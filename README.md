@@ -8,7 +8,7 @@ explicitly model the distribution and without writing an explicit loss. For
 example, the generator could learn to draw samples from the distribution of
 natural images. For more details on this technique, see
 ['Generative Adversarial Networks'](https://arxiv.org/abs/1406.2661) by
-Goodfellow et al. See [tensorflow/models](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow_models/gan/) for examples, and [this tutorial](http://go/tfgan-tutorial) for an
+Goodfellow et al. See [tensorflow/models](https://github.com/tensorflow/ganexamples/) for examples, and [this tutorial](https://github.com/tensorflow/gan) for an
 introduction.
 
 #### Usage
@@ -18,13 +18,13 @@ import tensorflow_gan as tfgan
 
 ## Why TF-GAN?
 
-* Easily train generator and discriminator networks with well-tested, flexible [library calls](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/train.py). You can
+* Easily train generator and discriminator networks with well-tested, flexible [library calls](https://github.com/tensorflow/ganpython/train.py). You can
 mix TF-GAN, native TF, and other custom frameworks
-* Use already implemented [GAN losses and penalties](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/losses/python/losses_impl.py) (ex Wasserstein loss, gradient penalty, mutual information penalty, etc)
-* [Monitor and visualize](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/eval/python/summaries_impl.py) GAN progress during training, and [evaluate](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/eval/python/classifier_metrics_impl.py) them
-* Use already-implemented [tricks](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/features/python/) to stabilize and improve training
-* Develop based on examples of [common GAN setups](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow_models/gan/)
-* Use the TF-GAN-backed [GANEstimator](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/estimator/python/gan_estimator_impl.py) to easily train a GAN model
+* Use already implemented [GAN losses and penalties](https://github.com/tensorflow/ganpython/losses/python/losses_impl.py) (ex Wasserstein loss, gradient penalty, mutual information penalty, etc)
+* [Monitor and visualize](https://github.com/tensorflow/ganpython/eval/python/summaries_impl.py) GAN progress during training, and [evaluate](https://github.com/tensorflow/ganpython/eval/python/classifier_metrics_impl.py) them
+* Use already-implemented [tricks](https://github.com/tensorflow/ganpython/features/python/) to stabilize and improve training
+* Develop based on examples of [common GAN setups](https://github.com/tensorflow/gan)
+* Use the TF-GAN-backed [GANEstimator](https://github.com/tensorflow/ganpython/estimator/python/gan_estimator_impl.py) to easily train a GAN model
 * Improvements in TF-GAN infrastructure will automatically benefit your TF-GAN project
 * Stay up-to-date with research as we add more algorithms
 
@@ -33,29 +33,29 @@ mix TF-GAN, native TF, and other custom frameworks
 TF-GAN is composed of several parts which were design to exist independently.
 These include the following main pieces (explained in detail below).
 
-*   [core](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/train.py):
+*   [core](https://github.com/tensorflow/ganpython/train.py):
     provides the main infrastructure needed to train a GAN. Training occurs in
     four phases, and each phase can be completed by custom-code or by using a
     TF-GAN library call.
 
-*   [features](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/features/python/):
+*   [features](https://github.com/tensorflow/ganpython/features/python/):
     Many common GAN operations and normalization techniques are implemented for
     you to use, such as instance normalization and conditioning.
 
-*   [losses](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/losses/python/):
+*   [losses](https://github.com/tensorflow/ganpython/losses/python/):
     Easily experiment with already-implemented and well-tested losses and
     penalties, such as the Wasserstein loss, gradient penalty, mutual
     information penalty, etc
 
-*   [evaluation](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow/contrib/gan/python/eval/python/):
+*   [evaluation](https://github.com/tensorflow/ganpython/eval/python/):
     Use `Inception Score`, `Frechet Distance`, or `Kernel Distance` with a
     pretrained Inception network to evaluate your unconditional generative
     model. You can also use your own pretrained classifier for more specific
     performance numbers, or use other methods for evaluating conditional
     generative models.
 
-*   [examples](https://cs.corp.google.com/#piper///depot/google3/third_party/tensorflow_models/gan/)
-    and [tutorial](http://go/tfgan-tutorial): See examples of how to use TF-GAN
+*   [examples](https://github.com/tensorflow/gan)
+    and [tutorial](https://github.com/tensorflow/gan): See examples of how to use TF-GAN
     to make GAN training easier, or use the more complicated examples to
     jumpstart your own project. These include unconditional and conditional
     GANs, InfoGANs, adversarial losses on existing networks, and image-to-image

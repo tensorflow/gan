@@ -1,4 +1,5 @@
-# Copyright 2019 The TensorFlow GAN Authors.
+# coding=utf-8
+# Copyright 2018 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
+
 """Tests for CycleGAN inference demo."""
 
 from __future__ import absolute_import
@@ -44,7 +45,7 @@ class InferenceDemoTest(tf.test.TestCase):
     self._ckpt_path = os.path.join(self._export_dir, 'model.ckpt')
     self._image_glob = os.path.join(
         FLAGS.test_srcdir,
-        'google3/third_party/py/tensorflow_gan/examples/cyclegan/testdata',
+        'tensorflow_gan/examples/cyclegan/testdata',
         '*.jpg')
     self._genx_dir = os.path.join(FLAGS.test_tmpdir, 'genx')
     self._geny_dir = os.path.join(FLAGS.test_tmpdir, 'geny')

@@ -1,4 +1,5 @@
-# Copyright 2019 The TensorFlow GAN Authors.
+# coding=utf-8
+# Copyright 2018 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,21 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# ============================================================================
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# ==============================================================================
+
 """Trains a generator on CIFAR data."""
 from __future__ import absolute_import
 from __future__ import division
@@ -41,43 +28,26 @@ from tensorflow_gan.examples.cifar import data_provider
 from tensorflow_gan.examples.cifar import networks
 
 
+# ML Hparams.
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
-
-flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
-
-flags.DEFINE_string('train_log_dir', '/tmp/cifar/',
-                    'Directory where to write event logs.')
-
 flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
+flags.DEFINE_float('generator_lr', 0.0002, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr', 0.0002,
+                   'The discriminator learning rate.')
 
+# ML Infrastructure.
+flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_string('train_log_dir', '/tmp/cifar/',
+                    'Directory where to write event logs.')
 flags.DEFINE_integer(
     'ps_tasks', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
-
 flags.DEFINE_integer(
     'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
-
-flags.DEFINE_boolean(
-    'conditional', False,
-    'If `True`, set up a conditional GAN. If False, it is unconditional.')
-
-# Sync replicas flags.
-flags.DEFINE_boolean(
-    'use_sync_replicas', True,
-    'If `True`, use sync replicas. Otherwise use async.')
-
-flags.DEFINE_integer(
-    'worker_replicas', 10,
-    'The number of gradients to collect before updating params. Only used '
-    'with sync replicas.')
-
-flags.DEFINE_integer(
-    'backup_workers', 1,
-    'Number of workers to be kept as backup in the sync replicas case.')
 
 
 FLAGS = flags.FLAGS
@@ -92,19 +62,13 @@ def main(_):
     # the forward inference and back-propagation.
     with tf.name_scope('inputs'):
       with tf.device('/cpu:0'):
-        images, one_hot_labels = data_provider.provide_data(
+        images, _ = data_provider.provide_data(
             'train', FLAGS.batch_size, num_parallel_calls=4)
 
     # Define the GANModel tuple.
-    noise = tf.random_normal([FLAGS.batch_size, 64])
-    if FLAGS.conditional:
-      generator_fn = networks.conditional_generator
-      discriminator_fn = networks.conditional_discriminator
-      generator_inputs = (noise, one_hot_labels)
-    else:
-      generator_fn = networks.generator
-      discriminator_fn = networks.discriminator
-      generator_inputs = noise
+    generator_fn = networks.generator
+    discriminator_fn = networks.discriminator
+    generator_inputs = tf.random_normal([FLAGS.batch_size, 64])
     gan_model = tfgan.gan_model(
         generator_fn,
         discriminator_fn,
@@ -121,24 +85,16 @@ def main(_):
     # Get the GANTrain ops using the custom optimizers and optional
     # discriminator weight clipping.
     with tf.name_scope('train'):
-      gen_lr, dis_lr = _learning_rate()
-      gen_opt, dis_opt = _optimizer(gen_lr, dis_lr, FLAGS.use_sync_replicas)
+      gen_opt, dis_opt = _get_optimizers()
       train_ops = tfgan.gan_train_ops(
           gan_model,
           gan_loss,
           generator_optimizer=gen_opt,
           discriminator_optimizer=dis_opt,
-          summarize_gradients=True,
-          colocate_gradients_with_ops=True,
-          aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
-      tf.summary.scalar('generator_lr', gen_lr)
-      tf.summary.scalar('discriminator_lr', dis_lr)
+          summarize_gradients=True)
 
     # Run the alternating training loop. Skip it if no steps should be taken
     # (used for graph construction tests).
-    sync_hooks = ([gen_opt.make_session_run_hook(FLAGS.task == 0),
-                   dis_opt.make_session_run_hook(FLAGS.task == 0)]
-                  if FLAGS.use_sync_replicas else [])
     status_message = tf.string_join(
         ['Starting train step: ',
          tf.as_string(tf.train.get_or_create_global_step())],
@@ -148,39 +104,18 @@ def main(_):
         train_ops,
         hooks=(
             [tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-             tf.train.LoggingTensorHook([status_message], every_n_iter=10)] +
-            sync_hooks),
+             tf.train.LoggingTensorHook([status_message], every_n_iter=10)]),
         logdir=FLAGS.train_log_dir,
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
 
 
-def _learning_rate():
-  generator_lr = tf.train.exponential_decay(
-      learning_rate=0.0001,
-      global_step=tf.train.get_or_create_global_step(),
-      decay_steps=100000,
-      decay_rate=0.9,
-      staircase=True)
-  discriminator_lr = 0.001
-  return generator_lr, discriminator_lr
+def _get_optimizers():
+  """Get optimizers that are optionally synchronous."""
+  gen_opt = tf.train.AdamOptimizer(FLAGS.generator_lr, 0.5)
+  dis_opt = tf.train.AdamOptimizer(FLAGS.discriminator_lr, 0.5)
 
-
-def _optimizer(gen_lr, dis_lr, use_sync_replicas):
-  """Get an optimizer, that's optionally synchronous."""
-  generator_opt = tf.train.RMSPropOptimizer(gen_lr, decay=.9, momentum=0.1)
-  discriminator_opt = tf.train.RMSPropOptimizer(dis_lr, decay=.95, momentum=0.1)
-
-  def _make_sync(opt):
-    return tf.train.SyncReplicasOptimizer(
-        opt,
-        replicas_to_aggregate=FLAGS.worker_replicas-FLAGS.backup_workers,
-        total_num_replicas=FLAGS.worker_replicas)
-  if use_sync_replicas:
-    generator_opt = _make_sync(generator_opt)
-    discriminator_opt = _make_sync(discriminator_opt)
-
-  return generator_opt, discriminator_opt
+  return gen_opt, dis_opt
 
 
 if __name__ == '__main__':
