@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
@@ -29,6 +30,12 @@ class UtilsTest(tf.test.TestCase):
     tfgan.eval.image_grid(
         input_tensor=tf.zeros([25, 32, 32, 3]),
         grid_shape=(5, 5))
+
+  def test_python_image_grid(self):
+    image_grid = tfgan.eval.python_image_grid(
+        input_array=np.zeros([25, 32, 32, 3]),
+        grid_shape=(5, 5))
+    self.assertTupleEqual(image_grid.shape, (5 * 32, 5 * 32, 3))
 
   # TODO(joelshor): Add more `image_reshaper` tests.
   def test_image_reshaper_image_list(self):

@@ -44,7 +44,7 @@ def _ensure_tf_install():  # pylint: disable=g-statement-before-imports
     # Re-raise with more informative error message.
     raise ImportError(
         "Failed to import TensorFlow. Please note that TensorFlow is not "
-        "installed by default when you install TF GAN. This is "
+        "installed by default when you install TF-GAN. This is "
         "so that users can decide whether to install the GPU-enabled "
         "TensorFlow package. To use TF GAN, please install the "
         "most recent version of TensorFlow, by following instructions at "

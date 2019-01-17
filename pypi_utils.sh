@@ -56,7 +56,7 @@ test_build_and_install_whl() {
   WHEEL_PATH=${venv_dir}/wheel/${py_version}
   ./pip_pkg.sh ${WHEEL_PATH}/
 
-  pip install ${WHEEL_PATH}/tf_gan-*.whl
+  pip install ${WHEEL_PATH}/tensorflow_gan-*.whl
 
   # Move away from repo directory so "import tensorflow_gan" refers to the
   # installed wheel and not to the local fs.

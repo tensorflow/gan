@@ -35,7 +35,7 @@ DEST=$(cd "$DEST" && pwd)
 
 # Pass through remaining arguments (following the first argument, which
 # specifies the output dir) to setup.py, e.g.,
-#  ./pip_pkg /tmp/tf_gan_pkg
+#  ./pip_pkg /tmp/tensorflow_gan_pkg
 # passes to setup.py.
 python setup.py bdist_wheel --universal ${@:2} --dist-dir="$DEST" >/dev/null
 

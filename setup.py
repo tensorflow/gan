@@ -30,6 +30,11 @@ from setuptools.command.install import install as InstallCommandBase
 from setuptools.command.test import test as TestCommandBase
 from setuptools.dist import Distribution
 
+from tensorflow_gan import __version__  # pylint: disable=g-import-not-at-top
+
+project_name = 'tensorflow-gan'
+version = __version__
+
 
 class StderrWrapper(io.IOBase):
 
@@ -72,14 +77,6 @@ class Test(TestCommandBase):
 
     # Run inside absl.app.run to ensure flags parsing is done.
     return app.run(main)
-
-
-from tensorflow_gan import __version__  # pylint: disable=g-import-not-at-top
-
-version = __version__
-
-
-project_name = 'tf-gan'
 
 
 class BinaryDistribution(Distribution):
