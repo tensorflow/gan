@@ -39,11 +39,11 @@ from tensorflow_gan.python import features
 from tensorflow_gan.python import losses
 
 # Modules to wildcard import.
-from .namedtuples import *  # pylint:disable=wildcard-import
-from .train import *  # pylint:disable=wildcard-import
+from tensorflow_gan.python.namedtuples import *  # pylint:disable=wildcard-import
+from tensorflow_gan.python.train import *  # pylint:disable=wildcard-import
 
 # Get the version number.
-from .version import __version__
+from tensorflow_gan.python.version import __version__
 
 # Collect allowed top-level symbols to expose to users.
 __all__ = [
@@ -53,8 +53,8 @@ __all__ = [
     'losses',
     '__version__',
 ]
-from .namedtuples import __all__ as namedtuple_symbols
-from .train import __all__ as train_symbols
+from tensorflow_gan.python.namedtuples import __all__ as namedtuple_symbols
+from tensorflow_gan.python.train import __all__ as train_symbols
 __all__ += namedtuple_symbols
 __all__ += train_symbols
 

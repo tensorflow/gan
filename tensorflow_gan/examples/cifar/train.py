@@ -41,7 +41,7 @@ flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_string('train_log_dir', '/tmp/cifar/',
                     'Directory where to write event logs.')
 flags.DEFINE_integer(
-    'ps_tasks', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
@@ -57,7 +57,7 @@ def main(_):
   if not tf.gfile.Exists(FLAGS.train_log_dir):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks)):
+  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
     # Force all input processing onto CPU in order to reserve the GPU for
     # the forward inference and back-propagation.
     with tf.name_scope('inputs'):

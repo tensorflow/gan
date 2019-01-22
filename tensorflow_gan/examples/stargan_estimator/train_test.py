@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 # Dependency imports
 from absl import flags
 import tensorflow as tf
@@ -29,8 +28,6 @@ from tensorflow_gan.examples.stargan_estimator import train
 FLAGS = flags.FLAGS
 mock = tf.test.mock
 
-TESTDATA_DIR = 'tensorflow_gan/examples/stargan_estimator/testdata/celeba'
-
 
 def _test_generator(input_images, _):
   """Simple generator function."""
@@ -39,11 +36,8 @@ def _test_generator(input_images, _):
 
 def _test_discriminator(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
-
   hidden = tf.contrib.layers.flatten(inputs)
-
   output_src = tf.reduce_mean(hidden, axis=1)
-
   output_cls = tf.contrib.layers.fully_connected(
       inputs=hidden,
       num_outputs=num_domains,
@@ -55,16 +49,20 @@ def _test_discriminator(inputs, num_domains):
 
 class TrainTest(tf.test.TestCase):
 
-  def test_main(self):
-
-    FLAGS.image_file_patterns = [
-        os.path.join(FLAGS.test_srcdir, TESTDATA_DIR, 'black/*.jpg'),
-        os.path.join(FLAGS.test_srcdir, TESTDATA_DIR, 'blond/*.jpg'),
-        os.path.join(FLAGS.test_srcdir, TESTDATA_DIR, 'brown/*.jpg'),
-    ]
-    FLAGS.max_number_of_steps = 1
+  @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
+  def test_main(self, mock_provide_data):
+    FLAGS.max_number_of_steps = 0
     FLAGS.steps_per_eval = 1
     FLAGS.batch_size = 1
+    FLAGS.patch_size = 8
+    num_domains = 3
+
+    # Construct mock inputs.
+    images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
+    img_list = [tf.zeros(images_shape)] * num_domains
+    lbl_list = [tf.one_hot([0] * FLAGS.batch_size, num_domains)] * num_domains
+    mock_provide_data.return_value = (img_list, lbl_list)
+
     train.main(None, _test_generator, _test_discriminator)
 
 

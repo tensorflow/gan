@@ -26,7 +26,7 @@ import tensorflow as tf
 
 def normalize_image(image):
   """Rescale from range [0, 255] to [-1, 1]."""
-  return (tf.to_float(image) - 127.5) / 127.5
+  return (tf.cast(image, tf.float32) - 127.5) / 127.5
 
 
 def undo_normalize_image(normalized_image):

@@ -43,7 +43,7 @@ test_build_and_install_whl() {
 
   echo "run_tests ${py_version}" "${venv_dir}"
 
-  if [ ${venv_dir} = "" ]; then
+  if [ "${venv_dir}" = "" ]; then
     venv_dir=$(mktemp -d)
   fi
 

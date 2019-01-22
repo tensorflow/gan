@@ -31,6 +31,7 @@ import tensorflow as tf
 __all__ = [
     'clip_variables',
     'clip_discriminator_weights',
+    'VariableClippingOptimizer',
 ]
 
 

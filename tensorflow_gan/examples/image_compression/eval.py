@@ -97,4 +97,4 @@ def main(_, run_eval_loop=True):
 
 
 if __name__ == '__main__':
-  app.run()
+  app.run(main)

@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_gan.examples.stargan import data_provider
@@ -28,28 +29,36 @@ mock = tf.test.mock
 
 class DataProviderTest(tf.test.TestCase):
 
-  @mock.patch.object(
-      data_provider.data_provider, 'provide_custom_data', autospec=True)
-  def test_data_provider(self, mock_provide_custom_data):
+  def setUp(self):
+    super(DataProviderTest, self).setUp()
+    mock_imgs = np.zeros([128, 128, 3], dtype=np.uint8)
+    self.mock_ds = tf.data.Dataset.from_tensors(
+        {'attributes': {
+            'A': True,
+            'B': True,
+            'C': True},
+         'image': mock_imgs})
 
-    batch_size = 2
-    patch_size = 8
-    num_domains = 3
-
-    images_shape = [batch_size, patch_size, patch_size, 3]
-    mock_provide_custom_data.return_value = [
-        tf.zeros(images_shape) for _ in range(num_domains)
-    ]
+  @mock.patch.object(data_provider, 'tfds', autospec=True)
+  def test_provide_data(self, mock_tfds):
+    batch_size = 5
+    patch_size = 32
+    mock_tfds.load.return_value = self.mock_ds
 
     images, labels = data_provider.provide_data(
-        image_file_patterns=None, batch_size=batch_size, patch_size=patch_size)
+        'test', batch_size, patch_size=patch_size, domains=('A', 'B', 'C'))
+    self.assertLen(images, 3)
+    self.assertLen(labels, 3)
 
-    self.assertEqual(num_domains, len(images))
-    self.assertEqual(num_domains, len(labels))
-    for label in labels:
-      self.assertListEqual([batch_size, num_domains], label.shape.as_list())
-    for image in images:
-      self.assertListEqual(images_shape, image.shape.as_list())
+    with self.cached_session() as sess:
+      images = sess.run(images)
+      labels = sess.run(labels)
+    for img in images:
+      self.assertTupleEqual(img.shape, (batch_size, patch_size, patch_size, 3))
+      self.assertTrue(np.all(np.abs(img) <= 1))
+    for lbl in labels:
+      expected_lbls_shape = (batch_size, 3)
+      self.assertTupleEqual(lbl.shape, expected_lbls_shape)
 
 
 if __name__ == '__main__':

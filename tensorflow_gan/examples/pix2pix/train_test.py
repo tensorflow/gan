@@ -46,7 +46,7 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
         [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3],
         dtype=np.float32)
     with mock.patch.object(train, 'data_provider') as mock_data_provider:
-      mock_data_provider.provide_data.return_value = mock_imgs
+      mock_data_provider.provide_data.return_value = mock_imgs, None
       train.main(None)
 
 if __name__ == '__main__':

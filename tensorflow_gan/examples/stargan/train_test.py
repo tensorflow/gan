@@ -89,9 +89,7 @@ class TrainTest(tf.test.TestCase):
     self.assertAlmostEqual(base_lr, lr_step2)
     self.assertAlmostEqual(base_lr * 0.2, lr_step9)
 
-  @mock.patch.object(tf.summary, 'scalar', autospec=True)
-  def test_define_train_ops(self, mock_summary_scalar):
-
+  def test_define_train_ops(self):
     FLAGS.batch_size = 2
     FLAGS.generator_lr = 0.1
     FLAGS.discriminator_lr = 0.01
@@ -105,13 +103,8 @@ class TrainTest(tf.test.TestCase):
     train_ops = train._define_train_ops(model, loss)
 
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
-    mock_summary_scalar.assert_has_calls([
-        mock.call('generator_lr', mock.ANY),
-        mock.call('discriminator_lr', mock.ANY)
-    ])
 
   def test_get_train_step(self):
-
     FLAGS.gen_disc_step_ratio = 0.5
     train_steps = train._define_train_step()
     self.assertEqual(1, train_steps.generator_train_steps)
@@ -122,14 +115,13 @@ class TrainTest(tf.test.TestCase):
     self.assertEqual(3, train_steps.generator_train_steps)
     self.assertEqual(1, train_steps.discriminator_train_steps)
 
-  @mock.patch.object(
-      train.data_provider, 'provide_data', autospec=True)
+  @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
   def test_main(self, mock_provide_data):
-    FLAGS.image_file_patterns = ['/tmp/A/*.jpg', '/tmp/B/*.jpg', '/tmp/C/*.jpg']
     FLAGS.max_number_of_steps = 10
     FLAGS.batch_size = 2
     num_domains = 3
 
+    # Construct mock inputs.
     images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
     img_list = [tf.zeros(images_shape)] * num_domains
     lbl_list = [tf.one_hot([0] * FLAGS.batch_size, num_domains)] * num_domains

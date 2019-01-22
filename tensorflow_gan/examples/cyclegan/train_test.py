@@ -88,8 +88,7 @@ class TrainTest(tf.test.TestCase):
         mock.call(dis_lr, beta1=mock.ANY, use_locking=True)
     ])
 
-  @mock.patch.object(tf.summary, 'scalar', autospec=True)
-  def test_define_train_ops(self, mock_summary_scalar):
+  def test_define_train_ops(self):
     FLAGS.batch_size = 2
     FLAGS.generator_lr = 0.1
     FLAGS.discriminator_lr = 0.01
@@ -101,13 +100,9 @@ class TrainTest(tf.test.TestCase):
     cyclegan_model = train._define_model(images_x, images_y)
     cyclegan_loss = tfgan.cyclegan_loss(
         cyclegan_model, cycle_consistency_loss_weight=10.0)
-    train_ops = train._define_train_ops(cyclegan_model, cyclegan_loss)
 
+    train_ops = train._define_train_ops(cyclegan_model, cyclegan_loss)
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
-    mock_summary_scalar.assert_has_calls([
-        mock.call('generator_lr', mock.ANY),
-        mock.call('discriminator_lr', mock.ANY)
-    ])
 
   @mock.patch.object(tf, 'gfile', autospec=True)
   @mock.patch.object(train, 'data_provider', autospec=True)

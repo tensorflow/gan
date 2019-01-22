@@ -28,10 +28,6 @@ from tensorflow_gan.examples.stargan import data_provider
 from tensorflow_gan.examples.stargan import network
 
 # FLAGS for data.
-flags.DEFINE_multi_string(
-    'image_file_patterns', None,
-    'List of file pattern for different domain of images. '
-    '(e.g.[\'black_hair\', \'blond_hair\', \'brown_hair\']')
 flags.DEFINE_integer('batch_size', 6, 'The number of images in each batch.')
 flags.DEFINE_integer('patch_size', 128, 'The patch size of images.')
 
@@ -51,7 +47,7 @@ flags.DEFINE_float('gen_disc_step_ratio', 0.2,
 # FLAGS for distributed training.
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_integer(
-    'ps_tasks', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
@@ -176,12 +172,12 @@ def main(_):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
 
   # Shard the model to different parameter servers.
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks)):
+  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
 
     # Create the input dataset.
-    with tf.name_scope('inputs'):
+    with tf.name_scope('inputs'), tf.device('/cpu:0'):
       images, labels = data_provider.provide_data(
-          FLAGS.image_file_patterns, FLAGS.batch_size, FLAGS.patch_size)
+          'train', FLAGS.batch_size, FLAGS.patch_size)
 
     # Define the model.
     with tf.name_scope('model'):
@@ -189,9 +185,7 @@ def main(_):
 
     # Add image summary.
     tfgan.eval.add_stargan_image_summaries(
-        model,
-        num_images=len(FLAGS.image_file_patterns) * FLAGS.batch_size,
-        display_diffs=True)
+        model, num_images=3 * FLAGS.batch_size, display_diffs=True)
 
     # Define the model loss.
     loss = tfgan.stargan_loss(model)
@@ -225,5 +219,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.flags.mark_flag_as_required('image_file_patterns')
   tf.app.run()

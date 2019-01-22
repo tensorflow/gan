@@ -19,12 +19,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import io
 import os
 # Dependency imports
 from absl import flags
 import numpy as np
 import scipy.misc
+from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
@@ -32,10 +32,6 @@ from tensorflow_gan.examples.stargan import network
 from tensorflow_gan.examples.stargan_estimator import data_provider
 
 # FLAGS for data.
-flags.DEFINE_multi_string(
-    'image_file_patterns', None,
-    'List of file pattern for different domain of images. '
-    '(e.g.[\'black_hair\', \'blond_hair\', \'brown_hair\']')
 flags.DEFINE_integer('batch_size', 6, 'The number of images in each batch.')
 flags.DEFINE_integer('patch_size', 128, 'The patch size of images.')
 
@@ -122,7 +118,7 @@ def _get_summary_image(estimator, test_images_np):
           ((dataset_imgs, dataset_lbls), unused_tensor))
 
     prediction_iterable = estimator.predict(test_input_fn)
-    predictions = [prediction_iterable.next() for _ in xrange(num_domains)]
+    predictions = [next(prediction_iterable) for _ in xrange(num_domains)]
     transform_row = np.concatenate([img_np] + predictions, 1)
     img_rows.append(transform_row)
 
@@ -130,15 +126,6 @@ def _get_summary_image(estimator, test_images_np):
   # Normalize` [-1, 1] to [0, 1].
   normalized_summary = (all_rows + 1.0) / 2.0
   return normalized_summary
-
-
-def _write_to_disk(summary_image, filename):
-  """Write to disk."""
-  buf = io.BytesIO()
-  scipy.misc.imsave(buf, summary_image, format='png')
-  buf.seek(0)
-  with tf.gfile.GFile(filename, 'w') as f:
-    f.write(buf.getvalue())
 
 
 def main(_, override_generator_fn=None, override_discriminator_fn=None):
@@ -155,7 +142,6 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
   gen_opt, dis_opt = _get_optimizer(FLAGS.generator_lr, FLAGS.discriminator_lr)
 
   # Create estimator.
-  # TODO(joelshor): Add optional distribution strategy here.
   stargan_estimator = tfgan.estimator.StarGANEstimator(
       generator_fn=override_generator_fn or network.generator,
       discriminator_fn=override_discriminator_fn or network.discriminator,
@@ -167,19 +153,19 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
 
   # Get input function for training and test images.
   train_input_fn = lambda: data_provider.provide_data(  # pylint:disable=g-long-lambda
-      FLAGS.image_file_patterns, FLAGS.batch_size, FLAGS.patch_size)
+      'train', FLAGS.batch_size, FLAGS.patch_size)
   test_images_np, _ = data_provider.provide_celeba_test_set()
   filename_str = os.path.join(FLAGS.output_dir, 'summary_image_%i.png')
 
   # Periodically train and write prediction output to disk.
   cur_step = 0
   while cur_step < FLAGS.max_number_of_steps:
-    stargan_estimator.train(train_input_fn, steps=FLAGS.steps_per_eval)
     cur_step += FLAGS.steps_per_eval
+    stargan_estimator.train(train_input_fn, steps=cur_step)
     summary_img = _get_summary_image(stargan_estimator, test_images_np)
-    _write_to_disk(summary_img, filename_str % cur_step)
+    with tf.gfile.Open(filename_str % cur_step, 'w') as f:
+      scipy.misc.imsave(f, summary_img)
 
 
 if __name__ == '__main__':
-  tf.flags.mark_flag_as_required('image_file_patterns')
   tf.app.run()

@@ -20,7 +20,7 @@ if [[ "$git_repo" == "" ]]; then
 fi
 
 # Base name for where the evaluation images will be saved to.
-EVAL_DIR=/tmp/mnist-estimator
+output_dir=/tmp/mnist-estimator
 
 # Where the dataset is saved to.
 DATASET_DIR=/tmp/mnist-data
@@ -45,7 +45,7 @@ NUM_STEPS=1600
 Banner "Starting training GANEstimator ${NUM_STEPS} steps..."
 python "${git_repo}/tensorflow_gan/examples/mnist_estimator/train.py" \
   --max_number_of_steps=${NUM_STEPS} \
-  --eval_dir=${EVAL_DIR} \
+  --output_dir=${OUTPUT_DIR} \
   --dataset_dir=${DATASET_DIR} \
   --alsologtostderr
-Banner "Finished training GANEstimator ${NUM_STEPS} steps. See ${EVAL_DIR} for output images."
+Banner "Finished training GANEstimator ${NUM_STEPS} steps. See ${OUTPUT_DIR} for output images."

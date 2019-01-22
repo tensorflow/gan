@@ -40,7 +40,7 @@ flags.DEFINE_integer('max_number_of_steps', 20000,
 flags.DEFINE_integer(
     'noise_dims', 64, 'Dimensions of the generator noise vector')
 
-flags.DEFINE_string('eval_dir', '/tmp/mnist-estimator/',
+flags.DEFINE_string('output_dir', '/tmp/mnist-estimator/',
                     'Directory where the results are saved to.')
 
 FLAGS = flags.FLAGS
@@ -86,17 +86,15 @@ def main(_):
   # Run inference.
   predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims)
   prediction_iterable = gan_estimator.predict(predict_input_fn)
-  predictions = [prediction_iterable.next() for _ in xrange(36)]
+  predictions = np.array([next(prediction_iterable) for _ in xrange(36)])
 
   # Nicely tile.
-  image_rows = [np.concatenate(predictions[i:i+6], axis=0) for i in
-                range(0, 36, 6)]
-  tiled_image = np.concatenate(image_rows, axis=1)
+  tiled_image = tfgan.eval.python_image_grid(predictions, grid_shape=(6, 6))
 
   # Write to disk.
-  if not tf.gfile.Exists(FLAGS.eval_dir):
-    tf.gfile.MakeDirs(FLAGS.eval_dir)
-  scipy.misc.imsave(os.path.join(FLAGS.eval_dir, 'unconditional_gan.png'),
+  if not tf.gfile.Exists(FLAGS.output_dir):
+    tf.gfile.MakeDirs(FLAGS.output_dir)
+  scipy.misc.imsave(os.path.join(FLAGS.output_dir, 'unconditional_gan.png'),
                     np.squeeze(tiled_image, axis=2))
 
 

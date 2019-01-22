@@ -170,8 +170,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     # Evaluate.
     num_steps_eval = 2
     scores = est.evaluate(eval_input_fn, steps=num_steps_eval)
-    self.assertEqual(num_steps_train + num_steps_eval,
-                     scores[tf.GraphKeys.GLOBAL_STEP])
+    self.assertIn(tf.GraphKeys.GLOBAL_STEP, six.iterkeys(scores))
     self.assertIn('loss', six.iterkeys(scores))
     self.assertEqual(scores['discriminator_loss'] + scores['generator_loss'],
                      scores['loss'])

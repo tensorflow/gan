@@ -34,7 +34,7 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_full_flow(self, mock_data_provider):
-    FLAGS.eval_dir = self.get_temp_dir()
+    FLAGS.output_dir = self.get_temp_dir()
     FLAGS.batch_size = 16
     FLAGS.max_number_of_steps = 2
     FLAGS.noise_dims = 3

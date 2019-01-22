@@ -28,39 +28,31 @@ from tensorflow_gan.examples.image_compression import data_provider
 from tensorflow_gan.examples.pix2pix import networks
 
 
+# ML Hyperparameters.
 flags.DEFINE_integer('batch_size', 10, 'The number of images in each batch.')
-
 flags.DEFINE_integer('patch_size', 32, 'The size of the patches to train on.')
-
-flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
-
-flags.DEFINE_string('train_log_dir', '/tmp/pix2pix/',
-                    'Directory where to write event logs.')
-
 flags.DEFINE_float('generator_lr', 0.00001,
                    'The compression model learning rate.')
-
 flags.DEFINE_float('discriminator_lr', 0.00001,
                    'The discriminator learning rate.')
-
 flags.DEFINE_integer('max_number_of_steps', 2000000,
                      'The maximum number of gradient steps.')
+flags.DEFINE_float(
+    'weight_factor', 10.0,
+    'How much to weight the adversarial loss relative to pixel loss.')
 
+# ML Infrastructure.
+flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_string('train_log_dir', '/tmp/pix2pix/',
+                    'Directory where to write event logs.')
 flags.DEFINE_integer(
-    'ps_tasks', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
-
 flags.DEFINE_integer(
     'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
-
-flags.DEFINE_float(
-    'weight_factor', 0.0,
-    'How much to weight the adversarial loss relative to pixel loss.')
-
-flags.DEFINE_string('dataset_dir', None, 'Location of data.')
 
 
 FLAGS = flags.FLAGS
@@ -70,15 +62,14 @@ def main(_):
   if not tf.gfile.Exists(FLAGS.train_log_dir):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks)):
+  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
     # Get real and distorted images.
     with tf.device('/cpu:0'), tf.name_scope('inputs'):
-      real_images = data_provider.provide_data(
-          'train', FLAGS.batch_size, dataset_dir=FLAGS.dataset_dir,
-          patch_size=FLAGS.patch_size)
-    distorted_images = _distort_images(
-        real_images, downscale_size=int(FLAGS.patch_size / 2),
-        upscale_size=FLAGS.patch_size)
+      real_images, _ = data_provider.provide_data(
+          'train', FLAGS.batch_size, FLAGS.patch_size)
+      distorted_images = _distort_images(
+          real_images, downscale_size=int(FLAGS.patch_size / 2),
+          upscale_size=int(FLAGS.patch_size))
 
     # Create a GANModel tuple.
     gan_model = tfgan.gan_model(
@@ -167,8 +158,8 @@ def _lr(gen_lr_base, dis_lr_base):
 
 
 def _distort_images(images, downscale_size, upscale_size):
-  downscaled = tf.image.resize_area(images, [downscale_size] * 2)
-  upscaled = tf.image.resize_area(downscaled, [upscale_size] * 2)
+  downscaled = tf.image.resize_area(images, [downscale_size, downscale_size])
+  upscaled = tf.image.resize_area(downscaled, [upscale_size, upscale_size])
   return upscaled
 
 

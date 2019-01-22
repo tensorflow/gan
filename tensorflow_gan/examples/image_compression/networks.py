@@ -27,7 +27,7 @@ from tensorflow_models.slim.nets import pix2pix
 
 def _last_conv_layer(end_points):
   """"Returns the last convolutional layer from an endpoints dictionary."""
-  conv_list = [k if k[:4] == 'conv' else None for k in end_points.keys()]
+  conv_list = [k for k in end_points.keys() if k[:4] == 'conv']
   conv_list.sort()
   return end_points[conv_list[-1]]
 

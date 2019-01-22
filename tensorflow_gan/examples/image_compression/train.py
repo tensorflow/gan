@@ -57,7 +57,7 @@ flags.DEFINE_integer('max_number_of_steps', 2000000,
                      'The maximum number of gradient steps.')
 
 flags.DEFINE_integer(
-    'ps_tasks', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 
@@ -67,7 +67,7 @@ flags.DEFINE_integer(
     'identify each worker.')
 
 flags.DEFINE_float(
-    'weight_factor', 10000.0,
+    'weight_factor', 4000.0,
     'How much to weight the adversarial loss relative to pixel loss.')
 
 
@@ -75,7 +75,7 @@ def main(_):
   if not tf.gfile.Exists(FLAGS.train_log_dir):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_tasks)):
+  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
     # Put input pipeline on CPU to reserve GPU for training.
     with tf.name_scope('inputs'), tf.device('/cpu:0'):
       images, _ = data_provider.provide_data(
@@ -113,6 +113,7 @@ def main(_):
       # Modify the loss tuple to include the pixel loss. Add summaries as well.
       gan_loss = tfgan.losses.combine_adversarial_loss(
           gan_loss, gan_model, l1_pixel_loss, weight_factor=FLAGS.weight_factor)
+      tf.summary.scalar('weight_factor', FLAGS.weight_factor)
 
     # Get the GANTrain ops using the custom optimizers and optional
     # discriminator weight clipping.

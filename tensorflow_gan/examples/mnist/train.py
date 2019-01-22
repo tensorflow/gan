@@ -70,10 +70,9 @@ def main(_):
 
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
-  with tf.name_scope('inputs'):
-    with tf.device('/cpu:0'):
-      images, one_hot_labels = data_provider.provide_data(
-          'train', FLAGS.batch_size, num_parallel_calls=4)
+  with tf.name_scope('inputs'), tf.device('/cpu:0'):
+    images, one_hot_labels = data_provider.provide_data(
+        'train', FLAGS.batch_size, num_parallel_calls=4)
 
   # Define the GANModel tuple. Optionally, condition the GAN on the label or
   # use an InfoGAN to learn a latent representation.

@@ -41,10 +41,10 @@ def provide_celeba_test_set():
   """
   base_dir = 'tensorflow_gan/examples/stargan_estimator/data'
   images_fn = os.path.join(base_dir, 'celeba_test_split_images.npy')
-  with tf.gfile.Open(images_fn) as f:
+  with tf.gfile.Open(images_fn, 'rb') as f:
     images_np = np.load(f)
   labels_fn = os.path.join(base_dir, 'celeba_test_split_labels.npy')
-  with tf.gfile.Open(labels_fn) as f:
+  with tf.gfile.Open(labels_fn, 'rb') as f:
     labels_np = np.load(f)
   if images_np.shape[0] != labels_np.shape[0]:
     raise ValueError('Test data is malformed.')
