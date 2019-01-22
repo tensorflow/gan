@@ -265,10 +265,10 @@ with tf.variable_scope('Generator') as gen_scope:
   generated_images = generator_fn(noise)
 with tf.variable_scope('Discriminator') as dis_scope:
   discriminator_gen_outputs = discriminator_fn(generated_images)
-with variable_scope.variable_scope(dis_scope, reuse=True):
+with tf.variable_scope(dis_scope, reuse=True):
   discriminator_real_outputs = discriminator_fn(images)
-generator_variables = variables_lib.get_trainable_variables(gen_scope)
-discriminator_variables = variables_lib.get_trainable_variables(dis_scope)
+generator_variables = get_trainable_variables(gen_scope)
+discriminator_variables = get_trainable_variables(dis_scope)
 # Depending on what TF-GAN features you use, you don't always need to supply
 # every `GANModel` field. At a minimum, you need to include the discriminator
 # outputs and variables if you want to use TF-GAN to construct losses.

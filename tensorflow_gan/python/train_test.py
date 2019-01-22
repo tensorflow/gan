@@ -26,6 +26,8 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
+from tensorflow_gan.python.contrib_utils import get_trainable_variables
+
 # Private functions to be tested.
 from tensorflow_gan.python.train import generate_stargan_random_domain_target
 from tensorflow_gan.python.train import tensor_pool_adjusted_model
@@ -909,7 +911,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
   def test_sync_replicas(self, create_gan_model_fn, create_global_step):
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
-    num_trainable_vars = len(tf.contrib.framework.get_trainable_variables())
+    num_trainable_vars = len(get_trainable_variables())
 
     if create_global_step:
       gstep = tf.get_variable(
@@ -922,7 +924,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
         model, loss, generator_optimizer=g_opt, discriminator_optimizer=d_opt)
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
     # No new trainable variables should have been added.
-    self.assertLen(tf.contrib.framework.get_trainable_variables(),
+    self.assertLen(get_trainable_variables(),
                    num_trainable_vars)
 
     # Sync hooks should be populated in the GANTraintf.

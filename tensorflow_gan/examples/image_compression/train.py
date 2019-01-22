@@ -71,6 +71,11 @@ flags.DEFINE_float(
     'How much to weight the adversarial loss relative to pixel loss.')
 
 
+def _get_trainable_variables(scope):
+  assert isinstance(scope, tf.VariableScope)
+  return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope.name)
+
+
 def main(_):
   if not tf.gfile.Exists(FLAGS.train_log_dir):
     tf.gfile.MakeDirs(FLAGS.train_log_dir)
@@ -182,15 +187,14 @@ def _lr(gen_lr_base, dis_lr_base):
 def _get_gan_model(generator_inputs, generated_data, real_data,
                    generator_scope):
   """Manually construct and return a GANModel tuple."""
-  generator_vars = tf.contrib.framework.get_trainable_variables(generator_scope)
+  generator_vars = _get_trainable_variables(generator_scope)
 
   discriminator_fn = networks.discriminator
   with tf.variable_scope('discriminator') as dis_scope:
     discriminator_gen_outputs = discriminator_fn(generated_data)
   with tf.variable_scope(dis_scope, reuse=True):
     discriminator_real_outputs = discriminator_fn(real_data)
-  discriminator_vars = tf.contrib.framework.get_trainable_variables(
-      dis_scope)
+  discriminator_vars = _get_trainable_variables(dis_scope)
 
   # Manually construct GANModel tuple.
   gan_model = tfgan.GANModel(

@@ -35,8 +35,9 @@ import os
 import time
 
 import tensorflow as tf
-from tensorflow_gan.python import namedtuples
 
+from tensorflow_gan.python import contrib_utils as contrib
+from tensorflow_gan.python import namedtuples
 from tensorflow_gan.python.losses import losses_wargs
 from tensorflow_gan.python.losses import tuple_losses
 
@@ -113,10 +114,8 @@ def gan_model(
           '(%s).' % (generated_data.shape, real_data.shape))
 
   # Get model-specific variables.
-  generator_variables = tf.contrib.framework.get_trainable_variables(
-      gen_scope)
-  discriminator_variables = tf.contrib.framework.get_trainable_variables(
-      dis_scope)
+  generator_variables = contrib.get_trainable_variables(gen_scope)
+  discriminator_variables = contrib.get_trainable_variables(dis_scope)
 
   return namedtuples.GANModel(
       generator_inputs, generated_data, generator_variables, gen_scope,
@@ -189,9 +188,9 @@ def infogan_model(
         '(%s).' % (generated_data.get_shape(), real_data.get_shape()))
 
   # Get model-specific variables.
-  generator_variables = tf.contrib.framework.get_trainable_variables(
+  generator_variables = contrib.get_trainable_variables(
       gen_scope)
-  discriminator_variables = tf.contrib.framework.get_trainable_variables(
+  discriminator_variables = contrib.get_trainable_variables(
       disc_scope)
 
   return namedtuples.InfoGANModel(
@@ -286,9 +285,9 @@ def acgan_model(
           '(%s).' % (generated_data.shape, real_data.shape))
 
   # Get model-specific variables.
-  generator_variables = tf.contrib.framework.get_trainable_variables(
+  generator_variables = contrib.get_trainable_variables(
       gen_scope)
-  discriminator_variables = tf.contrib.framework.get_trainable_variables(
+  discriminator_variables = contrib.get_trainable_variables(
       dis_scope)
 
   return namedtuples.ACGANModel(
@@ -449,9 +448,9 @@ def stargan_model(generator_fn,
         input_data, num_domains)
 
   # Collect trainable variables from the neural networks.
-  generator_variables = tf.contrib.framework.get_trainable_variables(
+  generator_variables = contrib.get_trainable_variables(
       generator_scope)
-  discriminator_variables = tf.contrib.framework.get_trainable_variables(
+  discriminator_variables = contrib.get_trainable_variables(
       discriminator_scope)
 
   # Create the StarGANModel namedtuple.

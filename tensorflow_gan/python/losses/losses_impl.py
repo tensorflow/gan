@@ -39,6 +39,7 @@ from __future__ import print_function
 
 
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
 
 
 __all__ = [
@@ -888,7 +889,7 @@ def combine_adversarial_loss(main_loss,
   """
   _validate_args([main_loss, adversarial_loss], weight_factor, gradient_ratio)
   if variables is None:
-    variables = tf.contrib.framework.get_trainable_variables()
+    variables = contrib.get_trainable_variables()
 
   with tf.name_scope(scope, 'adversarial_loss',
                      values=[main_loss, adversarial_loss]):

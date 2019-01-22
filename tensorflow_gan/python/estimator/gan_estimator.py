@@ -25,6 +25,7 @@ import enum
 
 import tensorflow as tf
 
+from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python import namedtuples as tfgan_tuples
 from tensorflow_gan.python import train as tfgan_train
 from tensorflow_gan.python.eval import summaries as tfgan_summaries
@@ -287,7 +288,7 @@ def _make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
   with tf.variable_scope(generator_scope) as gen_scope:
     generator_inputs = tfgan_train._convert_tensor_or_l_or_d(generator_inputs)  # pylint:disable=protected-access
     generated_data = generator_fn(generator_inputs)
-  generator_variables = tf.contrib.framework.get_trainable_variables(gen_scope)
+  generator_variables = contrib.get_trainable_variables(gen_scope)
 
   return tfgan_tuples.GANModel(
       generator_inputs,
