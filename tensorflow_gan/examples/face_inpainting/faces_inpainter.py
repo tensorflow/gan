@@ -107,7 +107,7 @@ def get_input_fn(data_dir, batch_size, imshape, mask_side_len):
     data = files.map(lambda x: faces_gan.open_image(x, imshape, False),
                      num_parallel_calls=4)
     data = data.cache().repeat().batch(
-        batch_size, drop_remainder=True).prefetch(tf.contrib.data.AUTOTUNE)
+        batch_size, drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE)
     image_iterator = data.make_one_shot_iterator()
     expanded_weighted_mask = tf.expand_dims(
         tf.convert_to_tensor(weighted_mask, dtype=tf.float32), -1)

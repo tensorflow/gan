@@ -91,7 +91,7 @@ def _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
   ds = (
       ds.batch(batch_size,
-               drop_remainder=True).prefetch(tf.contrib.data.AUTOTUNE))
+               drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
   return ds
 
 
