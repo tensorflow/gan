@@ -171,6 +171,25 @@ class SpectralNormalizationTest(tf.test.TestCase):
 
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
+  def testConv2D_Keras(self):
+
+    def build_layer_fn(x, w_initializer, b_initializer):
+      layer = tf.keras.layers.Conv2D(
+          filters=3,
+          kernel_size=3,
+          padding='same',
+          kernel_initializer=w_initializer,
+          bias_initializer=b_initializer)
+      layer.build(x.shape)
+      layer.kernel = tfgan.features.spectral_normalize(layer.kernel)
+      net = layer.apply(x)
+      expected_normalized_vars = {'keras.Conv2d.kernel': layer.kernel}
+      expected_not_normalized_vars = {'keras.Conv2d.bias': layer.bias}
+
+      return net, expected_normalized_vars, expected_not_normalized_vars
+
+    self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
+
   def testConv2D_ContribLayers(self):
 
     def build_layer_fn(x, w_initializer, b_initializer):
@@ -236,6 +255,25 @@ class SpectralNormalizationTest(tf.test.TestCase):
       net = layer.apply(x)
       expected_normalized_vars = {'tf.layers.Dense.kernel': layer.kernel}
       expected_not_normalized_vars = {'tf.layers.Dense.bias': layer.bias}
+
+      return net, expected_normalized_vars, expected_not_normalized_vars
+
+    self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+
+  def testFC_Keras(self):
+
+    def build_layer_fn(x, w_initializer, b_initializer):
+      flatten = tf.keras.layers.Flatten()
+      x = flatten.apply(x)
+      layer = tf.keras.layers.Dense(
+          units=3,
+          kernel_initializer=w_initializer,
+          bias_initializer=b_initializer)
+      layer.build(x.shape)
+      layer.kernel = tfgan.features.spectral_normalize(layer.kernel)
+      net = layer.apply(x)
+      expected_normalized_vars = {'keras.Dense.kernel': layer.kernel}
+      expected_not_normalized_vars = {'keras.Dense.bias': layer.bias}
 
       return net, expected_normalized_vars, expected_not_normalized_vars
 

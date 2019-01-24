@@ -191,9 +191,6 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
         'discriminator', custom_getter=spectral_normalization_custom_getter()):
       net = discriminator_fn(net)
 
-  IMPORTANT: Keras does not respect the custom_getter supplied by the
-  VariableScope, so this approach won't work for Keras layers.
-
   It is important to carefully select to which weights you want to apply
   Spectral Normalization. In general you want to normalize the kernels of
   convolution and dense layers, but you do not want to normalize biases. You
@@ -209,6 +206,16 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
   which means the normalized discriminator weights may change slightly whilst
   training the generator. Whilst unusual, this matches how the paper's authors
   implement it, and in general additional rounds of power iteration can't hurt.
+
+  IMPORTANT: Keras does not respect the custom_getter supplied by the
+  VariableScope, so this approach won't work for Keras layers. For Keras layers
+  each layer needs to have Spectral Normalization explicitly applied. This
+  should be accomplished using code like:
+
+    my_layer = tf.keras.layers.SomeLayer()
+    layer.build(inputs.shape)
+    layer.kernel = spectral_normalize(layer.kernel)
+    outputs = layer.apply(inputs)
 
   Args:
     name_filter: Optionally, a method that takes a Variable name as input and
