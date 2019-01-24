@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -81,7 +80,7 @@ def _get_lr(base_lr):
 
   Args:
     base_lr: A scalar float `Tensor` or a Python number.  The base learning
-        rate.
+      rate.
 
   Returns:
     A scalar float `Tensor` of learning rate which equals `base_lr` when the
@@ -106,9 +105,9 @@ def _get_optimizer(gen_lr, dis_lr):
 
   Args:
     gen_lr: A scalar float `Tensor` or a Python number.  The Generator learning
-        rate.
+      rate.
     dis_lr: A scalar float `Tensor` or a Python number.  The Discriminator
-        learning rate.
+      learning rate.
 
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
@@ -125,8 +124,7 @@ def _define_train_ops(model, loss):
 
   Args:
     model: A `StarGANModel` namedtuple.
-    loss: A `StarGANLoss` namedtuple containing all losses for
-        `stargan_model`.
+    loss: A `StarGANLoss` namedtuple containing all losses for `stargan_model`.
 
   Returns:
     A `GANTrainOps` namedtuple.
@@ -176,8 +174,8 @@ def main(_):
 
     # Create the input dataset.
     with tf.name_scope('inputs'), tf.device('/cpu:0'):
-      images, labels = data_provider.provide_data(
-          'train', FLAGS.batch_size, FLAGS.patch_size)
+      images, labels = data_provider.provide_data('train', FLAGS.batch_size,
+                                                  FLAGS.patch_size)
 
     # Define the model.
     with tf.name_scope('model'):
@@ -198,12 +196,11 @@ def main(_):
     train_steps = _define_train_step()
 
     # Define a status message.
-    status_message = tf.string_join(
-        [
-            'Starting train step: ',
-            tf.as_string(tf.train.get_or_create_global_step())
-        ],
-        name='status_message')
+    status_message = tf.string_join([
+        'Starting train step: ',
+        tf.as_string(tf.train.get_or_create_global_step())
+    ],
+                                    name='status_message')
 
     # Train the model.
     tfgan.gan_train(

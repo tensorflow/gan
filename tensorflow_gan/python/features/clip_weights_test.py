@@ -20,7 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
-# Dependency imports
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -32,8 +31,9 @@ class ClipWeightsTest(tf.test.TestCase):
   def setUp(self):
     super(ClipWeightsTest, self).setUp()
     self.variables = [tf.Variable(2.0)]
-    self.tuple = collections.namedtuple(
-        'VarTuple', ['discriminator_variables'])(self.variables)
+    self.tuple = collections.namedtuple('VarTuple',
+                                        ['discriminator_variables'])(
+                                            self.variables)
 
   def _test_weight_clipping_helper(self, use_tuple):
     loss = self.variables[0]

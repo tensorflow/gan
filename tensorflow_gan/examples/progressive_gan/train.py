@@ -27,7 +27,6 @@ from __future__ import print_function
 
 import os
 
-# Dependency imports
 from absl import logging
 import numpy as np
 import tensorflow as tf
@@ -87,7 +86,7 @@ def get_batch_size(stage_id, **kwargs):
     stage_id: An integer of training stage index.
     **kwargs: A dictionary of
         'batch_size_schedule': A list of integer, each element is the batch size
-            for the current training image resolution.
+          for the current training image resolution.
         'num_resolutions': An integer of number of progressive resolutions.
 
   Returns:
@@ -111,9 +110,9 @@ def get_stage_info(stage_id, **kwargs):
     **kwargs: A dictionary of
         'num_resolutions': An integer of number of progressive resolutions.
         'stable_stage_num_images': An integer of number of training images in
-            the stable stage.
+          the stable stage.
         'transition_stage_num_images': An integer of number of training images
-            in the transition stage.
+          in the transition stage.
         'total_num_images': An integer of total number of training images.
 
   Returns:
@@ -190,11 +189,11 @@ def define_loss(gan_model, **kwargs):
     gan_model: A `GANModel` namedtuple.
     **kwargs: A dictionary of
         'gradient_penalty_weight': A float of gradient norm target for
-            wasserstein loss.
+          wasserstein loss.
         'gradient_penalty_target': A float of gradient penalty weight for
-            wasserstein loss.
-        'real_score_penalty_weight': A float of Additional penalty to keep
-            the scores from drifting too far from zero.
+          wasserstein loss.
+        'real_score_penalty_weight': A float of Additional penalty to keep the
+          scores from drifting too far from zero.
 
   Returns:
     A `GANLoss` namedtuple.
@@ -269,24 +268,24 @@ def build_model(stage_id, batch_size, real_images, **kwargs):
         'scale_base': An integer of resolution multiplier.
         'num_resolutions': An integer of number of progressive resolutions.
         'stable_stage_num_images': An integer of number of training images in
-            the stable stage.
+          the stable stage.
         'transition_stage_num_images': An integer of number of training images
-            in the transition stage.
+          in the transition stage.
         'total_num_images': An integer of total number of training images.
         'kernel_size': Convolution kernel size.
         'colors': Number of image channels.
         'to_rgb_use_tanh_activation': Whether to apply tanh activation when
-            output rgb.
+          output rgb.
         'fmap_base': Base number of filters.
         'fmap_decay': Decay of number of filters.
         'fmap_max': Max number of filters.
         'latent_vector_size': An integer of latent vector size.
         'gradient_penalty_weight': A float of gradient norm target for
-            wasserstein loss.
+          wasserstein loss.
         'gradient_penalty_target': A float of gradient penalty weight for
-            wasserstein loss.
-        'real_score_penalty_weight': A float of Additional penalty to keep
-            the scores from drifting too far from zero.
+          wasserstein loss.
+        'real_score_penalty_weight': A float of Additional penalty to keep the
+          scores from drifting too far from zero.
         'adam_beta1': A float of Adam optimizer beta1.
         'adam_beta2': A float of Adam optimizer beta2.
         'generator_learning_rate': A float of generator learning rate.
@@ -389,10 +388,12 @@ def build_model(stage_id, batch_size, real_images, **kwargs):
 
 def make_var_scope_custom_getter_for_ema(ema):
   """Makes variable scope custom getter."""
+
   def _custom_getter(getter, name, *args, **kwargs):
     var = getter(name, *args, **kwargs)
     ema_var = ema.average(var)
     return ema_var if ema_var else var
+
   return _custom_getter
 
 
@@ -406,12 +407,12 @@ def add_model_summaries(model, **kwargs):
   - summaries for `gan_model` losses, variable distributions etc.
 
   Args:
-    model: An model object having all information of progressive GAN model,
-        e.g. the return of build_model().
+    model: An model object having all information of progressive GAN model, e.g.
+      the return of build_model().
     **kwargs: A dictionary of
       'fake_grid_size': The fake image grid size for summaries.
       'interp_grid_size': The latent space interpolated image grid size for
-          summaries.
+        summaries.
       'colors': Number of image channels.
       'latent_vector_size': An integer of latent vector size.
   """
@@ -486,9 +487,9 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
         'train_log_dir': A string of root directory of training logs.
         'num_resolutions': An integer of number of progressive resolutions.
         'stable_stage_num_images': An integer of number of training images in
-            the stable stage.
+          the stable stage.
         'transition_stage_num_images': An integer of number of training images
-            in the transition stage.
+          in the transition stage.
         'total_num_images': An integer of total number of training images.
 
   Returns:
@@ -543,28 +544,28 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
 
 def make_status_message(model):
   """Makes a string `Tensor` of training status."""
-  return tf.string_join(
-      [
-          'Starting train step: current_image_id: ',
-          tf.as_string(model.current_image_id), ', progress: ',
-          tf.as_string(model.progress), ', num_blocks: {}'.format(
-              model.num_blocks), ', batch_size: {}'.format(model.batch_size)
-      ],
-      name='status_message')
+  return tf.string_join([
+      'Starting train step: current_image_id: ',
+      tf.as_string(model.current_image_id), ', progress: ',
+      tf.as_string(model.progress), ', num_blocks: {}'.format(model.num_blocks),
+      ', batch_size: {}'.format(model.batch_size)
+  ],
+                        name='status_message')
 
 
 def train(model, **kwargs):
   """Trains progressive GAN for stage `stage_id`.
 
   Args:
-    model: An model object having all information of progressive GAN model,
-        e.g. the return of build_model().
+    model: An model object having all information of progressive GAN model, e.g.
+      the return of build_model().
     **kwargs: A dictionary of
         'train_log_dir': A string of root directory of training logs.
         'master': Name of the TensorFlow master to use.
         'task': The Task ID. This value is used when training with multiple
-            workers to identify each worker.
+          workers to identify each worker.
         'save_summaries_num_images': Save summaries in this number of images.
+
   Returns:
     None.
   """
@@ -579,8 +580,8 @@ def train(model, **kwargs):
       get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(1, 1)),
       hooks=[
           tf.train.StopAtStepHook(last_step=model.num_images),
-          tf.train.LoggingTensorHook(
-              [make_status_message(model)], every_n_iter=10)
+          tf.train.LoggingTensorHook([make_status_message(model)],
+                                     every_n_iter=10)
       ],
       master=kwargs['master'],
       is_chief=(kwargs['task'] == 0),

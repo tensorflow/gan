@@ -19,8 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
-
 from absl import app
 from absl import flags
 
@@ -32,7 +30,6 @@ from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
 
 FLAGS = flags.FLAGS
-
 
 flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
                     'Directory where the model was written to.')
@@ -51,13 +48,15 @@ flags.DEFINE_boolean('eval_real_images', False,
 flags.DEFINE_integer('noise_dims', 64,
                      'Dimensions of the generator noise vector')
 
-flags.DEFINE_string('classifier_filename', None,
-                    'Location of the pretrained classifier. If `None`, use '
-                    'default.')
+flags.DEFINE_string(
+    'classifier_filename', None,
+    'Location of the pretrained classifier. If `None`, use '
+    'default.')
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
-                     'Number of times to run evaluation. If `None`, run '
-                     'forever.')
+flags.DEFINE_integer(
+    'max_number_of_evaluations', None,
+    'Number of times to run evaluation. If `None`, run '
+    'forever.')
 
 flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
@@ -79,9 +78,10 @@ def main(_, run_eval_loop=True):
       images = networks.unconditional_generator(
           tf.random_normal([FLAGS.num_images_generated, FLAGS.noise_dims]),
           is_training=False)
-    tf.summary.scalar('MNIST_Frechet_distance',
-                      util.mnist_frechet_distance(
-                          real_images, images, FLAGS.classifier_filename))
+    tf.summary.scalar(
+        'MNIST_Frechet_distance',
+        util.mnist_frechet_distance(real_images, images,
+                                    FLAGS.classifier_filename))
     tf.summary.scalar('MNIST_Classifier_score',
                       util.mnist_score(images, FLAGS.classifier_filename))
     if FLAGS.num_images_generated >= 100 and FLAGS.write_to_disk:
@@ -89,15 +89,18 @@ def main(_, run_eval_loop=True):
           images[:100, ...], num_cols=10)
       uint8_images = data_provider.float_image_to_uint8(reshaped_images)
       image_write_ops = tf.write_file(
-          '%s/%s'% (FLAGS.eval_dir, 'unconditional_gan.png'),
+          '%s/%s' % (FLAGS.eval_dir, 'unconditional_gan.png'),
           tf.image.encode_png(uint8_images[0]))
 
   # For unit testing, use `run_eval_loop=False`.
-  if not run_eval_loop: return
+  if not run_eval_loop:
+    return
   tf.contrib.training.evaluate_repeatedly(
       FLAGS.checkpoint_dir,
-      hooks=[tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
-             tf.contrib.training.StopAfterNEvalsHook(1)],
+      hooks=[
+          tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
+          tf.contrib.training.StopAfterNEvalsHook(1)
+      ],
       eval_ops=image_write_ops,
       max_number_of_evaluations=FLAGS.max_number_of_evaluations)
 

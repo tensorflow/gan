@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 from absl import logging
 import tensorflow as tf
@@ -28,7 +27,6 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.examples.image_compression import data_provider
 from tensorflow_gan.examples.image_compression import networks
 from tensorflow_gan.examples.image_compression import summaries
-
 
 FLAGS = flags.FLAGS
 
@@ -47,11 +45,9 @@ flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_string('train_log_dir', '/tmp/compression/',
                     'Directory where to write event logs.')
 
-flags.DEFINE_float('generator_lr', 1e-5,
-                   'The compression model learning rate.')
+flags.DEFINE_float('generator_lr', 1e-5, 'The compression model learning rate.')
 
-flags.DEFINE_float('discriminator_lr', 1e-6,
-                   'The discriminator learning rate.')
+flags.DEFINE_float('discriminator_lr', 1e-6, 'The discriminator learning rate.')
 
 flags.DEFINE_integer('max_number_of_steps', 2000000,
                      'The maximum number of gradient steps.')
@@ -92,9 +88,7 @@ def main(_):
     # TFGAN's flexibility.
     with tf.variable_scope('generator') as gen_scope:
       reconstructions, _, prebinary = networks.compression_model(
-          images,
-          num_bits=FLAGS.bits_per_patch,
-          depth=FLAGS.model_depth)
+          images, num_bits=FLAGS.bits_per_patch, depth=FLAGS.model_depth)
     gan_model = _get_gan_model(
         generator_inputs=images,
         generated_data=reconstructions,
@@ -112,8 +106,8 @@ def main(_):
           add_summaries=FLAGS.weight_factor > 0)
 
       # Define the standard pixel loss.
-      l1_pixel_loss = tf.norm(gan_model.real_data - gan_model.generated_data,
-                              ord=1)
+      l1_pixel_loss = tf.norm(
+          gan_model.real_data - gan_model.generated_data, ord=1)
 
       # Modify the loss tuple to include the pixel loss. Add summaries as well.
       gan_loss = tfgan.losses.combine_adversarial_loss(
@@ -143,17 +137,21 @@ def main(_):
 
     # Run the alternating training loop. Skip it if no steps should be taken
     # (used for graph construction tests).
-    status_message = tf.string_join(
-        ['Starting train step: ',
-         tf.as_string(tf.train.get_or_create_global_step())],
-        name='status_message')
-    if FLAGS.max_number_of_steps == 0: return
+    status_message = tf.string_join([
+        'Starting train step: ',
+        tf.as_string(tf.train.get_or_create_global_step())
+    ],
+                                    name='status_message')
+    if FLAGS.max_number_of_steps == 0:
+      return
     tfgan.gan_train(
         train_ops,
         FLAGS.train_log_dir,
         tfgan.get_sequential_train_hooks(train_steps),
-        hooks=[tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-               tf.train.LoggingTensorHook([status_message], every_n_iter=10)],
+        hooks=[
+            tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+            tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+        ],
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
 
@@ -216,4 +214,3 @@ def _get_gan_model(generator_inputs, generated_data, real_data,
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
   tf.app.run()
-

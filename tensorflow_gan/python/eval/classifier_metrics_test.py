@@ -24,7 +24,6 @@ import sys
 import tarfile
 import tempfile
 
-# Dependency imports
 from absl.testing import parameterized
 import numpy as np
 from scipy import linalg as scp_linalg
@@ -130,6 +129,7 @@ def _expected_kid_and_std(real_imgs, gen_imgs, max_block_size=1024):
   var = np.var(ests, ddof=1) if len(ests) > 1 else np.nan
   return np.mean(ests), np.sqrt(var / len(ests))
 
+
 # A dummy GraphDef string with the minimum number of Ops.
 graphdef_string = """
 node {
@@ -229,9 +229,8 @@ def _run_with_mock(function, *args, **kwargs):
 
 class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
-  @parameterized.named_parameters(
-      ('GraphDef', False),
-      ('DefaultGraphDefFn', True))
+  @parameterized.named_parameters(('GraphDef', False),
+                                  ('DefaultGraphDefFn', True))
   def test_run_inception_graph(self, use_default_graph_def):
     """Test `run_inception` graph construction."""
     batch_size = 7
@@ -248,20 +247,19 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
     # Check that none of the model variables are trainable.
     self.assertListEqual([], tf.trainable_variables())
 
-  @parameterized.named_parameters(
-      ('GraphDef', False),
-      ('DefaultGraphDefFn', True))
+  @parameterized.named_parameters(('GraphDef', False),
+                                  ('DefaultGraphDefFn', True))
   def test_run_inception_graph_pool_output(self, use_default_graph_def):
     """Test `run_inception` graph construction with pool output."""
     batch_size = 3
     img = tf.ones([batch_size, 299, 299, 3])
 
     if use_default_graph_def:
-      pool = _run_with_mock(tfgan.eval.run_inception, img,
-                            output_tensor=INCEPTION_FINAL_POOL)
+      pool = _run_with_mock(
+          tfgan.eval.run_inception, img, output_tensor=INCEPTION_FINAL_POOL)
     else:
-      pool = tfgan.eval.run_inception(img, _get_dummy_graphdef(),
-                                      output_tensor=INCEPTION_FINAL_POOL)
+      pool = tfgan.eval.run_inception(
+          img, _get_dummy_graphdef(), output_tensor=INCEPTION_FINAL_POOL)
 
     self.assertIsInstance(pool, tf.Tensor)
     pool.shape.assert_is_compatible_with([batch_size, 2048])
@@ -274,7 +272,8 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
     batch_size = 3
     img = tf.ones([batch_size, 299, 299, 3])
     logits, pool = _run_with_mock(
-        tfgan.eval.run_inception, img,
+        tfgan.eval.run_inception,
+        img,
         output_tensor=[INCEPTION_OUTPUT, INCEPTION_FINAL_POOL])
 
     self.assertIsInstance(logits, tf.Tensor)
@@ -288,9 +287,7 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
   def test_inception_score_graph(self):
     """Test `inception_score` graph construction."""
     score = _run_with_mock(
-        tfgan.eval.inception_score,
-        tf.zeros([6, 299, 299, 3]),
-        num_batches=3)
+        tfgan.eval.inception_score, tf.zeros([6, 299, 299, 3]), num_batches=3)
     self.assertIsInstance(score, tf.Tensor)
     score.shape.assert_has_rank(0)
 
@@ -439,11 +436,12 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
     fid_ops = []
     for i in range(len(test_pool_reals)):
-      fid_ops.append(_run_with_mock(
-          tfgan.eval.frechet_classifier_distance,
-          test_pool_reals[i],
-          test_pool_gens[i],
-          classifier_fn=lambda x: x))
+      fid_ops.append(
+          _run_with_mock(
+              tfgan.eval.frechet_classifier_distance,
+              test_pool_reals[i],
+              test_pool_gens[i],
+              classifier_fn=lambda x: x))
 
     fids = []
     with self.cached_session() as sess:

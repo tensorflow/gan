@@ -19,13 +19,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
-
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
 
-def add_reconstruction_summaries(images, reconstructions, prebinary,
+def add_reconstruction_summaries(images,
+                                 reconstructions,
+                                 prebinary,
                                  num_imgs_to_visualize=8):
   """Adds image summaries."""
   reshaped_img = stack_images(images, reconstructions, num_imgs_to_visualize)
@@ -37,8 +37,9 @@ def add_reconstruction_summaries(images, reconstructions, prebinary,
 
 def stack_images(images, reconstructions, num_imgs_to_visualize=8):
   """Stack and reshape images to see compression effects."""
-  to_reshape = (tf.unstack(images)[:num_imgs_to_visualize] +
-                tf.unstack(reconstructions)[:num_imgs_to_visualize])
+  to_reshape = (
+      tf.unstack(images)[:num_imgs_to_visualize] +
+      tf.unstack(reconstructions)[:num_imgs_to_visualize])
   reshaped_img = tfgan.eval.image_reshaper(
       to_reshape, num_cols=num_imgs_to_visualize)
   return reshaped_img

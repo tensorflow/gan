@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 import tensorflow as tf
 
@@ -159,12 +158,12 @@ class NetworksTest(tf.test.TestCase):
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
     fake_loss = tf.reduce_sum(tf.square(x))
     grad_norms = [
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None
@@ -212,12 +211,12 @@ class NetworksTest(tf.test.TestCase):
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
     fake_loss = tf.reduce_sum(tf.square(logits))
     grad_norms = [
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(
-            fake_loss, tf.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None

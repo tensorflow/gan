@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import matplotlib.pyplot
 import numpy as np
 import tensorflow as tf
@@ -58,8 +57,8 @@ def sample_patch(image, patch_height, patch_width, colors):
   w_major_target_h = tf.maximum(1, _to_int32((w * patch_height) / patch_width))
   w_major_target_w = w
   target_hw = tf.cond(
-      h_major_target_w <= w,
-      lambda: tf.convert_to_tensor([h_major_target_h, h_major_target_w]),
+      h_major_target_w <=
+      w, lambda: tf.convert_to_tensor([h_major_target_h, h_major_target_w]),
       lambda: tf.convert_to_tensor([w_major_target_h, w_major_target_w]))
   # Cut a patch of shape (target_h, target_w).
   image = tf.image.resize_image_with_crop_or_pad(image, target_hw[0],
@@ -75,30 +74,34 @@ def sample_patch(image, patch_height, patch_width, colors):
   return image
 
 
-def _standard_ds_pipeline(
-    ds, batch_size, patch_height, patch_width, colors, num_parallel_calls,
-    shuffle):
+def _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
+                          num_parallel_calls, shuffle):
   """Efficiently process and batch a tf.data.Dataset."""
+
   def _preprocess(element):
     """Map elements to the example dicts expected by the model."""
     images = normalize_image(element['image'])
     images = sample_patch(images, patch_height, patch_width, colors)
     return {'images': images}
 
-  ds = (ds
-        .map(_preprocess, num_parallel_calls=num_parallel_calls)
-        .cache()
-        .repeat())
+  ds = (
+      ds.map(_preprocess,
+             num_parallel_calls=num_parallel_calls).cache().repeat())
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-  ds = (ds
-        .batch(batch_size, drop_remainder=True)
-        .prefetch(tf.contrib.data.AUTOTUNE))
+  ds = (
+      ds.batch(batch_size,
+               drop_remainder=True).prefetch(tf.contrib.data.AUTOTUNE))
   return ds
 
 
-def provide_dataset(split, batch_size, patch_height=32, patch_width=32,
-                    colors=3, num_parallel_calls=None, shuffle=True):
+def provide_dataset(split,
+                    batch_size,
+                    patch_height=32,
+                    patch_width=32,
+                    colors=3,
+                    num_parallel_calls=None,
+                    shuffle=True):
   """Provides batches of images.
 
   Args:
@@ -126,8 +129,13 @@ def provide_dataset(split, batch_size, patch_height=32, patch_width=32,
   return ds
 
 
-def provide_data(split, batch_size, patch_height=32, patch_width=32,
-                 colors=3, num_parallel_calls=None, shuffle=True):
+def provide_data(split,
+                 batch_size,
+                 patch_height=32,
+                 patch_width=32,
+                 colors=3,
+                 num_parallel_calls=None,
+                 shuffle=True):
   """Provides batches of CIFAR10 digits.
 
   Args:
@@ -190,6 +198,7 @@ def provide_data_from_image_files(file_pattern,
     if img.shape.ndims == 2:
       img = tf.expand_dims(img, -1)
     return {'image': img}
+
   ds = ds.map(_make_dict, num_parallel_calls=num_parallel_calls)
   ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                              num_parallel_calls, shuffle)

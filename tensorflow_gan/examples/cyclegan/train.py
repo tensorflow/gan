@@ -19,14 +19,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cyclegan import data_provider
 from tensorflow_gan.examples.pix2pix import networks
-
 
 flags.DEFINE_string('image_set_x_file_pattern', None,
                     'File pattern of images in image set X')
@@ -65,7 +63,6 @@ flags.DEFINE_integer(
 flags.DEFINE_float('cycle_consistency_loss_weight', 10.0,
                    'The weight of cycle consistency loss')
 
-
 FLAGS = flags.FLAGS
 
 
@@ -96,7 +93,7 @@ def _get_lr(base_lr):
 
   Args:
     base_lr: A scalar float `Tensor` or a Python number.  The base learning
-        rate.
+      rate.
 
   Returns:
     A scalar float `Tensor` of learning rate which equals `base_lr` when the
@@ -121,9 +118,9 @@ def _get_optimizer(gen_lr, dis_lr):
 
   Args:
     gen_lr: A scalar float `Tensor` or a Python number.  The Generator learning
-        rate.
+      rate.
     dis_lr: A scalar float `Tensor` or a Python number.  The Discriminator
-        learning rate.
+      learning rate.
 
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
@@ -141,7 +138,7 @@ def _define_train_ops(cyclegan_model, cyclegan_loss):
   Args:
     cyclegan_model: A `CycleGANModel` namedtuple.
     cyclegan_loss: A `CycleGANLoss` namedtuple containing all losses for
-        `cyclegan_model`.
+      `cyclegan_model`.
 
   Returns:
     A `GANTrainOps` namedtuple.
@@ -191,12 +188,11 @@ def main(_):
 
     # Training
     train_steps = tfgan.GANTrainSteps(1, 1)
-    status_message = tf.string_join(
-        [
-            'Starting train step: ',
-            tf.as_string(tf.train.get_or_create_global_step())
-        ],
-        name='status_message')
+    status_message = tf.string_join([
+        'Starting train step: ',
+        tf.as_string(tf.train.get_or_create_global_step())
+    ],
+                                    name='status_message')
     if not FLAGS.max_number_of_steps:
       return
     tfgan.gan_train(

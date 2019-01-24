@@ -23,7 +23,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tempfile
-# Dependency imports
+
 import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -60,8 +60,8 @@ class TrainInputEstimatorTest(tf.test.TestCase):
       """The generator function will get the newly created z variable."""
       del mode
       self.assertSequenceEqual(net.shape, input_z_shape)
-      gen_dummy_var = tf.get_variable(name='generator_dummy_variable',
-                                      initializer=tf.ones(input_z_shape))
+      gen_dummy_var = tf.get_variable(
+          name='generator_dummy_variable', initializer=tf.ones(input_z_shape))
       return net * gen_dummy_var
 
     def _discriminator(net, condition, mode):
@@ -85,30 +85,39 @@ class TrainInputEstimatorTest(tf.test.TestCase):
     # We are not loading checkpoints, so set the corresponding directory to a
     # dummy directories.
     tmp_dir = tempfile.mkdtemp()
-    config = tf.estimator.RunConfig(model_dir=tmp_dir,
-                                    save_summary_steps=None,
-                                    save_checkpoints_steps=1,
-                                    save_checkpoints_secs=None)
+    config = tf.estimator.RunConfig(
+        model_dir=tmp_dir,
+        save_summary_steps=None,
+        save_checkpoints_steps=1,
+        save_checkpoints_secs=None)
 
     # Get the estimator. Disable warm start so that there is no attempted
     # checkpoint reloading.
     estimator = tfgan.estimator.get_latent_gan_estimator(
-        _generator, _discriminator, _loss, optimizer, params, config, tmp_dir,
+        _generator,
+        _discriminator,
+        _loss,
+        optimizer,
+        params,
+        config,
+        tmp_dir,
         warmstart_options=None)
 
     # Train for a few steps.
     def dummy_input():
       return true_features, true_labels
+
     estimator.train(input_fn=dummy_input, steps=10)
 
     # Make sure the generator variables did not change, but the z variables did
     # change.
-    self.assertTrue(np.array_equal(
-        estimator.get_variable_value('Generator/generator_dummy_variable'),
-        np.ones(input_z_shape)))
-    self.assertTrue(np.array_equal(
-        estimator.get_variable_value('new_var_z_input'),
-        expected_z_output))
+    self.assertTrue(
+        np.array_equal(
+            estimator.get_variable_value('Generator/generator_dummy_variable'),
+            np.ones(input_z_shape)))
+    self.assertTrue(
+        np.array_equal(
+            estimator.get_variable_value('new_var_z_input'), expected_z_output))
 
 
 if __name__ == '__main__':

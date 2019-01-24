@@ -37,7 +37,7 @@ from __future__ import division
 from __future__ import print_function
 import contextlib
 import socket
-# Dependency imports
+
 import numpy as np
 
 import tensorflow as tf
@@ -86,8 +86,7 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
       grads0 = tf.constant([[0.1, 0.1], [0.1, 0.1]], dtype=dtype)
       grads1 = tf.constant([0.01, 0.01], dtype=dtype)
       sgd = tf.train.GradientDescentOptimizer(3.0)
-      clip_opt = tfgan.features.VariableClippingOptimizer(
-          sgd, {var0: [1]}, 2.0)
+      clip_opt = tfgan.features.VariableClippingOptimizer(sgd, {var0: [1]}, 2.0)
 
       update_op = clip_opt.apply_gradients(
           list(zip([grads0, grads1], [var0, var1])))
@@ -108,27 +107,26 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
                                        var0_out[0])
     # var0[1] has norm > 2.0, so it is clipped.
     expected_unclipped = np.array([(2.0 - 3.0 * 0.1), (3.0 - 3.0 * 0.1)])
-    self.assertAllCloseAccordingToType(2.0 * expected_unclipped /
-                                       np.linalg.norm(expected_unclipped),
-                                       var0_out[1])
+    self.assertAllCloseAccordingToType(
+        2.0 * expected_unclipped / np.linalg.norm(expected_unclipped),
+        var0_out[1])
     # var1 is not in the var list, so it should not be clipped
     self.assertAllCloseAccordingToType([4.0 - 3.0 * 0.01, 5.0 - 3.0 * 0.01],
                                        var1.eval())
 
   def _setupSparse(self, is_distributed, dtype):
     with self._maybeWithDevice("/job:ps" if is_distributed else None):
-      var0 = tf.Variable(
-          [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]], dtype=dtype)
-      var1 = tf.Variable(
-          [[0.0, 1.0], [0.0, 3.0], [0.0, 5.0]], dtype=dtype)
+      var0 = tf.Variable([[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]], dtype=dtype)
+      var1 = tf.Variable([[0.0, 1.0], [0.0, 3.0], [0.0, 5.0]], dtype=dtype)
     with self._maybeWithDevice("/job:worker" if is_distributed else None):
       grads = tf.IndexedSlices(
-          tf.constant(
-              [[0.1, 0.1], [0.1, 0.1]], dtype=dtype), [0, 2], [3, 2])
+          tf.constant([[0.1, 0.1], [0.1, 0.1]], dtype=dtype), [0, 2], [3, 2])
       sgd = tf.train.GradientDescentOptimizer(3.0)
       clip_opt = tfgan.features.VariableClippingOptimizer(
-          sgd, {var0: [1],
-                var1: [0]}, 2.0)
+          sgd, {
+              var0: [1],
+              var1: [0]
+          }, 2.0)
       update_op = clip_opt.apply_gradients(
           list(zip([grads, grads], [var0, var1])))
       tf.global_variables_initializer().run()
@@ -149,13 +147,13 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
     # should still be correct.
     var1_out = var1.eval()
     # var1[:, 0] has norm < 2.0, so it is not clipped.
-    self.assertAllCloseAccordingToType(
-        [(0.0 - 3.0 * 0.1), 0.0, (0.0 - 3.0 * 0.1)], var1_out[:, 0])
+    self.assertAllCloseAccordingToType([(0.0 - 3.0 * 0.1), 0.0,
+                                        (0.0 - 3.0 * 0.1)], var1_out[:, 0])
     # var1[:, 1] has norm > 2.0, so it is clipped.
     expected_unclipped = np.array([(1.0 - 3.0 * 0.1), 3.0, (5.0 - 3.0 * 0.1)])
-    self.assertAllCloseAccordingToType(2.0 * expected_unclipped /
-                                       np.linalg.norm(expected_unclipped),
-                                       var1_out[:, 1])
+    self.assertAllCloseAccordingToType(
+        2.0 * expected_unclipped / np.linalg.norm(expected_unclipped),
+        var1_out[:, 1])
 
     # Validate updated params
     var0_out = var0.eval()
@@ -166,9 +164,9 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
     self.assertAllCloseAccordingToType([2.0, 3.0], var0_out[1])
     # var0[2] has norm > 2.0, so it is clipped.
     expected_unclipped = np.array([(4.0 - 3.0 * 0.1), (5.0 - 3.0 * 0.1)])
-    self.assertAllCloseAccordingToType(2.0 * expected_unclipped /
-                                       np.linalg.norm(expected_unclipped),
-                                       var0_out[2])
+    self.assertAllCloseAccordingToType(
+        2.0 * expected_unclipped / np.linalg.norm(expected_unclipped),
+        var0_out[2])
 
   def testDenseLocal(self):
     for dtype in [tf.float32, tf.float64, tf.half]:

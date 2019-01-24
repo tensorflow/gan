@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl.testing import parameterized
 import numpy as np
 
@@ -80,8 +79,7 @@ def acgan_discriminator_model(inputs, _, num_classes=10):
       discriminator_model(inputs, _),
       tf.one_hot(
           # TODO(haeusser): infer batch size from input
-          tf.random_uniform(
-              [3], maxval=num_classes, dtype=tf.int32),
+          tf.random_uniform([3], maxval=num_classes, dtype=tf.int32),
           num_classes))
 
 
@@ -92,8 +90,7 @@ class ACGANDiscriminator(object):
         discriminator_model(inputs, _),
         tf.one_hot(
             # TODO(haeusser): infer batch size from input
-            tf.random_uniform(
-                [3], maxval=num_classes, dtype=tf.int32),
+            tf.random_uniform([3], maxval=num_classes, dtype=tf.int32),
             num_classes))
 
 
@@ -305,15 +302,14 @@ def get_callable_stargan_model():
 
 
 def create_stargan_model():
-  return tfgan.stargan_model(
-      stargan_generator_model, stargan_discriminator_model,
-      tf.ones([1, 2, 2, 3]), tf.ones([1, 2]))
+  return tfgan.stargan_model(stargan_generator_model,
+                             stargan_discriminator_model, tf.ones([1, 2, 2, 3]),
+                             tf.ones([1, 2]))
 
 
 def create_callable_stargan_model():
   return tfgan.stargan_model(StarGANGenerator(), StarGANDiscriminator(),
-                             tf.ones([1, 2, 2, 3]),
-                             tf.ones([1, 2]))
+                             tf.ones([1, 2, 2, 3]), tf.ones([1, 2]))
 
 
 def get_sync_optimizer():
@@ -335,16 +331,13 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
       ('gan', get_gan_model, tfgan.GANModel),
       ('callable_gan', get_callable_gan_model, tfgan.GANModel),
       ('infogan', get_infogan_model, tfgan.InfoGANModel),
-      ('callable_infogan', get_callable_infogan_model,
-       tfgan.InfoGANModel),
+      ('callable_infogan', get_callable_infogan_model, tfgan.InfoGANModel),
       ('acgan', get_acgan_model, tfgan.ACGANModel),
       ('callable_acgan', get_callable_acgan_model, tfgan.ACGANModel),
       ('cyclegan', get_cyclegan_model, tfgan.CycleGANModel),
-      ('callable_cyclegan', get_callable_cyclegan_model,
-       tfgan.CycleGANModel),
+      ('callable_cyclegan', get_callable_cyclegan_model, tfgan.CycleGANModel),
       ('stargan', get_stargan_model, tfgan.StarGANModel),
-      ('callabel_stargan', get_callable_stargan_model, tfgan.StarGANModel)
-  )
+      ('callabel_stargan', get_callable_stargan_model, tfgan.StarGANModel))
   def test_output_type(self, create_fn, expected_tuple_type):
     """Test that output type is as expected."""
     self.assertIsInstance(create_fn(), expected_tuple_type)
@@ -382,8 +375,10 @@ class StarGANModelTest(tf.test.TestCase):
     for _ in range(num_domains):
       input_tensor_list.append(
           tf.random_uniform((batch_size, img_size, img_size, c_size)))
-      domain_idx = tf.random_uniform(
-          [batch_size], minval=0, maxval=num_domains, dtype=tf.int32)
+      domain_idx = tf.random_uniform([batch_size],
+                                     minval=0,
+                                     maxval=num_domains,
+                                     dtype=tf.int32)
       label_tensor_list.append(tf.one_hot(domain_idx, num_domains))
     return input_tensor_list, label_tensor_list
 
@@ -418,8 +413,7 @@ class StarGANModelTest(tf.test.TestCase):
     self.assertIsInstance(model, tfgan.StarGANModel)
     self.assertTrue(isinstance(model.discriminator_variables, list))
     self.assertTrue(isinstance(model.generator_variables, list))
-    self.assertIsInstance(model.discriminator_scope,
-                          tf.VariableScope)
+    self.assertIsInstance(model.discriminator_scope, tf.VariableScope)
     self.assertTrue(model.generator_scope, tf.VariableScope)
     self.assertTrue(callable(model.discriminator_fn))
     self.assertTrue(callable(model.generator_fn))
@@ -587,11 +581,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
       no_reg_loss_dis_np = no_reg_loss.discriminator_loss.eval()
 
     with tf.name_scope(get_gan_model_fn().generator_scope.name):
-      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
-                           tf.constant(3.0))
+      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, tf.constant(3.0))
     with tf.name_scope(get_gan_model_fn().discriminator_scope.name):
-      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES,
-                           tf.constant(2.0))
+      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, tf.constant(2.0))
 
     # Check that losses now include the correct regularization values.
     reg_loss = tfgan.gan_loss(get_gan_model_fn())
@@ -704,24 +696,30 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_discriminator_only_sees_pool(self):
     """Checks that discriminator only sees pooled values."""
+
     def checker_gen_fn(_):
       return tf.constant(0.0)
+
     model = tfgan.gan_model(
         checker_gen_fn,
         discriminator_model,
         real_data=tf.zeros([]),
         generator_inputs=tf.random_normal([]))
+
     def tensor_pool_fn(_):
       return (tf.random_uniform([]), tf.random_uniform([]))
+
     def checker_dis_fn(inputs, _):
       """Discriminator that checks that it only sees pooled Tensors."""
+
       def _is_constant(tensor):
         """Returns `True` if the Tensor is a constant."""
         return tensor.op.type == 'Const'
+
       self.assertFalse(_is_constant(inputs))
       return inputs
-    model = model._replace(
-        discriminator_fn=checker_dis_fn)
+
+    model = model._replace(discriminator_fn=checker_dis_fn)
     tfgan.gan_loss(model, tensor_pool_fn=tensor_pool_fn)
 
   def test_doesnt_crash_when_in_nested_scope(self):
@@ -741,8 +739,8 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
 class TensorPoolAdjusteModelTest(tf.test.TestCase):
 
-  def _check_tensor_pool_adjusted_model_outputs(
-      self, tensor1, tensor2, pool_size):
+  def _check_tensor_pool_adjusted_model_outputs(self, tensor1, tensor2,
+                                                pool_size):
     history_values = []
     with self.test_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
@@ -868,11 +866,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
 
     # Add an update op outside the generator and discriminator scopes.
     if provide_update_ops:
-      kwargs = {
-          'update_ops': [
-              tf.constant(1.0), gen_update_op, dis_update_op
-          ]
-      }
+      kwargs = {'update_ops': [tf.constant(1.0), gen_update_op, dis_update_op]}
     else:
       tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, tf.constant(1.0))
       kwargs = {}
@@ -924,8 +918,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
         model, loss, generator_optimizer=g_opt, discriminator_optimizer=d_opt)
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
     # No new trainable variables should have been added.
-    self.assertLen(get_trainable_variables(),
-                   num_trainable_vars)
+    self.assertLen(get_trainable_variables(), num_trainable_vars)
 
     # Sync hooks should be populated in the GANTraintf.
     self.assertLen(train_ops.train_hooks, 2)
@@ -1028,9 +1021,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops,
-        logdir='',
-        hooks=[tf.train.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf.train.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 
@@ -1095,16 +1086,20 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
     sequential_train_hooks = tfgan.get_sequential_train_hooks()(train_ops)
     self.assertLen(sequential_train_hooks, 4)
     sync_opts = [
-        hook._sync_optimizer for hook in sequential_train_hooks if
-        isinstance(hook, get_sync_optimizer_hook_type())]
+        hook._sync_optimizer
+        for hook in sequential_train_hooks
+        if isinstance(hook, get_sync_optimizer_hook_type())
+    ]
     self.assertLen(sync_opts, 2)
     self.assertSetEqual(frozenset(sync_opts), frozenset((g_opt, d_opt)))
 
     joint_train_hooks = tfgan.get_joint_train_hooks()(train_ops)
     self.assertLen(joint_train_hooks, 5)
     sync_opts = [
-        hook._sync_optimizer for hook in joint_train_hooks if
-        isinstance(hook, get_sync_optimizer_hook_type())]
+        hook._sync_optimizer
+        for hook in joint_train_hooks
+        if isinstance(hook, get_sync_optimizer_hook_type())
+    ]
     self.assertLen(sync_opts, 2)
     self.assertSetEqual(frozenset(sync_opts), frozenset((g_opt, d_opt)))
 
@@ -1131,9 +1126,7 @@ class PatchGANTest(tf.test.TestCase, parameterized.TestCase):
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops,
-        logdir='',
-        hooks=[tf.train.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf.train.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 

@@ -22,7 +22,6 @@ from __future__ import print_function
 import shutil
 import tempfile
 
-# Dependency imports
 from absl.testing import parameterized
 import numpy as np
 import six
@@ -266,8 +265,8 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
     img_size = 8
     channel_size = 3
     label_size = 3
-    image_data = np.zeros(
-        [batch_size, img_size, img_size, channel_size], dtype=np.float32)
+    image_data = np.zeros([batch_size, img_size, img_size, channel_size],
+                          dtype=np.float32)
     train_input_fn = tf.estimator.inputs.numpy_input_fn(
         x={'x': image_data},
         batch_size=batch_size,

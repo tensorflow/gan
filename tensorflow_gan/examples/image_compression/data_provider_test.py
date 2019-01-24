@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl.testing import parameterized
 import numpy as np
 
@@ -36,8 +35,10 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     super(DataProviderTest, self).setUp()
     mock_imgs = np.zeros([32, 32, 3], dtype=np.uint8)
     mock_lbls = np.ones([], dtype=np.int64)
-    self.mock_ds = tf.data.Dataset.from_tensors(
-        {'image': mock_imgs, 'label': mock_lbls})
+    self.mock_ds = tf.data.Dataset.from_tensors({
+        'image': mock_imgs,
+        'label': mock_lbls
+    })
 
   @parameterized.parameters(
       {'split': 'train'},

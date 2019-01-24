@@ -26,7 +26,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import app
 from absl import flags
 import numpy as np
@@ -38,16 +37,16 @@ from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
 
-
 flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
                     'Directory where the model was written to.')
 
 flags.DEFINE_string('eval_dir', '/tmp/mnist/',
                     'Directory where the results are saved to.')
 
-flags.DEFINE_integer('noise_samples', 6,
-                     'Number of samples to draw from the continuous structured '
-                     'noise.')
+flags.DEFINE_integer(
+    'noise_samples', 6,
+    'Number of samples to draw from the continuous structured '
+    'noise.')
 
 flags.DEFINE_integer('unstructured_noise_dims', 62,
                      'The number of dimensions of the unstructured noise.')
@@ -55,13 +54,15 @@ flags.DEFINE_integer('unstructured_noise_dims', 62,
 flags.DEFINE_integer('continuous_noise_dims', 2,
                      'The number of dimensions of the continuous noise.')
 
-flags.DEFINE_string('classifier_filename', None,
-                    'Location of the pretrained classifier. If `None`, use '
-                    'default.')
+flags.DEFINE_string(
+    'classifier_filename', None,
+    'Location of the pretrained classifier. If `None`, use '
+    'default.')
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
-                     'Number of times to run evaluation. If `None`, run '
-                     'forever.')
+flags.DEFINE_integer(
+    'max_number_of_evaluations', None,
+    'Number of times to run evaluation. If `None`, run '
+    'forever.')
 
 flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
@@ -85,6 +86,7 @@ def main(_, run_eval_loop=True):
   def generator_fn(inputs):
     return networks.infogan_generator(
         inputs, len(CAT_SAMPLE_POINTS), is_training=False)
+
   with tf.variable_scope('Generator') as genscope:  # Same scope as in training.
     categorical_images = generator_fn(display_noise1)
   reshaped_categorical_img = tfgan.eval.image_reshaper(
@@ -112,19 +114,25 @@ def main(_, run_eval_loop=True):
   # Write images to disk.
   image_write_ops = []
   if FLAGS.write_to_disk:
-    image_write_ops.append(_get_write_image_ops(
-        FLAGS.eval_dir, 'categorical_infogan.png', reshaped_categorical_img[0]))
-    image_write_ops.append(_get_write_image_ops(
-        FLAGS.eval_dir, 'continuous1_infogan.png', reshaped_continuous1_img[0]))
-    image_write_ops.append(_get_write_image_ops(
-        FLAGS.eval_dir, 'continuous2_infogan.png', reshaped_continuous2_img[0]))
+    image_write_ops.append(
+        _get_write_image_ops(FLAGS.eval_dir, 'categorical_infogan.png',
+                             reshaped_categorical_img[0]))
+    image_write_ops.append(
+        _get_write_image_ops(FLAGS.eval_dir, 'continuous1_infogan.png',
+                             reshaped_continuous1_img[0]))
+    image_write_ops.append(
+        _get_write_image_ops(FLAGS.eval_dir, 'continuous2_infogan.png',
+                             reshaped_continuous2_img[0]))
 
   # For unit testing, use `run_eval_loop=False`.
-  if not run_eval_loop: return
+  if not run_eval_loop:
+    return
   tf.contrib.training.evaluate_repeatedly(
       FLAGS.checkpoint_dir,
-      hooks=[tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
-             tf.contrib.training.StopAfterNEvalsHook(1)],
+      hooks=[
+          tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
+          tf.contrib.training.StopAfterNEvalsHook(1)
+      ],
       eval_ops=image_write_ops,
       max_number_of_evaluations=FLAGS.max_number_of_evaluations)
 
@@ -152,7 +160,7 @@ def _validate_noises(noises):
 def _get_write_image_ops(eval_dir, filename, images):
   """Create Ops that write images to disk."""
   return tf.write_file(
-      '%s/%s'% (eval_dir, filename),
+      '%s/%s' % (eval_dir, filename),
       tf.image.encode_png(data_provider.float_image_to_uint8(images)))
 
 

@@ -21,7 +21,6 @@ from __future__ import print_function
 
 import collections
 
-# Dependency imports
 import numpy as np
 
 import tensorflow as tf
@@ -51,22 +50,23 @@ class ArgsToGanModelTest(tf.test.TestCase):
                      gan_model_loss(tuple_type(1, None), arg2=5, arg4=7))
 
     # Uses non-tuple argument with defaults.
-    self.assertEqual(1 + 5 + 2 + 4,
-                     gan_model_loss(tuple_type(1, 2), arg2=5))
+    self.assertEqual(1 + 5 + 2 + 4, gan_model_loss(tuple_type(1, 2), arg2=5))
 
     # Requires non-tuple, non-default arguments.
     with self.assertRaisesRegexp(ValueError, '`arg2` must be supplied'):
       gan_model_loss(tuple_type(1, 2))
 
     # Can't pass tuple argument outside tuple.
-    with self.assertRaisesRegexp(
-        ValueError, 'present in both the tuple and keyword args'):
+    with self.assertRaisesRegexp(ValueError,
+                                 'present in both the tuple and keyword args'):
       gan_model_loss(tuple_type(1, 2), arg2=1, arg3=5)
 
   def testargs_to_gan_model_name(self):
     """Test that `args_to_gan_model` produces correctly named functions."""
+
     def loss_fn(x):
       return x
+
     new_loss_fn = args_to_gan_model(loss_fn)
     self.assertEqual('loss_fn', new_loss_fn.__name__)
     self.assertTrue('The gan_model version of' in new_loss_fn.__docstring__)
@@ -74,6 +74,7 @@ class ArgsToGanModelTest(tf.test.TestCase):
   def test_tuple_respects_optional_args(self):
     """Test that optional args can be changed with tuple losses."""
     tuple_type = collections.namedtuple('fake_type', ['arg1', 'arg2'])
+
     def args_loss(arg1, arg2, arg3=3):
       return arg1 + 2 * arg2 + 3 * arg3
 
@@ -89,6 +90,7 @@ class ArgsToGanModelTest(tf.test.TestCase):
 
     class InheritedType(tuple_type):
       pass
+
     def args_loss(arg1, arg2, arg3=3):
       return arg1 + 2 * arg2 + 3 * arg3
 
@@ -115,35 +117,32 @@ def add_loss_consistency_test(test_class, loss_name_str, loss_args):
   def consistency_test(self):
     self.assertEqual(arg_loss.__name__, tuple_loss.__name__)
     with self.cached_session():
-      self.assertEqual(arg_loss(**loss_args).eval(),
-                       tuple_loss(_tuple_from_dict(loss_args)).eval())
+      self.assertEqual(
+          arg_loss(**loss_args).eval(),
+          tuple_loss(_tuple_from_dict(loss_args)).eval())
 
-  test_name = 'test_loss_consistency_%s' %  loss_name_str
+  test_name = 'test_loss_consistency_%s' % loss_name_str
   setattr(test_class, test_name, consistency_test)
 
 
 # A list of consistency tests which need to be manually written.
 manual_tests = [
-    'acgan_discriminator_loss',
-    'acgan_generator_loss',
-    'combine_adversarial_loss',
-    'mutual_information_penalty',
-    'wasserstein_gradient_penalty',
-    'cycle_consistency_loss',
-    'stargan_generator_loss_wrapper',
-    'stargan_discriminator_loss_wrapper',
+    'acgan_discriminator_loss', 'acgan_generator_loss',
+    'combine_adversarial_loss', 'mutual_information_penalty',
+    'wasserstein_gradient_penalty', 'cycle_consistency_loss',
+    'stargan_generator_loss_wrapper', 'stargan_discriminator_loss_wrapper',
     'stargan_gradient_penalty_wrapper'
 ]
 
 discriminator_keyword_args = {
-    'discriminator_real_outputs': np.array([[3.4, 2.3, -2.3],
-                                            [6.3, -2.1, 0.2]]),
-    'discriminator_gen_outputs': np.array([[6.2, -1.5, 2.3],
-                                           [-2.9, -5.1, 0.1]]),
+    'discriminator_real_outputs':
+        np.array([[3.4, 2.3, -2.3], [6.3, -2.1, 0.2]]),
+    'discriminator_gen_outputs':
+        np.array([[6.2, -1.5, 2.3], [-2.9, -5.1, 0.1]]),
 }
 generator_keyword_args = {
-    'discriminator_gen_outputs': np.array([[6.2, -1.5, 2.3],
-                                           [-2.9, -5.1, 0.1]]),
+    'discriminator_gen_outputs':
+        np.array([[6.2, -1.5, 2.3], [-2.9, -5.1, 0.1]]),
 }
 
 
@@ -211,10 +210,10 @@ class StarGANLossWrapperTest(tf.test.TestCase):
         generated_data=self.generated_data,
         generated_data_domain_target=None,
         reconstructed_data=None,
-        discriminator_input_data_source_predication=self.
-        discriminator_input_data_source_predication,
-        discriminator_generated_data_source_predication=self.
-        discriminator_generated_data_source_predication,
+        discriminator_input_data_source_predication=self
+        .discriminator_input_data_source_predication,
+        discriminator_generated_data_source_predication=self
+        .discriminator_generated_data_source_predication,
         discriminator_input_data_domain_predication=None,
         discriminator_generated_data_domain_predication=None,
         generator_variables=None,
@@ -286,7 +285,8 @@ class StarGANLossWrapperTest(tf.test.TestCase):
 
 if __name__ == '__main__':
   for loss_name in tuple_all:
-    if loss_name in manual_tests: continue
+    if loss_name in manual_tests:
+      continue
     if 'generator' in loss_name:
       keyword_args = generator_keyword_args
     else:

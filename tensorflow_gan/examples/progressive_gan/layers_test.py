@@ -17,7 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 import tensorflow as tf
 
@@ -35,10 +34,9 @@ def dummy_apply_kernel(kernel_shape, kernel_initializer):
 class LayersTest(tf.test.TestCase):
 
   def test_pixel_norm_4d_images_returns_channel_normalized_images(self):
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     with self.test_session(use_gpu=True) as sess:
       output_np = sess.run(layers.pixel_norm(x))
 
@@ -63,10 +61,9 @@ class LayersTest(tf.test.TestCase):
       layers.downscale(tf.constant([]), -1)
 
   def test_downscale_4d_images_returns_downscaled_images(self):
-    x_np = np.array(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=np.float32)
+    x_np = np.array([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=np.float32)
     with self.test_session(use_gpu=True) as sess:
       x1_np, x2_np = sess.run(
           [layers.downscale(tf.constant(x_np), n) for n in [1, 2]])
@@ -93,10 +90,9 @@ class LayersTest(tf.test.TestCase):
     self.assertNDArrayNear(x2_np, expected2_np, 1.0e-5)
 
   def test_minibatch_mean_stddev_4d_images_returns_scalar(self):
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     with self.test_session(use_gpu=True) as sess:
       output_np = sess.run(layers.minibatch_mean_stddev(x))
 
@@ -107,10 +103,9 @@ class LayersTest(tf.test.TestCase):
       layers.scalar_concat(tf.constant(1.2), 2.0)
 
   def test_scalar_concat_4d_images_and_scalar(self):
-    x = tf.constant(
-        [[[[1, 2], [4, 5]], [[7, 8], [10, 11]]], [[[0, 0], [-1, -2]],
-                                                  [[1, -2], [2, 5]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2], [4, 5]], [[7, 8], [10, 11]]],
+                     [[[0, 0], [-1, -2]], [[1, -2], [2, 5]]]],
+                    dtype=tf.float32)
     with self.test_session(use_gpu=True) as sess:
       output_np = sess.run(layers.scalar_concat(x, 7))
 
@@ -171,10 +166,9 @@ class LayersTest(tf.test.TestCase):
 
   @mock.patch.object(tf.layers, 'conv2d', autospec=True)
   def test_custom_conv2d_passes_conv2d_options(self, mock_conv2d):
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     layers.custom_conv2d(x, 1, 2)
     mock_conv2d.assert_called_once_with(
         x,
@@ -188,10 +182,9 @@ class LayersTest(tf.test.TestCase):
   @mock.patch.object(layers, '_custom_layer_impl', autospec=True)
   def test_custom_conv2d_passes_custom_layer_options(self,
                                                      mock_custom_layer_impl):
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     layers.custom_conv2d(x, 1, 2)
     mock_custom_layer_impl.assert_called_once_with(
         mock.ANY,
@@ -207,17 +200,16 @@ class LayersTest(tf.test.TestCase):
                                             mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
     mock_random_normal_initializer.return_value = tf.constant_initializer(3.0)
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     output = layers.custom_conv2d(x, 1, 2)
     with self.test_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
-    expected_np = [[[[68.54998016], [42.56921768]], [[50.36344528],
-                                                     [29.57883835]]],
+    expected_np = [[[[68.54998016], [42.56921768]],
+                    [[50.36344528], [29.57883835]]],
                    [[[5.33012676], [4.46410179]], [[10.52627945],
                                                    [9.66025352]]]]
     self.assertNDArrayNear(output_np, expected_np, 1.0e-5)
@@ -228,10 +220,9 @@ class LayersTest(tf.test.TestCase):
                                           mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
     mock_random_normal_initializer.return_value = tf.constant_initializer(3.0)
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     output = layers.custom_conv2d(x, 1, [2, 3])
     with self.test_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
@@ -246,10 +237,9 @@ class LayersTest(tf.test.TestCase):
   @mock.patch.object(layers, '_custom_layer_impl', autospec=True)
   def test_custom_dense_passes_custom_layer_options(self,
                                                     mock_custom_layer_impl):
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     layers.custom_dense(x, 3)
     mock_custom_layer_impl.assert_called_once_with(
         mock.ANY,
@@ -265,10 +255,9 @@ class LayersTest(tf.test.TestCase):
                                           mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
     mock_random_normal_initializer.return_value = tf.constant_initializer(3.0)
-    x = tf.constant(
-        [[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-         [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-        dtype=tf.float32)
+    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
+                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
+                    dtype=tf.float32)
     output = layers.custom_dense(x, 3)
     with self.test_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())

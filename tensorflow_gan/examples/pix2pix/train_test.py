@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 from absl.testing import parameterized
 import numpy as np
@@ -49,6 +48,6 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
       mock_data_provider.provide_data.return_value = mock_imgs, None
       train.main(None)
 
+
 if __name__ == '__main__':
   tf.test.main()
-

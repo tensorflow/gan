@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 import numpy as np
 import tensorflow as tf
@@ -64,8 +63,7 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train.networks, 'generator', autospec=True)
   @mock.patch.object(train.networks, 'discriminator', autospec=True)
-  @mock.patch.object(
-      tf.train, 'get_or_create_global_step', autospec=True)
+  @mock.patch.object(tf.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step,
                   unused_mock_discriminator, unused_mock_generator):
     FLAGS.max_number_of_steps = 10
@@ -124,9 +122,9 @@ class TrainTest(tf.test.TestCase):
     FLAGS.cycle_consistency_loss_weight = 2.0
     FLAGS.max_number_of_steps = 1
 
-    mock_data_provider.provide_custom_data.return_value = (
-        tf.zeros([3, 2, 2, 3], dtype=tf.float32),
-        tf.zeros([3, 2, 2, 3], dtype=tf.float32))
+    mock_data_provider.provide_custom_data.return_value = (tf.zeros(
+        [3, 2, 2, 3], dtype=tf.float32), tf.zeros([3, 2, 2, 3],
+                                                  dtype=tf.float32))
 
     train.main(None)
     mock_data_provider.provide_custom_data.assert_called_once_with(

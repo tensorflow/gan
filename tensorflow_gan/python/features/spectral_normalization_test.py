@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 
 import tensorflow as tf
@@ -29,8 +28,7 @@ import tensorflow_gan as tfgan
 class SpectralNormalizationTest(tf.test.TestCase):
 
   def testComputeSpectralNorm(self):
-    weights = tf.get_variable(
-        'w', dtype=tf.float32, shape=[2, 3, 50, 100])
+    weights = tf.get_variable('w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
     s = tf.linalg.svd(
         tf.reshape(weights, [-1, weights.shape[-1]]), compute_uv=False)
@@ -59,15 +57,13 @@ class SpectralNormalizationTest(tf.test.TestCase):
       self.assertGreater(abs(np_true_sn - np_est_1), abs(np_true_sn - np_est_5))
 
   def testSpectralNormalize(self):
-    weights = tf.get_variable(
-        'w', dtype=tf.float32, shape=[2, 3, 50, 100])
+    weights = tf.get_variable('w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
     normalized_weights = tfgan.features.spectral_normalize(
         weights, power_iteration_rounds=1)
 
     unnormalized_sigma = tf.linalg.svd(
-        tf.reshape(weights, [-1, weights.shape[-1]]),
-        compute_uv=False)[..., 0]
+        tf.reshape(weights, [-1, weights.shape[-1]]), compute_uv=False)[..., 0]
     normalized_sigma = tf.linalg.svd(
         tf.reshape(normalized_weights, [-1, weights.shape[-1]]),
         compute_uv=False)[..., 0]

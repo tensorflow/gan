@@ -27,14 +27,12 @@ from __future__ import print_function
 
 import sys
 
-# Dependency imports
 from absl import flags
 from absl import logging
 import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import data_provider
 from tensorflow_gan.examples.progressive_gan import train
-
 
 flags.DEFINE_string('dataset_file_pattern', '', 'Dataset file pattern.')
 
@@ -84,9 +82,10 @@ flags.DEFINE_float('gradient_penalty_target', 1.0,
 flags.DEFINE_float('gradient_penalty_weight', 10.0,
                    'Gradient penalty weight for wasserstein loss.')
 
-flags.DEFINE_float('real_score_penalty_weight', 0.001,
-                   'Additional penalty to keep the scores from drifting too '
-                   'far from zero.')
+flags.DEFINE_float(
+    'real_score_penalty_weight', 0.001,
+    'Additional penalty to keep the scores from drifting too '
+    'far from zero.')
 
 flags.DEFINE_float('generator_learning_rate', 0.001, 'Learning rate.')
 

@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-# Dependency imports
+
 from absl import flags
 import numpy as np
 

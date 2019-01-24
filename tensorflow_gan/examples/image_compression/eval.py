@@ -19,8 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
-
 from absl import app
 from absl import flags
 import tensorflow as tf
@@ -39,9 +37,10 @@ flags.DEFINE_string('checkpoint_dir', '/tmp/compression/',
 flags.DEFINE_string('eval_dir', '/tmp/compression/',
                     'Directory where the results are saved to.')
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
-                     'Number of times to run evaluation. If `None`, run '
-                     'forever.')
+flags.DEFINE_integer(
+    'max_number_of_evaluations', None,
+    'Number of times to run evaluation. If `None`, run '
+    'forever.')
 
 # Compression-specific flags.
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
@@ -81,17 +80,19 @@ def main(_, run_eval_loop=True):
   uint8_images = data_provider.float_image_to_uint8(images)
   uint8_reconstructions = data_provider.float_image_to_uint8(reconstructions)
   uint8_reshaped = summaries.stack_images(uint8_images, uint8_reconstructions)
-  image_write_ops = tf.write_file(
-      '%s/%s'% (FLAGS.eval_dir, 'compression.png'),
-      tf.image.encode_png(uint8_reshaped[0]))
+  image_write_ops = tf.write_file('%s/%s' % (FLAGS.eval_dir, 'compression.png'),
+                                  tf.image.encode_png(uint8_reshaped[0]))
 
   # For unit testing, use `run_eval_loop=False`.
-  if not run_eval_loop: return
+  if not run_eval_loop:
+    return
   tf.contrib.training.evaluate_repeatedly(
       FLAGS.checkpoint_dir,
       master=FLAGS.master,
-      hooks=[tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
-             tf.contrib.training.StopAfterNEvalsHook(1)],
+      hooks=[
+          tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
+          tf.contrib.training.StopAfterNEvalsHook(1)
+      ],
       eval_ops=image_write_ops,
       max_number_of_evaluations=FLAGS.max_number_of_evaluations)
 

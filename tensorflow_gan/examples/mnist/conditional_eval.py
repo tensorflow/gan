@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import app
 from absl import flags
 
@@ -29,7 +28,6 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
-
 
 flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
                     'Directory where the model was written to.')
@@ -43,13 +41,15 @@ flags.DEFINE_integer('num_images_per_class', 10,
 flags.DEFINE_integer('noise_dims', 64,
                      'Dimensions of the generator noise vector')
 
-flags.DEFINE_string('classifier_filename', None,
-                    'Location of the pretrained classifier. If `None`, use '
-                    'default.')
+flags.DEFINE_string(
+    'classifier_filename', None,
+    'Location of the pretrained classifier. If `None`, use '
+    'default.')
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
-                     'Number of times to run evaluation. If `None`, run '
-                     'forever.')
+flags.DEFINE_integer(
+    'max_number_of_evaluations', None,
+    'Number of times to run evaluation. If `None`, run '
+    'forever.')
 
 flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
@@ -59,13 +59,13 @@ NUM_CLASSES = 10
 
 def main(_, run_eval_loop=True):
   with tf.name_scope('inputs'):
-    noise, one_hot_labels = _get_generator_inputs(
-        FLAGS.num_images_per_class, NUM_CLASSES, FLAGS.noise_dims)
+    noise, one_hot_labels = _get_generator_inputs(FLAGS.num_images_per_class,
+                                                  NUM_CLASSES, FLAGS.noise_dims)
 
   # Generate images.
   with tf.variable_scope('Generator'):  # Same scope as in train job.
-    images = networks.conditional_generator(
-        (noise, one_hot_labels), is_training=False)
+    images = networks.conditional_generator((noise, one_hot_labels),
+                                            is_training=False)
 
   # Visualize images.
   reshaped_img = tfgan.eval.image_reshaper(
@@ -75,24 +75,28 @@ def main(_, run_eval_loop=True):
   # Calculate evaluation metrics.
   tf.summary.scalar('MNIST_Classifier_score',
                     util.mnist_score(images, FLAGS.classifier_filename))
-  tf.summary.scalar('MNIST_Cross_entropy',
-                    util.mnist_cross_entropy(
-                        images, one_hot_labels, FLAGS.classifier_filename))
+  tf.summary.scalar(
+      'MNIST_Cross_entropy',
+      util.mnist_cross_entropy(images, one_hot_labels,
+                               FLAGS.classifier_filename))
 
   # Write images to disk.
   image_write_ops = None
   if FLAGS.write_to_disk:
     image_write_ops = tf.write_file(
-        '%s/%s'% (FLAGS.eval_dir, 'conditional_gan.png'),
-        tf.image.encode_png(data_provider.float_image_to_uint8(
-            reshaped_img[0])))
+        '%s/%s' % (FLAGS.eval_dir, 'conditional_gan.png'),
+        tf.image.encode_png(
+            data_provider.float_image_to_uint8(reshaped_img[0])))
 
   # For unit testing, use `run_eval_loop=False`.
-  if not run_eval_loop: return
+  if not run_eval_loop:
+    return
   tf.contrib.training.evaluate_repeatedly(
       FLAGS.checkpoint_dir,
-      hooks=[tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
-             tf.contrib.training.StopAfterNEvalsHook(1)],
+      hooks=[
+          tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
+          tf.contrib.training.StopAfterNEvalsHook(1)
+      ],
       eval_ops=image_write_ops,
       max_number_of_evaluations=FLAGS.max_number_of_evaluations)
 
@@ -102,8 +106,9 @@ def _get_generator_inputs(num_images_per_class, num_classes, noise_dims):
   # construct the desired class labels.
   num_images_generated = num_images_per_class * num_classes
   noise = tf.random_normal([num_images_generated, noise_dims])
-  labels = [lbl for lbl in range(num_classes) for _
-            in range(num_images_per_class)]
+  labels = [
+      lbl for lbl in range(num_classes) for _ in range(num_images_per_class)
+  ]
   one_hot_labels = tf.one_hot(tf.constant(labels), num_classes)
   return noise, one_hot_labels
 

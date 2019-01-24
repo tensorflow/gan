@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 from absl.testing import parameterized
 import tensorflow as tf
@@ -33,7 +32,9 @@ class EvalTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.parameters(
       {'eval_real_images': True},
-      {'eval_real_images': False,},
+      {
+          'eval_real_images': False,
+      },
   )
   @mock.patch.object(eval.util, 'get_frechet_inception_distance', autospec=True)
   @mock.patch.object(eval.util, 'get_inception_scores', autospec=True)
@@ -44,9 +45,9 @@ class EvalTest(tf.test.TestCase, parameterized.TestCase):
     FLAGS.num_images_generated = 100
 
     # Mock reads from disk.
-    mock_provide_data.return_value = (
-        tf.ones([FLAGS.num_images_generated, 32, 32, 3]),
-        tf.zeros([FLAGS.num_images_generated]))
+    mock_provide_data.return_value = (tf.ones(
+        [FLAGS.num_images_generated, 32, 32, 3]),
+                                      tf.zeros([FLAGS.num_images_generated]))
 
     # Mock `frechet_inception_distance` and `inception_score`, which are
     # expensive.

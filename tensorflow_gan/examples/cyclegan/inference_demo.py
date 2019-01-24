@@ -20,7 +20,6 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-# Dependency imports
 
 from absl import app
 from absl import flags
@@ -31,10 +30,9 @@ import tensorflow as tf
 from tensorflow_gan.examples.cyclegan import data_provider
 from tensorflow_gan.examples.pix2pix import networks
 
-
-flags.DEFINE_string('checkpoint_path', '',
-                    'CycleGAN checkpoint path created by train.py. '
-                    '(e.g. "/mylogdir/model.ckpt-18442")')
+flags.DEFINE_string(
+    'checkpoint_path', '', 'CycleGAN checkpoint path created by train.py. '
+    '(e.g. "/mylogdir/model.ckpt-18442")')
 
 flags.DEFINE_string(
     'image_set_x_glob', '',

@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 from scipy import ndimage
 
@@ -34,9 +33,9 @@ class ClassifierMetricsTest(tf.test.TestCase):
   def test_laplacian_pyramid(self):
     # The numpy/scipy code for reference estimation comes from:
     # https://github.com/tkarras/progressive_growing_of_gans
-    gaussian_filter = np.float32([[1, 4, 6, 4, 1], [4, 16, 24, 16, 4], [
-        6, 24, 36, 24, 6
-    ], [4, 16, 24, 16, 4], [1, 4, 6, 4, 1]]) / 256.0
+    gaussian_filter = np.float32([[1, 4, 6, 4, 1], [4, 16, 24, 16, 4],
+                                  [6, 24, 36, 24, 6], [4, 16, 24, 16, 4],
+                                  [1, 4, 6, 4, 1]]) / 256.0
 
     def np_pyr_down(minibatch):  # matches cv2.pyrDown()
       assert minibatch.ndim == 4
@@ -69,9 +68,7 @@ class ClassifierMetricsTest(tf.test.TestCase):
     pyramid_tf = laplacian_pyramid(data_tf, 3)
     with self.cached_session() as sess:
       pyramid_tf = sess.run(
-          pyramid_tf, feed_dict={
-              data_tf: data.transpose(0, 2, 3, 1)
-          })
+          pyramid_tf, feed_dict={data_tf: data.transpose(0, 2, 3, 1)})
     for x in range(3):
       self.assertAllClose(
           pyramid[x].transpose(0, 2, 3, 1), pyramid_tf[x], atol=1e-6)

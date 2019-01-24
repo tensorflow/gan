@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 from absl.testing import parameterized
 import numpy as np
@@ -46,15 +45,15 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
     mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
         (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)), axis=1)
+         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
     train.main(None)
 
-  @parameterized.named_parameters(
-      ('Unconditional', 'unconditional'),
-      ('Conditional', 'conditional'),
-      ('InfoGAN', 'infogan'))
+  @parameterized.named_parameters(('Unconditional', 'unconditional'),
+                                  ('Conditional', 'conditional'),
+                                  ('InfoGAN', 'infogan'))
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_build_graph(self, gan_type, mock_data_provider):
     FLAGS.max_number_of_steps = 0
@@ -64,10 +63,12 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
     mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
         (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)), axis=1)
+         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
     train.main(None)
+
 
 if __name__ == '__main__':
   tf.test.main()

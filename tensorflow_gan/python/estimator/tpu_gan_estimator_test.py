@@ -22,7 +22,6 @@ from __future__ import print_function
 import shutil
 import tempfile
 
-# Dependency imports
 from absl import flags
 from absl.testing import parameterized
 import numpy as np
@@ -33,7 +32,6 @@ import tensorflow_gan as tfgan
 
 # Private functions to test.
 from tensorflow_gan.python.estimator.tpu_gan_estimator import get_estimator_spec
-
 
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
@@ -138,9 +136,14 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
       tf.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
-  def _test_complete_flow(
-      self, train_input_fn, eval_input_fn, predict_input_fn, prediction_size,
-      lr_decay=False, joint_train=True):
+  def _test_complete_flow(self,
+                          train_input_fn,
+                          eval_input_fn,
+                          predict_input_fn,
+                          prediction_size,
+                          lr_decay=False,
+                          joint_train=True):
+
     def make_opt():
       gstep = tf.train.get_or_create_global_step()
       lr = tf.train.exponential_decay(1.0, gstep, 10, 0.9)
@@ -177,18 +180,18 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIn('mse_custom_metric', six.iterkeys(scores))
 
     # Predict.
-    predictions = np.array([x['generated_data'] for x in
-                            est.predict(predict_input_fn)])
+    predictions = np.array(
+        [x['generated_data'] for x in est.predict(predict_input_fn)])
     self.assertAllEqual(prediction_size, predictions.shape)
 
-  @parameterized.named_parameters(
-      ('joint_train', True, False, False),
-      ('train_sequential', False, False, False),
-      ('lr_decay', False, True, False),
-      ('train_sequential_ds', False, False, True))
+  @parameterized.named_parameters(('joint_train', True, False, False),
+                                  ('train_sequential', False, False, False),
+                                  ('lr_decay', False, True, False),
+                                  ('train_sequential_ds', False, False, True))
   def test_numpy_input_fn(self, joint_train, lr_decay, return_ds):
     """Tests complete flow with numpy_input_fn."""
     input_dim = 4
+
     def train_input_fn(params):
       data = np.zeros([input_dim], dtype=np.float32)
       ds = (
@@ -199,6 +202,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
       else:
         x, y = ds.make_one_shot_iterator().get_next()
         return x, y
+
     def eval_input_fn(params):
       data = np.zeros([input_dim], dtype=np.float32)
       ds = (
@@ -209,7 +213,9 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
       else:
         x, y = ds.make_one_shot_iterator().get_next()
         return x, y
+
     predict_size = 10
+
     def predict_input_fn(params):
       del params  # unused
       data = np.zeros([input_dim], dtype=np.float32)
@@ -240,6 +246,7 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
 
   def _test_warm_start(self, warm_start_from=None):
     """Tests whether WarmStartSettings work as intended."""
+
     def generator_with_new_variable(noise_dict, mode):
       tf.get_variable(
           name=self.new_variable_name,
@@ -295,9 +302,11 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
     est_warm = self._test_warm_start(warm_start_from=warmstart)
     full_variable_name = 'Generator/%s' % self.new_variable_name
     self.assertIn(full_variable_name, est_warm.get_variable_names())
-    equal_vals = np.array_equal(est_warm.get_variable_value(full_variable_name),
-                                self.new_variable_value)
+    equal_vals = np.array_equal(
+        est_warm.get_variable_value(full_variable_name),
+        self.new_variable_value)
     self.assertTrue(equal_vals)
+
 
 if __name__ == '__main__':
   tf.test.main()

@@ -21,7 +21,6 @@ from __future__ import print_function
 
 import functools
 
-# Dependency imports
 from absl import flags
 from absl import logging
 
@@ -32,7 +31,6 @@ from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
 
-
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
 
 flags.DEFINE_string('train_log_dir', '/tmp/mnist/',
@@ -41,16 +39,13 @@ flags.DEFINE_string('train_log_dir', '/tmp/mnist/',
 flags.DEFINE_integer('max_number_of_steps', 20000,
                      'The maximum number of gradient steps.')
 
-flags.DEFINE_string(
-    'gan_type', 'unconditional',
-    'Either `unconditional`, `conditional`, or `infogan`.')
+flags.DEFINE_string('gan_type', 'unconditional',
+                    'Either `unconditional`, `conditional`, or `infogan`.')
 
-flags.DEFINE_integer(
-    'grid_size', 5, 'Grid size for image visualization.')
+flags.DEFINE_integer('grid_size', 5, 'Grid size for image visualization.')
 
-
-flags.DEFINE_integer(
-    'noise_dims', 64, 'Dimensions of the generator noise vector.')
+flags.DEFINE_integer('noise_dims', 64,
+                     'Dimensions of the generator noise vector.')
 
 FLAGS = flags.FLAGS
 
@@ -81,8 +76,7 @@ def main(_):
         generator_fn=networks.unconditional_generator,
         discriminator_fn=networks.unconditional_discriminator,
         real_data=images,
-        generator_inputs=tf.random_normal(
-            [FLAGS.batch_size, FLAGS.noise_dims]))
+        generator_inputs=tf.random_normal([FLAGS.batch_size, FLAGS.noise_dims]))
   elif FLAGS.gan_type == 'conditional':
     noise = tf.random_normal([FLAGS.batch_size, FLAGS.noise_dims])
     gan_model = tfgan.gan_model(
@@ -95,7 +89,8 @@ def main(_):
     generator_fn = functools.partial(
         networks.infogan_generator, categorical_dim=cat_dim)
     discriminator_fn = functools.partial(
-        networks.infogan_discriminator, categorical_dim=cat_dim,
+        networks.infogan_discriminator,
+        categorical_dim=cat_dim,
         continuous_dim=cont_dim)
     unstructured_inputs, structured_inputs = util.get_infogan_noise(
         FLAGS.batch_size, cat_dim, cont_dim, FLAGS.noise_dims)
@@ -110,12 +105,11 @@ def main(_):
   # Get the GANLoss tuple. You can pass a custom function, use one of the
   # already-implemented losses from the losses library, or use the defaults.
   with tf.name_scope('loss'):
-    mutual_information_penalty_weight = (1.0 if FLAGS.gan_type == 'infogan'
-                                         else 0.0)
+    mi_penalty_weight = 1.0 if FLAGS.gan_type == 'infogan' else 0.0
     gan_loss = tfgan.gan_loss(
         gan_model,
         gradient_penalty_weight=1.0,
-        mutual_information_penalty_weight=mutual_information_penalty_weight,
+        mutual_information_penalty_weight=mi_penalty_weight,
         add_summaries=True)
     tfgan.eval.add_regularization_loss_summaries(gan_model)
 
@@ -132,17 +126,22 @@ def main(_):
 
   # Run the alternating training loop. Skip it if no steps should be taken
   # (used for graph construction tests).
-  status_message = tf.string_join(
-      ['Starting train step: ',
-       tf.as_string(tf.train.get_or_create_global_step())],
-      name='status_message')
-  if FLAGS.max_number_of_steps == 0: return
+  status_message = tf.string_join([
+      'Starting train step: ',
+      tf.as_string(tf.train.get_or_create_global_step())
+  ],
+                                  name='status_message')
+  if FLAGS.max_number_of_steps == 0:
+    return
   tfgan.gan_train(
       train_ops,
-      hooks=[tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-             tf.train.LoggingTensorHook([status_message], every_n_iter=10)],
+      hooks=[
+          tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+          tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+      ],
       logdir=FLAGS.train_log_dir,
       get_hooks_fn=tfgan.get_joint_train_hooks())
+
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)

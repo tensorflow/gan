@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import os
 
-# Dependency imports
 from absl import flags
 from absl.testing import parameterized
 import numpy as np
@@ -52,8 +51,8 @@ class DataProviderUtilsTest(tf.test.TestCase):
         image, patch_height=3, patch_width=3, colors=1)
     with self.cached_session() as sess:
       image_patch_np = sess.run(image_patch)
-    expected_np = np.asarray([[[0.], [0.66666669], [1.]], [[1.33333337], [2.],
-                                                           [2.33333349]],
+    expected_np = np.asarray([[[0.], [0.66666669], [1.]],
+                              [[1.33333337], [2.], [2.33333349]],
                               [[2.], [2.66666675], [3.]]])
     self.assertNDArrayNear(image_patch_np, expected_np, 1.0e-6)
 
@@ -79,8 +78,10 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
         'testdata/')
     mock_imgs = np.zeros([32, 32, 3], dtype=np.uint8)
     mock_lbls = np.ones([], dtype=np.int64)
-    self.mock_ds = tf.data.Dataset.from_tensors(
-        {'image': mock_imgs, 'label': mock_lbls})
+    self.mock_ds = tf.data.Dataset.from_tensors({
+        'image': mock_imgs,
+        'label': mock_lbls
+    })
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_dataset(self, mock_tfds):

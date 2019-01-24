@@ -19,8 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
-
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
@@ -36,8 +34,10 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     super(DataProviderTest, self).setUp()
     mock_imgs = np.zeros([32, 32, 3], dtype=np.uint8)
     mock_lbls = np.ones([], dtype=np.int64)
-    self.mock_ds = tf.data.Dataset.from_tensors(
-        {'image': mock_imgs, 'label': mock_lbls})
+    self.mock_ds = tf.data.Dataset.from_tensors({
+        'image': mock_imgs,
+        'label': mock_lbls
+    })
 
   @parameterized.parameters(
       {'one_hot': True},
@@ -60,8 +60,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     shapes = ds.output_shapes
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images', 'labels']))
-    self.assertListEqual(shapes['images'].as_list(),
-                         [batch_size, 32, 32, 3])
+    self.assertListEqual(shapes['images'].as_list(), [batch_size, 32, 32, 3])
     if one_hot:
       expected_lbls_shape = [batch_size, 10]
     else:
@@ -121,6 +120,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     with self.session() as sess:
       sess.run([images, labels])
       sess.run([images, labels])
+
 
 if __name__ == '__main__':
   tf.test.main()

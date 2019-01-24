@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 import tensorflow as tf
 
@@ -135,8 +134,8 @@ def provide_custom_datasets(image_file_patterns,
   """
   if not isinstance(image_file_patterns, (list, tuple)):
     raise ValueError(
-        '`image_file_patterns` should be either list or tuple, but was {}.'.
-        format(type(image_file_patterns)))
+        '`image_file_patterns` should be either list or tuple, but was {}.'
+        .format(type(image_file_patterns)))
   custom_datasets = []
   for pattern in image_file_patterns:
     custom_datasets.append(
@@ -174,8 +173,8 @@ def provide_custom_data(image_file_patterns,
   Raises:
     ValueError: If image_file_patterns is not a list or tuple.
   """
-  datasets = provide_custom_datasets(
-      image_file_patterns, batch_size, shuffle, num_threads, patch_size)
+  datasets = provide_custom_datasets(image_file_patterns, batch_size, shuffle,
+                                     num_threads, patch_size)
 
   tensors = []
   for ds in datasets:

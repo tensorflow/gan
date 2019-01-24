@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -52,15 +51,14 @@ def provide_dataset(split, batch_size, num_parallel_calls=None, shuffle=True):
     one_hot_labels = tf.one_hot(element['label'], num_classes)
     return {'images': images, 'labels': one_hot_labels}
 
-  ds = (ds
-        .map(_preprocess, num_parallel_calls=num_parallel_calls)
-        .cache()
-        .repeat())
+  ds = (
+      ds.map(_preprocess,
+             num_parallel_calls=num_parallel_calls).cache().repeat())
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-  ds = (ds
-        .batch(batch_size, drop_remainder=True)
-        .prefetch(tf.contrib.data.AUTOTUNE))
+  ds = (
+      ds.batch(batch_size,
+               drop_remainder=True).prefetch(tf.contrib.data.AUTOTUNE))
 
   return ds
 

@@ -19,13 +19,11 @@ from __future__ import print_function
 
 import os
 
-# Dependency imports
 from absl import flags
 from absl.testing import absltest
 import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import train
-
 
 FLAGS = flags.FLAGS
 

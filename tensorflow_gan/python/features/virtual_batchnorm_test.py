@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 
 import tensorflow as tf
@@ -53,8 +52,8 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vb_var = mean_sq - tf.square(vb_mean)
 
       with self.cached_session(use_gpu=True) as sess:
-        vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run([
-            vb_mean, vb_var, mom_mean, mom_var])
+        vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run(
+            [vb_mean, vb_var, mom_mean, mom_var])
 
       self.assertAllClose(mom_mean_np, vb_mean_np)
       self.assertAllClose(mom_var_np, vb_var_np)
@@ -79,16 +78,16 @@ class VirtualBatchnormTest(tf.test.TestCase):
       del vb_reduction_axes[reduction_axis]
       del vb_reduction_axes[batch_axis]
       vbn = tfgan.features.VBN(partial_batch, reduction_axis)
-      vb_mean, mean_sq = vbn._virtual_statistics(
-          single_example, vb_reduction_axes)
+      vb_mean, mean_sq = vbn._virtual_statistics(single_example,
+                                                 vb_reduction_axes)
       vb_variance = mean_sq - tf.square(vb_mean)
       # Remove singleton batch dim for easy comparisons.
       vb_mean = tf.squeeze(vb_mean, batch_axis)
       vb_variance = tf.squeeze(vb_variance, batch_axis)
 
       with self.cached_session(use_gpu=True) as sess:
-        vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run([
-            vb_mean, vb_variance, mom_mean, mom_variance])
+        vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run(
+            [vb_mean, vb_variance, mom_mean, mom_variance])
 
       self.assertAllClose(mom_mean_np, vb_mean_np)
       self.assertAllClose(mom_var_np, vb_var_np)
@@ -127,7 +126,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
         tf.stack(examples), training=True)
 
     for i in range(num_examples):
-      examples_except_i = tf.stack(examples[:i] + examples[i+1:])
+      examples_except_i = tf.stack(examples[:i] + examples[i + 1:])
       # Get the result of VBN's batch normalization.
       vbn = tfgan.features.VBN(examples_except_i)
       vb_normed = tf.squeeze(vbn(tf.expand_dims(examples[i], [0])), [0])
@@ -212,35 +211,34 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_invalid_input(self):
     # Reference batch has unknown dimensions.
-    with self.assertRaisesRegexp(
-        ValueError, '`reference_batch` has unknown dimensions.'):
+    with self.assertRaisesRegexp(ValueError,
+                                 '`reference_batch` has unknown dimensions.'):
       tfgan.features.VBN(tf.placeholder(tf.float32), name='vbn1')
 
     # Axis too negative.
-    with self.assertRaisesRegexp(
-        ValueError, 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegexp(ValueError,
+                                 'Value of `axis` argument .* is out of range'):
       tfgan.features.VBN(tf.zeros([1, 2]), axis=-3, name='vbn2')
 
     # Axis too large.
-    with self.assertRaisesRegexp(
-        ValueError, 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegexp(ValueError,
+                                 'Value of `axis` argument .* is out of range'):
       tfgan.features.VBN(tf.zeros([1, 2]), axis=2, name='vbn3')
 
     # Batch axis too negative.
-    with self.assertRaisesRegexp(
-        ValueError, 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegexp(ValueError,
+                                 'Value of `axis` argument .* is out of range'):
       tfgan.features.VBN(tf.zeros([1, 2]), name='vbn4', batch_axis=-3)
 
     # Batch axis too large.
-    with self.assertRaisesRegexp(
-        ValueError, 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegexp(ValueError,
+                                 'Value of `axis` argument .* is out of range'):
       tfgan.features.VBN(tf.zeros([1, 2]), name='vbn5', batch_axis=2)
 
     # Axis and batch axis are the same.
-    with self.assertRaisesRegexp(
-        ValueError, '`axis` and `batch_axis` cannot be the same.'):
-      tfgan.features.VBN(tf.zeros(
-          [1, 2]), axis=1, name='vbn6', batch_axis=1)
+    with self.assertRaisesRegexp(ValueError,
+                                 '`axis` and `batch_axis` cannot be the same.'):
+      tfgan.features.VBN(tf.zeros([1, 2]), axis=1, name='vbn6', batch_axis=1)
 
     # Reference Tensor and example Tensor have incompatible shapes.
     tensor_ref = tf.zeros([5, 2, 3])

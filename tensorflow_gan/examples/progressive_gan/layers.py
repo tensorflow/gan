@@ -27,7 +27,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 import tensorflow as tf
 
@@ -109,7 +108,7 @@ def minibatch_mean_stddev(x):
 
   Args:
     x: A `Tensor` for which to compute the standard deviation average. The first
-        dimension must be batch size.
+      dimension must be batch size.
 
   Returns:
     A scalar `Tensor` which is the mean variance of variable x.
@@ -138,7 +137,8 @@ def scalar_concat(tensor, scalar):
     raise ValueError('`tensor` must have number of dimensions >= 1.')
   shape = tf.shape(tensor)
   return tf.concat(
-      [tensor, tf.ones([shape[i] for i in range(ndims - 1)] + [1]) * scalar],
+      [tensor,
+       tf.ones([shape[i] for i in range(ndims - 1)] + [1]) * scalar],
       axis=ndims - 1)
 
 
@@ -164,8 +164,7 @@ def _custom_layer_impl(apply_kernel, kernel_shape, bias_shape, activation,
     apply_kernel: A function that transforms kernel to output.
     kernel_shape: An integer tuple or list of the kernel shape.
     bias_shape: An integer tuple or list of the bias shape.
-    activation: An activation function to be applied. None means no
-        activation.
+    activation: An activation function to be applied. None means no activation.
     he_initializer_slope: A float slope for the He initializer.
     use_weight_scaling: Whether to apply weight scaling.
 
@@ -214,8 +213,8 @@ def custom_conv2d(x,
     kernel_size: An integer or a int tuple of [kernel_height, kernel_width].
     strides: A list of strides.
     padding: One of "VALID" or "SAME".
-    activation: An activation function to be applied. None means no
-        activation. Defaults to None.
+    activation: An activation function to be applied. None means no activation.
+      Defaults to None.
     he_initializer_slope: A float slope for the He initializer. Defaults to 1.0.
     use_weight_scaling: Whether to apply weight scaling. Defaults to True.
     scope: A string or variable scope.
@@ -265,8 +264,8 @@ def custom_dense(x,
   Args:
     x: A `Tensor`.
     units: An int of the last dimension size of output.
-    activation: An activation function to be applied. None means no
-        activation. Defaults to None.
+    activation: An activation function to be applied. None means no activation.
+      Defaults to None.
     he_initializer_slope: A float slope for the He initializer. Defaults to 1.0.
     use_weight_scaling: Whether to apply weight scaling. Defaults to True.
     scope: A string or variable scope.

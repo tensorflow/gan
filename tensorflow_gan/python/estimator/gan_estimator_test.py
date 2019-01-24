@@ -22,7 +22,6 @@ from __future__ import print_function
 import shutil
 import tempfile
 
-# Dependency imports
 from absl.testing import parameterized
 import numpy as np
 import six
@@ -205,9 +204,13 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
       tf.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
-  def _test_complete_flow(
-      self, train_input_fn, eval_input_fn, predict_input_fn, prediction_size,
-      lr_decay=False):
+  def _test_complete_flow(self,
+                          train_input_fn,
+                          eval_input_fn,
+                          predict_input_fn,
+                          prediction_size,
+                          lr_decay=False):
+
     def make_opt():
       gstep = tf.train.get_or_create_global_step()
       lr = tf.train.exponential_decay(1.0, gstep, 10, 0.9)
@@ -311,11 +314,13 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
         'x': tf.io.FixedLenFeature([input_dim], tf.float32),
         'y': tf.io.FixedLenFeature([input_dim], tf.float32),
     }
+
     def _train_input_fn():
       feature_map = tf.io.parse_example(serialized_examples, feature_spec)
       features = {'x': feature_map['x']}
       labels = feature_map['y']
       return features, labels
+
     def _eval_input_fn():
       feature_map = tf.io.parse_example(
           tf.train.limit_epochs(serialized_examples, num_epochs=1),
@@ -323,6 +328,7 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
       features = {'x': feature_map['x']}
       labels = feature_map['y']
       return features, labels
+
     def _predict_input_fn():
       feature_map = tf.io.parse_example(
           tf.train.limit_epochs(serialized_examples, num_epochs=1),
@@ -349,6 +355,7 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
 
   def _test_warm_start(self, warm_start_from=None):
     """Tests whether WarmStartSettings work as intended."""
+
     def generator_with_new_variable(noise_dict, mode):
       tf.get_variable(
           name=self.new_variable_name,
@@ -399,8 +406,9 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
     est_warm = self._test_warm_start(warm_start_from=warmstart)
     full_variable_name = 'Generator/%s' % self.new_variable_name
     self.assertIn(full_variable_name, est_warm.get_variable_names())
-    equal_vals = np.array_equal(est_warm.get_variable_value(full_variable_name),
-                                self.new_variable_value)
+    equal_vals = np.array_equal(
+        est_warm.get_variable_value(full_variable_name),
+        self.new_variable_value)
     self.assertTrue(equal_vals)
 
 

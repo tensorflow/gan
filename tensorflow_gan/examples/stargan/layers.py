@@ -26,8 +26,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
-
 import tensorflow as tf
 
 from tensorflow_gan.examples.stargan import ops
@@ -71,8 +69,7 @@ def generator_down_sample(input_net, final_num_outputs=256):
     if input_net.shape[1] % 4 != 0:
       raise ValueError(
           'Dimension 1 of the input should be divisible by 4, but is {} '
-          'instead.'.
-          format(input_net.shape[1]))
+          'instead.'.format(input_net.shape[1]))
   else:
     raise ValueError('Dimension 1 of the input should be explicitly defined.')
 
@@ -81,8 +78,7 @@ def generator_down_sample(input_net, final_num_outputs=256):
     if input_net.shape[2] % 4 != 0:
       raise ValueError(
           'Dimension 2 of the input should be divisible by 4, but is {} '
-          'instead.'.
-          format(input_net.shape[2]))
+          'instead.'.format(input_net.shape[2]))
   else:
     raise ValueError('Dimension 2 of the input should be explicitly defined.')
 
@@ -153,14 +149,13 @@ def _residual_block(input_net,
 
   with tf.variable_scope(name):
 
-    with tf.contrib.framework.arg_scope(
-        [tf.contrib.layers.conv2d],
-        num_outputs=num_outputs,
-        kernel_size=kernel_size,
-        stride=stride,
-        padding='VALID',
-        normalizer_fn=normalizer_fn,
-        activation_fn=None):
+    with tf.contrib.framework.arg_scope([tf.contrib.layers.conv2d],
+                                        num_outputs=num_outputs,
+                                        kernel_size=kernel_size,
+                                        stride=stride,
+                                        padding='VALID',
+                                        normalizer_fn=normalizer_fn,
+                                        activation_fn=None):
 
       res_block = ops.pad(input_net, padding_size)
       res_block = tf.contrib.layers.conv2d(inputs=res_block, scope='conv_0')

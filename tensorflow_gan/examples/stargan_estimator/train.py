@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-# Dependency imports
+
 from absl import flags
 import numpy as np
 import scipy.misc
@@ -70,9 +70,9 @@ def _get_optimizer(gen_lr, dis_lr):
 
   Args:
     gen_lr: A scalar float `Tensor` or a Python number.  The Generator learning
-        rate.
+      rate.
     dis_lr: A scalar float `Tensor` or a Python number.  The Discriminator
-        learning rate.
+      learning rate.
 
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
@@ -105,6 +105,7 @@ def _get_summary_image(estimator, test_images_np):
 
   img_rows = []
   for img_np in test_images_np:
+
     def test_input_fn():
       dataset_imgs = [img_np] * num_domains  # pylint:disable=cell-var-from-loop
       dataset_lbls = [tf.one_hot([d], num_domains) for d in xrange(num_domains)]
@@ -114,8 +115,8 @@ def _get_summary_image(estimator, test_images_np):
       dataset_imgs = np.expand_dims(dataset_imgs, 1)
       dataset_lbls = tf.stack(dataset_lbls)
       unused_tensor = tf.zeros(num_domains)
-      return tf.data.Dataset.from_tensor_slices(
-          ((dataset_imgs, dataset_lbls), unused_tensor))
+      return tf.data.Dataset.from_tensor_slices(((dataset_imgs, dataset_lbls),
+                                                 unused_tensor))
 
     prediction_iterable = estimator.predict(test_input_fn)
     predictions = [next(prediction_iterable) for _ in xrange(num_domains)]

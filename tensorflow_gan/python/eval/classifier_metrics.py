@@ -33,7 +33,6 @@ import os
 import sys
 import tarfile
 
-# Dependency imports
 from six.moves import urllib
 
 import tensorflow as tf
@@ -156,8 +155,8 @@ def kl_divergence(p, p_logits, q):
     p: A 2-D floating-point Tensor p_ij, where `i` corresponds to the minibatch
       example and `j` corresponds to the probability of being in class `j`.
     p_logits: A 2-D floating-point Tensor corresponding to logits for `p`.
-    q: A 1-D floating-point Tensor, where q_j corresponds to the probability
-      of class `j`.
+    q: A 1-D floating-point Tensor, where q_j corresponds to the probability of
+      class `j`.
 
   Returns:
     KL divergence between two distributions. Output dimension is 1D, one entry
@@ -202,9 +201,9 @@ def get_graph_def_from_url_tarball(url, filename, tar_filename=None):
   if not (tar_filename and os.path.exists(tar_filename)):
 
     def _progress(count, block_size, total_size):
-      sys.stdout.write('\r>> Downloading %s %.1f%%' %
-                       (url,
-                        float(count * block_size) / float(total_size) * 100.0))
+      sys.stdout.write(
+          '\r>> Downloading %s %.1f%%' %
+          (url, float(count * block_size) / float(total_size) * 100.0))
       sys.stdout.flush()
 
     tar_filename, _ = urllib.request.urlretrieve(url, tar_filename, _progress)
@@ -230,8 +229,8 @@ def run_inception(images,
     images: Input tensors. Must be [batch, height, width, channels]. Input shape
       and values must be in [-1, 1], which can be achieved using
       `preprocess_image`.
-    graph_def: A GraphDef proto of a pretrained Inception graph. If `None`,
-      call `default_graph_def_fn` to get GraphDef.
+    graph_def: A GraphDef proto of a pretrained Inception graph. If `None`, call
+      `default_graph_def_fn` to get GraphDef.
     default_graph_def_fn: A function that returns a GraphDef. Used if
       `graph_def` is `None. By default, returns a pretrained InceptionV3 graph.
     image_size: Required image width and height. See unit tests for the default
@@ -332,8 +331,7 @@ def classifier_score(images, classifier_fn, num_batches=1):
     The classifier score. A floating-point scalar of the same type as the output
     of `classifier_fn`.
   """
-  generated_images_list = tf.split(
-      images, num_or_size_splits=num_batches)
+  generated_images_list = tf.split(images, num_or_size_splits=num_batches)
 
   # Compute the classifier splits using the memory-efficient `map_fn`.
   logits = tf.map_fn(
@@ -365,8 +363,8 @@ def classifier_score_from_logits(logits):
   the prior distribution over classes.
 
   Args:
-    logits: Precomputed 2D tensor of logits that will be used to
-      compute the classifier score.
+    logits: Precomputed 2D tensor of logits that will be used to compute the
+      classifier score.
 
   Returns:
     The classifier score. A floating-point scalar of the same type as the output
@@ -475,17 +473,16 @@ def frechet_classifier_distance(real_images,
     real_images: Real images to use to compute Frechet Inception distance.
     generated_images: Generated images to use to compute Frechet Inception
       distance.
-    classifier_fn: A function that takes images and produces activations
-      based on a classifier.
-    num_batches: Number of batches to split images in to in order to
-      efficiently run them through the classifier network.
+    classifier_fn: A function that takes images and produces activations based
+      on a classifier.
+    num_batches: Number of batches to split images in to in order to efficiently
+      run them through the classifier network.
 
   Returns:
     The Frechet Inception distance. A floating-point scalar of the same type
     as the output of `classifier_fn`.
   """
-  real_images_list = tf.split(
-      real_images, num_or_size_splits=num_batches)
+  real_images_list = tf.split(real_images, num_or_size_splits=num_batches)
   generated_images_list = tf.split(
       generated_images, num_or_size_splits=num_batches)
 
@@ -494,12 +491,13 @@ def frechet_classifier_distance(real_images,
 
   # Compute the activations using the memory-efficient `map_fn`.
   def compute_activations(elems):
-    return tf.map_fn(fn=classifier_fn,
-                     elems=elems,
-                     parallel_iterations=1,
-                     back_prop=False,
-                     swap_memory=True,
-                     name='RunClassifier')
+    return tf.map_fn(
+        fn=classifier_fn,
+        elems=elems,
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        name='RunClassifier')
 
   real_a = compute_activations(real_imgs)
   gen_a = compute_activations(generated_imgs)
@@ -559,8 +557,8 @@ def mean_only_frechet_classifier_distance_from_activations(
   m_w = tf.reduce_mean(generated_activations, 0)
 
   # Next the distance between means.
-  mean = tf.reduce_sum(
-      tf.squared_difference(m, m_w))  # Equivalent to L2 but more stable.
+  mean = tf.reduce_sum(tf.squared_difference(
+      m, m_w))  # Equivalent to L2 but more stable.
   mofid = mean
   if activations_dtype != tf.float64:
     mofid = tf.cast(mofid, activations_dtype)
@@ -630,12 +628,11 @@ def diagonal_only_frechet_classifier_distance_from_activations(
 
   # First the covariance component.
   # Here, note that trace(A + B) = trace(A) + trace(B)
-  trace = tf.reduce_sum(
-      (var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w)))
+  trace = tf.reduce_sum((var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w)))
 
   # Next the distance between means.
-  mean = tf.reduce_sum(
-      tf.squared_difference(m, m_w))  # Equivalent to L2 but more stable.
+  mean = tf.reduce_sum(tf.squared_difference(
+      m, m_w))  # Equivalent to L2 but more stable.
   dofid = trace + mean
   if activations_dtype != tf.float64:
     dofid = tf.cast(dofid, activations_dtype)
@@ -693,8 +690,7 @@ def frechet_classifier_distance_from_activations(real_activations,
   # Compute mean and covariance matrices of activations.
   m = tf.reduce_mean(real_activations, 0)
   m_w = tf.reduce_mean(generated_activations, 0)
-  num_examples_real = tf.cast(
-      tf.shape(real_activations)[0], tf.float64)
+  num_examples_real = tf.cast(tf.shape(real_activations)[0], tf.float64)
   num_examples_generated = tf.cast(
       tf.shape(generated_activations)[0], tf.float64)
 
@@ -719,13 +715,14 @@ def frechet_classifier_distance_from_activations(real_activations,
   trace = tf.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
 
   # Next the distance between means.
-  mean = tf.reduce_sum(
-      tf.squared_difference(m, m_w))  # Equivalent to L2 but more stable.
+  mean = tf.reduce_sum(tf.squared_difference(
+      m, m_w))  # Equivalent to L2 but more stable.
   fid = trace + mean
   if activations_dtype != tf.float64:
     fid = tf.cast(fid, activations_dtype)
 
   return fid
+
 
 frechet_inception_distance = functools.partial(
     frechet_classifier_distance,
@@ -1084,9 +1081,9 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
     k_rr = (tf.matmul(r, r, transpose_b=True) / dim + 1)**3
     k_rg = (tf.matmul(r, g, transpose_b=True) / dim + 1)**3
     k_gg = (tf.matmul(g, g, transpose_b=True) / dim + 1)**3
-    return (-2 * tf.reduce_mean(k_rg) +
-            (tf.reduce_sum(k_rr) - tf.trace(k_rr)) / (m * (m - 1)) +
-            (tf.reduce_sum(k_gg) - tf.trace(k_gg)) / (n * (n - 1)))
+    return (
+        -2 * tf.reduce_mean(k_rg) + (tf.reduce_sum(k_rr) - tf.trace(k_rr)) /
+        (m * (m - 1)) + (tf.reduce_sum(k_gg) - tf.trace(k_gg)) / (n * (n - 1)))
 
   ests = tf.map_fn(
       compute_kid_block, tf.range(n_blocks), dtype=dtype, back_prop=False)

@@ -26,7 +26,7 @@ from __future__ import division
 from __future__ import print_function
 
 import math
-# Dependency imports
+
 import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
@@ -40,10 +40,10 @@ class ResolutionSchedule(object):
 
     Args:
       start_resolutions: An tuple of integers of HxW format for start image
-      resolutions. Defaults to (4, 4).
+        resolutions. Defaults to (4, 4).
       scale_base: An integer of resolution base multiplier. Defaults to 2.
       num_resolutions: An integer of how many progressive resolutions (including
-          `start_resolutions`). Defaults to 4.
+        `start_resolutions`). Defaults to 4.
     """
     self._start_resolutions = start_resolutions
     self._scale_base = scale_base
@@ -118,11 +118,11 @@ def compute_progress(current_image_id, stable_stage_num_images,
 
   Args:
     current_image_id: An scalar integer `Tensor` of the current image id, count
-        from 0.
+      from 0.
     stable_stage_num_images: An integer representing the number of images in
-        each stable stage.
+      each stable stage.
     transition_stage_num_images: An integer representing the number of images in
-        each transition stage.
+      each transition stage.
     num_blocks: Number of network blocks.
 
   Returns:
@@ -244,16 +244,16 @@ def generator(z,
     z: A `Tensor` of latent vector. The first dimension must be batch size.
     progress: A scalar float `Tensor` of training progress.
     num_filters_fn: A function that maps `block_id` to # of filters for the
-        block.
+      block.
     resolution_schedule: An object of `ResolutionSchedule`.
     num_blocks: An integer of number of blocks. None means maximum number of
-        blocks, i.e. `resolution.schedule.num_resolutions`. Defaults to None.
+      blocks, i.e. `resolution.schedule.num_resolutions`. Defaults to None.
     kernel_size: An integer of convolution kernel size.
     colors: Number of output color channels. Defaults to 3.
     to_rgb_activation: Activation function applied when output rgb.
     scope: A string or variable scope.
-    reuse: Whether to reuse `scope`. Defaults to None which means to inherit
-        the reuse option of the parent scope.
+    reuse: Whether to reuse `scope`. Defaults to None which means to inherit the
+      reuse option of the parent scope.
 
   Returns:
     A `Tensor` of model output and a dictionary of model end points.
@@ -345,14 +345,14 @@ def discriminator(x,
     x: A `Tensor`of NHWC format representing images of size `resolution`.
     progress: A scalar float `Tensor` of training progress.
     num_filters_fn: A function that maps `block_id` to # of filters for the
-        block.
+      block.
     resolution_schedule: An object of `ResolutionSchedule`.
     num_blocks: An integer of number of blocks. None means maximum number of
-        blocks, i.e. `resolution.schedule.num_resolutions`. Defaults to None.
+      blocks, i.e. `resolution.schedule.num_resolutions`. Defaults to None.
     kernel_size: An integer of convolution kernel size.
     scope: A string or variable scope.
-    reuse: Whether to reuse `scope`. Defaults to None which means to inherit
-        the reuse option of the parent scope.
+    reuse: Whether to reuse `scope`. Defaults to None which means to inherit the
+      reuse option of the parent scope.
 
   Returns:
     A `Tensor` of model output and a dictionary of model end points.

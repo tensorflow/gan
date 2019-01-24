@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 import tensorflow as tf
 
@@ -68,4 +67,3 @@ class TrainTest(tf.test.TestCase):
 
 if __name__ == '__main__':
   tf.test.main()
-

@@ -27,15 +27,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import numpy as np
 import tensorflow as tf
 
 __all__ = ['sliced_wasserstein_distance']
 
-_GAUSSIAN_FILTER = np.float32([[1, 4, 6, 4, 1], [4, 16, 24, 16, 4], [
-    6, 24, 36, 24, 6
-], [4, 16, 24, 16, 4], [1, 4, 6, 4, 1]]).reshape([5, 5, 1, 1]) / 256.0
+_GAUSSIAN_FILTER = np.float32([[1, 4, 6, 4, 1], [4, 16, 24, 16, 4],
+                               [6, 24, 36, 24, 6], [4, 16, 24, 16, 4],
+                               [1, 4, 6, 4, 1]]).reshape([5, 5, 1, 1]) / 256.0
 
 
 def _to_float(tensor):
@@ -48,6 +47,7 @@ def laplacian_pyramid(batch, num_levels):
   Args:
       batch: (tensor) The batch of images (batch, height, width, channels).
       num_levels: (int) Desired number of hierarchical levels.
+
   Returns:
       List of tensors from the highest to lowest resolution.
   """
@@ -88,6 +88,7 @@ def _batch_to_patches(batch, patches_per_image, patch_size):
       batch: (tensor) The batch of images (batch, height, width, channels).
       patches_per_image: (int) Number of patches to extract per image.
       patch_size: (int) Size of the patches (size, size, channels) to extract.
+
   Returns:
       Tensor (batch*patches_per_image, patch_size, patch_size, channels) of
       patches.
@@ -120,6 +121,7 @@ def _normalize_patches(patches):
 
   Args:
       patches: (tensor) The batch of patches (batch, size, size, channels).
+
   Returns:
       Tensor (batch, size, size, channels) of the normalized patches.
   """
@@ -135,6 +137,7 @@ def _sort_rows(matrix, num_rows):
   Args:
       matrix: a matrix of values (row,col).
       num_rows: (int) number of sorted rows to return from the matrix.
+
   Returns:
       Tensor (num_rows, col) of the sorted matrix top K rows.
   """
@@ -151,6 +154,7 @@ def _sliced_wasserstein(a, b, random_sampling_count, random_projection_dim):
       b: (matrix) Distribution "b" of samples (row, col).
       random_sampling_count: (int) Number of random projections to average.
       random_projection_dim: (int) Dimension of the random projection space.
+
   Returns:
       Float containing the approximate distance between "a" and "b".
   """
@@ -180,6 +184,7 @@ def _sliced_wasserstein_svd(a, b):
   Args:
       a: (matrix) Distribution "a" of samples (row, col).
       b: (matrix) Distribution "b" of samples (row, col).
+
   Returns:
       Float containing the approximate distance between "a" and "b".
   """
@@ -217,6 +222,7 @@ def sliced_wasserstein_distance(real_images,
       random_sampling_count: (int) Number of random projections to average.
       random_projection_dim: (int) Dimension of the random projection space.
       use_svd: experimental method to compute a more accurate distance.
+
   Returns:
       List of tuples (distance_real, distance_fake) for each level of the
       Laplacian pyramid from the highest resolution to the lowest.
@@ -239,8 +245,7 @@ def sliced_wasserstein_distance(real_images,
   resolution_max = resolution_full
   # Base loss of detail.
   resolutions = [
-      2**i
-      for i in range(
+      2**i for i in range(
           int(np.log2(resolution_max)),
           int(np.log2(resolution_min)) - 1, -1)
   ]
@@ -248,15 +253,13 @@ def sliced_wasserstein_distance(real_images,
   # Gather patches for each level of the Laplacian pyramids.
   patches_real, patches_fake, patches_test = (
       [[] for _ in resolutions] for _ in range(3))
-  for lod, level in enumerate(
-      laplacian_pyramid(real_images, len(resolutions))):
+  for lod, level in enumerate(laplacian_pyramid(real_images, len(resolutions))):
     patches_real[lod].append(
         _batch_to_patches(level, patches_per_image, patch_size))
     patches_test[lod].append(
         _batch_to_patches(level, patches_per_image, patch_size))
 
-  for lod, level in enumerate(
-      laplacian_pyramid(fake_images, len(resolutions))):
+  for lod, level in enumerate(laplacian_pyramid(fake_images, len(resolutions))):
     patches_fake[lod].append(
         _batch_to_patches(level, patches_per_image, patch_size))
 

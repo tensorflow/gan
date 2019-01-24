@@ -18,7 +18,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 from absl import flags
 from absl import logging
 import tensorflow as tf
@@ -26,7 +25,6 @@ import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cifar import data_provider
 from tensorflow_gan.examples.cifar import networks
-
 
 # ML Hparams.
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
@@ -48,7 +46,6 @@ flags.DEFINE_integer(
     'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
-
 
 FLAGS = flags.FLAGS
 
@@ -78,9 +75,8 @@ def main(_):
 
     # Get the GANLoss tuple. Use the selected GAN loss functions.
     with tf.name_scope('loss'):
-      gan_loss = tfgan.gan_loss(gan_model,
-                                gradient_penalty_weight=1.0,
-                                add_summaries=True)
+      gan_loss = tfgan.gan_loss(
+          gan_model, gradient_penalty_weight=1.0, add_summaries=True)
 
     # Get the GANTrain ops using the custom optimizers and optional
     # discriminator weight clipping.
@@ -95,16 +91,19 @@ def main(_):
 
     # Run the alternating training loop. Skip it if no steps should be taken
     # (used for graph construction tests).
-    status_message = tf.string_join(
-        ['Starting train step: ',
-         tf.as_string(tf.train.get_or_create_global_step())],
-        name='status_message')
-    if FLAGS.max_number_of_steps == 0: return
+    status_message = tf.string_join([
+        'Starting train step: ',
+        tf.as_string(tf.train.get_or_create_global_step())
+    ],
+                                    name='status_message')
+    if FLAGS.max_number_of_steps == 0:
+      return
     tfgan.gan_train(
         train_ops,
-        hooks=(
-            [tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-             tf.train.LoggingTensorHook([status_message], every_n_iter=10)]),
+        hooks=([
+            tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+            tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+        ]),
         logdir=FLAGS.train_log_dir,
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
@@ -121,4 +120,3 @@ def _get_optimizers():
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
   tf.app.run()
-

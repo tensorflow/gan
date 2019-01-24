@@ -19,13 +19,15 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-# Dependency imports
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
 
-def provide_dataset(split, batch_size, num_parallel_calls=None,
-                    shuffle=True, one_hot=True):
+def provide_dataset(split,
+                    batch_size,
+                    num_parallel_calls=None,
+                    shuffle=True,
+                    one_hot=True):
   """Provides batches of CIFAR10 digits.
 
   Args:
@@ -59,20 +61,22 @@ def provide_dataset(split, batch_size, num_parallel_calls=None,
       labels = tf.cast(labels, tf.float32)
     return {'images': images, 'labels': labels}
 
-  ds = (ds
-        .map(_preprocess, num_parallel_calls=num_parallel_calls)
-        .cache()
-        .repeat())
+  ds = (
+      ds.map(_preprocess,
+             num_parallel_calls=num_parallel_calls).cache().repeat())
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-  ds = (ds
-        .batch(batch_size, drop_remainder=True)
-        .prefetch(tf.contrib.data.AUTOTUNE))
+  ds = (
+      ds.batch(batch_size,
+               drop_remainder=True).prefetch(tf.contrib.data.AUTOTUNE))
 
   return ds
 
 
-def provide_data(split, batch_size, num_parallel_calls=None, shuffle=True,
+def provide_data(split,
+                 batch_size,
+                 num_parallel_calls=None,
+                 shuffle=True,
                  one_hot=True):
   """Provides batches of CIFAR10 digits.
 
@@ -93,8 +97,7 @@ def provide_data(split, batch_size, num_parallel_calls=None, shuffle=True,
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle,
-                       one_hot)
+  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle, one_hot)
 
   next_batch = ds.make_one_shot_iterator().get_next()
   images, labels = next_batch['images'], next_batch['labels']
