@@ -999,7 +999,7 @@ def gan_train_ops(
     gen_update_ops += [generator_global_step.assign(global_step)]
     sync_hooks.append(generator_optimizer.make_session_run_hook(is_chief))
   with tf.name_scope('generator_train'):
-    gen_train_op = tf.contrib.training.create_train_op(
+    gen_train_op = contrib.create_train_op(
         total_loss=loss.generator_loss,
         optimizer=generator_optimizer,
         variables_to_train=model.generator_variables,
@@ -1020,7 +1020,7 @@ def gan_train_ops(
     dis_update_ops += [discriminator_global_step.assign(global_step)]
     sync_hooks.append(discriminator_optimizer.make_session_run_hook(is_chief))
   with tf.name_scope('discriminator_train'):
-    disc_train_op = tf.contrib.training.create_train_op(
+    disc_train_op = contrib.create_train_op(
         total_loss=loss.discriminator_loss,
         optimizer=discriminator_optimizer,
         variables_to_train=model.discriminator_variables,

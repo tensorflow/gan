@@ -289,6 +289,5 @@ gan_model = tfgan.GANModel(
 ...
 ```
 
-
 ## Authors
 Joel Shor (github: [joel-shor](https://github.com/joel-shor))

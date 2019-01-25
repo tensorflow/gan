@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python import namedtuples as tfgan_tuples
 from tensorflow_gan.python import train as tfgan_train
 from tensorflow_gan.python.estimator.gan_estimator import get_gan_model as estimator_get_gan_model
@@ -378,14 +379,14 @@ def _get_train_estimator_spec(
 
   def gen_train_op():
     with tf.name_scope('generator_train'):
-      return tf.contrib.training.create_train_op(
+      return contrib.create_train_op(
           total_loss=gan_loss.generator_loss,
           optimizer=generator_optimizer,
           variables_to_train=gan_model.generator_variables,
           update_ops=gen_update_ops)
   def dis_train_op():
     with tf.name_scope('discriminator_train'):
-      return tf.contrib.training.create_train_op(
+      return contrib.create_train_op(
           total_loss=gan_loss.discriminator_loss,
           optimizer=discriminator_optimizer,
           variables_to_train=gan_model.discriminator_variables,
