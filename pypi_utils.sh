@@ -16,14 +16,28 @@ make_virtual_env() {
   source ${VENV_PATH}/bin/activate
 }
 
+install_tensorflow() {
+  local tf_version=$1
+
+  if [[ "$tf_version" == "TF1.x" ]]; then
+    pip install tensorflow
+  elif [[ "$tf_version" == "TF2.x" ]]; then
+    pip install tf-nightly-2.0-preview
+  else
+    echo "TensorFlow version not recognized: ${tf_version}"
+    exit -1
+  fi
+}
+
 run_unittests_tests() {
   local py_version=$1
-  echo "run_tests ${py_version}"
+  local tf_version=$2
+  echo "run_tests ${py_version}" "${tf_version}"
   venv_dir=$(mktemp -d)
   make_virtual_env "${py_version}" "${venv_dir}"
 
   # Install TensorFlow explicitly (see http://g/tf-oss/vpEioAGbZ4Q).
-  pip install tensorflow
+  install_tensorflow "${tf_version}"
 
   # TODO(joelshor): These should get installed in setup.py, but aren't for some
   # reason.
@@ -39,9 +53,10 @@ run_unittests_tests() {
 
 test_build_and_install_whl() {
   local py_version=$1
-  local venv_dir=$2
+  local tf_version=$2
+  local venv_dir=$3
 
-  echo "run_tests ${py_version}" "${venv_dir}"
+  echo "run_tests ${py_version}" "${tf_version}" "${venv_dir}"
 
   if [ "${venv_dir}" = "" ]; then
     venv_dir=$(mktemp -d)
@@ -50,7 +65,7 @@ test_build_and_install_whl() {
   make_virtual_env "${py_version}" "${venv_dir}"
 
   # Install TensorFlow explicitly (see http://g/tf-oss/vpEioAGbZ4Q).
-  pip install tensorflow
+  install_tensorflow "${tf_version}"
 
   # Install tf_gan package.
   WHEEL_PATH=${venv_dir}/wheel/${py_version}

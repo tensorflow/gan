@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
 import numpy as np
 import tensorflow as tf
 from tensorflow_gan.python import contrib_utils
@@ -47,7 +48,7 @@ def get_variables_by_name(given_name, scope=None):
   return contrib_utils.get_variables(scope=scope, suffix=suffix)
 
 
-class CreateTrainOpTest(tf.test.TestCase):
+class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
   def setUp(self):
     super(CreateTrainOpTest, self).setUp()
@@ -192,4 +193,4 @@ class CreateTrainOpTest(tf.test.TestCase):
 
 
 if __name__ == '__main__':
-  tf.test.main()
+  absltest.main()
