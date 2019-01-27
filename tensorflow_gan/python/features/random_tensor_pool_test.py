@@ -113,7 +113,6 @@ class TensorPoolTest(tf.test.TestCase):
     t = tf.constant(1)
     input_values = [[t, t, t], (t, t), t]
     output_values = tfgan.features.tensor_pool(input_values, pool_size=5)
-    print('stuff: ', output_values)
     # Overall shape.
     self.assertIsInstance(output_values, list)
     self.assertEqual(3, len(output_values))

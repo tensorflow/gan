@@ -36,10 +36,10 @@ def _encoder(img_batch, is_training=True, bits=64, depth=64):
   """Maps images to internal representation.
 
   Args:
-    img_batch: Stuff
-    is_training: Stuff
+    img_batch: Batch of images to encode.
+    is_training: Python bool. Whether encoder is training or not.
     bits: Number of bits per patch.
-    depth: Stuff
+    depth: Number of channels in first convolution layer.
 
   Returns:
     Real-valued 2D Tensor of size [batch_size, bits].
