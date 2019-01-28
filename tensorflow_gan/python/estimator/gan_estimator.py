@@ -111,6 +111,7 @@ class GANEstimator(tf.estimator.Estimator):
                add_summaries=None,
                use_loss_summaries=True,
                config=None,
+               params=None,
                warm_start_from=None,
                is_chief=True):
     """Initializes a GANEstimator instance.
@@ -151,6 +152,9 @@ class GANEstimator(tf.estimator.Estimator):
       use_loss_summaries: If `True`, add loss summaries. If `False`, does not.
         If `None`, uses defaults.
       config: `RunConfig` object to configure the runtime settings.
+      params: Optional `dict` of hyperparameters.  Will receive what is passed
+        to Estimator in `params` parameter. This allows to configure Estimators
+        from hyper parameter tuning.
       warm_start_from: A filepath to a checkpoint or saved model, or a
         WarmStartSettings object to configure initialization.
       is_chief: Whether or not this Estimator is running on a chief or worker.
@@ -192,7 +196,7 @@ class GANEstimator(tf.estimator.Estimator):
                                 get_hooks_fn, use_loss_summaries, is_chief)
 
     super(GANEstimator, self).__init__(
-        model_fn=_model_fn, model_dir=model_dir, config=config,
+        model_fn=_model_fn, model_dir=model_dir, config=config, params=params,
         warm_start_from=warm_start_from)
 
 

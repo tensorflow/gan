@@ -107,7 +107,8 @@ class StarGANEstimator(tf.estimator.Estimator):
                get_eval_metric_ops_fn=None,
                add_summaries=None,
                use_loss_summaries=True,
-               config=None):
+               config=None,
+               params=None):
     """Initializes a StarGANEstimator instance.
 
     Args:
@@ -144,6 +145,9 @@ class StarGANEstimator(tf.estimator.Estimator):
       use_loss_summaries: If `True`, add loss summaries. If `False`, does not.
         If `None`, uses defaults.
       config: `RunConfig` object to configure the runtime settings.
+      params: Optional `dict` of hyperparameters.  Will receive what is passed
+        to Estimator in `params` parameter. This allows to configure Estimators
+        from hyper parameter tuning.
 
     Raises:
       ValueError: If loss functions aren't callable.
@@ -184,7 +188,7 @@ class StarGANEstimator(tf.estimator.Estimator):
                                 discriminator_optimizer, get_hooks_fn)
 
     super(StarGANEstimator, self).__init__(
-        model_fn=_model_fn, model_dir=model_dir, config=config)
+        model_fn=_model_fn, model_dir=model_dir, config=config, params=params)
 
 
 def get_gan_model(mode,
