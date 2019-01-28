@@ -364,6 +364,15 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
         generator_inputs=tf.zeros([1]),
         check_shapes=False)
 
+  def test_multiple_models(self):
+    # Verify that creating 2 GANModels with the same scope names does not create
+    # double the variables.
+    create_gan_model()
+    variables_1 = tf.global_variables()
+    create_gan_model()
+    variables_2 = tf.global_variables()
+    self.assertEqual(variables_1, variables_2)
+
 
 class StarGANModelTest(tf.test.TestCase):
   """Tests for `stargan_model`."""

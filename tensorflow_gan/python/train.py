@@ -97,10 +97,10 @@ def gan_model(
       `real_data`.
   """
   # Create models
-  with tf.variable_scope(generator_scope) as gen_scope:
+  with tf.variable_scope(generator_scope, reuse=tf.AUTO_REUSE) as gen_scope:
     generator_inputs = _convert_tensor_or_l_or_d(generator_inputs)
     generated_data = generator_fn(generator_inputs)
-  with tf.variable_scope(discriminator_scope) as dis_scope:
+  with tf.variable_scope(discriminator_scope, reuse=tf.AUTO_REUSE) as dis_scope:
     discriminator_gen_outputs = discriminator_fn(generated_data,
                                                  generator_inputs)
   with tf.variable_scope(dis_scope, reuse=True):
