@@ -44,10 +44,13 @@ class SummaryType(enum.IntEnum):
   IMAGE_COMPARISON = 3
 
 
-_summary_type_map = {
-    SummaryType.VARIABLES: tfgan_summaries.add_gan_model_summaries,
-    SummaryType.IMAGES: tfgan_summaries.add_gan_model_image_summaries,
-    SummaryType.IMAGE_COMPARISON: tfgan_summaries.add_image_comparison_summaries,  # pylint:disable=line-too-long
+summary_type_map = {
+    SummaryType.VARIABLES:
+        tfgan_summaries.add_gan_model_summaries,
+    SummaryType.IMAGES:
+        tfgan_summaries.add_gan_model_image_summaries,
+    SummaryType.IMAGE_COMPARISON:
+        tfgan_summaries.add_image_comparison_summaries,
 }
 
 
@@ -206,18 +209,19 @@ def get_gan_model(mode,
                   real_data,
                   generator_inputs,
                   add_summaries,
-                  generator_scope='Generator'):
+                  generator_scope='Generator',
+                  discriminator_scope='Discriminator'):
   """Makes the GANModel tuple, which encapsulates the GAN model architecture."""
   if mode == tf.estimator.ModeKeys.PREDICT:
     if real_data is not None:
       raise ValueError('`labels` must be `None` when mode is `predict`. '
                        'Instead, found %s' % real_data)
-    gan_model = _make_prediction_gan_model(
-        generator_inputs, generator_fn, generator_scope)
+    gan_model = make_prediction_gan_model(generator_inputs, generator_fn,
+                                          generator_scope)
   else:  # tf.estimator.ModeKeys.TRAIN or tf.estimator.ModeKeys.EVAL
-    gan_model = _make_gan_model(
-        generator_fn, discriminator_fn, real_data, generator_inputs,
-        generator_scope, add_summaries, mode)
+    gan_model = _make_gan_model(generator_fn, discriminator_fn, real_data,
+                                generator_inputs, generator_scope,
+                                discriminator_scope, add_summaries, mode)
 
   return gan_model
 
@@ -258,8 +262,8 @@ def get_estimator_spec(mode,
   return estimator_spec
 
 
-def _make_gan_model(generator_fn, discriminator_fn, real_data,
-                    generator_inputs, generator_scope, add_summaries, mode):
+def _make_gan_model(generator_fn, discriminator_fn, real_data, generator_inputs,
+                    generator_scope, discriminator_scope, add_summaries, mode):
   """Construct a `GANModel`, and optionally pass in `mode`."""
   # If network functions have an argument `mode`, pass mode to it.
   if 'mode' in inspect.getargspec(generator_fn).args:
@@ -272,18 +276,19 @@ def _make_gan_model(generator_fn, discriminator_fn, real_data,
       real_data,
       generator_inputs,
       generator_scope=generator_scope,
+      discriminator_scope=discriminator_scope,
       check_shapes=False)
   if add_summaries:
     if not isinstance(add_summaries, (tuple, list)):
       add_summaries = [add_summaries]
     with tf.name_scope(None):
       for summary_type in add_summaries:
-        _summary_type_map[summary_type](gan_model)
+        summary_type_map[summary_type](gan_model)
 
   return gan_model
 
 
-def _make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
+def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
   """Make a `GANModel` from just the generator."""
   # If `generator_fn` has an argument `mode`, pass mode to it.
   if 'mode' in inspect.getargspec(generator_fn).args:
