@@ -412,5 +412,32 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
     self.assertTrue(equal_vals)
 
 
+class GANEstimatorParamsTest(tf.test.TestCase):
+
+  def setUp(self):
+    self._model_dir = self.get_temp_dir()
+
+  def tearDown(self):
+    tf.summary.FileWriterCache.clear()
+
+  def test_params_used(self):
+    def train_input_fn(params):
+      self.assertIn('batch_size', params)
+      data = np.zeros([params['batch_size'], 4])
+      return {'x': data}, data
+
+    est = tfgan.estimator.GANEstimator(
+        generator_fn=generator_fn,
+        discriminator_fn=discriminator_fn,
+        generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
+        discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
+        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        model_dir=self._model_dir,
+        params={'batch_size': 4})
+
+    est.train(train_input_fn, steps=1)
+
+
 if __name__ == '__main__':
   tf.test.main()

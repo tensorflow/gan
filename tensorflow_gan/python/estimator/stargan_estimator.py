@@ -161,8 +161,9 @@ class StarGANEstimator(tf.estimator.Estimator):
     if get_hooks_fn is not None and not callable(get_hooks_fn):
       raise TypeError('get_hooks_fn must be callable.')
 
-    def _model_fn(features, labels, mode):
+    def _model_fn(features, labels, mode, params):
       """StarGANEstimator model function."""
+      del params  # unused
       if mode not in [
           tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL,
           tf.estimator.ModeKeys.PREDICT

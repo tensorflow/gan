@@ -294,5 +294,31 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
         prediction_size=[batch_size, img_size, img_size, channel_size])
 
 
+class StarGANEstimatorParamsTest(tf.test.TestCase):
+
+  def setUp(self):
+    self._model_dir = self.get_temp_dir()
+
+  def tearDown(self):
+    tf.summary.FileWriterCache.clear()
+
+  def test_params_used(self):
+    def train_input_fn(params):
+      self.assertIn('batch_size', params)
+      data = np.zeros([params['batch_size'], 4], dtype=np.float32)
+      return data, data
+
+    est = tfgan.estimator.StarGANEstimator(
+        generator_fn=dummy_generator_fn,
+        discriminator_fn=dummy_discriminator_fn,
+        loss_fn=dummy_loss_fn,
+        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        model_dir=self._model_dir,
+        params={'batch_size': 4})
+
+    est.train(train_input_fn, steps=1)
+
+
 if __name__ == '__main__':
   tf.test.main()
