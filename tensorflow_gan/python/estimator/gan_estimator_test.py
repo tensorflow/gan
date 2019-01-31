@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for TFGAN's estimator.py."""
+"""Tests for TF-GAN's estimator.py."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -30,6 +30,7 @@ import tensorflow as tf
 import tensorflow_gan as tfgan
 
 # Private functions to test.
+from tensorflow_gan.python.estimator.gan_estimator import extract_gan_loss_args_from_params
 from tensorflow_gan.python.estimator.gan_estimator import get_estimator_spec
 from tensorflow_gan.python.estimator.gan_estimator import get_gan_model
 
@@ -412,15 +413,20 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
     self.assertTrue(equal_vals)
 
 
-class GANEstimatorParamsTest(tf.test.TestCase):
+class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
 
   def setUp(self):
+    super(GANEstimatorParamsTest, self).setUp()
     self._model_dir = self.get_temp_dir()
 
   def tearDown(self):
+    super(GANEstimatorParamsTest, self).tearDown()
     tf.summary.FileWriterCache.clear()
 
-  def test_params_used(self):
+  @parameterized.named_parameters(
+      ('mi_penalty', 1.0),
+      ('no_mi_penalty', None))
+  def test_params_used(self, mi_penalty):
     def train_input_fn(params):
       self.assertIn('batch_size', params)
       data = np.zeros([params['batch_size'], 4])
@@ -434,9 +440,25 @@ class GANEstimatorParamsTest(tf.test.TestCase):
         generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
         discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
         model_dir=self._model_dir,
-        params={'batch_size': 4})
+        params={'batch_size': 4,
+                'mutual_information_penalty_weight': mi_penalty})
 
-    est.train(train_input_fn, steps=1)
+    if mi_penalty:
+      with self.assertRaises(ValueError):
+        est.train(train_input_fn, steps=1)
+    else:
+      est.train(train_input_fn, steps=1)
+
+  def test_extract_gan_loss_args_from_params(self):
+    params = {'tensor_pool_fn': 1, 'gradient_penalty_target': 2, 'other': 3}
+    gan_loss_args = extract_gan_loss_args_from_params(params)
+    self.assertEqual(gan_loss_args, {'tensor_pool_fn': 1,
+                                     'gradient_penalty_target': 2})
+
+  def test_extract_gan_loss_args_from_params_forbidden(self):
+    params = {'tensor_pool_fn': 1, 'model': 2}
+    with self.assertRaises(ValueError):
+      extract_gan_loss_args_from_params(params)
 
 
 if __name__ == '__main__':

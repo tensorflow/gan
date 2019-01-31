@@ -157,7 +157,9 @@ class GANEstimator(tf.estimator.Estimator):
       config: `RunConfig` object to configure the runtime settings.
       params: Optional `dict` of hyperparameters.  Will receive what is passed
         to Estimator in `params` parameter. This allows to configure Estimators
-        from hyper parameter tuning.
+        from hyper parameter tuning. If any `params` are args to TF-GAN's
+        `gan_loss`, they will be passed to `gan_loss` during training and
+        evaluation.
       warm_start_from: A filepath to a checkpoint or saved model, or a
         WarmStartSettings object to configure initialization.
       is_chief: Whether or not this Estimator is running on a chief or worker.
@@ -179,7 +181,6 @@ class GANEstimator(tf.estimator.Estimator):
 
     def _model_fn(features, labels, mode, params):
       """GANEstimator model function."""
-      del params
       if mode not in [
           tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL,
           tf.estimator.ModeKeys.PREDICT
@@ -194,10 +195,11 @@ class GANEstimator(tf.estimator.Estimator):
 
       # Make the EstimatorSpec, which incorporates the GANModel, losses, eval
       # metrics, and optimizers (if required).
-      return get_estimator_spec(mode, gan_model, generator_loss_fn,
-                                discriminator_loss_fn, get_eval_metric_ops_fn,
-                                generator_optimizer, discriminator_optimizer,
-                                get_hooks_fn, use_loss_summaries, is_chief)
+      gan_loss_kwargs = extract_gan_loss_args_from_params(params)
+      return get_estimator_spec(
+          mode, gan_model, generator_loss_fn, discriminator_loss_fn,
+          get_eval_metric_ops_fn, generator_optimizer, discriminator_optimizer,
+          gan_loss_kwargs, get_hooks_fn, use_loss_summaries, is_chief)
 
     super(GANEstimator, self).__init__(
         model_fn=_model_fn, model_dir=model_dir, config=config, params=params,
@@ -234,6 +236,7 @@ def get_estimator_spec(mode,
                        get_eval_metric_ops_fn,
                        generator_optimizer,
                        discriminator_optimizer,
+                       gan_loss_kwargs=None,
                        get_hooks_fn=None,
                        use_loss_summaries=True,
                        is_chief=True):
@@ -242,11 +245,13 @@ def get_estimator_spec(mode,
     estimator_spec = tf.estimator.EstimatorSpec(
         mode=mode, predictions=gan_model.generated_data)
   else:
-    gan_loss = tfgan_tuples.GANLoss(
-        generator_loss=generator_loss_fn(
-            gan_model, add_summaries=use_loss_summaries),
-        discriminator_loss=discriminator_loss_fn(
-            gan_model, add_summaries=use_loss_summaries))
+    kwargs = gan_loss_kwargs or {}
+    gan_loss = tfgan_train.gan_loss(
+        gan_model,
+        generator_loss_fn,
+        discriminator_loss_fn,
+        add_summaries=use_loss_summaries,
+        **kwargs)
     if mode == tf.estimator.ModeKeys.EVAL:
       estimator_spec = _get_eval_estimator_spec(
           gan_model, gan_loss, get_eval_metric_ops_fn)
@@ -355,3 +360,20 @@ def _get_train_estimator_spec(
       mode=tf.estimator.ModeKeys.TRAIN,
       train_op=train_ops.global_step_inc_op,
       training_hooks=training_hooks)
+
+
+def extract_gan_loss_args_from_params(params):
+  """Returns a dictionary with values for `gan_loss`."""
+  gan_loss_arg_names = inspect.getargspec(tfgan_train.gan_loss).args
+
+  # Remove args that you can't adjust via params, and fail if they're present.
+  for forbidden_symbol in [
+      'model', 'generator_loss_fn', 'discriminator_loss_fn', 'add_summaries']:
+    gan_loss_arg_names.remove(forbidden_symbol)
+    if forbidden_symbol in params:
+      raise ValueError('`%s` is not allowed in params.')
+
+  gan_loss_args = {k: params[k] for k in gan_loss_arg_names if k in params}
+
+  return gan_loss_args
+
