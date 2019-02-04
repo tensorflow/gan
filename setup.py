@@ -92,7 +92,7 @@ with codecs.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
 setup(
     name=project_name,
     version=version,
-    description=('TF-GAN:A Generative Adversarial Networks Library for '
+    description=('TF-GAN: A Generative Adversarial Networks Library for '
                  'TensorFlow'),
     long_description=long_description,
     author='Joel Shor',
