@@ -39,7 +39,8 @@ class _LossesTest(object):
   def test_generator_all_correct(self):
     loss = self._g_loss_fn(self._discriminator_gen_outputs)
     self.assertEqual(self._discriminator_gen_outputs.dtype, loss.dtype)
-    self.assertEqual(self._generator_loss_name, loss.op.name)
+    # Tests should not depend on op names, as they are subject to change.
+    # self.assertEqual(self._generator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_g_loss, loss.eval(), 5)
 
@@ -47,7 +48,8 @@ class _LossesTest(object):
     loss = self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs)
     self.assertEqual(self._discriminator_gen_outputs.dtype, loss.dtype)
-    self.assertEqual(self._discriminator_loss_name, loss.op.name)
+    # Tests should not depend on op names, as they are subject to change.
+    # self.assertEqual(self._discriminator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
@@ -271,7 +273,8 @@ class ACGANLossTest(tf.test.TestCase):
     loss = self._g_loss_fn(**self._generator_kwargs)
     self.assertEqual(
         self._discriminator_gen_classification_logits.dtype, loss.dtype)
-    self.assertEqual(self._generator_loss_name, loss.op.name)
+    # Tests should not depend on op names, as they are subject to change.
+    # self.assertEqual(self._generator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_g_loss, loss.eval(), 5)
 
@@ -279,7 +282,8 @@ class ACGANLossTest(tf.test.TestCase):
     loss = self._d_loss_fn(**self._discriminator_kwargs)
     self.assertEqual(
         self._discriminator_gen_classification_logits.dtype, loss.dtype)
-    self.assertEqual(self._discriminator_loss_name, loss.op.name)
+    # Tests should not depend on op names, as they are subject to change.
+    # self.assertEqual(self._discriminator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
@@ -391,7 +395,8 @@ class _PenaltyTest(object):
   def test_all_correct(self):
     loss = self._penalty_fn(**self._kwargs)
     self.assertEqual(self._expected_dtype, loss.dtype)
-    self.assertEqual(self._expected_op_name, loss.op.name)
+    # Tests should not depend on op names, as they are subject to change.
+    # self.assertEqual(self._expected_op_name, loss.op.name)
     with self.cached_session():
       tf.global_variables_initializer().run()
       self.assertAlmostEqual(self._expected_loss, loss.eval(), 6)
@@ -686,4 +691,3 @@ class CycleConsistencyLossTest(tf.test.TestCase):
 
 if __name__ == '__main__':
   tf.test.main()
-
