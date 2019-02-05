@@ -441,8 +441,7 @@ class StarGANModelTest(tf.test.TestCase):
         input_data=input_tensor,
         input_data_domain_label=label_tensor)
 
-    with self.test_session(use_gpu=True) as sess:
-
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
 
       input_data, generated_data, reconstructed_data = sess.run(
@@ -471,8 +470,7 @@ class StarGANModelTest(tf.test.TestCase):
         input_data=input_tensor,
         input_data_domain_label=label_tensor)
 
-    with self.test_session(use_gpu=True) as sess:
-
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
 
       disc_input_data_source_pred, disc_gen_data_source_pred = sess.run([
@@ -518,6 +516,8 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     loss = tfgan.gan_loss(get_gan_model_fn(), add_summaries=True)
     self.assertIsInstance(loss, tfgan.GANLoss)
     self.assertNotEmpty(tf.get_collection(tf.GraphKeys.SUMMARIES))
+    self.assertEqual(0, loss.generator_loss.shape.ndims)
+    self.assertEqual(0, loss.discriminator_loss.shape.ndims)
 
   @parameterized.named_parameters(
       ('cyclegan', create_cyclegan_model),
@@ -527,6 +527,10 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     loss = tfgan.cyclegan_loss(get_gan_model_fn(), add_summaries=True)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
     self.assertNotEmpty(tf.get_collection(tf.GraphKeys.SUMMARIES))
+    self.assertEqual(0, loss.loss_x2y.discriminator_loss.shape.ndims)
+    self.assertEqual(0, loss.loss_x2y.generator_loss.shape.ndims)
+    self.assertEqual(0, loss.loss_y2x.discriminator_loss.shape.ndims)
+    self.assertEqual(0, loss.loss_y2x.generator_loss.shape.ndims)
 
   @parameterized.named_parameters(
       ('gan', create_gan_model, False),
@@ -553,7 +557,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIsInstance(loss_gp, tfgan.GANLoss)
 
     # Check values.
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       loss_gen_np, loss_gen_gp_np = sess.run(
           [loss.generator_loss, loss_gp.generator_loss])
@@ -585,7 +589,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     """Test regularization loss."""
     # Evaluate losses without regularization.
     no_reg_loss = tfgan.gan_loss(get_gan_model_fn())
-    with self.test_session(use_gpu=True):
+    with self.cached_session(use_gpu=True):
       no_reg_loss_gen_np = no_reg_loss.generator_loss.eval()
       no_reg_loss_dis_np = no_reg_loss.discriminator_loss.eval()
 
@@ -596,7 +600,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check that losses now include the correct regularization values.
     reg_loss = tfgan.gan_loss(get_gan_model_fn())
-    with self.test_session(use_gpu=True):
+    with self.cached_session(use_gpu=True):
       reg_loss_gen_np = reg_loss.generator_loss.eval()
       reg_loss_dis_np = reg_loss.discriminator_loss.eval()
 
@@ -618,7 +622,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIsInstance(loss_ac_dis, tfgan.GANLoss)
 
     # Check values.
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       loss_gen_np, loss_ac_gen_gen_np, loss_ac_dis_gen_np = sess.run([
           loss.generator_loss, loss_ac_gen.generator_loss,
@@ -646,7 +650,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
 
     # Check values.
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       (loss_x2y_gen_np, loss_x2y_dis_np, loss_y2x_gen_np,
        loss_y2x_dis_np) = sess.run([
@@ -698,7 +702,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIsInstance(loss, tfgan.GANLoss)
 
     # Check values.
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       for _ in range(10):
         sess.run([loss.generator_loss, loss.discriminator_loss])
@@ -751,7 +755,7 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
   def _check_tensor_pool_adjusted_model_outputs(self, tensor1, tensor2,
                                                 pool_size):
     history_values = []
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       for i in range(2 * pool_size):
         t1, t2 = sess.run([tensor1, tensor2])
@@ -889,7 +893,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     train_ops = tfgan.gan_train_ops(
         model, loss, g_opt, d_opt, check_for_unused_update_ops=False, **kwargs)
 
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
       self.assertEqual(0, gen_update_count.eval())
       self.assertEqual(0, dis_update_count.eval())
@@ -941,7 +945,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check that update op is run properly.
     global_step = tf.train.get_or_create_global_step()
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       tf.global_variables_initializer().run()
       tf.local_variables_initializer().run()
 
