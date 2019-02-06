@@ -31,7 +31,11 @@ import tensorflow as tf
 import tensorflow_gan as tfgan
 
 # Private functions to test.
-from tensorflow_gan.python.estimator.tpu_gan_estimator import get_estimator_spec
+from tensorflow_gan.python.estimator.tpu_gan_estimator import get_eval_estimator_spec
+from tensorflow_gan.python.estimator.tpu_gan_estimator import get_predict_estimator_spec
+from tensorflow_gan.python.estimator.tpu_gan_estimator import get_train_estimator_spec
+from tensorflow_gan.python.estimator.tpu_gan_estimator import LossFns
+from tensorflow_gan.python.estimator.tpu_gan_estimator import Optimizers
 
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
@@ -139,43 +143,62 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
         tf.train.GradientDescentOptimizer(1.0))
     cls._discriminator_optimizer = tf.contrib.tpu.CrossShardOptimizer(
         tf.train.GradientDescentOptimizer(1.0))
+    cls._optimizers = Optimizers(cls._generator_optimizer,
+                                 cls._discriminator_optimizer)
+
+    cls._loss_fns = LossFns(tfgan.losses.wasserstein_generator_loss,
+                            tfgan.losses.wasserstein_discriminator_loss)
 
   @parameterized.named_parameters(
-      ('joint_train', tf.estimator.ModeKeys.TRAIN, True),
-      ('train_sequential', tf.estimator.ModeKeys.TRAIN, False),
-      ('eval', tf.estimator.ModeKeys.EVAL, None),
-      ('predict', tf.estimator.ModeKeys.PREDICT, None))
-  def test_get_estimator_spec(self, mode, joint_train):
+      ('joint_train', True),
+      ('train_sequential', False),
+  )
+  def test_get_train_estimator_spec(self, joint_train):
     with tf.Graph().as_default():
-      if mode != tf.estimator.ModeKeys.TRAIN or joint_train:
-        self._gan_models = [get_dummy_gan_model()]
+      if joint_train:
+        gan_models = [get_dummy_gan_model()]
       else:
-        self._gan_models = [get_dummy_gan_model(), get_dummy_gan_model()]
-      spec = get_estimator_spec(
-          mode,
-          self._gan_models,
-          generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
-          discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-          get_eval_metric_ops_fn=get_metrics,
-          generator_optimizer=self._generator_optimizer,
-          discriminator_optimizer=self._discriminator_optimizer,
+        gan_models = [get_dummy_gan_model(), get_dummy_gan_model()]
+      spec = get_train_estimator_spec(
+          gan_models,
+          self._loss_fns,
+          self._optimizers,
           joint_train=joint_train,
           is_on_tpu=flags.FLAGS.use_tpu,
           gan_train_steps=tfgan.GANTrainSteps(1, 1))
 
     self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
-    self.assertEqual(mode, spec.mode)
-    if mode == tf.estimator.ModeKeys.PREDICT:
-      self.assertEqual({'generated_data': self._gan_models[0].generated_data},
-                       spec.predictions)
-    elif mode == tf.estimator.ModeKeys.TRAIN:
-      self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
-      self.assertIsNotNone(spec.train_op)
-      self.assertIsNotNone(spec.training_hooks)
-    elif mode == tf.estimator.ModeKeys.EVAL:
-      self.assertEqual(self._gan_models[0].generated_data, spec.predictions)
-      self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
-      self.assertIsNotNone(spec.eval_metrics)
+    self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
+
+    self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
+    self.assertIsNotNone(spec.train_op)
+    self.assertIsNotNone(spec.training_hooks)
+
+  def test_get_eval_estimator_spec(self):
+    with tf.Graph().as_default():
+      gan_models = [get_dummy_gan_model()]
+      spec = get_eval_estimator_spec(
+          gan_models,
+          self._loss_fns,
+          get_eval_metric_ops_fn=get_metrics,
+          is_on_tpu=flags.FLAGS.use_tpu)
+
+    self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
+    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+
+    self.assertEqual(gan_models[0].generated_data, spec.predictions)
+    self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
+    self.assertIsNotNone(spec.eval_metrics)
+
+  def test_get_predict_estimator_spec(self):
+    with tf.Graph().as_default():
+      gan_models = [get_dummy_gan_model()]
+      spec = get_predict_estimator_spec(gan_models)
+
+    self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
+    self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
+    self.assertEqual({'generated_data': gan_models[0].generated_data},
+                     spec.predictions)
 
 
 class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):

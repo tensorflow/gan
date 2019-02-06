@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import functools
 import inspect
 
@@ -33,6 +34,9 @@ from tensorflow_gan.python.estimator import gan_estimator
 __all__ = [
     'TPUGANEstimator',
 ]
+
+LossFns = collections.namedtuple('_loss_fns', ['g_loss_fn', 'd_loss_fn'])
+Optimizers = collections.namedtuple('Optimizers', ['gopt', 'dopt'])
 
 
 class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
@@ -201,29 +205,15 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
         tuple.
       ValueError: If `gan_train_steps` isn't 1:1 training.
     """
-    if not callable(generator_loss_fn):
-      raise ValueError('generator_loss_fn must be callable.')
-    if not callable(discriminator_loss_fn):
-      raise ValueError('discriminator_loss_fn must be callable.')
-    if not isinstance(gan_train_steps, tfgan_tuples.GANTrainSteps):
-      raise ValueError(
-          '`gan_train_steps` must be `tfgan_tuples.GANTrainSteps`. Instead, '
-          'was type: %s' % type(gan_train_steps))
+    _validate_input_args(
+        generator_loss_fn, discriminator_loss_fn, gan_train_steps)
+    loss_fns = LossFns(generator_loss_fn, discriminator_loss_fn)
+    optimizers = Optimizers(generator_optimizer, discriminator_optimizer)
 
-    if joint_train:
-      required_train_models = max(gan_train_steps.generator_train_steps,
-                                  gan_train_steps.discriminator_train_steps)
-    else:
-      required_train_models = (
-          gan_train_steps.generator_train_steps +
-          gan_train_steps.discriminator_train_steps)
+    # Determine the number of GAN models required to create in order to train
+    # in different D:G ratios on TPU.
+    required_train_models = _required_train_models(gan_train_steps, joint_train)
     effective_train_batch_size = required_train_models * train_batch_size
-
-    if use_tpu:
-      generator_optimizer = _maybe_make_cross_shard_optimizer(
-          generator_optimizer)
-      discriminator_optimizer = _maybe_make_cross_shard_optimizer(
-          discriminator_optimizer)
 
     def _model_fn(features, labels, mode, params):
       """GANEstimator model function."""
@@ -249,13 +239,19 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
           num_train_models=required_train_models,
           add_summaries=None if is_on_tpu else add_summaries)
 
-      # Make the TPUEstimatorSpec, which incorporates the GANModel, losses, eval
+      # Make the TPUEstimatorSpec, which incorporates the model, losses, eval
       # metrics, and optimizers (if required).
-      estimator_spec = get_estimator_spec(
-          mode, gan_models, generator_loss_fn, discriminator_loss_fn,
-          get_eval_metric_ops_fn, generator_optimizer, discriminator_optimizer,
-          joint_train, is_on_tpu, gan_train_steps)
+      if mode == tf.estimator.ModeKeys.TRAIN:
+        estimator_spec = get_train_estimator_spec(
+            gan_models, loss_fns, optimizers, joint_train, is_on_tpu,
+            gan_train_steps)
+      elif mode == tf.estimator.ModeKeys.EVAL:
+        estimator_spec = get_eval_estimator_spec(
+            gan_models, loss_fns, is_on_tpu, get_eval_metric_ops_fn)
+      else:  # predict
+        estimator_spec = get_predict_estimator_spec(gan_models)
       assert isinstance(estimator_spec, tf.contrib.tpu.TPUEstimatorSpec)
+
       return estimator_spec
 
     super(TPUGANEstimator, self).__init__(
@@ -271,6 +267,28 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
         eval_on_tpu=eval_on_tpu,
         export_to_tpu=export_to_tpu,
         warm_start_from=warm_start_from)
+
+
+def _validate_input_args(generator_loss_fn, discriminator_loss_fn,
+                         gan_train_steps):
+  if not callable(generator_loss_fn):
+    raise ValueError('generator_loss_fn must be callable.')
+  if not callable(discriminator_loss_fn):
+    raise ValueError('discriminator_loss_fn must be callable.')
+  if not isinstance(gan_train_steps, tfgan_tuples.GANTrainSteps):
+    raise ValueError(
+        '`gan_train_steps` must be `tfgan_tuples.GANTrainSteps`. Instead, '
+        'was type: %s' % type(gan_train_steps))
+
+
+def _required_train_models(gan_train_steps, joint_train):
+  """Returns the required number of train models to create."""
+  if joint_train:
+    return max(gan_train_steps.generator_train_steps,
+               gan_train_steps.discriminator_train_steps)
+  else:
+    return (gan_train_steps.generator_train_steps +
+            gan_train_steps.discriminator_train_steps)
 
 
 def _get_gan_models(mode,
@@ -366,103 +384,86 @@ def _is_on_tpu(mode, use_tpu, eval_on_tpu):
     return False
 
 
-def get_estimator_spec(mode, gan_models, generator_loss_fn,
-                       discriminator_loss_fn, get_eval_metric_ops_fn,
-                       generator_optimizer, discriminator_optimizer,
-                       joint_train, is_on_tpu, gan_train_steps):
-  """Get the TPUEstimatorSpec for the current mode."""
-  if mode != tf.estimator.ModeKeys.TRAIN and len(gan_models) > 1:
-    raise ValueError('`gan_models` must be length 1 in eval and predict mode. '
-                     'Got length %d' % len(gan_models))
+def get_train_estimator_spec(
+    gan_models, loss_fns, optimizers, joint_train, is_on_tpu, gan_train_steps):
+  """Estimator spec for train case."""
+  gan_losses = _get_losses_for_train(gan_models, loss_fns, is_on_tpu)
 
-  gan_model = gan_models[0]  # Only one model for eval and predict.
-  if mode == tf.estimator.ModeKeys.PREDICT:
-    estimator_spec = tf.contrib.tpu.TPUEstimatorSpec(
-        mode=mode, predictions={'generated_data': gan_model.generated_data})
-  elif mode == tf.estimator.ModeKeys.EVAL:
-    gan_loss = tfgan_tuples.GANLoss(
-        generator_loss=generator_loss_fn(
-            gan_model, add_summaries=not is_on_tpu),
-        discriminator_loss=discriminator_loss_fn(
-            gan_model, add_summaries=not is_on_tpu))
-    # Eval losses for metrics must preserve batch dimension.
-    gan_loss_no_reduction = tfgan_tuples.GANLoss(
-        generator_loss=generator_loss_fn(
-            gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE),
-        discriminator_loss=discriminator_loss_fn(
-            gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE))
-    estimator_spec = _get_eval_estimator_spec(
-        gan_model, gan_loss, gan_loss_no_reduction, get_eval_metric_ops_fn)
-  else:  # tf.estimator.ModeKeys.TRAIN:
-    gan_losses = []
-    for gan_model in gan_models:
-      gan_losses.append(
-          tfgan_tuples.GANLoss(
-              generator_loss=generator_loss_fn(
-                  gan_model, add_summaries=not is_on_tpu),
-              discriminator_loss=discriminator_loss_fn(
-                  gan_model, add_summaries=not is_on_tpu)))
+  # Construct optimizers if arguments are callable. This has to be done inside
+  # the model_fn, since constructable optimizers might create tf.Variables that
+  # need to be added to the current tf.Graph.
+  optimizers = _maybe_construct_optimizers(optimizers)
+  if is_on_tpu:
+    optimizers = _maybe_make_cross_shard_optimizers(optimizers)
 
-    # Construct optimizers if arguments were callable. For TPUs, they must be
-    # `CrossShardOptimizer`.
-    g_callable = callable(generator_optimizer)
-    gopt = generator_optimizer() if g_callable  else generator_optimizer
-    d_callable = callable(discriminator_optimizer)
-    dopt = discriminator_optimizer() if d_callable else discriminator_optimizer
+  scalar_loss = (
+      gan_losses[-1].generator_loss + gan_losses[-1].discriminator_loss)
+  tpu_train_op = _get_train_op(
+      gan_models, gan_losses, optimizers, joint_train, gan_train_steps)
 
-    estimator_spec = _get_train_estimator_spec(
-        gan_models, gan_losses, gopt, dopt, joint_train, gan_train_steps)
-
-  return estimator_spec
+  return tf.contrib.tpu.TPUEstimatorSpec(
+      mode=tf.estimator.ModeKeys.TRAIN, loss=scalar_loss, train_op=tpu_train_op)
 
 
-def _get_eval_estimator_spec(gan_model, gan_loss, gan_loss_no_reduction,
-                             get_eval_metric_ops_fn):
-  """Return an TPUEstimatorSpec for the eval case."""
+def get_eval_estimator_spec(gan_models, loss_fns, is_on_tpu,
+                            get_eval_metric_ops_fn):
+  """Estimator spec for eval case."""
+  if len(gan_models) > 1:
+    raise ValueError('`gan_models` must be length 1 in eval mode. Got length %d'
+                     % len(gan_models))
+  gan_model = gan_models[0]
+
+  gan_loss = tfgan_tuples.GANLoss(
+      generator_loss=loss_fns.g_loss_fn(
+          gan_model, add_summaries=not is_on_tpu),
+      discriminator_loss=loss_fns.d_loss_fn(
+          gan_model, add_summaries=not is_on_tpu))
+
+  # Eval losses for metrics must preserve batch dimension.
+  gan_loss_no_reduction = tfgan_tuples.GANLoss(
+      generator_loss=loss_fns.g_loss_fn(
+          gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE),
+      discriminator_loss=loss_fns.d_loss_fn(
+          gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE))
+
   # Make the metric function and tensor names.
   if get_eval_metric_ops_fn is not None:
-    def metric_fn(
-        generator_inputs, generated_data, real_data, discriminator_real_outputs,
-        discriminator_gen_outputs, generator_loss, discriminator_loss):
-      """`metric_fn` used in TPUEstimator to calculate metrics."""
-      eval_metric_ops = {
-          'generator_loss': tf.metrics.mean(generator_loss),
-          'discriminator_loss': tf.metrics.mean(discriminator_loss),
-      }
-      custom_eval_metric_ops = get_eval_metric_ops_fn(
-          generator_inputs, generated_data, real_data,
-          discriminator_real_outputs, discriminator_gen_outputs)
-      if not isinstance(custom_eval_metric_ops, dict):
-        raise TypeError('`get_eval_metric_ops_fn` must return a dict, '
-                        'received: {}'.format(custom_eval_metric_ops))
-      eval_metric_ops.update(custom_eval_metric_ops)
-      return eval_metric_ops
-    tensors = {
-        'generator_loss': gan_loss_no_reduction.generator_loss,
-        'discriminator_loss': gan_loss_no_reduction.discriminator_loss,
-        'generator_inputs': gan_model.generator_inputs,
-        'generated_data': gan_model.generated_data,
-        'real_data': gan_model.real_data,
-        'discriminator_real_outputs': gan_model.discriminator_real_outputs,
-        'discriminator_gen_outputs': gan_model.discriminator_gen_outputs,
-    }
+    metric_fn = _make_custom_metric_fn(get_eval_metric_ops_fn)
+    tensors_for_metric_fn = _make_custom_metric_tensors(
+        gan_model, gan_loss_no_reduction)
   else:
-    def metric_fn(generator_loss, discriminator_loss):
-      return {
-          'generator_loss': tf.metrics.mean(generator_loss),
-          'discriminator_loss': tf.metrics.mean(discriminator_loss),
-      }
-    tensors = {
-        'generator_loss': gan_loss_no_reduction.generator_loss,
-        'discriminator_loss': gan_loss_no_reduction.discriminator_loss,
-    }
+    metric_fn = _make_default_metric_fn()
+    tensors_for_metric_fn = _make_default_metric_tensors(gan_loss_no_reduction)
 
   scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=gan_model.generated_data,
       loss=scalar_loss,
-      eval_metrics=(metric_fn, tensors))
+      eval_metrics=(metric_fn, tensors_for_metric_fn))
+
+
+def get_predict_estimator_spec(gan_models):
+  if len(gan_models) > 1:
+    raise ValueError('`gan_models` must be length 1 in predict mode. Got '
+                     'length %d' % len(gan_models))
+  gan_model = gan_models[0]
+
+  return tf.contrib.tpu.TPUEstimatorSpec(
+      mode=tf.estimator.ModeKeys.PREDICT,
+      predictions={'generated_data': gan_model.generated_data})
+
+
+def _get_losses_for_train(gan_models, loss_fns, is_on_tpu):
+  gan_losses = []
+  for gan_model in gan_models:
+    gan_losses.append(
+        tfgan_tuples.GANLoss(
+            generator_loss=loss_fns.g_loss_fn(
+                gan_model, add_summaries=not is_on_tpu),
+            discriminator_loss=loss_fns.d_loss_fn(
+                gan_model, add_summaries=not is_on_tpu)))
+  return gan_losses
 
 
 def _get_train_estimator_spec(gan_models, gan_losses, generator_optimizer,
@@ -537,6 +538,80 @@ def _get_train_estimator_spec(gan_models, gan_losses, generator_optimizer,
       loss=scalar_loss, mode=tf.estimator.ModeKeys.TRAIN, train_op=tpu_train_op)
 
 
+def _get_train_op(gan_models, gan_losses, optimizers, joint_train,
+                  gan_train_steps):
+  """Return a train op for TPU training."""
+  def update_ops(substep):
+    """Get generator and discriminator update ops for a single training substep.
+
+    We split up the generator and discriminator update ops so that they aren't
+    accidentally run multiple times. For now, throw an error if there are update
+    ops that aren't associated with either the generator or the discriminator.
+    Might modify the `kwargs` dictionary.
+
+    Args:
+      substep: An integer index into the substeps of a single global step, made
+        up of the joint training, discriminator-only training and generator-only
+        training steps.
+
+    Returns:
+       A tuple of lists corresponding to
+       (generator_update_ops, discriminator_update_ops).
+    """
+    return tfgan_train._get_update_ops(  # pylint:disable=protected-access
+        {}, gan_models[substep].generator_scope.name,
+        gan_models[substep].discriminator_scope.name)
+
+  def gen_train_op(substep):
+    """Get the generator train op for a single training substep.
+
+    Args:
+      substep: An integer index into the substeps of a single global step, made
+        up of the joint training, discriminator-only training and generator-only
+        training steps.
+
+    Returns:
+      An Op that performs a single generator training substep.
+    """
+    with tf.name_scope('generator_train'):
+      return contrib.create_train_op(
+          total_loss=gan_losses[substep].generator_loss,
+          optimizer=optimizers.gopt,
+          variables_to_train=gan_models[substep].generator_variables,
+          update_ops=update_ops(substep)[0])
+
+  def dis_train_op(substep):
+    """Get the discriminator train op for a single training substep.
+
+    Args:
+      substep: An integer index into the substeps of a single global step, made
+        up of the joint training, discriminator-only training and generator-only
+        training steps.
+
+    Returns:
+      An Op that performs a single discriminator training substep.
+    """
+    with tf.name_scope('discriminator_train'):
+      return contrib.create_train_op(
+          total_loss=gan_losses[substep].discriminator_loss,
+          optimizer=optimizers.dopt,
+          variables_to_train=gan_models[substep].discriminator_variables,
+          update_ops=update_ops(substep)[1])
+
+  # Either optimize the generator and discriminator sequentially or jointly.
+  return _combine_train_ops(gen_train_op, dis_train_op, joint_train,
+                            gan_train_steps)
+
+
+def _maybe_construct_optimizers(optimizers):
+  g_callable = callable(optimizers.gopt)
+  gopt = optimizers.gopt() if g_callable  else optimizers.gopt
+  d_callable = callable(optimizers.dopt)
+  dopt = optimizers.dopt() if d_callable else optimizers.dopt
+
+  return Optimizers(gopt, dopt)
+
+
 def _combine_train_ops(gen_train_op, dis_train_op, joint_train,
                        gan_train_steps):
   """Combine generator and discriminator train ops into a single op."""
@@ -563,10 +638,66 @@ def _combine_train_ops(gen_train_op, dis_train_op, joint_train,
   return prev_op
 
 
-def _maybe_make_cross_shard_optimizer(opt):
-  if callable(opt):
-    if not isinstance(opt(), tf.contrib.tpu.CrossShardOptimizer):
-      return lambda: tf.contrib.tpu.CrossShardOptimizer(opt())
-  elif not isinstance(opt, tf.contrib.tpu.CrossShardOptimizer):
-    return tf.contrib.tpu.CrossShardOptimizer(opt)
-  return opt
+def _maybe_make_cross_shard_optimizers(optimizers):
+  def _maybe_make_cross_shard_optimizer(opt):
+    assert not callable(optimizers.gopt)
+    if not isinstance(opt, tf.contrib.tpu.CrossShardOptimizer):
+      return tf.contrib.tpu.CrossShardOptimizer(opt)
+    else:
+      return opt
+
+  return Optimizers(_maybe_make_cross_shard_optimizer(optimizers.gopt),
+                    _maybe_make_cross_shard_optimizer(optimizers.dopt))
+
+
+def _make_custom_metric_fn(get_eval_metric_ops_fn):
+  """Returns a custom metric function that uses `get_eval_metric_ops_fn`."""
+  assert get_eval_metric_ops_fn is not None
+
+  def metric_fn(
+      generator_inputs, generated_data, real_data, discriminator_real_outputs,
+      discriminator_gen_outputs, generator_loss, discriminator_loss):
+    """`metric_fn` used in TPUEstimator to calculate metrics."""
+    # Start with the default metrics, then add custom ones.
+    eval_metric_ops = _make_default_metric_fn()(
+        generator_loss, discriminator_loss)
+
+    custom_eval_metric_ops = get_eval_metric_ops_fn(
+        generator_inputs, generated_data, real_data,
+        discriminator_real_outputs, discriminator_gen_outputs)
+    if not isinstance(custom_eval_metric_ops, dict):
+      raise TypeError('`get_eval_metric_ops_fn` must return a dict, '
+                      'received: {}'.format(custom_eval_metric_ops))
+    eval_metric_ops.update(custom_eval_metric_ops)
+    return eval_metric_ops
+
+  return metric_fn
+
+
+def _make_custom_metric_tensors(gan_model, gan_loss_no_reduction):
+  return {
+      'generator_loss': gan_loss_no_reduction.generator_loss,
+      'discriminator_loss': gan_loss_no_reduction.discriminator_loss,
+      'generator_inputs': gan_model.generator_inputs,
+      'generated_data': gan_model.generated_data,
+      'real_data': gan_model.real_data,
+      'discriminator_real_outputs': gan_model.discriminator_real_outputs,
+      'discriminator_gen_outputs': gan_model.discriminator_gen_outputs,
+  }
+
+
+def _make_default_metric_fn():
+  """Returns the default metric function."""
+  def metric_fn(generator_loss, discriminator_loss):
+    return {
+        'generator_loss': tf.metrics.mean(generator_loss),
+        'discriminator_loss': tf.metrics.mean(discriminator_loss),
+    }
+  return metric_fn
+
+
+def _make_default_metric_tensors(gan_loss_no_reduction):
+  return {
+      'generator_loss': gan_loss_no_reduction.generator_loss,
+      'discriminator_loss': gan_loss_no_reduction.discriminator_loss,
+  }
