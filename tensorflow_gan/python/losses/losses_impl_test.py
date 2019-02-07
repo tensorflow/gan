@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2018 The TensorFlow GAN Authors.
+# Copyright 2019 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,8 +39,6 @@ class _LossesTest(object):
   def test_generator_all_correct(self):
     loss = self._g_loss_fn(self._discriminator_gen_outputs)
     self.assertEqual(self._discriminator_gen_outputs.dtype, loss.dtype)
-    # Tests should not depend on op names, as they are subject to change.
-    # self.assertEqual(self._generator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_g_loss, loss.eval(), 5)
 
@@ -48,8 +46,6 @@ class _LossesTest(object):
     loss = self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs)
     self.assertEqual(self._discriminator_gen_outputs.dtype, loss.dtype)
-    # Tests should not depend on op names, as they are subject to change.
-    # self.assertEqual(self._discriminator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
@@ -176,8 +172,6 @@ class LeastSquaresLossTest(tf.test.TestCase, _LossesTest):
     self.init_constants()
     self._expected_g_loss = 17.69625
     self._expected_d_loss = 41.73375
-    self._generator_loss_name = 'lsq_generator_loss/value'
-    self._discriminator_loss_name = 'lsq_discriminator_loss/add'
     self._g_loss_fn = tfgan.losses.wargs.least_squares_generator_loss
     self._d_loss_fn = tfgan.losses.wargs.least_squares_discriminator_loss
 
@@ -190,8 +184,6 @@ class ModifiedLossTest(tf.test.TestCase, _LossesTest):
     self.init_constants()
     self._expected_g_loss = 1.38582
     self._expected_d_loss = 6.19637
-    self._generator_loss_name = 'generator_modified_loss/value'
-    self._discriminator_loss_name = 'discriminator_modified_loss/add_1'
     self._g_loss_fn = tfgan.losses.wargs.modified_generator_loss
     self._d_loss_fn = tfgan.losses.wargs.modified_discriminator_loss
 
@@ -204,8 +196,6 @@ class MinimaxLossTest(tf.test.TestCase, _LossesTest):
     self.init_constants()
     self._expected_g_loss = -4.82408
     self._expected_d_loss = 6.19637
-    self._generator_loss_name = 'generator_minimax_loss/Neg'
-    self._discriminator_loss_name = 'discriminator_minimax_loss/add_1'
     self._g_loss_fn = tfgan.losses.wargs.minimax_generator_loss
     self._d_loss_fn = tfgan.losses.wargs.minimax_discriminator_loss
 
@@ -218,8 +208,6 @@ class WassersteinLossTest(tf.test.TestCase, _LossesTest):
     self.init_constants()
     self._expected_g_loss = -3.12500
     self._expected_d_loss = 0.22500
-    self._generator_loss_name = 'generator_wasserstein_loss/value'
-    self._discriminator_loss_name = 'discriminator_wasserstein_loss/sub'
     self._g_loss_fn = tfgan.losses.wargs.wasserstein_generator_loss
     self._d_loss_fn = tfgan.losses.wargs.wasserstein_discriminator_loss
 
@@ -264,8 +252,6 @@ class ACGANLossTest(tf.test.TestCase):
         self._discriminator_real_classification_logits,
         'one_hot_labels': self._one_hot_labels,
     }
-    self._generator_loss_name = 'acgan_generator_loss/value'
-    self._discriminator_loss_name = 'acgan_discriminator_loss/add'
     self._expected_g_loss = 3.84974
     self._expected_d_loss = 9.43950
 
@@ -273,8 +259,6 @@ class ACGANLossTest(tf.test.TestCase):
     loss = self._g_loss_fn(**self._generator_kwargs)
     self.assertEqual(
         self._discriminator_gen_classification_logits.dtype, loss.dtype)
-    # Tests should not depend on op names, as they are subject to change.
-    # self.assertEqual(self._generator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_g_loss, loss.eval(), 5)
 
@@ -282,8 +266,6 @@ class ACGANLossTest(tf.test.TestCase):
     loss = self._d_loss_fn(**self._discriminator_kwargs)
     self.assertEqual(
         self._discriminator_gen_classification_logits.dtype, loss.dtype)
-    # Tests should not depend on op names, as they are subject to change.
-    # self.assertEqual(self._discriminator_loss_name, loss.op.name)
     with self.cached_session():
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
