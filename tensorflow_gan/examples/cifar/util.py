@@ -21,7 +21,7 @@ from __future__ import print_function
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
-import tensorflow_gan.google as tfgan
+import tensorflow_gan as tfgan  # tf
 
 
 def get_generator_conditioning(batch_size, num_classes):

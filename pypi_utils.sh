@@ -7,6 +7,10 @@ make_virtual_env() {
   local venv_dir=$2
   echo "make_virtual_env ${py_version} ${venv_dir}"
 
+  # TODO(joelshor): Check that virtualenv exists and, if not, install it.
+  # Probably check using something like `which virtualenv`, and install
+  # using something like `sudo apt-get install virtualenv`.
+
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
   # virtualenv directory to use it; we just need to source bin/activate into the
@@ -47,7 +51,7 @@ run_unittests_tests() {
   # Run the tests.
   python setup.py test
 
-  # Deactivate virtualenv
+  # Deactivate virtualenv.
   deactivate
 }
 
@@ -77,7 +81,7 @@ test_build_and_install_whl() {
   # installed wheel and not to the local fs.
   (cd $(mktemp -d) && python -c 'import tensorflow_gan')
 
-  # Deactivate virtualenv
+  # Deactivate virtualenv.
   deactivate
 }
 
