@@ -43,7 +43,7 @@ def dummy_generator_fn(input_data, input_data_domain_label, mode):
 def dummy_discriminator_fn(input_data, num_domains, mode):
   del mode
 
-  hidden = tf.contrib.layers.flatten(input_data)
+  hidden = tf.layers.flatten(input_data)
   output_src = tf.reduce_mean(hidden, axis=1)
   output_cls = tf.contrib.layers.fully_connected(
       inputs=hidden, num_outputs=num_domains, scope='debug')

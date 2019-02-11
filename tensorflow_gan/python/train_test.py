@@ -109,7 +109,7 @@ class StarGANGenerator(object):
 def stargan_discriminator_model(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
 
-  hidden = tf.contrib.layers.flatten(inputs)
+  hidden = tf.layers.flatten(inputs)
 
   output_src = tf.reduce_mean(hidden, axis=1)
 

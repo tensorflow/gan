@@ -261,10 +261,10 @@ def run_inception(images,
   if isinstance(activations, list):
     for i, activation in enumerate(activations):
       if tf.rank(activation) != 2:
-        activations[i] = tf.contrib.layers.flatten(activation)
+        activations[i] = tf.layers.flatten(activation)
   else:
     if tf.rank(activations) != 2:
-      activations = tf.contrib.layers.flatten(activations)
+      activations = tf.layers.flatten(activations)
 
   return activations
 

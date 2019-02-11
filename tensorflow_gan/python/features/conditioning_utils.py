@@ -67,7 +67,7 @@ def condition_tensor(tensor, conditioning):
                      % conditioning.shape)
 
   mapped_conditioning = tf.contrib.layers.linear(
-      tf.contrib.layers.flatten(conditioning), num_features)
+      tf.layers.flatten(conditioning), num_features)
   if not mapped_conditioning.shape.is_compatible_with(tensor.shape):
     mapped_conditioning = tf.reshape(mapped_conditioning, _get_shape(tensor))
   return tensor + mapped_conditioning

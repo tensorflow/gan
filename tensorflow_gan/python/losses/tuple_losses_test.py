@@ -191,7 +191,7 @@ class StarGANLossWrapperTest(tf.test.TestCase):
 
     def _discriminator_fn(inputs, num_domains):
       """Differentiable dummy discriminator for StarGAN."""
-      hidden = tf.contrib.layers.flatten(inputs)
+      hidden = tf.layers.flatten(inputs)
       output_src = tf.reduce_mean(hidden, axis=1)
       output_cls = tf.contrib.layers.fully_connected(
           inputs=hidden,
