@@ -96,7 +96,7 @@ def generator_fn(noise, mode):
   del mode
   # TODO(joelshor): Use `tf.compat.dimension_value` when I figure out how to
   # use it in open source.
-  return tf.contrib.layers.fully_connected(noise, noise.shape[1].value)
+  return tf.layers.dense(noise, noise.shape[1].value)
 
 
 def discriminator_fn(data, unused_conditioning, mode):
