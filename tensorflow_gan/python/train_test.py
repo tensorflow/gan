@@ -525,6 +525,41 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(0, loss.loss_y2x.generator_loss.shape.ndims)
 
   @parameterized.named_parameters(
+      ('infogan', get_infogan_model,
+       {'mutual_information_penalty_weight': 1.0}),
+      ('acgan', get_acgan_model,
+       {'aux_cond_generator_weight': 1.0,
+        'aux_cond_discriminator_weight': 1.0}),
+  )
+  def test_reduction(self, get_gan_model_fn, kwargs):
+    loss = tfgan.gan_loss(get_gan_model_fn(),
+                          reduction=tf.losses.Reduction.NONE, **kwargs)
+    self.assertIsInstance(loss, tfgan.GANLoss)
+    self.assertEqual(3, loss.generator_loss.shape.ndims)
+    self.assertEqual(3, loss.discriminator_loss.shape.ndims)
+
+  def test_reduction_cyclegan(self):
+    loss = tfgan.cyclegan_loss(create_cyclegan_model(),
+                               reduction=tf.losses.Reduction.NONE)
+    self.assertIsInstance(loss, tfgan.CycleGANLoss)
+    self.assertEqual(2, loss.loss_x2y.discriminator_loss.shape.ndims)
+    self.assertEqual(2, loss.loss_x2y.generator_loss.shape.ndims)
+    self.assertEqual(2, loss.loss_y2x.discriminator_loss.shape.ndims)
+    self.assertEqual(2, loss.loss_y2x.generator_loss.shape.ndims)
+
+  def test_no_reduction_or_add_summaries_loss(self):
+    def loss_fn(_):
+      return 0
+    tfgan.gan_loss(get_gan_model(), loss_fn, loss_fn)
+
+  def test_args_passed_in_correctly(self):
+    def loss_fn(gan_model, add_summaries):
+      del gan_model
+      self.assertFalse(add_summaries)
+      return 0
+    tfgan.gan_loss(get_gan_model(), loss_fn, loss_fn, add_summaries=False)
+
+  @parameterized.named_parameters(
       ('gan', create_gan_model, False),
       ('gan_one_sided', create_gan_model, True),
       ('callable_gan', create_callable_gan_model, False),

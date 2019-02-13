@@ -31,6 +31,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import inspect
 import os
 import time
 
@@ -569,15 +570,20 @@ def gan_loss(
     aux_cond_discriminator_weight=None,
     tensor_pool_fn=None,
     # Options.
+    reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=True):
   """Returns losses necessary to train generator and discriminator.
 
   Args:
     model: A GANModel tuple.
     generator_loss_fn: The loss function on the generator. Takes a GANModel
-      tuple.
+      tuple. If it also takes `reduction` or `add_summaries`, it will be
+      passed those values as well. All TF-GAN loss functions have these
+      arguments.
     discriminator_loss_fn: The loss function on the discriminator. Takes a
-      GANModel tuple.
+      GANModel tuple. If it also takes `reduction` or `add_summaries`, it will
+      be passed those values as well. All TF-GAN loss functions have these
+      arguments.
     gradient_penalty_weight: If not `None`, must be a non-negative Python number
       or Tensor indicating how much to weight the gradient penalty. See
       https://arxiv.org/pdf/1704.00028.pdf for more details.
@@ -602,6 +608,8 @@ def gan_loss(
       stores them in an internal pool and returns previous stored
       (generated_data, generator_inputs). For example
       `tf.gan.features.tensor_pool`. Defaults to None (not using tensor pool).
+    reduction: A `tf.losses.Reduction` to apply to loss, if the loss takes an
+      argument called `reduction`. Otherwise, this is ignored.
     add_summaries: Whether or not to add summaries for the losses.
 
   Returns:
@@ -645,9 +653,23 @@ def gan_loss(
   else:
     pooled_model = model
 
-  # Create standard losses.
-  gen_loss = generator_loss_fn(model, add_summaries=add_summaries)
-  dis_loss = discriminator_loss_fn(pooled_model, add_summaries=add_summaries)
+  # Create standard losses with optional kwargs, if the loss functions accept
+  # them.
+  def _optional_kwargs(fn, possible_kwargs):
+    """Returns a kwargs dictionary of valid kwargs for a given function."""
+    if inspect.getargspec(fn).keywords is not None:
+      return possible_kwargs
+    actual_args = inspect.getargspec(fn).args
+    actual_kwargs = {}
+    for k, v in possible_kwargs.items():
+      if k in actual_args:
+        actual_kwargs[k] = v
+    return actual_kwargs
+  possible_kwargs = {'reduction': reduction, 'add_summaries': add_summaries}
+  gen_loss = generator_loss_fn(
+      model, **_optional_kwargs(generator_loss_fn, possible_kwargs))
+  dis_loss = discriminator_loss_fn(
+      pooled_model, **_optional_kwargs(discriminator_loss_fn, possible_kwargs))
 
   # Add optional extra losses.
   if _use_aux_loss(gradient_penalty_weight):
@@ -656,25 +678,26 @@ def gan_loss(
         epsilon=gradient_penalty_epsilon,
         target=gradient_penalty_target,
         one_sided=gradient_penalty_one_sided,
+        reduction=reduction,
         add_summaries=add_summaries)
     dis_loss += gradient_penalty_weight * gp_loss
   if _use_aux_loss(mutual_information_penalty_weight):
     gen_info_loss = tuple_losses.mutual_information_penalty(
-        model, add_summaries=add_summaries)
+        model, reduction=reduction, add_summaries=add_summaries)
     if tensor_pool_fn is None:
       dis_info_loss = gen_info_loss
     else:
       dis_info_loss = tuple_losses.mutual_information_penalty(
-          pooled_model, add_summaries=add_summaries)
+          pooled_model, reduction=reduction, add_summaries=add_summaries)
     gen_loss += mutual_information_penalty_weight * gen_info_loss
     dis_loss += mutual_information_penalty_weight * dis_info_loss
   if _use_aux_loss(aux_cond_generator_weight):
     ac_gen_loss = tuple_losses.acgan_generator_loss(
-        model, add_summaries=add_summaries)
+        model, reduction=reduction, add_summaries=add_summaries)
     gen_loss += aux_cond_generator_weight * ac_gen_loss
   if _use_aux_loss(aux_cond_discriminator_weight):
     ac_disc_loss = tuple_losses.acgan_discriminator_loss(
-        pooled_model, add_summaries=add_summaries)
+        pooled_model, reduction=reduction, add_summaries=add_summaries)
     dis_loss += aux_cond_discriminator_weight * ac_disc_loss
   # Gathers auxiliary losses.
   if model.generator_scope:
