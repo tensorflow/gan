@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
 import shutil
 import tempfile
 
@@ -47,14 +48,49 @@ class TestOptimizerWrapper(tf.train.Optimizer):
   and this class will keep track of which steps executed on the real optimizer
   were executed by which instance of the wrapper class. This is useful for
   testing that the order of generator and discriminator steps is as desired.
+
+  This optimizer also has an assertion that two consecutive substeps do not
+  generate the same loss. This is meant for the toy case where every substep
+  uses the same input data. If the assertion fails it implies that the weights
+  for the second step were read before the updates from the first step were
+  applied (or the training has converged, which is unlikely in a test scenario).
   """
 
   def __init__(self, opt, name):
     super(TestOptimizerWrapper, self).__init__(use_locking=False, name=name)
     self._opt = opt
+    self._first_call = True
+    self._name = name
 
-  def compute_gradients(self, *args, **kwargs):
-    return self._opt.compute_gradients(*args, **kwargs)
+  def compute_gradients(self, loss, var_list, *args, **kwargs):
+    # Ensure that we don't get the same loss twice in a row. If we get this it
+    # implies that the previous weight updates have not been applied before the
+    # loss was computed.
+    if self._first_call:
+      self._create_non_slot_variable(
+          initial_value=0.0, name='last_loss', colocate_with=var_list[0])
+
+    graph = None if tf.executing_eagerly() else tf.get_default_graph()
+    last_loss = self._get_non_slot_variable('last_loss', graph=graph)
+
+    if self._first_call:
+      assert_op = tf.no_op()
+    else:
+      substep_counter = self._opt._get_non_slot_variable(
+          'substep_counter', graph=graph)
+      assert_op = tf.Assert(
+          tf.not_equal(loss, last_loss), [
+              self._name, 'encountered repeated loss at substep',
+              substep_counter, 'current loss:', loss, 'previous loss:',
+              last_loss
+          ])
+
+    with tf.control_dependencies([assert_op]):
+      assign_op = last_loss.assign(loss)
+
+    self._first_call = False
+    with tf.control_dependencies([assign_op]):
+      return self._opt.compute_gradients(loss, var_list, *args, **kwargs)
 
   # Wraps the apply_gradients method of the shared 'real' optimizer, but also
   # updates the internal substep_counter and substep_mask variables to indicate
@@ -69,23 +105,41 @@ class TestOptimizerWrapper(tf.train.Optimizer):
         initial_value=0,
         name='substep_counter',
         colocate_with=grads_and_vars[0][1])
-    graph = None if tf.executing_eagerly() else tf.get_default_graph()
-    substep_counter = self._opt._get_non_slot_variable(
-        'substep_counter', graph=graph)
     # Not shared
     self._create_non_slot_variable(
         initial_value=0,
         name='substep_mask',
         colocate_with=grads_and_vars[0][1])
-    substep_mask = self._get_non_slot_variable('substep_mask', graph=graph)
 
     update_op = self._opt.apply_gradients(
         grads_and_vars, global_step=global_step)
     with tf.control_dependencies([update_op]):
-      current_substep_mask = tf.bitwise.left_shift(1, substep_counter)
-      updated_substep_mask = tf.bitwise.bitwise_or(current_substep_mask,
-                                                   substep_mask)
-      assign_op = tf.assign(substep_mask, updated_substep_mask)
+      # Use a CriticalSection to prevent a race condition when jointly training
+      # G and D. This isn't necessary on TPU because there is only one thread of
+      # control. CriticalSection is not currently implemented for TPU anyway.
+      if flags.FLAGS.use_tpu:
+        return self._track_calls()
+      else:
+        # TODO(sarna): Clean this up once CriticalSection has fully moved into
+        # core.
+        try:
+          critical_section = tf.contrib.framework.CriticalSection()
+        except AttributeError:
+          critical_section = tf.CriticalSection()
+        return critical_section.execute(
+            self._track_calls, exclusive_resource_access=False)
+
+  def _track_calls(self):
+    graph = None if tf.executing_eagerly() else tf.get_default_graph()
+    substep_counter = self._opt._get_non_slot_variable(
+        'substep_counter', graph=graph)
+
+    substep_mask = self._get_non_slot_variable('substep_mask', graph=graph)
+
+    current_substep_mask = tf.bitwise.left_shift(1, substep_counter)
+    updated_substep_mask = tf.bitwise.bitwise_or(current_substep_mask,
+                                                 substep_mask)
+    assign_op = tf.assign(substep_mask, updated_substep_mask)
     with tf.control_dependencies([assign_op]):
       inc_op = tf.assign_add(substep_counter, 1)
 
@@ -101,10 +155,12 @@ def generator_fn(noise, mode):
 
 def discriminator_fn(data, unused_conditioning, mode):
   del unused_conditioning, mode
-  return tf.contrib.layers.fully_connected(data, 1)
+  return tf.layers.dense(data, 1)
 
 
-def get_dummy_gan_model():
+def get_dummy_gan_model(generated_data=None):
+  if generated_data is None:
+    generated_data = tf.ones([3, 4])
   # TODO(joelshor): Find a better way of creating a variable scope.
   with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as gen_scope:
     gen_var = tf.get_variable('dummy_var', initializer=0.0)
@@ -112,7 +168,7 @@ def get_dummy_gan_model():
     dis_var = tf.get_variable('dummy_var', initializer=0.0)
   return tfgan.GANModel(
       generator_inputs=None,
-      generated_data=tf.ones([3, 4]),
+      generated_data=generated_data,
       generator_variables=[gen_var],
       generator_scope=gen_scope,
       generator_fn=None,
@@ -156,16 +212,17 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
   def test_get_train_estimator_spec(self, joint_train):
     with tf.Graph().as_default():
       if joint_train:
-        gan_models = [get_dummy_gan_model()]
+        gan_model_fns = [get_dummy_gan_model]
       else:
-        gan_models = [get_dummy_gan_model(), get_dummy_gan_model()]
+        gan_model_fns = [get_dummy_gan_model, get_dummy_gan_model]
       spec = get_train_estimator_spec(
-          gan_models,
+          gan_model_fns,
           self._loss_fns,
           self._optimizers,
           joint_train=joint_train,
           is_on_tpu=flags.FLAGS.use_tpu,
-          gan_train_steps=tfgan.GANTrainSteps(1, 1))
+          gan_train_steps=tfgan.GANTrainSteps(1, 1),
+          add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
@@ -176,29 +233,30 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_get_eval_estimator_spec(self):
     with tf.Graph().as_default():
-      gan_models = [get_dummy_gan_model()]
+      generated_data = tf.ones([3, 4])
+      gan_model_fns = [functools.partial(get_dummy_gan_model, generated_data)]
       spec = get_eval_estimator_spec(
-          gan_models,
+          gan_model_fns,
           self._loss_fns,
           get_eval_metric_ops_fn=get_metrics,
-          is_on_tpu=flags.FLAGS.use_tpu)
+          add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
 
-    self.assertEqual(gan_models[0].generated_data, spec.predictions)
+    self.assertEqual(generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
     self.assertIsNotNone(spec.eval_metrics)
 
   def test_get_predict_estimator_spec(self):
     with tf.Graph().as_default():
-      gan_models = [get_dummy_gan_model()]
-      spec = get_predict_estimator_spec(gan_models)
+      generated_data = tf.ones([3, 4])
+      gan_model_fns = [functools.partial(get_dummy_gan_model, generated_data)]
+      spec = get_predict_estimator_spec(gan_model_fns)
 
     self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
-    self.assertEqual({'generated_data': gan_models[0].generated_data},
-                     spec.predictions)
+    self.assertEqual({'generated_data': generated_data}, spec.predictions)
 
 
 class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
@@ -336,7 +394,7 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
       ('0:1 seq', 0, 1, False, 1, None, [0b1]))
   def test_train(self, g_steps, d_steps, joint_train, expected_total_substeps,
                  expected_g_substep_mask, expected_d_substep_mask):
-    real_opt = tf.train.GradientDescentOptimizer(1.0)
+    real_opt = tf.train.GradientDescentOptimizer(1e-2)
     gopt = TestOptimizerWrapper(real_opt, name='g_opt')
     dopt = TestOptimizerWrapper(real_opt, name='d_opt')
     est = tfgan.estimator.TPUGANEstimator(
@@ -356,7 +414,7 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
         config=self._config)
 
     def train_input_fn(params):
-      data = tf.zeros([params['batch_size'], 4], dtype=tf.float32)
+      data = tf.ones([params['batch_size'], 4], dtype=tf.float32)
       return data, data
 
     est.train(train_input_fn, steps=1)
