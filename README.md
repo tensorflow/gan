@@ -1,4 +1,3 @@
-<!-- TODO(joelshor): Add images to the examples. -->
 # TensorFlow-GAN (TF-GAN)
 
 TF-GAN is a lightweight library for training and evaluating Generative
