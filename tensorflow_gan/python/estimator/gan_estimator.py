@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import functools
 import inspect
 import enum
@@ -35,6 +36,8 @@ __all__ = [
     'GANEstimator',
     'SummaryType'
 ]
+
+Optimizers = collections.namedtuple('Optimizers', ['gopt', 'dopt'])
 
 
 class SummaryType(enum.IntEnum):
@@ -170,14 +173,9 @@ class GANEstimator(tf.estimator.Estimator):
       ValueError: If `use_loss_summaries` isn't boolean or `None`.
       ValueError: If `get_hooks_fn` isn't callable or `None`.
     """
-    if not callable(generator_loss_fn):
-      raise ValueError('generator_loss_fn must be callable.')
-    if not callable(discriminator_loss_fn):
-      raise ValueError('discriminator_loss_fn must be callable.')
-    if use_loss_summaries not in [True, False, None]:
-      raise ValueError('use_loss_summaries must be True, False or None.')
-    if get_hooks_fn is not None and not callable(get_hooks_fn):
-      raise TypeError('get_hooks_fn must be callable.')
+    _validate_input_args(generator_loss_fn, discriminator_loss_fn,
+                         use_loss_summaries, get_hooks_fn)
+    optimizers = Optimizers(generator_optimizer, discriminator_optimizer)
 
     def _model_fn(features, labels, mode, params):
       """GANEstimator model function."""
@@ -193,17 +191,44 @@ class GANEstimator(tf.estimator.Estimator):
       gan_model = get_gan_model(mode, generator_fn, discriminator_fn, real_data,
                                 generator_inputs, add_summaries)
 
+      # Make GANLoss, which encapsulates the losses.
+      if mode in [tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL]:
+        gan_loss_kwargs = extract_gan_loss_args_from_params(params) or {}
+        gan_loss = tfgan_train.gan_loss(
+            gan_model,
+            generator_loss_fn,
+            discriminator_loss_fn,
+            add_summaries=use_loss_summaries,
+            **gan_loss_kwargs)
+
       # Make the EstimatorSpec, which incorporates the GANModel, losses, eval
       # metrics, and optimizers (if required).
-      gan_loss_kwargs = extract_gan_loss_args_from_params(params)
-      return get_estimator_spec(
-          mode, gan_model, generator_loss_fn, discriminator_loss_fn,
-          get_eval_metric_ops_fn, generator_optimizer, discriminator_optimizer,
-          gan_loss_kwargs, get_hooks_fn, use_loss_summaries, is_chief)
+      if mode == tf.estimator.ModeKeys.TRAIN:
+        estimator_spec = get_train_estimator_spec(
+            gan_model, gan_loss, optimizers, get_hooks_fn, is_chief=is_chief)
+      elif mode == tf.estimator.ModeKeys.EVAL:
+        estimator_spec = get_eval_estimator_spec(
+            gan_model, gan_loss, get_eval_metric_ops_fn)
+      else:  # tf.estimator.ModeKeys.PREDICT
+        estimator_spec = get_predict_estimator_spec(gan_model)
+
+      return estimator_spec
 
     super(GANEstimator, self).__init__(
         model_fn=_model_fn, model_dir=model_dir, config=config, params=params,
         warm_start_from=warm_start_from)
+
+
+def _validate_input_args(generator_loss_fn, discriminator_loss_fn,
+                         use_loss_summaries, get_hooks_fn):
+  if not callable(generator_loss_fn):
+    raise ValueError('generator_loss_fn must be callable.')
+  if not callable(discriminator_loss_fn):
+    raise ValueError('discriminator_loss_fn must be callable.')
+  if use_loss_summaries not in [True, False, None]:
+    raise ValueError('use_loss_summaries must be True, False or None.')
+  if get_hooks_fn is not None and not callable(get_hooks_fn):
+    raise TypeError('get_hooks_fn must be callable.')
 
 
 def get_gan_model(mode,
@@ -227,45 +252,6 @@ def get_gan_model(mode,
                                 discriminator_scope, add_summaries, mode)
 
   return gan_model
-
-
-def get_estimator_spec(mode,
-                       gan_model,
-                       generator_loss_fn,
-                       discriminator_loss_fn,
-                       get_eval_metric_ops_fn,
-                       generator_optimizer,
-                       discriminator_optimizer,
-                       gan_loss_kwargs=None,
-                       get_hooks_fn=None,
-                       use_loss_summaries=True,
-                       is_chief=True):
-  """Get the EstimatorSpec for the current mode."""
-  if mode == tf.estimator.ModeKeys.PREDICT:
-    estimator_spec = tf.estimator.EstimatorSpec(
-        mode=mode, predictions=gan_model.generated_data)
-  else:
-    kwargs = gan_loss_kwargs or {}
-    gan_loss = tfgan_train.gan_loss(
-        gan_model,
-        generator_loss_fn,
-        discriminator_loss_fn,
-        add_summaries=use_loss_summaries,
-        **kwargs)
-    if mode == tf.estimator.ModeKeys.EVAL:
-      estimator_spec = _get_eval_estimator_spec(
-          gan_model, gan_loss, get_eval_metric_ops_fn)
-    else:  # tf.estimator.ModeKeys.TRAIN:
-      if callable(generator_optimizer):
-        generator_optimizer = generator_optimizer()
-      if callable(discriminator_optimizer):
-        discriminator_optimizer = discriminator_optimizer()
-      get_hooks_fn = get_hooks_fn or tfgan_train.get_sequential_train_hooks()
-      estimator_spec = _get_train_estimator_spec(
-          gan_model, gan_loss, generator_optimizer, discriminator_optimizer,
-          get_hooks_fn, is_chief=is_chief)
-
-  return estimator_spec
 
 
 def _make_gan_model(generator_fn, discriminator_fn, real_data, generator_inputs,
@@ -319,20 +305,14 @@ def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
       discriminator_fn=None)
 
 
-def _get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None,
-                             name=None):
+def get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None):
   """Return an EstimatorSpec for the eval case."""
   scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
   with tf.name_scope(None, 'metrics',
                      [gan_loss.generator_loss, gan_loss.discriminator_loss]):
-
-    def _summary_key(head_name, val):
-      return '%s/%s' % (val, head_name) if head_name else val
     eval_metric_ops = {
-        _summary_key(name, 'generator_loss'):
-            tf.metrics.mean(gan_loss.generator_loss),
-        _summary_key(name, 'discriminator_loss'):
-            tf.metrics.mean(gan_loss.discriminator_loss)
+        'generator_loss': tf.metrics.mean(gan_loss.generator_loss),
+        'discriminator_loss': tf.metrics.mean(gan_loss.discriminator_loss),
     }
     if get_eval_metric_ops_fn is not None:
       custom_eval_metric_ops = get_eval_metric_ops_fn(gan_model)
@@ -347,13 +327,31 @@ def _get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None,
       eval_metric_ops=eval_metric_ops)
 
 
-def _get_train_estimator_spec(
-    gan_model, gan_loss, generator_optimizer, discriminator_optimizer,
+def get_predict_estimator_spec(gan_model):
+  """Return an EstimatorSpec for the predict case."""
+  return tf.estimator.EstimatorSpec(mode=tf.estimator.ModeKeys.PREDICT,
+                                    predictions=gan_model.generated_data)
+
+
+def _maybe_construct_optimizers(optimizers):
+  g_callable = callable(optimizers.gopt)
+  gopt = optimizers.gopt() if g_callable else optimizers.gopt
+  d_callable = callable(optimizers.dopt)
+  dopt = optimizers.dopt() if d_callable else optimizers.dopt
+
+  return Optimizers(gopt, dopt)
+
+
+def get_train_estimator_spec(
+    gan_model, gan_loss, optimizers,
     get_hooks_fn, train_op_fn=tfgan_train.gan_train_ops, is_chief=True):
   """Return an EstimatorSpec for the train case."""
+  get_hooks_fn = get_hooks_fn or tfgan_train.get_sequential_train_hooks()
+  optimizers = _maybe_construct_optimizers(optimizers)
+
   scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
-  train_ops = train_op_fn(gan_model, gan_loss, generator_optimizer,
-                          discriminator_optimizer, is_chief=is_chief)
+  train_ops = train_op_fn(gan_model, gan_loss, optimizers.gopt,
+                          optimizers.dopt, is_chief=is_chief)
   training_hooks = get_hooks_fn(train_ops)
   return tf.estimator.EstimatorSpec(
       loss=scalar_loss,
@@ -376,4 +374,3 @@ def extract_gan_loss_args_from_params(params):
   gan_loss_args = {k: params[k] for k in gan_loss_arg_names if k in params}
 
   return gan_loss_args
-

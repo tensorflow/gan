@@ -31,8 +31,11 @@ import tensorflow_gan as tfgan
 
 # Private functions to test.
 from tensorflow_gan.python.estimator.gan_estimator import extract_gan_loss_args_from_params
-from tensorflow_gan.python.estimator.gan_estimator import get_estimator_spec
+from tensorflow_gan.python.estimator.gan_estimator import get_eval_estimator_spec
 from tensorflow_gan.python.estimator.gan_estimator import get_gan_model
+from tensorflow_gan.python.estimator.gan_estimator import get_predict_estimator_spec
+from tensorflow_gan.python.estimator.gan_estimator import get_train_estimator_spec
+from tensorflow_gan.python.estimator.gan_estimator import Optimizers
 
 
 def get_sync_optimizer():
@@ -142,48 +145,57 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     cls._generator_optimizer = tf.train.GradientDescentOptimizer(1.0)
     cls._discriminator_optimizer = tf.train.GradientDescentOptimizer(1.0)
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
-  def test_get_estimator_spec(self, mode):
+  def test_get_train_estimator_spec(self):
     with tf.Graph().as_default():
-      self._gan_model = get_dummy_gan_model()
-      spec = get_estimator_spec(
-          mode,
-          self._gan_model,
-          generator_loss_fn=dummy_loss_fn,
-          discriminator_loss_fn=dummy_loss_fn,
-          get_eval_metric_ops_fn=get_metrics,
-          generator_optimizer=self._generator_optimizer,
-          discriminator_optimizer=self._discriminator_optimizer)
+      gan_model = get_dummy_gan_model()
+      gan_loss = tfgan.gan_loss(gan_model, dummy_loss_fn, dummy_loss_fn)
+      spec = get_train_estimator_spec(
+          gan_model,
+          gan_loss,
+          Optimizers(self._generator_optimizer, self._discriminator_optimizer),
+          get_hooks_fn=None,  # use default.
+          is_chief=True)
 
-    self.assertEqual(mode, spec.mode)
-    if mode == tf.estimator.ModeKeys.PREDICT:
-      self.assertEqual(self._gan_model.generated_data, spec.predictions)
-    elif mode == tf.estimator.ModeKeys.TRAIN:
-      self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
-      self.assertIsNotNone(spec.train_op)
-      self.assertIsNotNone(spec.training_hooks)
-    elif mode == tf.estimator.ModeKeys.EVAL:
-      self.assertEqual(self._gan_model.generated_data, spec.predictions)
-      self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
-      self.assertIsNotNone(spec.eval_metric_ops)
+    self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
+    self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
+    self.assertIsNotNone(spec.train_op)
+    self.assertIsNotNone(spec.training_hooks)
+
+  def test_get_eval_estimator_spec(self):
+    with tf.Graph().as_default():
+      gan_model = get_dummy_gan_model()
+      gan_loss = tfgan.gan_loss(gan_model, dummy_loss_fn, dummy_loss_fn)
+      spec = get_eval_estimator_spec(
+          gan_model,
+          gan_loss,
+          get_eval_metric_ops_fn=get_metrics)
+
+    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(gan_model.generated_data, spec.predictions)
+    self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
+    self.assertIsNotNone(spec.eval_metric_ops)
+
+  def test_get_predict_estimator_spec(self):
+    with tf.Graph().as_default():
+      gan_model = get_dummy_gan_model()
+      spec = get_predict_estimator_spec(gan_model)
+
+    self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
+    self.assertEqual(gan_model.generated_data, spec.predictions)
 
   def test_get_sync_estimator_spec(self):
     """Make sure spec is loaded with sync hooks for sync opts."""
     with tf.Graph().as_default():
-      self._gan_model = get_dummy_gan_model()
+      gan_model = get_dummy_gan_model()
+      gan_loss = tfgan.gan_loss(gan_model, dummy_loss_fn, dummy_loss_fn)
       g_opt = get_sync_optimizer()
       d_opt = get_sync_optimizer()
 
-      spec = get_estimator_spec(
-          tf.estimator.ModeKeys.TRAIN,
-          self._gan_model,
-          generator_loss_fn=dummy_loss_fn,
-          discriminator_loss_fn=dummy_loss_fn,
-          get_eval_metric_ops_fn=get_metrics,
-          generator_optimizer=g_opt,
-          discriminator_optimizer=d_opt)
+      spec = get_train_estimator_spec(
+          gan_model,
+          gan_loss,
+          Optimizers(g_opt, d_opt),
+          get_hooks_fn=None)  # use default.
 
       self.assertLen(spec.training_hooks, 4)
       sync_opts = [
