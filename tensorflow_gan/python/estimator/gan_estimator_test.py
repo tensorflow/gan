@@ -249,8 +249,7 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
     scores = est.evaluate(eval_input_fn)
     self.assertEqual(num_steps, scores[tf.GraphKeys.GLOBAL_STEP])
     self.assertIn('loss', six.iterkeys(scores))
-    self.assertEqual(scores['discriminator_loss'] + scores['generator_loss'],
-                     scores['loss'])
+    self.assertEqual(scores['discriminator_loss'], scores['loss'])
     self.assertIn('mse_custom_metric', six.iterkeys(scores))
 
     # Predict.

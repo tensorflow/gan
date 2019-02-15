@@ -307,7 +307,6 @@ def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
 
 def get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None):
   """Return an EstimatorSpec for the eval case."""
-  scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
   with tf.name_scope(None, 'metrics',
                      [gan_loss.generator_loss, gan_loss.discriminator_loss]):
     eval_metric_ops = {
@@ -323,7 +322,7 @@ def get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None):
   return tf.estimator.EstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=gan_model.generated_data,
-      loss=scalar_loss,
+      loss=gan_loss.discriminator_loss,
       eval_metric_ops=eval_metric_ops)
 
 
@@ -349,12 +348,11 @@ def get_train_estimator_spec(
   get_hooks_fn = get_hooks_fn or tfgan_train.get_sequential_train_hooks()
   optimizers = _maybe_construct_optimizers(optimizers)
 
-  scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
   train_ops = train_op_fn(gan_model, gan_loss, optimizers.gopt,
                           optimizers.dopt, is_chief=is_chief)
   training_hooks = get_hooks_fn(train_ops)
   return tf.estimator.EstimatorSpec(
-      loss=scalar_loss,
+      loss=gan_loss.discriminator_loss,
       mode=tf.estimator.ModeKeys.TRAIN,
       train_op=train_ops.global_step_inc_op,
       training_hooks=training_hooks)
