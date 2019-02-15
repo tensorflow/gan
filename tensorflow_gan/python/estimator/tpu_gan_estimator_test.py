@@ -218,6 +218,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       spec = get_train_estimator_spec(
           gan_model_fns,
           self._loss_fns,
+          {},  # gan_loss_kwargs
           self._optimizers,
           joint_train=joint_train,
           is_on_tpu=flags.FLAGS.use_tpu,
@@ -238,6 +239,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       spec = get_eval_estimator_spec(
           gan_model_fns,
           self._loss_fns,
+          gan_loss_kwargs={},
           get_eval_metric_ops_fn=get_metrics,
           add_summaries=not flags.FLAGS.use_tpu)
 
@@ -311,8 +313,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     scores = est.evaluate(eval_input_fn, steps=num_steps_eval)
     self.assertIn(tf.GraphKeys.GLOBAL_STEP, six.iterkeys(scores))
     self.assertIn('loss', six.iterkeys(scores))
-    self.assertEqual(scores['discriminator_loss'] + scores['generator_loss'],
-                     scores['loss'])
+    self.assertEqual(scores['discriminator_loss'], scores['loss'])
     self.assertIn('mse_custom_metric', six.iterkeys(scores))
 
     # Predict.

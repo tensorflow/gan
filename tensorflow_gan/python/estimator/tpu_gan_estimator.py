@@ -162,7 +162,9 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
       params: Same as `TPUEstimator`: An optional `dict` of hyper parameters
         that will be passed into `input_fn` and `model_fn`.  Keys are names of
         parameters, values are basic python types. There are reserved keys for
-        `TPUEstimator`, including 'batch_size'.
+        `TPUEstimator`, including 'batch_size'. If any `params` are args to
+        TF-GAN's `gan_loss`, they will be passed to `gan_loss` during training
+        and evaluation.
       use_tpu: Same as `TPUEstimator`: A bool indicating whether TPU support is
         enabled. Currently, TPU training and evaluation respect this bit, but
         eval_on_tpu can override execution of eval. See below. Predict still
@@ -217,7 +219,6 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
 
     def _model_fn(features, labels, mode, params):
       """GANEstimator model function."""
-      del params  # unused
       if mode not in [
           tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL,
           tf.estimator.ModeKeys.PREDICT
@@ -246,10 +247,12 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
 
       # Make the TPUEstimatorSpec, which incorporates the model, losses, eval
       # metrics, and optimizers (if required).
+      gan_loss_kwargs = gan_estimator.extract_gan_loss_args_from_params(params)
       if mode == tf.estimator.ModeKeys.TRAIN:
         estimator_spec = get_train_estimator_spec(
             gan_model_fns,
             loss_fns,
+            gan_loss_kwargs,
             optimizers,
             joint_train,
             is_on_tpu,
@@ -259,6 +262,7 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
         estimator_spec = get_eval_estimator_spec(
             gan_model_fns,
             loss_fns,
+            gan_loss_kwargs,
             get_eval_metric_ops_fn,
             add_summaries=summary_types)
       else:  # predict
@@ -399,8 +403,9 @@ def _maybe_add_summaries(gan_model, add_summaries):
         gan_estimator.summary_type_map[summary_type](gan_model)
 
 
-def get_train_estimator_spec(gan_model_fns, loss_fns, optimizers, joint_train,
-                             is_on_tpu, gan_train_steps, add_summaries):
+def get_train_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
+                             optimizers, joint_train, is_on_tpu,
+                             gan_train_steps, add_summaries):
   """Estimator spec for train case."""
   # Construct optimizers if arguments are callable. This has to be done inside
   # the model_fn, since constructable optimizers might create tf.Variables that
@@ -409,16 +414,16 @@ def get_train_estimator_spec(gan_model_fns, loss_fns, optimizers, joint_train,
   if is_on_tpu:
     optimizers = _maybe_make_cross_shard_optimizers(optimizers)
 
-  tpu_train_op, scalar_loss = _get_train_op(gan_model_fns, loss_fns, optimizers,
-                                            joint_train, gan_train_steps,
-                                            add_summaries)
+  tpu_train_op, scalar_loss = _get_train_op(
+      gan_model_fns, loss_fns, gan_loss_kwargs, optimizers, joint_train,
+      gan_train_steps, add_summaries)
 
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.TRAIN, loss=scalar_loss, train_op=tpu_train_op)
 
 
-def get_eval_estimator_spec(gan_model_fns, loss_fns, get_eval_metric_ops_fn,
-                            add_summaries):
+def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
+                            get_eval_metric_ops_fn, add_summaries):
   """Estimator spec for eval case."""
   assert len(gan_model_fns) == 1, (
       '`gan_models` must be length 1 in eval mode. Got length %d' %
@@ -428,17 +433,15 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, get_eval_metric_ops_fn,
 
   _maybe_add_summaries(gan_model, add_summaries)
 
-  gan_loss = tfgan_tuples.GANLoss(
-      generator_loss=loss_fns.g_loss_fn(gan_model, add_summaries=add_summaries),
-      discriminator_loss=loss_fns.d_loss_fn(
-          gan_model, add_summaries=add_summaries))
-
   # Eval losses for metrics must preserve batch dimension.
-  gan_loss_no_reduction = tfgan_tuples.GANLoss(
-      generator_loss=loss_fns.g_loss_fn(
-          gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE),
-      discriminator_loss=loss_fns.d_loss_fn(
-          gan_model, add_summaries=False, reduction=tf.losses.Reduction.NONE))
+  kwargs = gan_loss_kwargs or {}
+  gan_loss_no_reduction = tfgan_train.gan_loss(
+      gan_model,
+      loss_fns.g_loss_fn,
+      loss_fns.d_loss_fn,
+      add_summaries=add_summaries,
+      reduction=tf.losses.Reduction.NONE,
+      **kwargs)
 
   # Make the metric function and tensor names.
   if get_eval_metric_ops_fn is not None:
@@ -449,7 +452,9 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, get_eval_metric_ops_fn,
     metric_fn = _make_default_metric_fn()
     tensors_for_metric_fn = _make_default_metric_tensors(gan_loss_no_reduction)
 
-  scalar_loss = gan_loss.generator_loss + gan_loss.discriminator_loss
+  scalar_loss = tf.losses.compute_weighted_loss(
+      gan_loss_no_reduction.discriminator_loss, loss_collection=None,
+      reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=gan_model.generated_data,
@@ -469,15 +474,18 @@ def get_predict_estimator_spec(gan_model_fns):
       predictions={'generated_data': gan_model.generated_data})
 
 
-def _get_loss_for_train(gan_model, loss_fns, add_summaries):
-  return tfgan_tuples.GANLoss(
-      generator_loss=loss_fns.g_loss_fn(gan_model, add_summaries=add_summaries),
-      discriminator_loss=loss_fns.d_loss_fn(
-          gan_model, add_summaries=add_summaries))
+def _get_loss_for_train(gan_model, loss_fns, gan_loss_kwargs, add_summaries):
+  kwargs = gan_loss_kwargs or {}
+  return tfgan_train.gan_loss(
+      gan_model,
+      loss_fns.g_loss_fn,
+      loss_fns.d_loss_fn,
+      add_summaries=add_summaries,
+      **kwargs)
 
 
-def _get_train_op(gan_model_fns, loss_fns, optimizers, joint_train,
-                  gan_train_steps, add_summaries):
+def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
+                  joint_train, gan_train_steps, add_summaries):
   """Return a train op for TPU training."""
 
   def update_ops(gan_model):
@@ -552,7 +560,8 @@ def _get_train_op(gan_model_fns, loss_fns, optimizers, joint_train,
     with tf.control_dependencies([prev_op]):
       gan_model = gan_model_fns[i]()
       _maybe_add_summaries(gan_model, add_summaries and i == total_steps - 1)
-      gan_loss = _get_loss_for_train(gan_model, loss_fns, add_summaries)
+      gan_loss = _get_loss_for_train(gan_model, loss_fns, gan_loss_kwargs,
+                                     add_summaries)
       scalar_loss = gan_loss.discriminator_loss
       if i < joint_steps:
         prev_op = tf.group(
