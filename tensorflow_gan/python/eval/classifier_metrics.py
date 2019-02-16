@@ -59,6 +59,8 @@ __all__ = [
     'kernel_classifier_distance_from_activations',
     'kernel_classifier_distance_and_std_from_activations',
     'INCEPTION_DEFAULT_IMAGE_SIZE',
+    'INCEPTION_OUTPUT',
+    'INCEPTION_FINAL_POOL',
 ]
 
 INCEPTION_URL = 'http://download.tensorflow.org/models/frozen_inception_v1_2015_12_05.tar.gz'
