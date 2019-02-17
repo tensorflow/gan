@@ -229,26 +229,37 @@ def _run_with_mock(function, *args, **kwargs):
 
 class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
-  @parameterized.named_parameters(('GraphDef', False),
-                                  ('DefaultGraphDefFn', True))
-  def test_run_inception_graph(self, use_default_graph_def):
+  @parameterized.parameters(
+      {'use_default_graph_def': False, 'singleton': True},
+      {'use_default_graph_def': True, 'singleton': True},
+      {'use_default_graph_def': False, 'singleton': False},
+  )
+  def test_run_inception_graph(self, use_default_graph_def, singleton):
     """Test `run_inception` graph construction."""
-    batch_size = 7
+    batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
+    output_tensor = INCEPTION_OUTPUT if singleton else [INCEPTION_OUTPUT]
 
     if use_default_graph_def:
-      logits = _run_with_mock(tfgan.eval.run_inception, img)
+      logits = _run_with_mock(
+          tfgan.eval.run_inception, img, output_tensor=output_tensor)
     else:
-      logits = tfgan.eval.run_inception(img, _get_dummy_graphdef())
+      logits = tfgan.eval.run_inception(
+          img, _get_dummy_graphdef(), output_tensor=output_tensor)
 
+    if not singleton:
+      self.assertIsInstance(logits, list)
+      logits = logits[0]
     self.assertIsInstance(logits, tf.Tensor)
     logits.shape.assert_is_compatible_with([batch_size, 1001])
 
     # Check that none of the model variables are trainable.
     self.assertListEqual([], tf.trainable_variables())
 
-  @parameterized.named_parameters(('GraphDef', False),
-                                  ('DefaultGraphDefFn', True))
+  @parameterized.parameters(
+      {'use_default_graph_def': True},
+      {'use_default_graph_def': False},
+  )
   def test_run_inception_graph_pool_output(self, use_default_graph_def):
     """Test `run_inception` graph construction with pool output."""
     batch_size = 3
