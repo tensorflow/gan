@@ -314,7 +314,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIn(tf.GraphKeys.GLOBAL_STEP, six.iterkeys(scores))
     self.assertIn('loss', six.iterkeys(scores))
     self.assertAlmostEqual(
-        scores['discriminator_loss'], scores['loss'], places=7)
+        scores['discriminator_loss'], scores['loss'], places=5)
     self.assertIn('mse_custom_metric', six.iterkeys(scores))
 
     # Predict.
