@@ -227,7 +227,7 @@ def _run_with_mock(function, *args, **kwargs):
     return function(*args, **kwargs)
 
 
-class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
+class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.parameters(
       {'use_default_graph_def': False, 'singleton': True, 'num_batches': 1},
@@ -305,38 +305,6 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
     # Check that none of the model variables are trainable.
     self.assertListEqual([], tf.trainable_variables())
 
-  def test_inception_score_graph(self):
-    """Test `inception_score` graph construction."""
-    score = _run_with_mock(
-        tfgan.eval.inception_score, tf.zeros([6, 299, 299, 3]), num_batches=3)
-    self.assertIsInstance(score, tf.Tensor)
-    score.shape.assert_has_rank(0)
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
-
-  def test_frechet_inception_distance_graph(self):
-    """Test `frechet_inception_distance` graph construction."""
-    img = tf.ones([7, 299, 299, 3])
-    distance = _run_with_mock(tfgan.eval.frechet_inception_distance, img, img)
-
-    self.assertIsInstance(distance, tf.Tensor)
-    distance.shape.assert_has_rank(0)
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
-
-  def test_kernel_inception_distance_graph(self):
-    """Test `frechet_inception_distance` graph construction."""
-    img = tf.ones([7, 299, 299, 3])
-    distance = _run_with_mock(tfgan.eval.kernel_inception_distance, img, img)
-
-    self.assertIsInstance(distance, tf.Tensor)
-    distance.shape.assert_has_rank(0)
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
-
   def test_run_inception_multicall(self):
     """Test that `run_inception` can be called multiple times."""
     for batch_size in (7, 3, 2):
@@ -369,6 +337,19 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
     with self.assertRaisesRegexp(ValueError, 'must have rank 1'):
       kl_divergence(p, p_logits, tf.zeros([10, 8]))
 
+
+class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
+
+  def test_inception_score_graph(self):
+    """Test `inception_score` graph construction."""
+    score = _run_with_mock(
+        tfgan.eval.inception_score, tf.zeros([6, 299, 299, 3]), num_batches=3)
+    self.assertIsInstance(score, tf.Tensor)
+    score.shape.assert_has_rank(0)
+
+    # Check that none of the model variables are trainable.
+    self.assertListEqual([], tf.trainable_variables())
+
   def test_inception_score_value(self):
     """Test that `inception_score` gives the correct value."""
     logits = np.array(
@@ -381,6 +362,87 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
       incscore_np = sess.run(incscore, {'concat:0': logits})
 
     self.assertAllClose(_expected_inception_score(logits), incscore_np)
+
+
+class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
+
+  @parameterized.parameters(
+      {'use_default_graph_def': False, 'num_outputs': 0, 'num_batches': 1},
+      {'use_default_graph_def': False, 'num_outputs': 0, 'num_batches': 4},
+      {'use_default_graph_def': False, 'num_outputs': 1, 'num_batches': 1},
+      {'use_default_graph_def': False, 'num_outputs': 1, 'num_batches': 4},
+      {'use_default_graph_def': False, 'num_outputs': 2, 'num_batches': 1},
+      {'use_default_graph_def': False, 'num_outputs': 2, 'num_batches': 4},
+      {'use_default_graph_def': True, 'num_outputs': 0, 'num_batches': 1},
+      {'use_default_graph_def': True, 'num_outputs': 0, 'num_batches': 4},
+      {'use_default_graph_def': True, 'num_outputs': 1, 'num_batches': 1},
+      {'use_default_graph_def': True, 'num_outputs': 1, 'num_batches': 4},
+      {'use_default_graph_def': True, 'num_outputs': 2, 'num_batches': 1},
+      {'use_default_graph_def': True, 'num_outputs': 2, 'num_batches': 4},
+  )
+  def test_sample_and_run_inception_graph(
+      self, use_default_graph_def, num_outputs, num_batches):
+    """Test `test_sample_and_run_inception_graph` graph construction."""
+    batch_size = 8
+    def sample_fn(_):
+      return tf.ones([batch_size, 299, 299, 3])
+    sample_inputs = [1] * num_batches
+
+    output_tensor = {
+        0: INCEPTION_OUTPUT,
+        1: [INCEPTION_OUTPUT],
+        2: [INCEPTION_OUTPUT, INCEPTION_FINAL_POOL],
+    }[num_outputs]
+
+    if use_default_graph_def:
+      logits = _run_with_mock(
+          tfgan.eval.sample_and_run_inception, sample_fn, sample_inputs,
+          output_tensor=output_tensor)
+    else:
+      logits = tfgan.eval.sample_and_run_inception(
+          sample_fn, sample_inputs, _get_dummy_graphdef(),
+          output_tensor=output_tensor)
+
+    # Check that none of the model variables are trainable.
+    self.assertListEqual([], tf.trainable_variables())
+
+    if num_outputs == 0:
+      self.assertIsInstance(logits, tf.Tensor)
+      logits.shape.assert_is_compatible_with([batch_size, 1001])
+    elif num_outputs == 1:
+      self.assertIsInstance(logits, list)
+      self.assertLen(logits, 1)
+      logits[0].shape.assert_is_compatible_with([batch_size, 1001])
+    elif num_outputs == 2:
+      self.assertIsInstance(logits, list)
+      self.assertLen(logits, 2)
+      logits[0].shape.assert_is_compatible_with([batch_size, 1001])
+      logits[1].shape.assert_is_compatible_with([batch_size, 2048])
+
+
+class FIDTest(tf.test.TestCase, parameterized.TestCase):
+
+  def test_frechet_inception_distance_graph(self):
+    """Test `frechet_inception_distance` graph construction."""
+    img = tf.ones([7, 299, 299, 3])
+    distance = _run_with_mock(tfgan.eval.frechet_inception_distance, img, img)
+
+    self.assertIsInstance(distance, tf.Tensor)
+    distance.shape.assert_has_rank(0)
+
+    # Check that none of the model variables are trainable.
+    self.assertListEqual([], tf.trainable_variables())
+
+  def test_kernel_inception_distance_graph(self):
+    """Test `frechet_inception_distance` graph construction."""
+    img = tf.ones([7, 299, 299, 3])
+    distance = _run_with_mock(tfgan.eval.kernel_inception_distance, img, img)
+
+    self.assertIsInstance(distance, tf.Tensor)
+    distance.shape.assert_has_rank(0)
+
+    # Check that none of the model variables are trainable.
+    self.assertListEqual([], tf.trainable_variables())
 
   def test_mean_only_frechet_classifier_distance_value(self):
     """Test that `frechet_classifier_distance` gives the correct value."""
@@ -518,6 +580,9 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
       self.assertAllClose(expected_kid, actual_kid, 0.001)
       self.assertAllClose(expected_std, actual_std, 0.001)
+
+
+class UtilsTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_trace_sqrt_product_value(self):
     """Test that `trace_sqrt_product` gives the correct value."""

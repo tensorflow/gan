@@ -43,7 +43,9 @@ __all__ = [
     'get_graph_def_from_url_tarball',
     'preprocess_image',
     'run_image_classifier',
+    'sample_and_run_image_classifier',
     'run_inception',
+    'sample_and_run_inception',
     'inception_score',
     'classifier_score',
     'classifier_score_from_logits',
@@ -219,6 +221,26 @@ def _default_graph_def_fn():
                                         os.path.basename(INCEPTION_URL))
 
 
+def _graph_def_or_default(graph_def, default_graph_def_fn):
+  if graph_def is None:
+    if default_graph_def_fn is None:
+      raise ValueError('If `graph_def` is `None`, must provide '
+                       '`default_graph_def_fn`.')
+    return default_graph_def_fn()
+  return graph_def
+
+
+def _flatten_activations_or_list(activations):
+  if isinstance(activations, list):
+    for i, activation in enumerate(activations):
+      if tf.rank(activation) != 2:
+        activations[i] = tf.layers.flatten(activation)
+  else:
+    if tf.rank(activations) != 2:
+      activations = tf.layers.flatten(activations)
+  return activations
+
+
 def run_inception(images,
                   graph_def=None,
                   default_graph_def_fn=_default_graph_def_fn,
@@ -254,24 +276,59 @@ def run_inception(images,
     ValueError: If neither `graph_def` nor `default_graph_def_fn` are provided.
   """
   images = _validate_images(images, image_size)
-
-  if graph_def is None:
-    if default_graph_def_fn is None:
-      raise ValueError('If `graph_def` is `None`, must provide '
-                       '`default_graph_def_fn`.')
-    graph_def = default_graph_def_fn()
-
+  graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
   activations = run_image_classifier(images, graph_def, input_tensor,
                                      output_tensor, num_batches)
-  if isinstance(activations, list):
-    for i, activation in enumerate(activations):
-      if tf.rank(activation) != 2:
-        activations[i] = tf.layers.flatten(activation)
-  else:
-    if tf.rank(activations) != 2:
-      activations = tf.layers.flatten(activations)
+  return _flatten_activations_or_list(activations)
 
-  return activations
+
+def sample_and_run_inception(sample_fn,
+                             sample_inputs,
+                             graph_def=None,
+                             default_graph_def_fn=_default_graph_def_fn,
+                             input_tensor=INCEPTION_INPUT,
+                             output_tensor=INCEPTION_OUTPUT):
+  """Generates images then passes them through an Inception classifier.
+
+  This is the same as `run_inception`, but instead of taking images it takes a
+  function that samples from an image distribution. This is essential when
+  running inception on large batches, since it may be impossible to hold all the
+  images in memory at once.
+
+  Args:
+    sample_fn: A function that takes a single argument and returns images. This
+      function samples from an image distribution.
+    sample_inputs: A list of inputs to pass to `sample_fn`.
+    graph_def: A GraphDef proto of a pretrained Inception graph. If `None`, call
+      `default_graph_def_fn` to get GraphDef.
+    default_graph_def_fn: A function that returns a GraphDef. Used if
+      `graph_def` is `None. By default, returns a pretrained InceptionV3 graph.
+    input_tensor: Name of input Tensor.
+    output_tensor: Name or list of output Tensors. This function will compute
+      activations at the specified layer. Examples include INCEPTION_V3_OUTPUT
+      and INCEPTION_V3_FINAL_POOL which would result in this function computing
+      the final logits or the penultimate pooling layer.
+
+  Returns:
+    Tensor or Tensors corresponding to computed `output_tensor`.
+
+  Raises:
+    ValueError: If images are not the correct size.
+    ValueError: If neither `graph_def` nor `default_graph_def_fn` are provided.
+  """
+  graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
+  activations = sample_and_run_image_classifier(
+      sample_fn, sample_inputs, graph_def, input_tensor, output_tensor)
+  return _flatten_activations_or_list(activations)
+
+
+def _combine_outputs_after_while_loop(classifier_outputs):
+  if isinstance(classifier_outputs, tf.Tensor):
+    classifier_outputs = tf.concat(tf.unstack(classifier_outputs), 0)
+  else:
+    classifier_outputs = [tf.concat(tf.unstack(x), 0) for x in
+                          classifier_outputs]
+  return classifier_outputs
 
 
 def run_image_classifier(tensor,
@@ -321,12 +378,9 @@ def run_image_classifier(tensor,
         graph_def, input_map, output_tensor, name=scope)
     if len(outputs) == 1:
       outputs = outputs[0]
-
     return outputs
   if num_batches > 1:
     # Compute the classifier splits using the memory-efficient `map_fn`.
-    # TODO(joelshor): Add padding code so `tensor.shape[0]` doesn't have to be
-    # exactly divisible by `num_batches`.
     input_list = tf.split(tensor, num_or_size_splits=num_batches)
     classifier_outputs = tf.map_fn(
         fn=_fn,
@@ -336,15 +390,71 @@ def run_image_classifier(tensor,
         back_prop=False,
         swap_memory=True,
         name='RunClassifier')
-    # Combine outputs.
-    if isinstance(classifier_outputs, tf.Tensor):
-      classifier_outputs = tf.concat(tf.unstack(classifier_outputs), 0)
-    else:
-      classifier_outputs = [tf.concat(tf.unstack(x), 0) for x in
-                            classifier_outputs]
+    classifier_outputs = _combine_outputs_after_while_loop(classifier_outputs)
   else:
     classifier_outputs = _fn(tensor)
   if not output_is_tensor and not isinstance(classifier_outputs, list):
+    classifier_outputs = [classifier_outputs]
+
+  return classifier_outputs
+
+
+def sample_and_run_image_classifier(sample_fn,
+                                    sample_inputs,
+                                    graph_def,
+                                    input_tensor,
+                                    output_tensor,
+                                    dtypes=None,
+                                    scope='SampleAndRunClassifier'):
+  """Sampes Tensors from distribution then runs them through a frozen graph.
+
+  This is the same as `run_image_classifier`, but instead of taking images it
+  takes a function that samples from an image distribution. This is essential
+  when running inception on large batches, since it may be impossible to hold
+  all the images in memory at once.
+
+  If there are multiple outputs, cast them to tf.float32.
+
+  Args:
+    sample_fn: A function that takes a single argument and returns images. This
+      function samples from an image distribution.
+    sample_inputs: A list of inputs to pass to `sample_fn`.
+    graph_def: A GraphDef proto.
+    input_tensor: Name of input tensor in graph def.
+    output_tensor: A tensor name or list of tensor names in graph def.
+    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
+      every output. If `dtypes` is `None` in this case, assume every output type
+      is `tf.float32`.
+    scope: Name scope for classifier.
+
+  Returns:
+    Classifier output if `output_tensor` is a string, or a list of outputs if
+    `output_tensor` is a list.
+
+  Raises:
+    ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
+  """
+  if not isinstance(output_tensor, str):
+    dtypes = dtypes or [tf.float32] * len(output_tensor)
+
+  def _fn(x):
+    tensor = sample_fn(x)
+    return run_image_classifier(
+        tensor, graph_def, input_tensor, output_tensor)
+  if len(sample_inputs) > 1:
+    classifier_outputs = tf.map_fn(
+        fn=_fn,
+        elems=tf.stack(sample_inputs),
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        dtype=dtypes,
+        name=scope)
+    classifier_outputs = _combine_outputs_after_while_loop(classifier_outputs)
+  else:
+    classifier_outputs = _fn(sample_inputs[0])
+  if (isinstance(output_tensor, list) and
+      not isinstance(classifier_outputs, list)):
     classifier_outputs = [classifier_outputs]
 
   return classifier_outputs
