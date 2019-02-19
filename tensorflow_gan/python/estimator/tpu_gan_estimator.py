@@ -422,6 +422,32 @@ def get_train_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       mode=tf.estimator.ModeKeys.TRAIN, loss=scalar_loss, train_op=tpu_train_op)
 
 
+def _predictions_from_generator_output(generated_data):
+  """Returns a predictions tensor from generator output of unknown structure.
+
+  If `generated_data` is a Tensor, just return it.
+  If `generated_data` is a list or tuple, return the first element.
+  If `generated_data` is a dictionary, just return it.
+
+  Args:
+    generated_data: Output of generator.
+
+  Returns:
+    A single Tensor.
+  """
+
+  if isinstance(generated_data, tf.Tensor):
+    return generated_data
+  elif isinstance(generated_data, (list, tuple)):
+    return generated_data[0]
+  elif isinstance(generated_data, dict):
+    return generated_data
+  else:
+    raise ValueError(
+        'Generator produced output of type %s, but TPUGANEstimator cannot make '
+        'predictions from it.' % type(generated_data))
+
+
 def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
                             get_eval_metric_ops_fn, add_summaries):
   """Estimator spec for eval case."""
@@ -455,9 +481,10 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
   scalar_loss = tf.losses.compute_weighted_loss(
       gan_loss_no_reduction.discriminator_loss, loss_collection=None,
       reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
-      predictions=gan_model.generated_data,
+      predictions=_predictions_from_generator_output(gan_model.generated_data),
       loss=scalar_loss,
       eval_metrics=(metric_fn, tensors_for_metric_fn))
 
@@ -469,9 +496,10 @@ def get_predict_estimator_spec(gan_model_fns):
 
   gan_model = gan_model_fns[0]()
 
+  preds = _predictions_from_generator_output(gan_model.generated_data)
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.PREDICT,
-      predictions={'generated_data': gan_model.generated_data})
+      predictions={'generated_data': preds})
 
 
 def _get_loss_for_train(gan_model, loss_fns, gan_loss_kwargs, add_summaries):
