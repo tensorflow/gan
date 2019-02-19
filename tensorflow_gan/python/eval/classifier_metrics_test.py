@@ -230,11 +230,14 @@ def _run_with_mock(function, *args, **kwargs):
 class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.parameters(
-      {'use_default_graph_def': False, 'singleton': True},
-      {'use_default_graph_def': True, 'singleton': True},
-      {'use_default_graph_def': False, 'singleton': False},
+      {'use_default_graph_def': False, 'singleton': True, 'num_batches': 1},
+      {'use_default_graph_def': False, 'singleton': True, 'num_batches': 4},
+      {'use_default_graph_def': True, 'singleton': True, 'num_batches': 1},
+      {'use_default_graph_def': True, 'singleton': True, 'num_batches': 4},
+      {'use_default_graph_def': False, 'singleton': False, 'num_batches': 1},
   )
-  def test_run_inception_graph(self, use_default_graph_def, singleton):
+  def test_run_inception_graph(self, use_default_graph_def, singleton,
+                               num_batches):
     """Test `run_inception` graph construction."""
     batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
@@ -242,10 +245,12 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
 
     if use_default_graph_def:
       logits = _run_with_mock(
-          tfgan.eval.run_inception, img, output_tensor=output_tensor)
+          tfgan.eval.run_inception, img, output_tensor=output_tensor,
+          num_batches=num_batches)
     else:
       logits = tfgan.eval.run_inception(
-          img, _get_dummy_graphdef(), output_tensor=output_tensor)
+          img, _get_dummy_graphdef(), output_tensor=output_tensor,
+          num_batches=num_batches)
 
     if not singleton:
       self.assertIsInstance(logits, list)
@@ -257,20 +262,25 @@ class ClassifierMetricsTest(tf.test.TestCase, parameterized.TestCase):
     self.assertListEqual([], tf.trainable_variables())
 
   @parameterized.parameters(
-      {'use_default_graph_def': True},
-      {'use_default_graph_def': False},
+      {'use_default_graph_def': True, 'num_batches': 1},
+      {'use_default_graph_def': True, 'num_batches': 4},
+      {'use_default_graph_def': False, 'num_batches': 1},
+      {'use_default_graph_def': False, 'num_batches': 4},
   )
-  def test_run_inception_graph_pool_output(self, use_default_graph_def):
+  def test_run_inception_graph_pool_output(self, use_default_graph_def,
+                                           num_batches):
     """Test `run_inception` graph construction with pool output."""
-    batch_size = 3
+    batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
 
     if use_default_graph_def:
       pool = _run_with_mock(
-          tfgan.eval.run_inception, img, output_tensor=INCEPTION_FINAL_POOL)
+          tfgan.eval.run_inception, img, output_tensor=INCEPTION_FINAL_POOL,
+          num_batches=num_batches)
     else:
       pool = tfgan.eval.run_inception(
-          img, _get_dummy_graphdef(), output_tensor=INCEPTION_FINAL_POOL)
+          img, _get_dummy_graphdef(), output_tensor=INCEPTION_FINAL_POOL,
+          num_batches=num_batches)
 
     self.assertIsInstance(pool, tf.Tensor)
     pool.shape.assert_is_compatible_with([batch_size, 2048])

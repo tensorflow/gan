@@ -224,7 +224,8 @@ def run_inception(images,
                   default_graph_def_fn=_default_graph_def_fn,
                   image_size=INCEPTION_DEFAULT_IMAGE_SIZE,
                   input_tensor=INCEPTION_INPUT,
-                  output_tensor=INCEPTION_OUTPUT):
+                  output_tensor=INCEPTION_OUTPUT,
+                  num_batches=1):
   """Run images through a pretrained Inception classifier.
 
   Args:
@@ -242,6 +243,8 @@ def run_inception(images,
       activations at the specified layer. Examples include INCEPTION_V3_OUTPUT
       and INCEPTION_V3_FINAL_POOL which would result in this function computing
       the final logits or the penultimate pooling layer.
+    num_batches: Number of batches to split `images` in to in order to
+      efficiently run them through the classifier network.
 
   Returns:
     Tensor or Tensors corresponding to computed `output_tensor`.
@@ -259,7 +262,7 @@ def run_inception(images,
     graph_def = default_graph_def_fn()
 
   activations = run_image_classifier(images, graph_def, input_tensor,
-                                     output_tensor)
+                                     output_tensor, num_batches)
   if isinstance(activations, list):
     for i, activation in enumerate(activations):
       if tf.rank(activation) != 2:
@@ -275,14 +278,25 @@ def run_image_classifier(tensor,
                          graph_def,
                          input_tensor,
                          output_tensor,
+                         num_batches=1,
+                         dtypes=None,
                          scope='RunClassifier'):
   """Runs a network from a frozen graph.
+
+  If there are multiple outputs, cast them to tf.float32.
 
   Args:
     tensor: An Input tensor.
     graph_def: A GraphDef proto.
     input_tensor: Name of input tensor in graph def.
     output_tensor: A tensor name or list of tensor names in graph def.
+    num_batches: Number of batches to split `tensor` in to in order to
+      efficiently run them through the classifier network. This is useful if
+      running a large batch would consume too much memory, but running smaller
+      batches is feasible.
+    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
+      every output. If `dtypes` is `None` in this case, assume every output type
+      is `tf.float32`.
     scope: Name scope for classifier.
 
   Returns:
@@ -292,14 +306,46 @@ def run_image_classifier(tensor,
   Raises:
     ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
   """
-  input_map = {input_tensor: tensor}
-  is_singleton = isinstance(output_tensor, str)
-  if is_singleton:
+  if isinstance(output_tensor, str):
     output_tensor = [output_tensor]
-  classifier_outputs = tf.graph_util.import_graph_def(
-      graph_def, input_map, output_tensor, name=scope)
-  if is_singleton:
-    classifier_outputs = classifier_outputs[0]
+    output_is_tensor = True
+  elif len(output_tensor) == 1:
+    output_is_tensor = False
+  else:
+    output_is_tensor = False
+    dtypes = dtypes or [tf.float32] * len(output_tensor)
+
+  def _fn(tensor):
+    input_map = {input_tensor: tensor}
+    outputs = tf.graph_util.import_graph_def(
+        graph_def, input_map, output_tensor, name=scope)
+    if len(outputs) == 1:
+      outputs = outputs[0]
+
+    return outputs
+  if num_batches > 1:
+    # Compute the classifier splits using the memory-efficient `map_fn`.
+    # TODO(joelshor): Add padding code so `tensor.shape[0]` doesn't have to be
+    # exactly divisible by `num_batches`.
+    input_list = tf.split(tensor, num_or_size_splits=num_batches)
+    classifier_outputs = tf.map_fn(
+        fn=_fn,
+        elems=tf.stack(input_list),
+        dtype=dtypes,
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        name='RunClassifier')
+    # Combine outputs.
+    if isinstance(classifier_outputs, tf.Tensor):
+      classifier_outputs = tf.concat(tf.unstack(classifier_outputs), 0)
+    else:
+      classifier_outputs = [tf.concat(tf.unstack(x), 0) for x in
+                            classifier_outputs]
+  else:
+    classifier_outputs = _fn(tensor)
+  if not output_is_tensor and not isinstance(classifier_outputs, list):
+    classifier_outputs = [classifier_outputs]
 
   return classifier_outputs
 
