@@ -86,7 +86,7 @@ class TestOptimizerWrapper(tf.train.Optimizer):
           ])
 
     with tf.control_dependencies([assert_op]):
-      assign_op = last_loss.assign(loss)
+      assign_op = last_loss.assign(loss, use_locking=True)
 
     self._first_call = False
     with tf.control_dependencies([assign_op]):
@@ -114,20 +114,7 @@ class TestOptimizerWrapper(tf.train.Optimizer):
     update_op = self._opt.apply_gradients(
         grads_and_vars, global_step=global_step)
     with tf.control_dependencies([update_op]):
-      # Use a CriticalSection to prevent a race condition when jointly training
-      # G and D. This isn't necessary on TPU because there is only one thread of
-      # control. CriticalSection is not currently implemented for TPU anyway.
-      if flags.FLAGS.use_tpu:
-        return self._track_calls()
-      else:
-        # TODO(sarna): Clean this up once CriticalSection has fully moved into
-        # core.
-        try:
-          critical_section = tf.contrib.framework.CriticalSection()
-        except AttributeError:
-          critical_section = tf.CriticalSection()
-        return critical_section.execute(
-            self._track_calls, exclusive_resource_access=False)
+      return self._track_calls()
 
   def _track_calls(self):
     graph = None if tf.executing_eagerly() else tf.get_default_graph()
@@ -139,9 +126,9 @@ class TestOptimizerWrapper(tf.train.Optimizer):
     current_substep_mask = tf.bitwise.left_shift(1, substep_counter)
     updated_substep_mask = tf.bitwise.bitwise_or(current_substep_mask,
                                                  substep_mask)
-    assign_op = tf.assign(substep_mask, updated_substep_mask)
+    assign_op = tf.assign(substep_mask, updated_substep_mask, use_locking=True)
     with tf.control_dependencies([assign_op]):
-      inc_op = tf.assign_add(substep_counter, 1)
+      inc_op = tf.assign_add(substep_counter, 1, use_locking=True)
 
     return inc_op
 
