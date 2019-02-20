@@ -52,6 +52,8 @@ __all__ = [
     'minimax_discriminator_loss',
     'minimax_generator_loss',
     'wasserstein_discriminator_loss',
+    'wasserstein_hinge_generator_loss',
+    'wasserstein_hinge_discriminator_loss',
     'wasserstein_generator_loss',
     'wasserstein_gradient_penalty',
     'mutual_information_penalty',
@@ -157,6 +159,76 @@ def wasserstein_discriminator_loss(
       tf.summary.scalar('discriminator_gen_wass_loss', loss_on_generated)
       tf.summary.scalar('discriminator_real_wass_loss', loss_on_real)
       tf.summary.scalar('discriminator_wass_loss', loss)
+
+  return loss
+
+
+wasserstein_hinge_generator_loss = wasserstein_generator_loss
+wasserstein_hinge_generator_loss.__name__ = 'wasserstein_hinge_generator_loss'
+
+
+def wasserstein_hinge_discriminator_loss(
+    discriminator_real_outputs,
+    discriminator_gen_outputs,
+    real_weights=1.0,
+    generated_weights=1.0,
+    real_hinge=1.0,
+    generated_hinge=1.0,
+    scope=None,
+    loss_collection=tf.GraphKeys.LOSSES,
+    reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    add_summaries=False):
+  """Hinged wasserstein discriminator loss for GANs.
+
+  See `Spectral Normalization for Generative Adversarial Networks`
+  (https://arxiv.org/abs/1802.05957).
+
+  Args:
+    discriminator_real_outputs: Discriminator output on real data.
+    discriminator_gen_outputs: Discriminator output on generated data. Expected
+      to be in the range of (-inf, inf).
+    real_weights: Optional `Tensor` whose rank is either 0, or the same rank as
+      `discriminator_real_outputs`, and must be broadcastable to
+      `discriminator_real_outputs` (i.e., all dimensions must be either `1`, or
+      the same as the corresponding dimension).
+    generated_weights: Same as `real_weights`, but for
+      `discriminator_gen_outputs`.
+    real_hinge: Hinge for the logits from the real data.
+    generated_hinge: Hinge for the logits from the generated data.
+    scope: The scope for the operations performed in computing the loss.
+    loss_collection: collection to which this loss will be added.
+    reduction: A `tf.losses.Reduction` to apply to loss.
+    add_summaries: Whether or not to add summaries for the loss.
+
+  Returns:
+    A loss Tensor. The shape depends on `reduction`.
+  """
+  with tf.name_scope(scope, 'discriminator_wasserstein_loss', (
+      discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+      generated_weights)) as scope:
+    discriminator_real_outputs = _to_float(discriminator_real_outputs)
+    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+    discriminator_real_outputs.shape.assert_is_compatible_with(
+        discriminator_gen_outputs.shape)
+
+    # Compute the hinge.
+    hinged_real = tf.nn.relu(real_hinge - discriminator_real_outputs)
+    hinged_gen = tf.nn.relu(generated_hinge + discriminator_gen_outputs)
+
+    # Average.
+    loss_on_real = tf.losses.compute_weighted_loss(
+        hinged_real, real_weights, scope, loss_collection=None,
+        reduction=reduction)
+    loss_on_generated = tf.losses.compute_weighted_loss(
+        hinged_gen, generated_weights, scope,
+        loss_collection=None, reduction=reduction)
+    loss = loss_on_generated + loss_on_real
+    tf.losses.add_loss(loss, loss_collection)
+
+    if add_summaries:
+      tf.summary.scalar('discriminator_gen_wass_hinge_loss', loss_on_generated)
+      tf.summary.scalar('discriminator_real_wass_hinge_loss', loss_on_real)
+      tf.summary.scalar('discriminator_wass_hinge_loss', loss)
 
   return loss
 

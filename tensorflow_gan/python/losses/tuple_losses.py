@@ -77,6 +77,8 @@ __all__ = [
     'minimax_discriminator_loss',
     'minimax_generator_loss',
     'wasserstein_discriminator_loss',
+    'wasserstein_hinge_discriminator_loss',
+    'wasserstein_hinge_generator_loss',
     'wasserstein_generator_loss',
     'wasserstein_gradient_penalty',
     'mutual_information_penalty',
@@ -175,6 +177,10 @@ wasserstein_generator_loss = args_to_gan_model(
     tfgan_losses.wasserstein_generator_loss)
 wasserstein_discriminator_loss = args_to_gan_model(
     tfgan_losses.wasserstein_discriminator_loss)
+wasserstein_hinge_generator_loss = args_to_gan_model(
+    tfgan_losses.wasserstein_hinge_generator_loss)
+wasserstein_hinge_discriminator_loss = args_to_gan_model(
+    tfgan_losses.wasserstein_hinge_discriminator_loss)
 wasserstein_gradient_penalty = args_to_gan_model(
     tfgan_losses.wasserstein_gradient_penalty)
 

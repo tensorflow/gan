@@ -17,8 +17,8 @@
 # pylint: disable=wildcard-import,g-bad-import-order
 
 # Import all functions.
-from .losses_impl import *
+from tensorflow_gan.python.losses.losses_impl import *
 
 # Collect list of exposed symbols.
-from .losses_impl import __all__ as losses_impl_all
+from tensorflow_gan.python.losses.losses_impl import __all__ as losses_impl_all
 __all__ = losses_impl_all

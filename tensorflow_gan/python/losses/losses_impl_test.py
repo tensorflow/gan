@@ -212,6 +212,18 @@ class WassersteinLossTest(tf.test.TestCase, _LossesTest):
     self._d_loss_fn = tfgan.losses.wargs.wasserstein_discriminator_loss
 
 
+class HingeWassersteinLossTest(tf.test.TestCase, _LossesTest):
+  """Tests for wasserstein_hinge_xxx_loss."""
+
+  def setUp(self):
+    super(HingeWassersteinLossTest, self).setUp()
+    self.init_constants()
+    self._expected_g_loss = -3.12500
+    self._expected_d_loss = 6.7500
+    self._g_loss_fn = tfgan.losses.wargs.wasserstein_hinge_generator_loss
+    self._d_loss_fn = tfgan.losses.wargs.wasserstein_hinge_discriminator_loss
+
+
 # TODO(joelshor): Refactor this test to use the same code as the other losses.
 class ACGANLossTest(tf.test.TestCase):
   """Tests for acgan_loss."""
