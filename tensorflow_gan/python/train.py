@@ -776,6 +776,9 @@ def cyclegan_loss(
   return namedtuples.CycleGANLoss(loss_x2y, loss_y2x)
 
 
+# Begin google-internal
+# The four major parts can be found here: http://screen/tMRMBAohDYG.
+# End google-internal
 def stargan_loss(
     model,
     generator_loss_fn=tuple_losses.stargan_generator_loss_wrapper(
@@ -793,8 +796,6 @@ def stargan_loss(
     classification_one_hot=True,
     add_summaries=True):
   """StarGAN Loss.
-
-  The four major part can be found here: http://screen/tMRMBAohDYG.
 
   Args:
     model: (StarGAN) Model output of the stargan_model() function call.
