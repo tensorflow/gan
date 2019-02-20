@@ -67,7 +67,9 @@ def image_grid(input_tensor, grid_shape, image_shape=(32, 32), num_channels=3):
         int(input_tensor.shape[2]) != image_shape[1] or
         int(input_tensor.shape[3]) != num_channels):
       raise ValueError("Image shape and number of channels incompatible with "
-                       "input tensor.")
+                       "input tensor. %s vs %s" % (
+                           input_tensor.shape, (image_shape[0], image_shape[1],
+                                                num_channels)))
   else:
     raise ValueError("Unrecognized input tensor format.")
   height, width = grid_shape[0] * image_shape[0], grid_shape[1] * image_shape[1]
