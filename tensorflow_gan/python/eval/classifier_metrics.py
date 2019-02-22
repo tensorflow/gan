@@ -528,6 +528,7 @@ def classifier_score_from_logits(logits):
     The classifier score. A floating-point scalar of the same type as the output
     of `logits`.
   """
+  logits = tf.convert_to_tensor(logits)
   logits.shape.assert_has_rank(2)
 
   # Use maximum precision for best results.
@@ -837,7 +838,9 @@ def frechet_classifier_distance_from_activations(real_activations,
    as the output of the activations.
 
   """
+  real_activations = tf.convert_to_tensor(real_activations)
   real_activations.shape.assert_has_rank(2)
+  generated_activations = tf.convert_to_tensor(generated_activations)
   generated_activations.shape.assert_has_rank(2)
 
   activations_dtype = real_activations.dtype
