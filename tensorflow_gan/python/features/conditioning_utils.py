@@ -25,6 +25,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
 
 
 __all__ = [
@@ -34,8 +35,8 @@ __all__ = [
 
 
 def _get_shape(tensor):
-  tensor_shape = tf.shape(tensor)
-  static_tensor_shape = tf.contrib.util.constant_value(tensor_shape)
+  tensor_shape = tf.shape(input=tensor)
+  static_tensor_shape = contrib.get_static_value(tensor_shape)
   if static_tensor_shape is None:
     return tensor_shape
   else:
@@ -67,7 +68,7 @@ def condition_tensor(tensor, conditioning):
                      % conditioning.shape)
 
   mapped_conditioning = tf.contrib.layers.linear(
-      tf.layers.flatten(conditioning), num_features)
+      tf.compat.v1.layers.flatten(conditioning), num_features)
   if not mapped_conditioning.shape.is_compatible_with(tensor.shape):
     mapped_conditioning = tf.reshape(mapped_conditioning, _get_shape(tensor))
   return tensor + mapped_conditioning
@@ -76,9 +77,11 @@ def condition_tensor(tensor, conditioning):
 def _one_hot_to_embedding(one_hot, embedding_size):
   """Get a dense embedding vector from a one-hot encoding."""
   num_tokens = one_hot.shape[1]
-  label_id = tf.argmax(one_hot, axis=1)
-  embedding = tf.get_variable('embedding', [num_tokens, embedding_size])
-  return tf.nn.embedding_lookup(embedding, label_id, name='token_to_embedding')
+  label_id = tf.argmax(input=one_hot, axis=1)
+  embedding = tf.compat.v1.get_variable(
+      'embedding', [num_tokens, embedding_size], use_resource=False)
+  return tf.nn.embedding_lookup(
+      params=embedding, ids=label_id, name='token_to_embedding')
 
 
 def _validate_onehot(one_hot_labels):

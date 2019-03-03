@@ -28,7 +28,8 @@ import tensorflow_gan as tfgan
 class SpectralNormalizationTest(tf.test.TestCase):
 
   def testComputeSpectralNorm(self):
-    weights = tf.get_variable('w', dtype=tf.float32, shape=[2, 3, 50, 100])
+    weights = tf.compat.v1.get_variable(
+        'w', dtype=tf.float32, shape=[2, 3, 50, 100], use_resource=False)
     weights = tf.multiply(weights, 10.0)
     s = tf.linalg.svd(
         tf.reshape(weights, [-1, weights.shape[-1]]), compute_uv=False)
@@ -36,7 +37,7 @@ class SpectralNormalizationTest(tf.test.TestCase):
     estimated_sn = tfgan.features.compute_spectral_norm(weights)
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       np_true_sn = sess.run(true_sn)
       for i in range(50):
         est = sess.run(estimated_sn)
@@ -57,7 +58,8 @@ class SpectralNormalizationTest(tf.test.TestCase):
       self.assertGreater(abs(np_true_sn - np_est_1), abs(np_true_sn - np_est_5))
 
   def testSpectralNormalize(self):
-    weights = tf.get_variable('w', dtype=tf.float32, shape=[2, 3, 50, 100])
+    weights = tf.compat.v1.get_variable(
+        'w', dtype=tf.float32, shape=[2, 3, 50, 100], use_resource=False)
     weights = tf.multiply(weights, 10.0)
     normalized_weights = tfgan.features.spectral_normalize(
         weights, power_iteration_rounds=1)
@@ -69,7 +71,7 @@ class SpectralNormalizationTest(tf.test.TestCase):
         compute_uv=False)[..., 0]
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       s0 = sess.run(unnormalized_sigma)
 
       for i in range(50):
@@ -89,15 +91,15 @@ class SpectralNormalizationTest(tf.test.TestCase):
       self.assertGreater(abs(s0 - 1.), abs(s1 - 1.))
 
   def _testLayerHelper(self, build_layer_fn, w_shape, b_shape):
-    x = tf.placeholder(tf.float32, shape=[2, 10, 10, 3])
+    x = tf.compat.v1.placeholder(tf.float32, shape=[2, 10, 10, 3])
 
     w_initial = np.random.randn(*w_shape) * 10
-    w_initializer = tf.constant_initializer(w_initial)
+    w_initializer = tf.compat.v1.initializers.constant(w_initial)
     b_initial = np.random.randn(*b_shape)
-    b_initializer = tf.constant_initializer(b_initial)
+    b_initializer = tf.compat.v1.initializers.constant(b_initial)
 
     getter = tfgan.features.spectral_normalization_custom_getter()
-    context_manager = tf.variable_scope('', custom_getter=getter)
+    context_manager = tf.compat.v1.variable_scope('', custom_getter=getter)
 
     with context_manager:
       (net,
@@ -107,7 +109,7 @@ class SpectralNormalizationTest(tf.test.TestCase):
     x_data = np.random.rand(*x.shape)
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       # Before running a forward pass we still expect the variables values to
       # differ from the initial value because of the normalizer.
@@ -157,7 +159,7 @@ class SpectralNormalizationTest(tf.test.TestCase):
   def testConv2D_Layers(self):
 
     def build_layer_fn(x, w_initializer, b_initializer):
-      layer = tf.layers.Conv2D(
+      layer = tf.compat.v1.layers.Conv2D(
           filters=3,
           kernel_size=3,
           padding='same',
@@ -204,9 +206,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           weights_initializer=w_initializer,
           biases_initializer=b_initializer,
           variables_collections=var_collection)
-      weight_vars = tf.get_collection('CONTRIB_LAYERS_CONV2D_WEIGHTS')
+      weight_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_CONV2D_WEIGHTS')
       self.assertEquals(1, len(weight_vars))
-      bias_vars = tf.get_collection('CONTRIB_LAYERS_CONV2D_BIASES')
+      bias_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_CONV2D_BIASES')
       self.assertEquals(1, len(bias_vars))
       expected_normalized_vars = {
           'contrib.layers.conv2d.weights': weight_vars[0]
@@ -233,9 +235,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           weights_initializer=w_initializer,
           biases_initializer=b_initializer,
           variables_collections=var_collection)
-      weight_vars = tf.get_collection('SLIM_CONV2D_WEIGHTS')
+      weight_vars = tf.compat.v1.get_collection('SLIM_CONV2D_WEIGHTS')
       self.assertEquals(1, len(weight_vars))
-      bias_vars = tf.get_collection('SLIM_CONV2D_BIASES')
+      bias_vars = tf.compat.v1.get_collection('SLIM_CONV2D_BIASES')
       self.assertEquals(1, len(bias_vars))
       expected_normalized_vars = {'slim.conv2d.weights': weight_vars[0]}
       expected_not_normalized_vars = {'slim.conv2d.bias': bias_vars[0]}
@@ -247,8 +249,8 @@ class SpectralNormalizationTest(tf.test.TestCase):
   def testFC_Layers(self):
 
     def build_layer_fn(x, w_initializer, b_initializer):
-      x = tf.layers.flatten(x)
-      layer = tf.layers.Dense(
+      x = tf.compat.v1.layers.flatten(x)
+      layer = tf.compat.v1.layers.Dense(
           units=3,
           kernel_initializer=w_initializer,
           bias_initializer=b_initializer)
@@ -293,9 +295,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           weights_initializer=w_initializer,
           biases_initializer=b_initializer,
           variables_collections=var_collection)
-      weight_vars = tf.get_collection('CONTRIB_LAYERS_FC_WEIGHTS')
+      weight_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_FC_WEIGHTS')
       self.assertEquals(1, len(weight_vars))
-      bias_vars = tf.get_collection('CONTRIB_LAYERS_FC_BIASES')
+      bias_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_FC_BIASES')
       self.assertEquals(1, len(bias_vars))
       expected_normalized_vars = {
           'contrib.layers.fully_connected.weights': weight_vars[0]
@@ -322,9 +324,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           weights_initializer=w_initializer,
           biases_initializer=b_initializer,
           variables_collections=var_collection)
-      weight_vars = tf.get_collection('SLIM_FC_WEIGHTS')
+      weight_vars = tf.compat.v1.get_collection('SLIM_FC_WEIGHTS')
       self.assertEquals(1, len(weight_vars))
-      bias_vars = tf.get_collection('SLIM_FC_BIASES')
+      bias_vars = tf.compat.v1.get_collection('SLIM_FC_BIASES')
       self.assertEquals(1, len(bias_vars))
       expected_normalized_vars = {
           'slim.fully_connected.weights': weight_vars[0]

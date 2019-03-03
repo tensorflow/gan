@@ -64,7 +64,7 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
     data = np.random.normal(size=[256, 3, 32, 32]).astype('f')
     pyramid = np_laplacian_pyramid(data, 3)
-    data_tf = tf.placeholder(tf.float32, [256, 32, 32, 3])
+    data_tf = tf.compat.v1.placeholder(tf.float32, [256, 32, 32, 3])
     pyramid_tf = laplacian_pyramid(data_tf, 3)
     with self.cached_session() as sess:
       pyramid_tf = sess.run(
@@ -75,8 +75,8 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
   def test_sliced_wasserstein_distance(self):
     """Test the distance."""
-    d1 = tf.random_uniform([256, 32, 32, 3])
-    d2 = tf.random_normal([256, 32, 32, 3])
+    d1 = tf.random.uniform([256, 32, 32, 3])
+    d2 = tf.random.normal([256, 32, 32, 3])
     wfunc = tfgan.eval.sliced_wasserstein_distance(d1, d2)
     with self.cached_session() as sess:
       wscores = [sess.run(x) for x in wfunc]
@@ -91,8 +91,8 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
   def test_sliced_wasserstein_distance_svd(self):
     """Test the distance with svd."""
-    d1 = tf.random_uniform([256, 32, 32, 3])
-    d2 = tf.random_normal([256, 32, 32, 3])
+    d1 = tf.random.uniform([256, 32, 32, 3])
+    d2 = tf.random.normal([256, 32, 32, 3])
     wfunc = tfgan.eval.sliced_wasserstein_distance(d1, d2, use_svd=True)
     with self.cached_session() as sess:
       wscores = [sess.run(x) for x in wfunc]
@@ -107,10 +107,10 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
   def test_swd_mismatched(self):
     """Test the inputs mismatched shapes are detected."""
-    d1 = tf.random_uniform([256, 32, 32, 3])
-    d2 = tf.random_normal([256, 32, 31, 3])
-    d3 = tf.random_normal([256, 31, 32, 3])
-    d4 = tf.random_normal([255, 32, 32, 3])
+    d1 = tf.random.uniform([256, 32, 32, 3])
+    d2 = tf.random.normal([256, 32, 31, 3])
+    d3 = tf.random.normal([256, 31, 32, 3])
+    d4 = tf.random.normal([255, 32, 32, 3])
     with self.assertRaises(ValueError):
       tfgan.eval.sliced_wasserstein_distance(d1, d2)
     with self.assertRaises(ValueError):
@@ -120,8 +120,8 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
   def test_swd_not_rgb(self):
     """Test that only RGB is supported."""
-    d1 = tf.random_uniform([256, 32, 32, 1])
-    d2 = tf.random_normal([256, 32, 32, 1])
+    d1 = tf.random.uniform([256, 32, 32, 1])
+    d2 = tf.random.normal([256, 32, 32, 1])
     with self.assertRaises(ValueError):
       tfgan.eval.sliced_wasserstein_distance(d1, d2)
 

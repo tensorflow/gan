@@ -75,10 +75,10 @@ def image_grid(input_tensor, grid_shape, image_shape=(32, 32), num_channels=3):
   height, width = grid_shape[0] * image_shape[0], grid_shape[1] * image_shape[1]
   input_tensor = tf.reshape(
       input_tensor, tuple(grid_shape) + tuple(image_shape) + (num_channels,))
-  input_tensor = tf.transpose(input_tensor, [0, 1, 3, 2, 4])
+  input_tensor = tf.transpose(a=input_tensor, perm=[0, 1, 3, 2, 4])
   input_tensor = tf.reshape(
       input_tensor, [grid_shape[0], width, image_shape[0], num_channels])
-  input_tensor = tf.transpose(input_tensor, [0, 2, 1, 3])
+  input_tensor = tf.transpose(a=input_tensor, perm=[0, 2, 1, 3])
   input_tensor = tf.reshape(input_tensor, [1, height, width, num_channels])
   return input_tensor
 

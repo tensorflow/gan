@@ -56,12 +56,12 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  if not tf.gfile.Exists(FLAGS.train_log_dir):
-    tf.gfile.MakeDirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
     # Get real and distorted images.
-    with tf.device('/cpu:0'), tf.name_scope('inputs'):
+    with tf.device('/cpu:0'), tf.compat.v1.name_scope('inputs'):
       real_images, _ = data_provider.provide_data('train', FLAGS.batch_size,
                                                   FLAGS.patch_size)
       distorted_images = _distort_images(
@@ -80,7 +80,7 @@ def main(_):
     tfgan.eval.add_gan_model_image_summaries(gan_model, grid_size=3)
 
     # Define the GANLoss tuple using standard library functions.
-    with tf.name_scope('losses'):
+    with tf.compat.v1.name_scope('losses'):
       gan_loss = tfgan.gan_loss(
           gan_model,
           generator_loss_fn=tfgan.losses.least_squares_generator_loss,
@@ -88,14 +88,14 @@ def main(_):
 
       # Define the standard L1 pixel loss.
       l1_pixel_loss = tf.norm(
-          gan_model.real_data - gan_model.generated_data,
+          tensor=gan_model.real_data - gan_model.generated_data,
           ord=1) / FLAGS.patch_size**2
 
       # Modify the loss tuple to include the pixel loss. Add summaries as well.
       gan_loss = tfgan.losses.combine_adversarial_loss(
           gan_loss, gan_model, l1_pixel_loss, weight_factor=FLAGS.weight_factor)
 
-    with tf.name_scope('train_ops'):
+    with tf.compat.v1.name_scope('train_ops'):
       # Get the GANTrain ops using the custom optimizers and optional
       # discriminator weight clipping.
       gen_lr, dis_lr = _lr(FLAGS.generator_lr, FLAGS.discriminator_lr)
@@ -109,8 +109,8 @@ def main(_):
           colocate_gradients_with_ops=True,
           aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N,
           transform_grads_fn=tf.contrib.training.clip_gradient_norms_fn(1e3))
-      tf.summary.scalar('generator_lr', gen_lr)
-      tf.summary.scalar('discriminator_lr', dis_lr)
+      tf.compat.v1.summary.scalar('generator_lr', gen_lr)
+      tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
 
     # Use GAN train step function if using adversarial loss, otherwise
     # only train the generator.
@@ -120,11 +120,11 @@ def main(_):
 
     # Run the alternating training loop. Skip it if no steps should be taken
     # (used for graph construction tests).
-    status_message = tf.string_join([
+    status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.train.get_or_create_global_step())
+        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
     ],
-                                    name='status_message')
+                                     name='status_message')
     if FLAGS.max_number_of_steps == 0:
       return
     tfgan.gan_train(
@@ -132,8 +132,8 @@ def main(_):
         FLAGS.train_log_dir,
         get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-            tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ],
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
@@ -141,16 +141,16 @@ def main(_):
 
 def _optimizer(gen_lr, dis_lr):
   kwargs = {'beta1': 0.5, 'beta2': 0.999}
-  generator_opt = tf.train.AdamOptimizer(gen_lr, **kwargs)
-  discriminator_opt = tf.train.AdamOptimizer(dis_lr, **kwargs)
+  generator_opt = tf.compat.v1.train.AdamOptimizer(gen_lr, **kwargs)
+  discriminator_opt = tf.compat.v1.train.AdamOptimizer(dis_lr, **kwargs)
   return generator_opt, discriminator_opt
 
 
 def _lr(gen_lr_base, dis_lr_base):
   """Return the generator and discriminator learning rates."""
-  gen_lr = tf.train.exponential_decay(
+  gen_lr = tf.compat.v1.train.exponential_decay(
       learning_rate=gen_lr_base,
-      global_step=tf.train.get_or_create_global_step(),
+      global_step=tf.compat.v1.train.get_or_create_global_step(),
       decay_steps=100000,
       decay_rate=0.8,
       staircase=True,
@@ -161,10 +161,14 @@ def _lr(gen_lr_base, dis_lr_base):
 
 
 def _distort_images(images, downscale_size, upscale_size):
-  downscaled = tf.image.resize_area(images, [downscale_size, downscale_size])
-  upscaled = tf.image.resize_area(downscaled, [upscale_size, upscale_size])
+  downscaled = tf.image.resize(
+      images, [downscale_size, downscale_size],
+      method=tf.image.ResizeMethod.AREA)
+  upscaled = tf.image.resize(
+      downscaled, [upscale_size, upscale_size],
+      method=tf.image.ResizeMethod.AREA)
   return upscaled
 
 
 if __name__ == '__main__':
-  tf.app.run()
+  tf.compat.v1.app.run()

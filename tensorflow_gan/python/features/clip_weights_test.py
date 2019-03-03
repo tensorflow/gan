@@ -37,7 +37,7 @@ class ClipWeightsTest(tf.test.TestCase):
 
   def _test_weight_clipping_helper(self, use_tuple):
     loss = self.variables[0]
-    opt = tf.train.GradientDescentOptimizer(1.0)
+    opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
     if use_tuple:
       opt_clip = tfgan.features.clip_variables(opt, self.variables, 0.1)
     else:
@@ -47,13 +47,13 @@ class ClipWeightsTest(tf.test.TestCase):
     train_op2 = opt_clip.minimize(loss, var_list=self.variables)
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       self.assertEqual(2.0, self.variables[0].eval())
       sess.run(train_op1)
       self.assertLess(0.1, self.variables[0].eval())
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       self.assertEqual(2.0, self.variables[0].eval())
       sess.run(train_op2)
       self.assertNear(0.1, self.variables[0].eval(), 1e-7)
@@ -65,7 +65,7 @@ class ClipWeightsTest(tf.test.TestCase):
     self._test_weight_clipping_helper(True)
 
   def _test_incorrect_weight_clip_value_helper(self, use_tuple):
-    opt = tf.train.GradientDescentOptimizer(1.0)
+    opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
 
     if use_tuple:
       with self.assertRaisesRegexp(ValueError, 'must be positive'):

@@ -25,6 +25,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
 
 __all__ = [
     'VBN',
@@ -33,8 +34,8 @@ __all__ = [
 
 def _static_or_dynamic_batch_size(tensor, batch_axis):
   """Returns the static or dynamic batch size."""
-  batch_size = tf.shape(tensor)[batch_axis]
-  static_batch_size = tf.contrib.util.constant_value(batch_size)
+  batch_size = tf.shape(input=tensor)[batch_axis]
+  static_batch_size = contrib.get_static_value(batch_size)
   return static_batch_size or batch_size
 
 
@@ -57,11 +58,14 @@ def vbn_statistics(x, axes):
   y = tf.cast(x, tf.float32) if x.dtype == tf.float16 else x
 
   # Compute true mean while keeping the dims for proper broadcasting.
-  shift = tf.stop_gradient(tf.reduce_mean(y, axes, keepdims=True))
+  shift = tf.stop_gradient(
+      tf.reduce_mean(input_tensor=y, axis=axes, keepdims=True))
 
-  shifted_mean = tf.reduce_mean(y - shift, axes, keepdims=True)
+  shifted_mean = tf.reduce_mean(
+      input_tensor=y - shift, axis=axes, keepdims=True)
   mean = shifted_mean + shift
-  mean_squared = tf.reduce_mean(tf.square(y), axes, keepdims=True)
+  mean_squared = tf.reduce_mean(
+      input_tensor=tf.square(y), axis=axes, keepdims=True)
 
   mean = tf.squeeze(mean, axes)
   mean_squared = tf.squeeze(mean_squared, axes)
@@ -123,8 +127,8 @@ class VBN(object):
                epsilon=1e-3,
                center=True,
                scale=True,
-               beta_initializer=tf.zeros_initializer(),
-               gamma_initializer=tf.ones_initializer(),
+               beta_initializer=tf.compat.v1.initializers.zeros(),
+               gamma_initializer=tf.compat.v1.initializers.ones(),
                beta_regularizer=None,
                gamma_regularizer=None,
                trainable=True,
@@ -177,7 +181,8 @@ class VBN(object):
     if axis == self._batch_axis:
       raise ValueError('`axis` and `batch_axis` cannot be the same.')
 
-    with tf.variable_scope(name, 'VBN', values=[reference_batch]) as self._vs:
+    with tf.compat.v1.variable_scope(
+        name, 'VBN', values=[reference_batch]) as self._vs:
       self._reference_batch = reference_batch
 
       # Calculate important shapes:
@@ -219,19 +224,21 @@ class VBN(object):
 
       # Make the variables, if necessary.
       if center:
-        self._beta = tf.get_variable(
+        self._beta = tf.compat.v1.get_variable(
             name='beta',
             shape=(params_shape,),
             initializer=beta_initializer,
             regularizer=beta_regularizer,
-            trainable=trainable)
+            trainable=trainable,
+            use_resource=False)
       if scale:
-        self._gamma = tf.get_variable(
+        self._gamma = tf.compat.v1.get_variable(
             name='gamma',
             shape=(params_shape,),
             initializer=gamma_initializer,
             regularizer=gamma_regularizer,
-            trainable=trainable)
+            trainable=trainable,
+            use_resource=False)
 
   def _virtual_statistics(self, inputs, reduction_axes):
     """Compute the statistics needed for virtual batch normalization."""
@@ -253,7 +260,7 @@ class VBN(object):
 
   def reference_batch_normalization(self):
     """Return the reference batch, but batch normalized."""
-    with tf.name_scope(self._vs.name):
+    with tf.compat.v1.name_scope(self._vs.name):
       return tf.nn.batch_normalization(self._reference_batch,
                                        self._broadcast(self._ref_mean),
                                        self._broadcast(self._ref_variance),
@@ -275,7 +282,8 @@ class VBN(object):
     """
     _validate_call_input([inputs, self._reference_batch], self._batch_axis)
 
-    with tf.name_scope(self._vs.name, values=[inputs, self._reference_batch]):
+    with tf.compat.v1.name_scope(
+        self._vs.name, values=[inputs, self._reference_batch]):
       # Calculate the statistics on the current input on a per-example basis.
       vb_mean, vb_mean_sq = self._virtual_statistics(
           inputs, self._example_reduction_axes)

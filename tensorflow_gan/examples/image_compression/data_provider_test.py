@@ -26,7 +26,7 @@ import tensorflow as tf
 
 from tensorflow_gan.examples.image_compression import data_provider
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
@@ -79,7 +79,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(types['images'], tf.float32)
     self.assertEqual(types['labels'], tf.float32)
 
-    next_batch = ds.make_one_shot_iterator().get_next()
+    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
     images = next_batch['images']
     labels = next_batch['labels']
 

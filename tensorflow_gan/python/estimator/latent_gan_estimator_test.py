@@ -60,8 +60,10 @@ class TrainInputEstimatorTest(tf.test.TestCase):
       """The generator function will get the newly created z variable."""
       del mode
       self.assertSequenceEqual(net.shape, input_z_shape)
-      gen_dummy_var = tf.get_variable(
-          name='generator_dummy_variable', initializer=tf.ones(input_z_shape))
+      gen_dummy_var = tf.compat.v1.get_variable(
+          name='generator_dummy_variable',
+          initializer=tf.ones(input_z_shape),
+          use_resource=False)
       return net * gen_dummy_var
 
     def _discriminator(net, condition, mode):
@@ -77,10 +79,10 @@ class TrainInputEstimatorTest(tf.test.TestCase):
       """Make sure that features and labels are passed in from input."""
       self.assertTrue(np.array_equal(features, true_features))
       self.assertTrue(np.array_equal(labels, true_labels))
-      return tf.losses.absolute_difference(expected_z_output,
-                                           gan_model.generated_data)
+      return tf.compat.v1.losses.absolute_difference(expected_z_output,
+                                                     gan_model.generated_data)
 
-    optimizer = tf.train.AdamOptimizer
+    optimizer = tf.compat.v1.train.AdamOptimizer
 
     # We are not loading checkpoints, so set the corresponding directory to a
     # dummy directories.

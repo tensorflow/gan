@@ -50,14 +50,14 @@ def _get_train_input_fn(batch_size, noise_dims, num_parallel_calls=4):
   def train_input_fn():
     images, _ = data_provider.provide_data(
         'train', batch_size, num_parallel_calls=num_parallel_calls)
-    noise = tf.random_normal([batch_size, noise_dims])
+    noise = tf.random.normal([batch_size, noise_dims])
     return noise, images
   return train_input_fn
 
 
 def _get_predict_input_fn(batch_size, noise_dims):
   def predict_input_fn():
-    noise = tf.random_normal([batch_size, noise_dims])
+    noise = tf.random.normal([batch_size, noise_dims])
     return noise
   return predict_input_fn
 
@@ -75,8 +75,8 @@ def main(_):
       discriminator_fn=networks.unconditional_discriminator,
       generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-      generator_optimizer=tf.train.AdamOptimizer(0.001, 0.5),
-      discriminator_optimizer=tf.train.AdamOptimizer(0.0001, 0.5),
+      generator_optimizer=tf.compat.v1.train.AdamOptimizer(0.001, 0.5),
+      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(0.0001, 0.5),
       add_summaries=tfgan.estimator.SummaryType.IMAGES)
 
   # Train estimator.
@@ -92,11 +92,11 @@ def main(_):
   tiled_image = tfgan.eval.python_image_grid(predictions, grid_shape=(6, 6))
 
   # Write to disk.
-  if not tf.gfile.Exists(FLAGS.output_dir):
-    tf.gfile.MakeDirs(FLAGS.output_dir)
+  if not tf.io.gfile.exists(FLAGS.output_dir):
+    tf.io.gfile.makedirs(FLAGS.output_dir)
   scipy.misc.imsave(os.path.join(FLAGS.output_dir, 'unconditional_gan.png'),
                     np.squeeze(tiled_image, axis=2))
 
 
 if __name__ == '__main__':
-  tf.app.run()
+  tf.compat.v1.app.run()

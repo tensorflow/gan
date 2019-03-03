@@ -108,11 +108,11 @@ def get_input_fn(data_dir, batch_size, imshape, mask_side_len):
                      num_parallel_calls=4)
     data = data.cache().repeat().batch(
         batch_size, drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE)
-    image_iterator = data.make_one_shot_iterator()
+    image_iterator = tf.compat.v1.data.make_one_shot_iterator(data)
     expanded_weighted_mask = tf.expand_dims(
-        tf.convert_to_tensor(weighted_mask, dtype=tf.float32), -1)
+        tf.convert_to_tensor(value=weighted_mask, dtype=tf.float32), -1)
     expanded_mask = tf.expand_dims(
-        tf.convert_to_tensor(mask, dtype=tf.float32), -1)
+        tf.convert_to_tensor(value=mask, dtype=tf.float32), -1)
     features = {
         'mask': expanded_mask,
         'weighted_mask': expanded_weighted_mask
@@ -129,28 +129,32 @@ def inpainter_loss(gan_model, features, labels, add_summaries):
   inverse_mask = 1 - mask
 
   contextual_loss = tf.reduce_sum(
-      tf.keras.backend.batch_flatten(
-          tf.abs(tf.multiply(loss_weights, gan_model.generated_data) -
-                 tf.multiply(loss_weights, labels))), 1)
+      input_tensor=tf.keras.backend.batch_flatten(
+          tf.abs(
+              tf.multiply(loss_weights, gan_model.generated_data) -
+              tf.multiply(loss_weights, labels))),
+      axis=1)
 
   perceptual_loss = tfgan.losses.wasserstein_generator_loss(
       gan_model, add_summaries=add_summaries)
   inpaint_loss = contextual_loss + perceptual_loss
 
-  inpaint_loss = tf.reduce_mean(inpaint_loss)
+  inpaint_loss = tf.reduce_mean(input_tensor=inpaint_loss)
   infilled_image = (tf.multiply(mask, gan_model.real_data) +
                     tf.multiply(inverse_mask, gan_model.generated_data))
 
   if add_summaries:
-    contextual_loss = tf.reduce_mean(contextual_loss)
-    perceptual_loss = tf.reduce_mean(perceptual_loss)
-    tf.summary.scalar('contextual_loss', contextual_loss)
-    tf.summary.scalar('perceptual_loss', perceptual_loss)
-    tf.summary.image('mask_image', tf.multiply(mask, gan_model.real_data))
-    tf.summary.image('gen_image', gan_model.generated_data)
-    tf.summary.image('loss_mask', tf.expand_dims(loss_weights, axis=0))
+    contextual_loss = tf.reduce_mean(input_tensor=contextual_loss)
+    perceptual_loss = tf.reduce_mean(input_tensor=perceptual_loss)
+    tf.compat.v1.summary.scalar('contextual_loss', contextual_loss)
+    tf.compat.v1.summary.scalar('perceptual_loss', perceptual_loss)
+    tf.compat.v1.summary.image('mask_image',
+                               tf.multiply(mask, gan_model.real_data))
+    tf.compat.v1.summary.image('gen_image', gan_model.generated_data)
+    tf.compat.v1.summary.image('loss_mask', tf.expand_dims(
+        loss_weights, axis=0))
 
-  tf.summary.image('infill_image', infilled_image)
+  tf.compat.v1.summary.image('infill_image', infilled_image)
   return inpaint_loss
 
 
@@ -181,8 +185,13 @@ def main(_):
                                 log_step_count_steps=FLAGS.mod_sum)
 
   estimator = tfgan.estimator.get_latent_gan_estimator(
-      faces_gan.generator, faces_gan.discriminator, inpainter_loss,
-      tf.train.AdamOptimizer, params, conf, FLAGS.save_dir,
+      faces_gan.generator,
+      faces_gan.discriminator,
+      inpainter_loss,
+      tf.compat.v1.train.AdamOptimizer,
+      params,
+      conf,
+      FLAGS.save_dir,
       warmstart_options=FLAGS.warmstart)
 
   input_fn = get_input_fn(
@@ -195,4 +204,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.app.run(main)
+  tf.compat.v1.app.run(main)

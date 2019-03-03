@@ -24,7 +24,7 @@ import tensorflow as tf
 
 from tensorflow_gan.examples.mnist import data_provider
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase):
@@ -64,7 +64,7 @@ class DataProviderTest(tf.test.TestCase):
     self.assertEqual(types['images'], tf.float32)
     self.assertEqual(types['labels'], tf.float32)
 
-    next_batch = ds.make_one_shot_iterator().get_next()
+    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
     images = next_batch['images']
     labels = next_batch['labels']
 
@@ -83,7 +83,7 @@ class DataProviderTest(tf.test.TestCase):
     images, labels = data_provider.provide_data('test', batch_size)
 
     with self.cached_session() as sess:
-      sess.run(tf.tables_initializer())
+      sess.run(tf.compat.v1.tables_initializer())
       images, labels = sess.run([images, labels])
     self.assertTupleEqual(images.shape, (batch_size, 28, 28, 1))
     self.assertTrue(np.all(np.abs(images) <= 1))

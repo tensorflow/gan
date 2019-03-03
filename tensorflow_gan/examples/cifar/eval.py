@@ -61,7 +61,7 @@ flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
 def main(_, run_eval_loop=True):
   # Fetch and generate images to run through Inception.
-  with tf.name_scope('inputs'):
+  with tf.compat.v1.name_scope('inputs'):
     real_data, _ = data_provider.provide_data(
         'test', FLAGS.num_images_generated, shuffle=False)
     generated_data = _get_generated_data(FLAGS.num_images_generated)
@@ -71,7 +71,7 @@ def main(_, run_eval_loop=True):
     fid = util.get_frechet_inception_distance(
         real_data, generated_data, FLAGS.num_images_generated,
         FLAGS.num_inception_images)
-    tf.summary.scalar('frechet_inception_distance', fid)
+    tf.compat.v1.summary.scalar('frechet_inception_distance', fid)
 
   # Compute normal Inception scores.
   if FLAGS.eval_real_images:
@@ -80,15 +80,15 @@ def main(_, run_eval_loop=True):
   else:
     inc_score = util.get_inception_scores(
         generated_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
-  tf.summary.scalar('inception_score', inc_score)
+  tf.compat.v1.summary.scalar('inception_score', inc_score)
 
   # Create ops that write images to disk.
   image_write_ops = None
   if FLAGS.num_images_generated >= 100 and FLAGS.write_to_disk:
     reshaped_imgs = tfgan.eval.image_reshaper(generated_data[:100], num_cols=10)
     uint8_images = data_provider.float_image_to_uint8(reshaped_imgs)
-    image_write_ops = tf.write_file(
-        '%s/%s'% (FLAGS.eval_dir, 'unconditional_cifar10.png'),
+    image_write_ops = tf.io.write_file(
+        '%s/%s' % (FLAGS.eval_dir, 'unconditional_cifar10.png'),
         tf.image.encode_png(uint8_images[0]))
 
   # For unit testing, use `run_eval_loop=False`.
@@ -104,12 +104,12 @@ def main(_, run_eval_loop=True):
 
 def _get_generated_data(num_images_generated):
   """Get generated images."""
-  noise = tf.random_normal([num_images_generated, 64])
+  noise = tf.random.normal([num_images_generated, 64])
   generator_inputs = noise
   generator_fn = networks.generator
   # In order for variables to load, use the same variable scope as in the
   # train job.
-  with tf.variable_scope('Generator'):
+  with tf.compat.v1.variable_scope('Generator'):
     data = generator_fn(generator_inputs, is_training=False)
 
   return data

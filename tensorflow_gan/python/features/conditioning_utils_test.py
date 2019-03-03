@@ -29,45 +29,45 @@ class ConditioningUtilsTest(tf.test.TestCase):
     for tensor_shape in [(4, 1), (4, 2), (4, 2, 6), (None, 5, 3)]:
       for conditioning_shape in [(4, 1), (4, 8), (4, 5, 3)]:
         tfgan.features.condition_tensor(
-            tf.placeholder(tf.float32, tensor_shape),
-            tf.placeholder(tf.float32, conditioning_shape))
+            tf.compat.v1.placeholder(tf.float32, tensor_shape),
+            tf.compat.v1.placeholder(tf.float32, conditioning_shape))
 
   def test_condition_tensor_asserts(self):
     with self.assertRaisesRegexp(ValueError, 'Cannot reshape'):
       tfgan.features.condition_tensor(
-          tf.placeholder(tf.float32, (4, 1)),
-          tf.placeholder(tf.float32, (5, 1)))
+          tf.compat.v1.placeholder(tf.float32, (4, 1)),
+          tf.compat.v1.placeholder(tf.float32, (5, 1)))
 
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor(
-          tf.placeholder(tf.float32, (5, None)),
-          tf.placeholder(tf.float32, (5, 1)))
+          tf.compat.v1.placeholder(tf.float32, (5, None)),
+          tf.compat.v1.placeholder(tf.float32, (5, 1)))
 
     with self.assertRaisesRegexp(ValueError, 'at least 2D'):
       tfgan.features.condition_tensor(
-          tf.placeholder(tf.float32, (5, 2)),
-          tf.placeholder(tf.float32, (5)))
+          tf.compat.v1.placeholder(tf.float32, (5, 2)),
+          tf.compat.v1.placeholder(tf.float32, (5)))
 
   def test_condition_tensor_from_onehot(self):
     tfgan.features.condition_tensor_from_onehot(
-        tf.placeholder(tf.float32, (5, 4, 1)),
-        tf.placeholder(tf.float32, (5, 10)))
+        tf.compat.v1.placeholder(tf.float32, (5, 4, 1)),
+        tf.compat.v1.placeholder(tf.float32, (5, 10)))
 
   def test_condition_tensor_from_onehot_asserts(self):
     with self.assertRaisesRegexp(ValueError, 'Shape .* must have rank 2'):
       tfgan.features.condition_tensor_from_onehot(
-          tf.placeholder(tf.float32, (5, 1)),
-          tf.placeholder(tf.float32, (5)))
+          tf.compat.v1.placeholder(tf.float32, (5, 1)),
+          tf.compat.v1.placeholder(tf.float32, (5)))
 
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor_from_onehot(
-          tf.placeholder(tf.float32, (5, 1)),
-          tf.placeholder(tf.float32, (5, None)))
+          tf.compat.v1.placeholder(tf.float32, (5, 1)),
+          tf.compat.v1.placeholder(tf.float32, (5, None)))
 
     with self.assertRaisesRegexp(ValueError, 'Cannot reshape a tensor'):
       tfgan.features.condition_tensor_from_onehot(
-          tf.placeholder(tf.float32, (5, 1)),
-          tf.placeholder(tf.float32, (4, 6)))
+          tf.compat.v1.placeholder(tf.float32, (5, 1)),
+          tf.compat.v1.placeholder(tf.float32, (4, 6)))
 
 
 if __name__ == '__main__':

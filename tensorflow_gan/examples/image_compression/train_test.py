@@ -27,7 +27,7 @@ import tensorflow as tf
 from tensorflow_gan.examples.image_compression import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase, parameterized.TestCase):

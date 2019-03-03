@@ -28,7 +28,7 @@ import tensorflow as tf
 from tensorflow_gan.examples.mnist import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase, parameterized.TestCase):
@@ -39,7 +39,7 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
     FLAGS.gan_type = 'unconditional'
     FLAGS.batch_size = 5
     FLAGS.grid_size = 1
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
     # Mock input pipeline.
     mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)

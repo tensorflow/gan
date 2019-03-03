@@ -68,9 +68,13 @@ def pad(input_net, padding_size):
     dim.
   """
   if len(input_net.shape) == 4:
-    return tf.pad(input_net, _padding_arg(padding_size, padding_size, 'NHWC'))
+    return tf.pad(
+        tensor=input_net,
+        paddings=_padding_arg(padding_size, padding_size, 'NHWC'))
   elif len(input_net.shape) == 3:
-    return tf.pad(input_net, _padding_arg(padding_size, padding_size, 'HWC'))
+    return tf.pad(
+        tensor=input_net,
+        paddings=_padding_arg(padding_size, padding_size, 'HWC'))
   else:
     raise ValueError('The input tensor need to be either 3D or 4D.')
 

@@ -27,12 +27,12 @@ from tensorflow_gan.examples.cifar import networks
 class NetworksTest(tf.test.TestCase):
 
   def test_generator(self):
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
     batch_size = 100
-    noise = tf.random_normal([batch_size, 64])
+    noise = tf.random.normal([batch_size, 64])
     image = networks.generator(noise)
     with self.test_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       image_np = image.eval()
 
     self.assertAllEqual([batch_size, 32, 32, 3], image_np.shape)
@@ -40,10 +40,10 @@ class NetworksTest(tf.test.TestCase):
 
   def test_discriminator(self):
     batch_size = 5
-    image = tf.random_uniform([batch_size, 32, 32, 3], -1, 1)
+    image = tf.random.uniform([batch_size, 32, 32, 3], -1, 1)
     dis_output = networks.discriminator(image, None)
     with self.test_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       dis_output_np = dis_output.eval()
 
     self.assertAllEqual([batch_size, 1], dis_output_np.shape)

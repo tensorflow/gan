@@ -22,7 +22,7 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_gan.examples.cifar import util
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class UtilTest(tf.test.TestCase):
@@ -43,7 +43,7 @@ class UtilTest(tf.test.TestCase):
   def test_get_inception_scores(self, mock_inception_score):
     mock_inception_score.return_value = 1.0
     util.get_inception_scores(
-        tf.placeholder(tf.float32, shape=[None, 28, 28, 3]),
+        tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 3]),
         batch_size=100,
         num_inception_images=10)
 
@@ -53,8 +53,8 @@ class UtilTest(tf.test.TestCase):
   def test_get_frechet_inception_distance(self, mock_fid):
     mock_fid.return_value = 1.0
     util.get_frechet_inception_distance(
-        tf.placeholder(tf.float32, shape=[None, 28, 28, 3]),
-        tf.placeholder(tf.float32, shape=[None, 28, 28, 3]),
+        tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 3]),
+        tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 3]),
         batch_size=100,
         num_inception_images=10)
 

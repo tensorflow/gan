@@ -65,8 +65,8 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
         "ps": ["localhost:%s" % port2]
     })
 
-    worker = tf.train.Server(cs, job_name="worker", start=True)
-    ps = tf.train.Server(cs, job_name="ps", start=True)
+    worker = tf.distribute.Server(cs, job_name="worker", start=True)
+    ps = tf.distribute.Server(cs, job_name="ps", start=True)
 
     return worker, ps
 
@@ -85,12 +85,12 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
     with self._maybeWithDevice("/job:worker" if is_distributed else None):
       grads0 = tf.constant([[0.1, 0.1], [0.1, 0.1]], dtype=dtype)
       grads1 = tf.constant([0.01, 0.01], dtype=dtype)
-      sgd = tf.train.GradientDescentOptimizer(3.0)
+      sgd = tf.compat.v1.train.GradientDescentOptimizer(3.0)
       clip_opt = tfgan.features.VariableClippingOptimizer(sgd, {var0: [1]}, 2.0)
 
       update_op = clip_opt.apply_gradients(
           list(zip([grads0, grads1], [var0, var1])))
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
     return var0, var1, update_op
 
   def _assertDenseCorrect(self, var0, var1, update_op):
@@ -121,7 +121,7 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
     with self._maybeWithDevice("/job:worker" if is_distributed else None):
       grads = tf.IndexedSlices(
           tf.constant([[0.1, 0.1], [0.1, 0.1]], dtype=dtype), [0, 2], [3, 2])
-      sgd = tf.train.GradientDescentOptimizer(3.0)
+      sgd = tf.compat.v1.train.GradientDescentOptimizer(3.0)
       clip_opt = tfgan.features.VariableClippingOptimizer(
           sgd, {
               var0: [1],
@@ -129,7 +129,7 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
           }, 2.0)
       update_op = clip_opt.apply_gradients(
           list(zip([grads, grads], [var0, var1])))
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
     return var0, var1, update_op
 
   def _assertSparseCorrect(self, var0, var1, update_op):
@@ -177,7 +177,7 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
   def testDenseDistributed(self):
     worker, unused_ps = self._setupCluster()
     for dtype in [tf.float64, tf.half, tf.float32]:
-      with tf.Session(worker.target):
+      with tf.compat.v1.Session(worker.target):
         var0, var1, update_op = self._setupDense(True, dtype)
         self._assertDenseCorrect(var0, var1, update_op)
 
@@ -190,7 +190,7 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
   def testSparseDistributed(self):
     worker, unused_ps = self._setupCluster()
     for dtype in [tf.half, tf.float32, tf.float64]:
-      with tf.Session(worker.target):
+      with tf.compat.v1.Session(worker.target):
         var0, var1, update_op = self._setupSparse(True, dtype)
         self._assertSparseCorrect(var0, var1, update_op)
 

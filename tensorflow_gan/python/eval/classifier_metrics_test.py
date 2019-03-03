@@ -42,7 +42,7 @@ from tensorflow_gan.python.eval.classifier_metrics import trace_sqrt_product
 
 from google.protobuf import text_format
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 classifier_module = sys.modules[get_graph_def_from_url_tarball.__module__]
 
 
@@ -214,7 +214,7 @@ versions {
 
 
 def _get_dummy_graphdef():
-  dummy_graphdef = tf.GraphDef()
+  dummy_graphdef = tf.compat.v1.GraphDef()
   text_format.Merge(graphdef_string, dummy_graphdef)
   return dummy_graphdef
 
@@ -259,7 +259,7 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
     logits.shape.assert_is_compatible_with([batch_size, 1001])
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   @parameterized.parameters(
       {'use_default_graph_def': True, 'num_batches': 1},
@@ -286,7 +286,7 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
     pool.shape.assert_is_compatible_with([batch_size, 2048])
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   def test_run_inception_multiple_outputs(self):
     """Test `run_inception` graph construction with multiple outputs."""
@@ -303,7 +303,7 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
     pool.shape.assert_is_compatible_with([batch_size, 2048])
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   def test_run_inception_multicall(self):
     """Test that `run_inception` can be called multiple times."""
@@ -348,7 +348,7 @@ class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
     score.shape.assert_has_rank(0)
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   def test_inception_score_value(self):
     """Test that `inception_score` gives the correct value."""
@@ -404,7 +404,7 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
           output_tensor=output_tensor)
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
     if num_outputs == 0:
       self.assertIsInstance(logits, tf.Tensor)
@@ -431,7 +431,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     distance.shape.assert_has_rank(0)
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   def test_kernel_inception_distance_graph(self):
     """Test `frechet_inception_distance` graph construction."""
@@ -442,7 +442,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     distance.shape.assert_has_rank(0)
 
     # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.trainable_variables())
+    self.assertListEqual([], tf.compat.v1.trainable_variables())
 
   def test_mean_only_frechet_classifier_distance_value(self):
     """Test that `frechet_classifier_distance` gives the correct value."""
@@ -564,7 +564,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     test_pool_real_a = np.float32(np.random.randn(512, 256))
     test_pool_gen_a = np.float32(np.random.randn(768, 256) * 1.1 + .05)
 
-    max_block_size = tf.placeholder(tf.int32, shape=())
+    max_block_size = tf.compat.v1.placeholder(tf.int32, shape=())
     kid_op = _run_with_mock(
         tfgan.eval.kernel_classifier_distance_and_std_from_activations,
         tf.constant(test_pool_real_a),
@@ -630,7 +630,7 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
       graph_def = tfgan.eval.get_graph_def_from_url_tarball(
           'unused_url', relative_path)
 
-    self.assertIsInstance(graph_def, tf.GraphDef)
+    self.assertIsInstance(graph_def, tf.compat.v1.GraphDef)
     self.assertEqual(_get_dummy_graphdef(), graph_def)
 
 

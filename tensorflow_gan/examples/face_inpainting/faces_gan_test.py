@@ -49,7 +49,7 @@ class FacesGanTest(tf.test.TestCase):
       image_tensor = faces_gan.open_image('dummy', imshape=(10, 10))
 
     # Get the output to compare with an expected numpy array.
-    sess = tf.Session()
+    sess = tf.compat.v1.Session()
     image = sess.run(image_tensor)
 
     # If normalized from [0-256) to [-1-1] correctly, the output should be

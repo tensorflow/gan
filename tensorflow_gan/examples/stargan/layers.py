@@ -82,7 +82,7 @@ def generator_down_sample(input_net, final_num_outputs=256):
   else:
     raise ValueError('Dimension 2 of the input should be explicitly defined.')
 
-  with tf.variable_scope('generator_down_sample'):
+  with tf.compat.v1.variable_scope('generator_down_sample'):
 
     with tf.contrib.framework.arg_scope(
         [tf.contrib.layers.conv2d],
@@ -147,7 +147,7 @@ def _residual_block(input_net,
     Residual Tensor with the same shape as the input tensor.
   """
 
-  with tf.variable_scope(name):
+  with tf.compat.v1.variable_scope(name):
 
     with tf.contrib.framework.arg_scope([tf.contrib.layers.conv2d],
                                         num_outputs=num_outputs,
@@ -208,7 +208,7 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
     raise ValueError(
         'The last dimension of the input_net should be explicitly defined.')
 
-  with tf.variable_scope('generator_bottleneck'):
+  with tf.compat.v1.variable_scope('generator_bottleneck'):
 
     bottleneck = input_net
 
@@ -243,7 +243,7 @@ def generator_up_sample(input_net, num_outputs):
     Tensor of shape (batch_size, h, w, num_outputs).
   """
 
-  with tf.variable_scope('generator_up_sample'):
+  with tf.compat.v1.variable_scope('generator_up_sample'):
 
     with tf.contrib.framework.arg_scope(
         [tf.contrib.layers.conv2d_transpose],
@@ -298,7 +298,7 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
 
   num_outputs = init_num_outputs
 
-  with tf.variable_scope('discriminator_input_hidden'):
+  with tf.compat.v1.variable_scope('discriminator_input_hidden'):
 
     hidden = input_net
 
@@ -339,7 +339,7 @@ def discriminator_output_source(input_net):
     Tensor of shape (batch_size, h / 64, w / 64, 1) as the score.
   """
 
-  with tf.variable_scope('discriminator_output_source'):
+  with tf.compat.v1.variable_scope('discriminator_output_source'):
 
     output_src = ops.pad(input_net, 1)
     output_src = tf.contrib.layers.conv2d(
@@ -374,7 +374,7 @@ def discriminator_output_class(input_net, class_num):
     Tensor of shape (batch_size, class_num).
   """
 
-  with tf.variable_scope('discriminator_output_class'):
+  with tf.compat.v1.variable_scope('discriminator_output_class'):
 
     output_cls = tf.contrib.layers.flatten(input_net, scope='flatten')
     output_cls = tf.contrib.layers.fully_connected(

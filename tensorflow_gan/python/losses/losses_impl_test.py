@@ -50,27 +50,29 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
   def test_generator_loss_collection(self):
-    self.assertEqual(0, len(tf.get_collection('collection')))
+    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._g_loss_fn(
         self._discriminator_gen_outputs, loss_collection='collection')
-    self.assertEqual(1, len(tf.get_collection('collection')))
+    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_discriminator_loss_collection(self):
-    self.assertEqual(0, len(tf.get_collection('collection')))
+    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs,
         loss_collection='collection')
-    self.assertEqual(1, len(tf.get_collection('collection')))
+    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_generator_no_reduction(self):
     loss = self._g_loss_fn(
-        self._discriminator_gen_outputs, reduction=tf.losses.Reduction.NONE)
+        self._discriminator_gen_outputs,
+        reduction=tf.compat.v1.losses.Reduction.NONE)
     self.assertAllEqual([4], loss.shape)
 
   def test_discriminator_no_reduction(self):
     loss = self._d_loss_fn(
-        self._discriminator_real_outputs, self._discriminator_gen_outputs,
-        reduction=tf.losses.Reduction.NONE)
+        self._discriminator_real_outputs,
+        self._discriminator_gen_outputs,
+        reduction=tf.compat.v1.losses.Reduction.NONE)
     self.assertAllEqual([4], loss.shape)
 
   def test_generator_patch(self):
@@ -89,7 +91,7 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
   def test_generator_loss_with_placeholder_for_logits(self):
-    logits = tf.placeholder(tf.float32, shape=(None, 4))
+    logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     weights = tf.ones_like(logits, dtype=tf.float32)
 
     loss = self._g_loss_fn(logits, weights=weights)
@@ -103,8 +105,8 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
   def test_discriminator_loss_with_placeholder_for_logits(self):
-    logits = tf.placeholder(tf.float32, shape=(None, 4))
-    logits2 = tf.placeholder(tf.float32, shape=(None, 4))
+    logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
+    logits2 = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     real_weights = tf.ones_like(logits, dtype=tf.float32)
     generated_weights = tf.ones_like(logits, dtype=tf.float32)
 
@@ -152,16 +154,20 @@ class _LossesTest(object):
                              loss.eval(), 4)
 
   def test_generator_add_summaries(self):
-    self.assertEqual(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._g_loss_fn(self._discriminator_gen_outputs, add_summaries=True)
-    self.assertLess(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertLess(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
   def test_discriminator_add_summaries(self):
-    self.assertEqual(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs,
         add_summaries=True)
-    self.assertLess(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertLess(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
 
 class LeastSquaresLossTest(tf.test.TestCase, _LossesTest):
@@ -282,23 +288,24 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
   def test_generator_loss_collection(self):
-    self.assertEqual(0, len(tf.get_collection('collection')))
+    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._g_loss_fn(loss_collection='collection', **self._generator_kwargs)
-    self.assertEqual(1, len(tf.get_collection('collection')))
+    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_discriminator_loss_collection(self):
-    self.assertEqual(0, len(tf.get_collection('collection')))
+    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._d_loss_fn(loss_collection='collection', **self._discriminator_kwargs)
-    self.assertEqual(1, len(tf.get_collection('collection')))
+    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_generator_no_reduction(self):
     loss = self._g_loss_fn(
-        reduction=tf.losses.Reduction.NONE, **self._generator_kwargs)
+        reduction=tf.compat.v1.losses.Reduction.NONE, **self._generator_kwargs)
     self.assertAllEqual([4], loss.shape)
 
   def test_discriminator_no_reduction(self):
     loss = self._d_loss_fn(
-        reduction=tf.losses.Reduction.NONE, **self._discriminator_kwargs)
+        reduction=tf.compat.v1.losses.Reduction.NONE,
+        **self._discriminator_kwargs)
     self.assertAllEqual([4], loss.shape)
 
   def test_generator_patch(self):
@@ -316,8 +323,8 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_d_loss, loss.eval(), 5)
 
   def test_generator_loss_with_placeholder_for_logits(self):
-    gen_logits = tf.placeholder(tf.float32, shape=(None, 4))
-    one_hot_labels = tf.placeholder(tf.int32, shape=(None, 4))
+    gen_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
+    one_hot_labels = tf.compat.v1.placeholder(tf.int32, shape=(None, 4))
 
     loss = self._g_loss_fn(gen_logits, one_hot_labels)
     with self.cached_session() as sess:
@@ -329,9 +336,9 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
   def test_discriminator_loss_with_placeholder_for_logits_and_weights(self):
-    gen_logits = tf.placeholder(tf.float32, shape=(None, 4))
-    real_logits = tf.placeholder(tf.float32, shape=(None, 4))
-    one_hot_labels = tf.placeholder(tf.int32, shape=(None, 4))
+    gen_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
+    real_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
+    one_hot_labels = tf.compat.v1.placeholder(tf.int32, shape=(None, 4))
 
     loss = self._d_loss_fn(gen_logits, real_logits, one_hot_labels)
 
@@ -374,14 +381,18 @@ class ACGANLossTest(tf.test.TestCase):
                              loss.eval(), 4)
 
   def test_generator_add_summaries(self):
-    self.assertEqual(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._g_loss_fn(add_summaries=True, **self._generator_kwargs)
-    self.assertLess(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertLess(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
   def test_discriminator_add_summaries(self):
-    self.assertEqual(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._d_loss_fn(add_summaries=True, **self._discriminator_kwargs)
-    self.assertLess(0, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertLess(
+        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
 
 class _PenaltyTest(object):
@@ -392,28 +403,29 @@ class _PenaltyTest(object):
     # Tests should not depend on op names, as they are subject to change.
     # self.assertEqual(self._expected_op_name, loss.op.name)
     with self.cached_session():
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertAlmostEqual(self._expected_loss, loss.eval(), 6)
 
   def test_loss_collection(self):
-    self.assertEqual(0, len(tf.get_collection('collection')))
+    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._penalty_fn(loss_collection='collection', **self._kwargs)
-    self.assertEqual(1, len(tf.get_collection('collection')))
+    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_no_reduction(self):
-    loss = self._penalty_fn(reduction=tf.losses.Reduction.NONE, **self._kwargs)
+    loss = self._penalty_fn(
+        reduction=tf.compat.v1.losses.Reduction.NONE, **self._kwargs)
     self.assertAllEqual([self._batch_size], loss.shape)
 
   def test_python_scalar_weight(self):
     loss = self._penalty_fn(weights=2.3, **self._kwargs)
     with self.cached_session():
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertAlmostEqual(self._expected_loss * 2.3, loss.eval(), 3)
 
   def test_scalar_tensor_weight(self):
     loss = self._penalty_fn(weights=tf.constant(2.3), **self._kwargs)
     with self.cached_session():
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertAlmostEqual(self._expected_loss * 2.3, loss.eval(), 3)
 
 
@@ -427,7 +439,7 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self._real_data_np = [[-12.3, 23.2, 16.3, -43.2]]
     self._expected_dtype = tf.float32
 
-    with tf.variable_scope('fake_scope') as self._scope:
+    with tf.compat.v1.variable_scope('fake_scope') as self._scope:
       self._discriminator_fn(0.0, 0.0)
 
     self._kwargs = {
@@ -444,12 +456,13 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self._batch_size = 1
 
   def _discriminator_fn(self, inputs, _):
-    tf.add_to_collection('fake_update_ops', tf.constant(1.0))
-    return tf.get_variable('dummy_d', initializer=2.0) * inputs
+    tf.compat.v1.add_to_collection('fake_update_ops', tf.constant(1.0))
+    return tf.compat.v1.get_variable(
+        'dummy_d', initializer=2.0, use_resource=False) * inputs
 
   def test_loss_with_placeholder(self):
-    generated_data = tf.placeholder(tf.float32, shape=(None, None))
-    real_data = tf.placeholder(tf.float32, shape=(None, None))
+    generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
 
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
         generated_data,
@@ -460,7 +473,7 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self.assertEqual(generated_data.dtype, loss.dtype)
 
     with self.cached_session() as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       loss = sess.run(loss,
                       feed_dict={
                           generated_data: self._generated_data_np,
@@ -469,8 +482,8 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
       self.assertAlmostEqual(self._expected_loss, loss, 5)
 
   def test_loss_using_one_sided_mode(self):
-    generated_data = tf.placeholder(tf.float32, shape=(None, None))
-    real_data = tf.placeholder(tf.float32, shape=(None, None))
+    generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
 
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
         generated_data,
@@ -482,7 +495,7 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self.assertEqual(generated_data.dtype, loss.dtype)
 
     with self.cached_session() as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       loss = sess.run(loss,
                       feed_dict={
                           generated_data: self._generated_data_np,
@@ -492,8 +505,8 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
   def test_loss_with_gradient_norm_target(self):
     """Test loss value with non default gradient norm target."""
-    generated_data = tf.placeholder(tf.float32, shape=(None, None))
-    real_data = tf.placeholder(tf.float32, shape=(None, None))
+    generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
+    real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
 
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
         generated_data,
@@ -504,7 +517,7 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
         target=2.0)
 
     with self.cached_session() as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       loss = sess.run(
           loss,
           feed_dict={
@@ -515,30 +528,43 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
   def test_reuses_scope(self):
     """Test that gradient penalty reuses discriminator scope."""
-    num_vars = len(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES))
+    num_vars = len(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES))
     tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
     self.assertEqual(
-        num_vars, len(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)))
+        num_vars,
+        len(
+            tf.compat.v1.get_collection(
+                tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)))
 
   def test_works_with_get_collection(self):
     """Tests that gradient penalty works inside other scopes."""
     # We ran the discriminator once in the setup, so there should be an op
     # already in the collection.
-    self.assertEqual(1, len(tf.get_collection(
-        'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertEqual(
+        1,
+        len(
+            tf.compat.v1.get_collection(
+                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
 
     # Make sure the op is added to the collection even if it's in a name scope.
-    with tf.name_scope('loss'):
+    with tf.compat.v1.name_scope('loss'):
       tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
-    self.assertEqual(2, len(tf.get_collection(
-        'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertEqual(
+        2,
+        len(
+            tf.compat.v1.get_collection(
+                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
 
     # Make sure the op is added to the collection even if it's in a variable
     # scope.
-    with tf.variable_scope('loss_vscope'):
+    with tf.compat.v1.variable_scope('loss_vscope'):
       tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
-    self.assertEqual(3, len(tf.get_collection(
-        'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertEqual(
+        3,
+        len(
+            tf.compat.v1.get_collection(
+                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
 
 
 class MutualInformationPenaltyTest(tf.test.TestCase, _PenaltyTest):
@@ -549,8 +575,8 @@ class MutualInformationPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self._penalty_fn = tfgan.losses.wargs.mutual_information_penalty
     self._structured_generator_inputs = [1.0, 2.0]
     self._predicted_distributions = [
-        tf.distributions.Categorical(logits=[1.0, 2.0]),
-        tf.distributions.Normal([0.0], [1.0]),
+        tf.compat.v1.distributions.Categorical(logits=[1.0, 2.0]),
+        tf.compat.v1.distributions.Normal([0.0], [1.0]),
     ]
     self._expected_dtype = tf.float32
 
@@ -601,7 +627,7 @@ class CombineAdversarialLossTest(tf.test.TestCase):
         variables=variable_list)
 
     with self.test_session(use_gpu=True):
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertNear(expected_loss, combined_loss.eval(), 1e-5)
 
   def test_correct_useweightfactor(self):
@@ -636,8 +662,9 @@ class CombineAdversarialLossTest(tf.test.TestCase):
 
   def test_stable_global_norm_avoids_overflow(self):
     tensors = [tf.ones([4]), tf.ones([4, 4]) * 1e19, None]
-    gnorm_is_inf = tf.is_inf(tf.global_norm(tensors))
-    stable_gnorm_is_inf = tf.is_inf(numerically_stable_global_norm(tensors))
+    gnorm_is_inf = tf.math.is_inf(tf.linalg.global_norm(tensors))
+    stable_gnorm_is_inf = tf.math.is_inf(
+        numerically_stable_global_norm(tensors))
 
     with self.test_session(use_gpu=True):
       self.assertTrue(gnorm_is_inf.eval())
@@ -645,9 +672,9 @@ class CombineAdversarialLossTest(tf.test.TestCase):
 
   def test_stable_global_norm_unchanged(self):
     """Test that preconditioning doesn't change global norm value."""
-    tf.set_random_seed(1234)
-    tensors = [tf.random_uniform([3]*i, -10.0, 10.0) for i in range(6)]
-    gnorm = tf.global_norm(tensors)
+    tf.compat.v1.set_random_seed(1234)
+    tensors = [tf.random.uniform([3] * i, -10.0, 10.0) for i in range(6)]
+    gnorm = tf.linalg.global_norm(tensors)
     precond_gnorm = numerically_stable_global_norm(tensors)
 
     with self.test_session(use_gpu=True) as sess:
@@ -679,7 +706,7 @@ class CycleConsistencyLossTest(tf.test.TestCase):
         self._data_x, self._reconstructed_data_x, self._data_y,
         self._reconstructed_data_y)
     with self.test_session(use_gpu=True):
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertNear(5.25, loss.eval(), 1e-5)
 
 

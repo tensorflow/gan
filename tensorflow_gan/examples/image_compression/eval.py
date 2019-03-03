@@ -55,13 +55,13 @@ flags.DEFINE_integer('model_depth', 64,
 
 
 def main(_, run_eval_loop=True):
-  with tf.name_scope('inputs'):
+  with tf.compat.v1.name_scope('inputs'):
     images, _ = data_provider.provide_data(
         'validation', FLAGS.batch_size, FLAGS.patch_size, shuffle=False)
 
   # In order for variables to load, use the same variable scope as in the
   # train job.
-  with tf.variable_scope('generator'):
+  with tf.compat.v1.variable_scope('generator'):
     reconstructions, _, prebinary = networks.compression_model(
         images,
         num_bits=FLAGS.bits_per_patch,
@@ -71,17 +71,18 @@ def main(_, run_eval_loop=True):
 
   # Visualize losses.
   pixel_loss_per_example = tf.reduce_mean(
-      tf.abs(images - reconstructions), axis=[1, 2, 3])
-  pixel_loss = tf.reduce_mean(pixel_loss_per_example)
-  tf.summary.histogram('pixel_l1_loss_hist', pixel_loss_per_example)
-  tf.summary.scalar('pixel_l1_loss', pixel_loss)
+      input_tensor=tf.abs(images - reconstructions), axis=[1, 2, 3])
+  pixel_loss = tf.reduce_mean(input_tensor=pixel_loss_per_example)
+  tf.compat.v1.summary.histogram('pixel_l1_loss_hist', pixel_loss_per_example)
+  tf.compat.v1.summary.scalar('pixel_l1_loss', pixel_loss)
 
   # Create ops to write images to disk.
   uint8_images = data_provider.float_image_to_uint8(images)
   uint8_reconstructions = data_provider.float_image_to_uint8(reconstructions)
   uint8_reshaped = summaries.stack_images(uint8_images, uint8_reconstructions)
-  image_write_ops = tf.write_file('%s/%s' % (FLAGS.eval_dir, 'compression.png'),
-                                  tf.image.encode_png(uint8_reshaped[0]))
+  image_write_ops = tf.io.write_file(
+      '%s/%s' % (FLAGS.eval_dir, 'compression.png'),
+      tf.image.encode_png(uint8_reshaped[0]))
 
   # For unit testing, use `run_eval_loop=False`.
   if not run_eval_loop:

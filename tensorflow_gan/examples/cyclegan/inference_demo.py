@@ -60,8 +60,8 @@ FLAGS = flags.FLAGS
 
 def _make_dir_if_not_exists(dir_path):
   """Make a directory if it does not exist."""
-  if not tf.gfile.Exists(dir_path):
-    tf.gfile.MakeDirs(dir_path)
+  if not tf.io.gfile.exists(dir_path):
+    tf.io.gfile.makedirs(dir_path)
 
 
 def _file_output_path(dir_path, input_file_path):
@@ -79,14 +79,14 @@ def make_inference_graph(model_name, patch_dim):
   Returns:
     Tuple of (input_placeholder, generated_tensor).
   """
-  input_hwc_pl = tf.placeholder(tf.float32, [None, None, 3])
+  input_hwc_pl = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
 
   # Expand HWC to NHWC
   images_x = tf.expand_dims(
       data_provider.full_image_to_patch(input_hwc_pl, patch_dim), 0)
 
-  with tf.variable_scope(model_name):
-    with tf.variable_scope('Generator'):
+  with tf.compat.v1.variable_scope(model_name):
+    with tf.compat.v1.variable_scope('Generator'):
       generated = networks.generator(images_x)
   return input_hwc_pl, generated
 
@@ -105,7 +105,7 @@ def export(sess, input_pl, output_tensor, input_file_pattern, output_dir):
     _make_dir_if_not_exists(output_dir)
 
   if input_file_pattern:
-    for file_path in tf.gfile.Glob(input_file_pattern):
+    for file_path in tf.io.gfile.glob(input_file_pattern):
       # Grab a single image and run it through inference
       input_np = np.asarray(PIL.Image.open(file_path))
       output_np = sess.run(output_tensor, feed_dict={input_pl: input_np})
@@ -135,8 +135,8 @@ def main(_):
                                                       FLAGS.patch_dim)
 
   # Restore all the variables that were saved in the checkpoint.
-  saver = tf.train.Saver()
-  with tf.Session() as sess:
+  saver = tf.compat.v1.train.Saver()
+  with tf.compat.v1.Session() as sess:
     saver.restore(sess, FLAGS.checkpoint_path)
 
     export(sess, images_x_hwc_pl, generated_y, FLAGS.image_set_x_glob,

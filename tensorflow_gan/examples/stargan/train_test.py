@@ -27,12 +27,13 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.examples.stargan import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False)
 
 
 def _test_discriminator(inputs, num_domains):
@@ -40,7 +41,7 @@ def _test_discriminator(inputs, num_domains):
 
   hidden = tf.contrib.layers.flatten(inputs)
 
-  output_src = tf.reduce_mean(hidden, axis=1)
+  output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
 
   output_cls = tf.contrib.layers.fully_connected(
       inputs=hidden,
@@ -70,12 +71,13 @@ class TrainTest(tf.test.TestCase):
     self.assertShapeEqual(images_np, model.reconstructed_data)
     self.assertTrue(isinstance(model.discriminator_variables, list))
     self.assertTrue(isinstance(model.generator_variables, list))
-    self.assertIsInstance(model.discriminator_scope, tf.VariableScope)
-    self.assertTrue(model.generator_scope, tf.VariableScope)
+    self.assertIsInstance(model.discriminator_scope, tf.compat.v1.VariableScope)
+    self.assertTrue(model.generator_scope, tf.compat.v1.VariableScope)
     self.assertTrue(callable(model.discriminator_fn))
     self.assertTrue(callable(model.generator_fn))
 
-  @mock.patch.object(tf.train, 'get_or_create_global_step', autospec=True)
+  @mock.patch.object(
+      tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step):
     FLAGS.max_number_of_steps = 10
     base_lr = 0.01

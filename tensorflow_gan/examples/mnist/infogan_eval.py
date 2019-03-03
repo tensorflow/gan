@@ -72,7 +72,7 @@ FLAGS = flags.FLAGS
 
 
 def main(_, run_eval_loop=True):
-  with tf.name_scope('inputs'):
+  with tf.compat.v1.name_scope('inputs'):
     noise_args = (FLAGS.noise_samples, CAT_SAMPLE_POINTS, CONT_SAMPLE_POINTS,
                   FLAGS.unstructured_noise_dims, FLAGS.continuous_noise_dims)
     # Use fixed noise vectors to illustrate the effect of each dimension.
@@ -87,29 +87,34 @@ def main(_, run_eval_loop=True):
     return networks.infogan_generator(
         inputs, len(CAT_SAMPLE_POINTS), is_training=False)
 
-  with tf.variable_scope('Generator') as genscope:  # Same scope as in training.
+  with tf.compat.v1.variable_scope(
+      'Generator') as genscope:  # Same scope as in training.
     categorical_images = generator_fn(display_noise1)
   reshaped_categorical_img = tfgan.eval.image_reshaper(
       categorical_images, num_cols=len(CAT_SAMPLE_POINTS))
-  tf.summary.image('categorical', reshaped_categorical_img, max_outputs=1)
+  tf.compat.v1.summary.image(
+      'categorical', reshaped_categorical_img, max_outputs=1)
 
-  with tf.variable_scope(genscope, reuse=True):
+  with tf.compat.v1.variable_scope(genscope, reuse=True):
     continuous1_images = generator_fn(display_noise2)
   reshaped_continuous1_img = tfgan.eval.image_reshaper(
       continuous1_images, num_cols=len(CONT_SAMPLE_POINTS))
-  tf.summary.image('continuous1', reshaped_continuous1_img, max_outputs=1)
+  tf.compat.v1.summary.image(
+      'continuous1', reshaped_continuous1_img, max_outputs=1)
 
-  with tf.variable_scope(genscope, reuse=True):
+  with tf.compat.v1.variable_scope(genscope, reuse=True):
     continuous2_images = generator_fn(display_noise3)
   reshaped_continuous2_img = tfgan.eval.image_reshaper(
       continuous2_images, num_cols=len(CONT_SAMPLE_POINTS))
-  tf.summary.image('continuous2', reshaped_continuous2_img, max_outputs=1)
+  tf.compat.v1.summary.image(
+      'continuous2', reshaped_continuous2_img, max_outputs=1)
 
   # Evaluate image quality.
   all_images = tf.concat(
       [categorical_images, continuous1_images, continuous2_images], 0)
-  tf.summary.scalar('MNIST_Classifier_score',
-                    util.mnist_score(all_images, FLAGS.classifier_filename))
+  tf.compat.v1.summary.scalar(
+      'MNIST_Classifier_score',
+      util.mnist_score(all_images, FLAGS.classifier_filename))
 
   # Write images to disk.
   image_write_ops = []
@@ -159,7 +164,7 @@ def _validate_noises(noises):
 
 def _get_write_image_ops(eval_dir, filename, images):
   """Create Ops that write images to disk."""
-  return tf.write_file(
+  return tf.io.write_file(
       '%s/%s' % (eval_dir, filename),
       tf.image.encode_png(data_provider.float_image_to_uint8(images)))
 

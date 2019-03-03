@@ -94,9 +94,11 @@ def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
     add_summaries = params['add_summaries']
     input_clip = params['input_clip']
 
-    z = tf.get_variable(
-        name=INPUT_NAME, initializer=tf.random.truncated_normal(z_shape),
-        constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip))
+    z = tf.compat.v1.get_variable(
+        name=INPUT_NAME,
+        initializer=tf.random.truncated_normal(z_shape),
+        constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip),
+        use_resource=False)
 
     generator = functools.partial(generator_fn, mode=mode)
     discriminator = functools.partial(discriminator_fn, mode=mode)
@@ -110,17 +112,19 @@ def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
 
     # Use a variable scope to make sure that estimator variables dont cause
     # save/load problems when restoring from ckpts.
-    with tf.variable_scope(OPTIMIZER_NAME):
+    with tf.compat.v1.variable_scope(OPTIMIZER_NAME):
       opt = optimizer(learning_rate=params['learning_rate'],
                       **params['opt_kwargs'])
       train_op = opt.minimize(
-          loss=loss, global_step=tf.train.get_or_create_global_step(),
+          loss=loss,
+          global_step=tf.compat.v1.train.get_or_create_global_step(),
           var_list=[z])
 
     if add_summaries:
-      z_grads = tf.gradients(loss, z)
-      tf.summary.scalar('z_loss/z_grads', tf.global_norm(z_grads))
-      tf.summary.scalar('z_loss/loss', loss)
+      z_grads = tf.gradients(ys=loss, xs=z)
+      tf.compat.v1.summary.scalar('z_loss/z_grads',
+                                  tf.linalg.global_norm(z_grads))
+      tf.compat.v1.summary.scalar('z_loss/loss', loss)
 
     return tf.estimator.EstimatorSpec(mode=mode,
                                       predictions=gan_model.generated_data,

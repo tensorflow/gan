@@ -173,7 +173,7 @@ class CycleConsistencyLossTest(tf.test.TestCase):
             reconstructed_x=tf.constant([9, 8], dtype=tf.float32),
             reconstructed_y=tf.constant([7, 2], dtype=tf.float32)))
     with self.cached_session(use_gpu=True):
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       self.assertNear(5.0, loss.eval(), 1e-5)
 
 
@@ -191,12 +191,12 @@ class StarGANLossWrapperTest(tf.test.TestCase):
 
     def _discriminator_fn(inputs, num_domains):
       """Differentiable dummy discriminator for StarGAN."""
-      hidden = tf.layers.flatten(inputs)
-      output_src = tf.reduce_mean(hidden, axis=1)
-      output_cls = tf.layers.dense(hidden, num_domains)
+      hidden = tf.compat.v1.layers.flatten(inputs)
+      output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
+      output_cls = tf.compat.v1.layers.dense(hidden, num_domains)
       return output_src, output_cls
 
-    with tf.variable_scope('discriminator') as dis_scope:
+    with tf.compat.v1.variable_scope('discriminator') as dis_scope:
       pass
 
     self.model = tfgan.StarGANModel(
@@ -231,7 +231,7 @@ class StarGANLossWrapperTest(tf.test.TestCase):
     wrapped_loss_result_tensor = wrapped_loss_fn(self.model)
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       loss_result, wrapped_loss_result = sess.run(
           [loss_result_tensor, wrapped_loss_result_tensor])
       self.assertAlmostEqual(loss_result, wrapped_loss_result)
@@ -247,7 +247,7 @@ class StarGANLossWrapperTest(tf.test.TestCase):
     wrapped_loss_result_tensor = wrapped_loss_fn(self.model)
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       loss_result, wrapped_loss_result = sess.run(
           [loss_result_tensor, wrapped_loss_result_tensor])
       self.assertAlmostEqual(loss_result, wrapped_loss_result)
@@ -272,7 +272,7 @@ class StarGANLossWrapperTest(tf.test.TestCase):
     wrapped_loss_result_tensor = wrapped_loss_fn(self.model)
 
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       loss_result, wrapped_loss_result = sess.run(
           [loss_result_tensor, wrapped_loss_result_tensor])
       self.assertAlmostEqual(loss_result, wrapped_loss_result)

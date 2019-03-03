@@ -52,7 +52,7 @@ class OpsTest(tf.test.TestCase):
     c = 3
     pad = 3
 
-    test_input_tensor = tf.random_uniform((n, h, w, c))
+    test_input_tensor = tf.random.uniform((n, h, w, c))
     test_output_tensor = ops.pad(test_input_tensor, padding_size=pad)
 
     with self.test_session() as sess:
@@ -66,7 +66,7 @@ class OpsTest(tf.test.TestCase):
     c = 3
     pad = 3
 
-    test_input_tensor = tf.random_uniform((h, w, c))
+    test_input_tensor = tf.random.uniform((h, w, c))
     test_output_tensor = ops.pad(test_input_tensor, padding_size=pad)
 
     with self.test_session() as sess:
@@ -82,7 +82,7 @@ class OpsTest(tf.test.TestCase):
     c = 3
     pad = 3
 
-    test_input_tensor = tf.random_uniform((n, invalid_rank, h, w, c))
+    test_input_tensor = tf.random.uniform((n, invalid_rank, h, w, c))
 
     with self.assertRaises(ValueError):
       ops.pad(test_input_tensor, padding_size=pad)
@@ -95,8 +95,8 @@ class OpsTest(tf.test.TestCase):
     c = 3
     num_label = 5
 
-    input_tensor = tf.random_uniform((n, h, w, c))
-    label_tensor = tf.random_uniform((n, num_label))
+    input_tensor = tf.random.uniform((n, h, w, c))
+    label_tensor = tf.random.uniform((n, num_label))
     output_tensor = ops.condition_input_with_pixel_padding(
         input_tensor, label_tensor)
 

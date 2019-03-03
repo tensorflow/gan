@@ -74,7 +74,7 @@ INCEPTION_DEFAULT_IMAGE_SIZE = 299
 
 
 def _validate_images(images, image_size):
-  images = tf.convert_to_tensor(images)
+  images = tf.convert_to_tensor(value=images)
   images.shape.with_rank(4)
   images.shape.assert_is_compatible_with([None, image_size, image_size, None])
   return images
@@ -107,7 +107,7 @@ def _symmetric_matrix_square_root(mat, eps=1e-10):
   # Note that the v returned by Tensorflow is v = V
   # (when referencing the equation A = U S V^T)
   # This is unlike Numpy which returns v = V^T
-  return tf.matmul(tf.matmul(u, tf.diag(si)), v, transpose_b=True)
+  return tf.matmul(tf.matmul(u, tf.linalg.tensor_diag(si)), v, transpose_b=True)
 
 
 def preprocess_image(images,
@@ -132,12 +132,13 @@ def preprocess_image(images,
     3-D or 4-D float Tensor of prepared image(s). Values are in [-1, 1].
   """
   is_single = images.shape.ndims == 3
-  with tf.name_scope(scope, 'preprocess', [images, height, width]):
+  with tf.compat.v1.name_scope(scope, 'preprocess', [images, height, width]):
     if not images.dtype.is_floating:
       images = _to_float(images)
     if is_single:
       images = tf.expand_dims(images, axis=0)
-    resized = tf.image.resize_bilinear(images, [height, width])
+    resized = tf.image.resize(
+        images, [height, width], method=tf.image.ResizeMethod.BILINEAR)
     resized = (resized - 128.0) / 128.0
     if is_single:
       resized = tf.squeeze(resized, axis=0)
@@ -177,18 +178,20 @@ def kl_divergence(p, p_logits, q):
   p.shape.assert_has_rank(2)
   p_logits.shape.assert_has_rank(2)
   q.shape.assert_has_rank(1)
-  return tf.reduce_sum(p * (tf.nn.log_softmax(p_logits) - tf.log(q)), axis=1)
+  return tf.reduce_sum(
+      input_tensor=p * (tf.nn.log_softmax(p_logits) - tf.math.log(q)), axis=1)
 
 
 def get_graph_def_from_disk(filename):
   """Get a GraphDef proto from a disk location."""
-  with tf.gfile.FastGFile(filename, 'rb') as f:
-    return tf.GraphDef.FromString(f.read())
+  with tf.compat.v1.gfile.FastGFile(filename, 'rb') as f:
+    return tf.compat.v1.GraphDef.FromString(f.read())
 
 
 def get_graph_def_from_resource(filename):
   """Get a GraphDef proto from within a .par file."""
-  return tf.GraphDef.FromString(tf.resource_loader.load_resource(filename))
+  return tf.compat.v1.GraphDef.FromString(
+      tf.compat.v1.resource_loader.load_resource(filename))
 
 
 def get_graph_def_from_url_tarball(url, filename, tar_filename=None):
@@ -213,7 +216,7 @@ def get_graph_def_from_url_tarball(url, filename, tar_filename=None):
     tar_filename, _ = urllib.request.urlretrieve(url, tar_filename, _progress)
   with tarfile.open(tar_filename, 'r:gz') as tar:
     proto_str = tar.extractfile(filename).read()
-  return tf.GraphDef.FromString(proto_str)
+  return tf.compat.v1.GraphDef.FromString(proto_str)
 
 
 def _default_graph_def_fn():
@@ -234,10 +237,10 @@ def _flatten_activations_or_list(activations):
   if isinstance(activations, list):
     for i, activation in enumerate(activations):
       if tf.rank(activation) != 2:
-        activations[i] = tf.layers.flatten(activation)
+        activations[i] = tf.compat.v1.layers.flatten(activation)
   else:
     if tf.rank(activations) != 2:
-      activations = tf.layers.flatten(activations)
+      activations = tf.compat.v1.layers.flatten(activations)
   return activations
 
 
@@ -528,7 +531,7 @@ def classifier_score_from_logits(logits):
     The classifier score. A floating-point scalar of the same type as the output
     of `logits`.
   """
-  logits = tf.convert_to_tensor(logits)
+  logits = tf.convert_to_tensor(value=logits)
   logits.shape.assert_has_rank(2)
 
   # Use maximum precision for best results.
@@ -537,10 +540,10 @@ def classifier_score_from_logits(logits):
     logits = tf.cast(logits, tf.float64)
 
   p = tf.nn.softmax(logits)
-  q = tf.reduce_mean(p, axis=0)
+  q = tf.reduce_mean(input_tensor=p, axis=0)
   kl = kl_divergence(p, logits, q)
   kl.shape.assert_has_rank(1)
-  log_score = tf.reduce_mean(kl)
+  log_score = tf.reduce_mean(input_tensor=kl)
   final_score = tf.exp(log_score)
 
   if logits_dtype != tf.float64:
@@ -593,7 +596,7 @@ def trace_sqrt_product(sigma, sigma_v):
   # This is sqrt(A sigma_v A) above
   sqrt_a_sigmav_a = tf.matmul(sqrt_sigma, tf.matmul(sigma_v, sqrt_sigma))
 
-  return tf.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
+  return tf.linalg.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
 
 
 def frechet_classifier_distance(real_images,
@@ -712,11 +715,11 @@ def mean_only_frechet_classifier_distance_from_activations(
     generated_activations = tf.cast(generated_activations, tf.float64)
 
   # Compute means of activations.
-  m = tf.reduce_mean(real_activations, 0)
-  m_w = tf.reduce_mean(generated_activations, 0)
+  m = tf.reduce_mean(input_tensor=real_activations, axis=0)
+  m_w = tf.reduce_mean(input_tensor=generated_activations, axis=0)
 
   # Next the distance between means.
-  mean = tf.reduce_sum(tf.squared_difference(
+  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
       m, m_w))  # Equivalent to L2 but more stable.
   mofid = mean
   if activations_dtype != tf.float64:
@@ -773,8 +776,8 @@ def diagonal_only_frechet_classifier_distance_from_activations(
     generated_activations = tf.cast(generated_activations, tf.float64)
 
   # Compute mean and covariance matrices of activations.
-  m, var = tf.nn.moments(real_activations, axes=[0])
-  m_w, var_w = tf.nn.moments(generated_activations, axes=[0])
+  m, var = tf.nn.moments(x=real_activations, axes=[0])
+  m_w, var_w = tf.nn.moments(x=generated_activations, axes=[0])
 
   actual_shape = var.get_shape()
   expected_shape = m.get_shape()
@@ -787,10 +790,11 @@ def diagonal_only_frechet_classifier_distance_from_activations(
 
   # First the covariance component.
   # Here, note that trace(A + B) = trace(A) + trace(B)
-  trace = tf.reduce_sum((var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w)))
+  trace = tf.reduce_sum(
+      input_tensor=(var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w)))
 
   # Next the distance between means.
-  mean = tf.reduce_sum(tf.squared_difference(
+  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
       m, m_w))  # Equivalent to L2 but more stable.
   dofid = trace + mean
   if activations_dtype != tf.float64:
@@ -838,9 +842,9 @@ def frechet_classifier_distance_from_activations(real_activations,
    as the output of the activations.
 
   """
-  real_activations = tf.convert_to_tensor(real_activations)
+  real_activations = tf.convert_to_tensor(value=real_activations)
   real_activations.shape.assert_has_rank(2)
-  generated_activations = tf.convert_to_tensor(generated_activations)
+  generated_activations = tf.convert_to_tensor(value=generated_activations)
   generated_activations.shape.assert_has_rank(2)
 
   activations_dtype = real_activations.dtype
@@ -849,11 +853,11 @@ def frechet_classifier_distance_from_activations(real_activations,
     generated_activations = tf.cast(generated_activations, tf.float64)
 
   # Compute mean and covariance matrices of activations.
-  m = tf.reduce_mean(real_activations, 0)
-  m_w = tf.reduce_mean(generated_activations, 0)
-  num_examples_real = tf.cast(tf.shape(real_activations)[0], tf.float64)
+  m = tf.reduce_mean(input_tensor=real_activations, axis=0)
+  m_w = tf.reduce_mean(input_tensor=generated_activations, axis=0)
+  num_examples_real = tf.cast(tf.shape(input=real_activations)[0], tf.float64)
   num_examples_generated = tf.cast(
-      tf.shape(generated_activations)[0], tf.float64)
+      tf.shape(input=generated_activations)[0], tf.float64)
 
   # sigma = (1 / (n - 1)) * (X - mu) (X - mu)^T
   real_centered = real_activations - m
@@ -873,10 +877,10 @@ def frechet_classifier_distance_from_activations(real_activations,
 
   # First the covariance component.
   # Here, note that trace(A + B) = trace(A) + trace(B)
-  trace = tf.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
+  trace = tf.linalg.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
 
   # Next the distance between means.
-  mean = tf.reduce_sum(tf.squared_difference(
+  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
       m, m_w))  # Equivalent to L2 but more stable.
   fid = trace + mean
   if activations_dtype != tf.float64:
@@ -1200,11 +1204,11 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
 
   # Figure out how to split the activations into blocks of approximately
   # equal size, with none larger than max_block_size.
-  n_r = tf.shape(real_activations)[0]
-  n_g = tf.shape(generated_activations)[0]
+  n_r = tf.shape(input=real_activations)[0]
+  n_g = tf.shape(input=generated_activations)[0]
 
   n_bigger = tf.maximum(n_r, n_g)
-  n_blocks = tf.to_int32(tf.ceil(n_bigger / max_block_size))
+  n_blocks = tf.cast(tf.math.ceil(n_bigger / max_block_size), dtype=tf.int32)
 
   v_r = n_r // n_blocks
   v_g = n_g // n_blocks
@@ -1242,20 +1246,23 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
     k_rr = (tf.matmul(r, r, transpose_b=True) / dim + 1)**3
     k_rg = (tf.matmul(r, g, transpose_b=True) / dim + 1)**3
     k_gg = (tf.matmul(g, g, transpose_b=True) / dim + 1)**3
-    return (
-        -2 * tf.reduce_mean(k_rg) + (tf.reduce_sum(k_rr) - tf.trace(k_rr)) /
-        (m * (m - 1)) + (tf.reduce_sum(k_gg) - tf.trace(k_gg)) / (n * (n - 1)))
+    return (-2 * tf.reduce_mean(input_tensor=k_rg) +
+            (tf.reduce_sum(input_tensor=k_rr) - tf.linalg.trace(k_rr)) /
+            (m * (m - 1)) +
+            (tf.reduce_sum(input_tensor=k_gg) - tf.linalg.trace(k_gg)) /
+            (n * (n - 1)))
 
   ests = tf.map_fn(
       compute_kid_block, tf.range(n_blocks), dtype=dtype, back_prop=False)
 
-  mn = tf.reduce_mean(ests)
+  mn = tf.reduce_mean(input_tensor=ests)
 
   # tf.nn.moments doesn't use the Bessel correction, which we want here
   n_blocks_ = tf.cast(n_blocks, dtype)
   var = tf.cond(
-      tf.less_equal(n_blocks, 1),
-      lambda: tf.constant(float('nan'), dtype=dtype),
-      lambda: tf.reduce_sum(tf.square(ests - mn)) / (n_blocks_ - 1))
+      pred=tf.less_equal(n_blocks, 1),
+      true_fn=lambda: tf.constant(float('nan'), dtype=dtype),
+      false_fn=lambda: tf.reduce_sum(input_tensor=tf.square(ests - mn)) / (
+          n_blocks_ - 1))
 
   return mn, tf.sqrt(var / n_blocks_)

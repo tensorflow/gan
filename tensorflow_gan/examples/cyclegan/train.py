@@ -100,17 +100,20 @@ def _get_lr(base_lr):
     global training step is less than FLAGS.max_number_of_steps / 2, afterwards
     it linearly decays to zero.
   """
-  global_step = tf.train.get_or_create_global_step()
+  global_step = tf.compat.v1.train.get_or_create_global_step()
   lr_constant_steps = FLAGS.max_number_of_steps // 2
 
   def _lr_decay():
-    return tf.train.polynomial_decay(
+    return tf.compat.v1.train.polynomial_decay(
         learning_rate=base_lr,
         global_step=(global_step - lr_constant_steps),
         decay_steps=(FLAGS.max_number_of_steps - lr_constant_steps),
         end_learning_rate=0.0)
 
-  return tf.cond(global_step < lr_constant_steps, lambda: base_lr, _lr_decay)
+  return tf.cond(
+      pred=global_step < lr_constant_steps,
+      true_fn=lambda: base_lr,
+      false_fn=_lr_decay)
 
 
 def _get_optimizer(gen_lr, dis_lr):
@@ -127,8 +130,10 @@ def _get_optimizer(gen_lr, dis_lr):
   """
   # beta1 follows
   # https://github.com/junyanz/CycleGAN/blob/master/options.lua
-  gen_opt = tf.train.AdamOptimizer(gen_lr, beta1=0.5, use_locking=True)
-  dis_opt = tf.train.AdamOptimizer(dis_lr, beta1=0.5, use_locking=True)
+  gen_opt = tf.compat.v1.train.AdamOptimizer(
+      gen_lr, beta1=0.5, use_locking=True)
+  dis_opt = tf.compat.v1.train.AdamOptimizer(
+      dis_lr, beta1=0.5, use_locking=True)
   return gen_opt, dis_opt
 
 
@@ -155,17 +160,17 @@ def _define_train_ops(cyclegan_model, cyclegan_loss):
       colocate_gradients_with_ops=True,
       aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.summary.scalar('generator_lr', gen_lr)
-  tf.summary.scalar('discriminator_lr', dis_lr)
+  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
+  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
   return train_ops
 
 
 def main(_):
-  if not tf.gfile.Exists(FLAGS.train_log_dir):
-    tf.gfile.MakeDirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
-    with tf.name_scope('inputs'), tf.device('/cpu:0'):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
+    with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
       images_x, images_y = data_provider.provide_custom_data(
           [FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern],
           batch_size=FLAGS.batch_size,
@@ -188,11 +193,11 @@ def main(_):
 
     # Training
     train_steps = tfgan.GANTrainSteps(1, 1)
-    status_message = tf.string_join([
+    status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.train.get_or_create_global_step())
+        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
     ],
-                                    name='status_message')
+                                     name='status_message')
     if not FLAGS.max_number_of_steps:
       return
     tfgan.gan_train(
@@ -200,8 +205,8 @@ def main(_):
         FLAGS.train_log_dir,
         get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-            tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ],
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
@@ -210,4 +215,4 @@ def main(_):
 if __name__ == '__main__':
   tf.flags.mark_flag_as_required('image_set_x_file_pattern')
   tf.flags.mark_flag_as_required('image_set_y_file_pattern')
-  tf.app.run()
+  tf.compat.v1.app.run()

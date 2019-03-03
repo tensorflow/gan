@@ -77,9 +77,9 @@ def _get_optimizer(gen_lr, dis_lr):
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
   """
-  gen_opt = tf.train.AdamOptimizer(
+  gen_opt = tf.compat.v1.train.AdamOptimizer(
       gen_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
-  dis_opt = tf.train.AdamOptimizer(
+  dis_opt = tf.compat.v1.train.AdamOptimizer(
       dis_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
   return gen_opt, dis_opt
 
@@ -131,8 +131,8 @@ def _get_summary_image(estimator, test_images_np):
 
 def main(_, override_generator_fn=None, override_discriminator_fn=None):
   # Create directories if not exist.
-  if not tf.gfile.Exists(FLAGS.output_dir):
-    tf.gfile.MakeDirs(FLAGS.output_dir)
+  if not tf.io.gfile.exists(FLAGS.output_dir):
+    tf.io.gfile.makedirs(FLAGS.output_dir)
 
   # Make sure steps integers are consistent.
   if FLAGS.max_number_of_steps % FLAGS.steps_per_eval != 0:
@@ -164,9 +164,9 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
     cur_step += FLAGS.steps_per_eval
     stargan_estimator.train(train_input_fn, steps=cur_step)
     summary_img = _get_summary_image(stargan_estimator, test_images_np)
-    with tf.gfile.Open(filename_str % cur_step, 'w') as f:
+    with tf.io.gfile.GFile(filename_str % cur_step, 'w') as f:
       scipy.misc.imsave(f, summary_img)
 
 
 if __name__ == '__main__':
-  tf.app.run()
+  tf.compat.v1.app.run()

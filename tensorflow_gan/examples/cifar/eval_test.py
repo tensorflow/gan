@@ -25,7 +25,7 @@ import tensorflow as tf
 from tensorflow_gan.examples.cifar import eval  # pylint:disable=redefined-builtin
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class EvalTest(tf.test.TestCase, parameterized.TestCase):

@@ -30,9 +30,10 @@ def add_reconstruction_summaries(images,
   """Adds image summaries."""
   reshaped_img = stack_images(images, reconstructions, num_imgs_to_visualize)
 
-  tf.summary.image('real_vs_reconstruction', reshaped_img, max_outputs=1)
+  tf.compat.v1.summary.image(
+      'real_vs_reconstruction', reshaped_img, max_outputs=1)
   if prebinary is not None:
-    tf.summary.histogram('prebinary_codes', prebinary)
+    tf.compat.v1.summary.histogram('prebinary_codes', prebinary)
 
 
 def stack_images(images, reconstructions, num_imgs_to_visualize=8):

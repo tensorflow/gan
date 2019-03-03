@@ -28,7 +28,7 @@ import tensorflow as tf
 
 from tensorflow_gan.examples.cyclegan import data_provider
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase):
@@ -40,7 +40,7 @@ class DataProviderTest(tf.test.TestCase):
         'tensorflow_gan/examples/cyclegan/testdata')
 
   def test_normalize_image(self):
-    image = tf.random_uniform(shape=(8, 8, 3), maxval=256, dtype=tf.int32)
+    image = tf.random.uniform(shape=(8, 8, 3), maxval=256, dtype=tf.int32)
     rescaled_image = data_provider.normalize_image(image)
     self.assertEqual(tf.float32, rescaled_image.dtype)
     self.assertListEqual(image.shape.as_list(), rescaled_image.shape.as_list())
@@ -69,9 +69,9 @@ class DataProviderTest(tf.test.TestCase):
                          images_ds.output_shapes.as_list())
     self.assertEqual(tf.float32, images_ds.output_types)
 
-    iterator = images_ds.make_initializable_iterator()
+    iterator = tf.compat.v1.data.make_initializable_iterator(images_ds)
     with self.test_session(use_gpu=True) as sess:
-      sess.run(tf.local_variables_initializer())
+      sess.run(tf.compat.v1.local_variables_initializer())
       sess.run(iterator.initializer)
       images_out = sess.run(iterator.get_next())
       self.assertTupleEqual((batch_size, patch_size, patch_size, 3),
@@ -91,11 +91,13 @@ class DataProviderTest(tf.test.TestCase):
                            images_ds.output_shapes.as_list())
       self.assertEqual(tf.float32, images_ds.output_types)
 
-    iterators = [x.make_initializable_iterator() for x in images_ds_list]
+    iterators = [
+        tf.compat.v1.data.make_initializable_iterator(x) for x in images_ds_list
+    ]
     initialiers = [x.initializer for x in iterators]
     img_tensors = [x.get_next() for x in iterators]
     with self.test_session(use_gpu=True) as sess:
-      sess.run(tf.local_variables_initializer())
+      sess.run(tf.compat.v1.local_variables_initializer())
       sess.run(initialiers)
       images_out_list = sess.run(img_tensors)
       for images_out in images_out_list:
@@ -117,8 +119,8 @@ class DataProviderTest(tf.test.TestCase):
       self.assertEqual(tf.float32, images.dtype)
 
     with self.test_session(use_gpu=True) as sess:
-      sess.run(tf.local_variables_initializer())
-      sess.run(tf.tables_initializer())
+      sess.run(tf.compat.v1.local_variables_initializer())
+      sess.run(tf.compat.v1.tables_initializer())
       images_out_list = sess.run(images_list)
       for images_out in images_out_list:
         self.assertTupleEqual((batch_size, patch_size, patch_size, 3),

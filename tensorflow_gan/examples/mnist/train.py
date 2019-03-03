@@ -60,12 +60,12 @@ def _learning_rate(gan_type):
 
 
 def main(_):
-  if not tf.gfile.Exists(FLAGS.train_log_dir):
-    tf.gfile.MakeDirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
-  with tf.name_scope('inputs'), tf.device('/cpu:0'):
+  with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
     images, one_hot_labels = data_provider.provide_data(
         'train', FLAGS.batch_size, num_parallel_calls=4)
 
@@ -76,9 +76,9 @@ def main(_):
         generator_fn=networks.unconditional_generator,
         discriminator_fn=networks.unconditional_discriminator,
         real_data=images,
-        generator_inputs=tf.random_normal([FLAGS.batch_size, FLAGS.noise_dims]))
+        generator_inputs=tf.random.normal([FLAGS.batch_size, FLAGS.noise_dims]))
   elif FLAGS.gan_type == 'conditional':
-    noise = tf.random_normal([FLAGS.batch_size, FLAGS.noise_dims])
+    noise = tf.random.normal([FLAGS.batch_size, FLAGS.noise_dims])
     gan_model = tfgan.gan_model(
         generator_fn=networks.conditional_generator,
         discriminator_fn=networks.conditional_discriminator,
@@ -104,7 +104,7 @@ def main(_):
 
   # Get the GANLoss tuple. You can pass a custom function, use one of the
   # already-implemented losses from the losses library, or use the defaults.
-  with tf.name_scope('loss'):
+  with tf.compat.v1.name_scope('loss'):
     mi_penalty_weight = 1.0 if FLAGS.gan_type == 'infogan' else 0.0
     gan_loss = tfgan.gan_loss(
         gan_model,
@@ -114,30 +114,30 @@ def main(_):
     tfgan.eval.add_regularization_loss_summaries(gan_model)
 
   # Get the GANTrain ops using custom optimizers.
-  with tf.name_scope('train'):
+  with tf.compat.v1.name_scope('train'):
     gen_lr, dis_lr = _learning_rate(FLAGS.gan_type)
     train_ops = tfgan.gan_train_ops(
         gan_model,
         gan_loss,
-        generator_optimizer=tf.train.AdamOptimizer(gen_lr, 0.5),
-        discriminator_optimizer=tf.train.AdamOptimizer(dis_lr, 0.5),
+        generator_optimizer=tf.compat.v1.train.AdamOptimizer(gen_lr, 0.5),
+        discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(dis_lr, 0.5),
         summarize_gradients=True,
         aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
   # Run the alternating training loop. Skip it if no steps should be taken
   # (used for graph construction tests).
-  status_message = tf.string_join([
+  status_message = tf.strings.join([
       'Starting train step: ',
-      tf.as_string(tf.train.get_or_create_global_step())
+      tf.as_string(tf.compat.v1.train.get_or_create_global_step())
   ],
-                                  name='status_message')
+                                   name='status_message')
   if FLAGS.max_number_of_steps == 0:
     return
   tfgan.gan_train(
       train_ops,
       hooks=[
-          tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-          tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+          tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+          tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
       ],
       logdir=FLAGS.train_log_dir,
       get_hooks_fn=tfgan.get_joint_train_hooks())
@@ -145,4 +145,4 @@ def main(_):
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
-  tf.app.run()
+  tf.compat.v1.app.run()

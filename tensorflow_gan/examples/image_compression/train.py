@@ -68,17 +68,18 @@ flags.DEFINE_float(
 
 
 def _get_trainable_variables(scope):
-  assert isinstance(scope, tf.VariableScope)
-  return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope.name)
+  assert isinstance(scope, tf.compat.v1.VariableScope)
+  return tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES,
+                                     scope.name)
 
 
 def main(_):
-  if not tf.gfile.Exists(FLAGS.train_log_dir):
-    tf.gfile.MakeDirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
     # Put input pipeline on CPU to reserve GPU for training.
-    with tf.name_scope('inputs'), tf.device('/cpu:0'):
+    with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
       images, _ = data_provider.provide_data(
           'train', FLAGS.batch_size, FLAGS.patch_size, num_parallel_calls=5)
 
@@ -86,7 +87,7 @@ def main(_):
     # code to track variables. Note that we could replace all of this with a
     # call to `tfgan.gan_model`, but we don't in order to demonstrate some of
     # TFGAN's flexibility.
-    with tf.variable_scope('generator') as gen_scope:
+    with tf.compat.v1.variable_scope('generator') as gen_scope:
       reconstructions, _, prebinary = networks.compression_model(
           images, num_bits=FLAGS.bits_per_patch, depth=FLAGS.model_depth)
     gan_model = _get_gan_model(
@@ -98,7 +99,7 @@ def main(_):
     tfgan.eval.add_gan_model_summaries(gan_model)
 
     # Define the GANLoss tuple using standard library functions.
-    with tf.name_scope('loss'):
+    with tf.compat.v1.name_scope('loss'):
       gan_loss = tfgan.gan_loss(
           gan_model,
           generator_loss_fn=tfgan.losses.least_squares_generator_loss,
@@ -107,16 +108,16 @@ def main(_):
 
       # Define the standard pixel loss.
       l1_pixel_loss = tf.norm(
-          gan_model.real_data - gan_model.generated_data, ord=1)
+          tensor=gan_model.real_data - gan_model.generated_data, ord=1)
 
       # Modify the loss tuple to include the pixel loss. Add summaries as well.
       gan_loss = tfgan.losses.combine_adversarial_loss(
           gan_loss, gan_model, l1_pixel_loss, weight_factor=FLAGS.weight_factor)
-      tf.summary.scalar('weight_factor', FLAGS.weight_factor)
+      tf.compat.v1.summary.scalar('weight_factor', FLAGS.weight_factor)
 
     # Get the GANTrain ops using the custom optimizers and optional
     # discriminator weight clipping.
-    with tf.name_scope('train_ops'):
+    with tf.compat.v1.name_scope('train_ops'):
       gen_lr, dis_lr = _lr(FLAGS.generator_lr, FLAGS.discriminator_lr)
       gen_opt, dis_opt = _optimizer(gen_lr, dis_lr)
       train_ops = tfgan.gan_train_ops(
@@ -127,8 +128,8 @@ def main(_):
           summarize_gradients=True,
           colocate_gradients_with_ops=True,
           aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
-      tf.summary.scalar('generator_lr', gen_lr)
-      tf.summary.scalar('discriminator_lr', dis_lr)
+      tf.compat.v1.summary.scalar('generator_lr', gen_lr)
+      tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
 
     # Determine the number of generator vs discriminator steps.
     train_steps = tfgan.GANTrainSteps(
@@ -137,11 +138,11 @@ def main(_):
 
     # Run the alternating training loop. Skip it if no steps should be taken
     # (used for graph construction tests).
-    status_message = tf.string_join([
+    status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.train.get_or_create_global_step())
+        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
     ],
-                                    name='status_message')
+                                     name='status_message')
     if FLAGS.max_number_of_steps == 0:
       return
     tfgan.gan_train(
@@ -149,8 +150,8 @@ def main(_):
         FLAGS.train_log_dir,
         tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.train.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-            tf.train.LoggingTensorHook([status_message], every_n_iter=10)
+            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ],
         master=FLAGS.master,
         is_chief=FLAGS.task == 0)
@@ -162,8 +163,8 @@ def _optimizer(gen_lr, dis_lr):
       'epsilon': 1e-8,
       'beta1': 0.5,
   }
-  return (tf.train.AdamOptimizer(gen_lr, **adam_kwargs),
-          tf.train.AdamOptimizer(dis_lr, **adam_kwargs))
+  return (tf.compat.v1.train.AdamOptimizer(gen_lr, **adam_kwargs),
+          tf.compat.v1.train.AdamOptimizer(dis_lr, **adam_kwargs))
 
 
 def _lr(gen_lr_base, dis_lr_base):
@@ -173,9 +174,9 @@ def _lr(gen_lr_base, dis_lr_base):
       'decay_rate': 0.9,
       'staircase': True,
   }
-  gen_lr = tf.train.exponential_decay(
+  gen_lr = tf.compat.v1.train.exponential_decay(
       learning_rate=gen_lr_base,
-      global_step=tf.train.get_or_create_global_step(),
+      global_step=tf.compat.v1.train.get_or_create_global_step(),
       **gen_lr_kwargs)
   dis_lr = dis_lr_base
 
@@ -188,9 +189,9 @@ def _get_gan_model(generator_inputs, generated_data, real_data,
   generator_vars = _get_trainable_variables(generator_scope)
 
   discriminator_fn = networks.discriminator
-  with tf.variable_scope('discriminator') as dis_scope:
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
     discriminator_gen_outputs = discriminator_fn(generated_data)
-  with tf.variable_scope(dis_scope, reuse=True):
+  with tf.compat.v1.variable_scope(dis_scope, reuse=True):
     discriminator_real_outputs = discriminator_fn(real_data)
   discriminator_vars = _get_trainable_variables(dis_scope)
 
@@ -213,4 +214,4 @@ def _get_gan_model(generator_inputs, generated_data, real_data,
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
-  tf.app.run()
+  tf.compat.v1.app.run()

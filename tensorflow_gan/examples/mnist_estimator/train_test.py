@@ -26,7 +26,7 @@ import tensorflow as tf
 from tensorflow_gan.examples.mnist_estimator import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase):

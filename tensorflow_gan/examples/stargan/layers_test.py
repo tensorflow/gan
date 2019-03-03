@@ -27,7 +27,7 @@ class LayersTest(tf.test.TestCase):
     w = h
     c = 256
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers._residual_block(
         input_net=input_tensor,
         num_outputs=c,
@@ -36,7 +36,7 @@ class LayersTest(tf.test.TestCase):
         padding_size=1)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h, w, c), output.shape)
 
@@ -47,11 +47,11 @@ class LayersTest(tf.test.TestCase):
     w = h
     c = 3 + 3
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.generator_down_sample(input_tensor)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h // 4, w // 4, 256), output.shape)
 
@@ -62,11 +62,11 @@ class LayersTest(tf.test.TestCase):
     w = h
     c = 256
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.generator_bottleneck(input_tensor)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h, w, c), output.shape)
 
@@ -78,11 +78,11 @@ class LayersTest(tf.test.TestCase):
     c = 256
     c_out = 3
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.generator_up_sample(input_tensor, c_out)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h * 4, w * 4, c_out), output.shape)
 
@@ -93,11 +93,11 @@ class LayersTest(tf.test.TestCase):
     w = 128
     c = 3
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.discriminator_input_hidden(input_tensor)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, 2, 2, 2048), output.shape)
 
@@ -108,11 +108,11 @@ class LayersTest(tf.test.TestCase):
     w = 2
     c = 2048
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.discriminator_output_source(input_tensor)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h, w, 1), output.shape)
 
@@ -124,11 +124,11 @@ class LayersTest(tf.test.TestCase):
     c = 2048
     num_domain = 3
 
-    input_tensor = tf.random_uniform((n, h, w, c))
+    input_tensor = tf.random.uniform((n, h, w, c))
     output_tensor = layers.discriminator_output_class(input_tensor, num_domain)
 
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, num_domain), output.shape)
 

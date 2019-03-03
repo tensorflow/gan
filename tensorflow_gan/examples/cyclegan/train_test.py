@@ -27,18 +27,20 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.examples.cyclegan import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 def _test_generator(input_images):
   """Simple generator function."""
-  return input_images * tf.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False)
 
 
 def _test_discriminator(image_batch, unused_conditioning=None):
   """Simple discriminator function."""
   return tf.contrib.layers.flatten(
-      image_batch * tf.get_variable('dummy_d', initializer=2.0))
+      image_batch *
+      tf.compat.v1.get_variable('dummy_d', initializer=2.0, use_resource=False))
 
 
 train.networks.generator = _test_generator
@@ -63,7 +65,8 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train.networks, 'generator', autospec=True)
   @mock.patch.object(train.networks, 'discriminator', autospec=True)
-  @mock.patch.object(tf.train, 'get_or_create_global_step', autospec=True)
+  @mock.patch.object(
+      tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step,
                   unused_mock_discriminator, unused_mock_generator):
     FLAGS.max_number_of_steps = 10
@@ -77,7 +80,7 @@ class TrainTest(tf.test.TestCase):
     self.assertAlmostEqual(base_lr, lr_step2)
     self.assertAlmostEqual(base_lr * 0.2, lr_step9)
 
-  @mock.patch.object(tf.train, 'AdamOptimizer', autospec=True)
+  @mock.patch.object(tf.compat.v1.train, 'AdamOptimizer', autospec=True)
   def test_get_optimizer(self, mock_adam_optimizer):
     gen_lr, dis_lr = 0.1, 0.01
     train._get_optimizer(gen_lr=gen_lr, dis_lr=dis_lr)
@@ -102,7 +105,7 @@ class TrainTest(tf.test.TestCase):
     train_ops = train._define_train_ops(cyclegan_model, cyclegan_loss)
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
 
-  @mock.patch.object(tf, 'gfile', autospec=True)
+  @mock.patch.object(tf.io, 'gfile', autospec=True)
   @mock.patch.object(train, 'data_provider', autospec=True)
   @mock.patch.object(train, '_define_model', autospec=True)
   @mock.patch.object(tfgan, 'cyclegan_loss', autospec=True)

@@ -29,19 +29,19 @@ class Pix2PixTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 128, 128, 3])
     model_output = networks.generator(img_batch)
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_graph(self):
     for shape in ([4, 32, 32], [3, 128, 128], [2, 80, 400]):
-      tf.reset_default_graph()
+      tf.compat.v1.reset_default_graph()
       img = tf.ones(shape + [3])
       output_imgs = networks.generator(img)
 
       self.assertAllEqual(shape + [3], output_imgs.shape.as_list())
 
   def test_generator_graph_unknown_batch_dim(self):
-    img = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
+    img = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
     output_imgs = networks.generator(img)
 
     self.assertAllEqual([None, 32, 32, 3], output_imgs.shape.as_list())
@@ -54,27 +54,27 @@ class Pix2PixTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 128, 128, 5])
     model_output = networks.generator(img_batch)
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_invalid_channels(self):
     with self.assertRaisesRegexp(
         ValueError, 'Last dimension shape must be known but is None'):
-      img = tf.placeholder(tf.float32, shape=[4, 32, 32, None])
+      img = tf.compat.v1.placeholder(tf.float32, shape=[4, 32, 32, None])
       networks.generator(img)
 
   def test_discriminator_run(self):
     img_batch = tf.zeros([3, 70, 70, 3])
     disc_output = networks.discriminator(img_batch)
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(disc_output)
 
   def test_discriminator_graph(self):
     # Check graph construction for a number of image size/depths and batch
     # sizes.
     for batch_size, patch_size in zip([3, 6], [70, 128]):
-      tf.reset_default_graph()
+      tf.compat.v1.reset_default_graph()
       img = tf.ones([batch_size, patch_size, patch_size, 3])
       disc_output = networks.discriminator(img)
 

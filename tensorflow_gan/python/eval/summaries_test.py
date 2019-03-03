@@ -24,11 +24,13 @@ import tensorflow_gan as tfgan
 
 
 def generator_model(inputs):
-  return tf.get_variable('dummy_g', initializer=2.0) * inputs
+  return tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False) * inputs
 
 
 def discriminator_model(inputs, _):
-  return tf.get_variable('dummy_d', initializer=2.0) * inputs
+  return tf.compat.v1.get_variable(
+      'dummy_d', initializer=2.0, use_resource=False) * inputs
 
 
 def stargan_generator_model(inputs, _):
@@ -37,9 +39,9 @@ def stargan_generator_model(inputs, _):
 
 def get_gan_model():
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator') as gen_scope:
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
     pass
-  with tf.variable_scope('discriminator') as dis_scope:
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
     pass
   return tfgan.GANModel(
       generator_inputs=tf.zeros([4, 32, 32, 3]),
@@ -58,9 +60,9 @@ def get_gan_model():
 def get_stargan_model():
   """Similar to get_gan_model()."""
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('discriminator') as dis_scope:
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
     pass
-  with tf.variable_scope('generator') as gen_scope:
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
     return tfgan.StarGANModel(
         input_data=tf.ones([1, 2, 2, 3]),
         input_data_domain_label=tf.ones([1, 2]),
@@ -81,9 +83,9 @@ def get_stargan_model():
 
 
 def get_cyclegan_model():
-  with tf.variable_scope('x2y'):
+  with tf.compat.v1.variable_scope('x2y'):
     model_x2y = get_gan_model()
-  with tf.variable_scope('y2x'):
+  with tf.compat.v1.variable_scope('y2x'):
     model_y2x = get_gan_model()
   return tfgan.CycleGANModel(
       model_x2y=model_x2y,
@@ -99,11 +101,12 @@ class SummariesTest(tf.test.TestCase):
     tfgan.eval.add_gan_model_image_summaries(get_model_fn(), grid_size=2,
                                              model_summaries=model_summaries)
 
-    self.assertEquals(expected_num_summary_ops,
-                      len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        expected_num_summary_ops,
+        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     with self.cached_session(use_gpu=True):
-      tf.global_variables_initializer().run()
-      tf.summary.merge_all().eval()
+      tf.compat.v1.global_variables_initializer().run()
+      tf.compat.v1.summary.merge_all().eval()
 
   def test_add_gan_model_image_summaries(self):
     self._test_add_gan_model_image_summaries_impl(get_gan_model, 5, True)
@@ -119,11 +122,12 @@ class SummariesTest(tf.test.TestCase):
                                          expected_num_summary_ops):
     tfgan.eval.add_gan_model_summaries(get_model_fn())
 
-    self.assertEquals(expected_num_summary_ops,
-                      len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        expected_num_summary_ops,
+        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     with self.cached_session(use_gpu=True):
-      tf.global_variables_initializer().run()
-      tf.summary.merge_all().eval()
+      tf.compat.v1.global_variables_initializer().run()
+      tf.compat.v1.summary.merge_all().eval()
 
   def test_add_gan_model_summaries(self):
     self._test_add_gan_model_summaries_impl(get_gan_model, 3)
@@ -135,10 +139,11 @@ class SummariesTest(tf.test.TestCase):
                                                    expected_num_summary_ops):
     tfgan.eval.add_regularization_loss_summaries(get_model_fn())
 
-    self.assertEquals(expected_num_summary_ops,
-                      len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        expected_num_summary_ops,
+        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     with self.cached_session(use_gpu=True):
-      tf.summary.merge_all().eval()
+      tf.compat.v1.summary.merge_all().eval()
 
   def test_add_regularization_loss_summaries(self):
     self._test_add_regularization_loss_summaries_impl(get_gan_model, 2)
@@ -152,10 +157,11 @@ class SummariesTest(tf.test.TestCase):
     tfgan.eval.add_image_comparison_summaries(
         get_model_fn(), display_diffs=True)
 
-    self.assertEquals(expected_num_summary_ops,
-                      len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        expected_num_summary_ops,
+        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     with self.cached_session(use_gpu=True):
-      tf.summary.merge_all().eval()
+      tf.compat.v1.summary.merge_all().eval()
 
   def test_add_image_comparison_summaries(self):
     self._test_add_image_comparison_summaries_impl(get_gan_model, 1)
@@ -163,19 +169,21 @@ class SummariesTest(tf.test.TestCase):
   def test_add_image_comparison_summaries_for_cyclegan(self):
     tfgan.eval.add_cyclegan_image_summaries(get_cyclegan_model())
 
-    self.assertEquals(2, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        2, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     with self.cached_session(use_gpu=True):
-      tf.summary.merge_all().eval()
+      tf.compat.v1.summary.merge_all().eval()
 
   def test_add_image_comparison_summaries_for_stargan(self):
 
     tfgan.eval.add_stargan_image_summaries(get_stargan_model())
 
-    self.assertEquals(1, len(tf.get_collection(tf.GraphKeys.SUMMARIES)))
+    self.assertEqual(
+        1, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
-      tf.summary.merge_all().eval()
+      sess.run(tf.compat.v1.global_variables_initializer())
+      tf.compat.v1.summary.merge_all().eval()
 
 
 if __name__ == '__main__':

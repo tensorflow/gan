@@ -34,7 +34,8 @@ import tensorflow_probability as tfp
 
 
 def generator_model(inputs):
-  return tf.get_variable('dummy_g', initializer=2.0) * inputs
+  return tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False) * inputs
 
 
 class Generator(object):
@@ -44,7 +45,8 @@ class Generator(object):
 
 
 def infogan_generator_model(inputs):
-  return tf.get_variable('dummy_g', initializer=2.0) * inputs[0]
+  return tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False) * inputs[0]
 
 
 class InfoGANGenerator(object):
@@ -54,7 +56,8 @@ class InfoGANGenerator(object):
 
 
 def discriminator_model(inputs, _):
-  return tf.get_variable('dummy_d', initializer=2.0) * inputs
+  return tf.compat.v1.get_variable(
+      'dummy_d', initializer=2.0, use_resource=False) * inputs
 
 
 class Discriminator(object):
@@ -64,7 +67,8 @@ class Discriminator(object):
 
 
 def infogan_discriminator_model(inputs, _):
-  return (tf.get_variable('dummy_d', initializer=2.0) * inputs,
+  return (tf.compat.v1.get_variable(
+      'dummy_d', initializer=2.0, use_resource=False) * inputs,
           [tfp.distributions.Categorical([1.0])])
 
 
@@ -79,7 +83,7 @@ def acgan_discriminator_model(inputs, _, num_classes=10):
       discriminator_model(inputs, _),
       tf.one_hot(
           # TODO(haeusser): infer batch size from input
-          tf.random_uniform([3], maxval=num_classes, dtype=tf.int32),
+          tf.random.uniform([3], maxval=num_classes, dtype=tf.int32),
           num_classes))
 
 
@@ -90,14 +94,15 @@ class ACGANDiscriminator(object):
         discriminator_model(inputs, _),
         tf.one_hot(
             # TODO(haeusser): infer batch size from input
-            tf.random_uniform([3], maxval=num_classes, dtype=tf.int32),
+            tf.random.uniform([3], maxval=num_classes, dtype=tf.int32),
             num_classes))
 
 
 def stargan_generator_model(inputs, _):
   """Dummy generator for StarGAN."""
 
-  return tf.get_variable('dummy_g', initializer=0.5) * inputs
+  return tf.compat.v1.get_variable(
+      'dummy_g', initializer=0.5, use_resource=False) * inputs
 
 
 class StarGANGenerator(object):
@@ -108,9 +113,9 @@ class StarGANGenerator(object):
 
 def stargan_discriminator_model(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
-  hidden = tf.layers.flatten(inputs)
-  output_src = tf.reduce_mean(hidden, axis=1)
-  output_cls = tf.layers.dense(hidden, num_domains)
+  hidden = tf.compat.v1.layers.flatten(inputs)
+  output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
+  output_cls = tf.compat.v1.layers.dense(hidden, num_domains)
   return output_src, output_cls
 
 
@@ -122,9 +127,9 @@ class StarGANDiscriminator(object):
 
 def get_gan_model():
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator') as gen_scope:
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
     pass
-  with tf.variable_scope('discriminator') as dis_scope:
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
     pass
   return tfgan.GANModel(
       generator_inputs=None,
@@ -151,7 +156,7 @@ def create_gan_model():
       generator_model,
       discriminator_model,
       real_data=tf.zeros([1, 2]),
-      generator_inputs=tf.random_normal([1, 2]))
+      generator_inputs=tf.random.normal([1, 2]))
 
 
 def create_callable_gan_model():
@@ -159,7 +164,7 @@ def create_callable_gan_model():
       Generator(),
       Discriminator(),
       real_data=tf.zeros([1, 2]),
-      generator_inputs=tf.random_normal([1, 2]))
+      generator_inputs=tf.random.normal([1, 2]))
 
 
 def get_infogan_model():
@@ -184,7 +189,7 @@ def create_infogan_model():
       infogan_discriminator_model,
       real_data=tf.zeros([1, 2]),
       unstructured_generator_inputs=[],
-      structured_generator_inputs=[tf.random_normal([1, 2])])
+      structured_generator_inputs=[tf.random.normal([1, 2])])
 
 
 def create_callable_infogan_model():
@@ -193,7 +198,7 @@ def create_callable_infogan_model():
       InfoGANDiscriminator(),
       real_data=tf.zeros([1, 2]),
       unstructured_generator_inputs=[],
-      structured_generator_inputs=[tf.random_normal([1, 2])])
+      structured_generator_inputs=[tf.random.normal([1, 2])])
 
 
 def get_acgan_model():
@@ -217,7 +222,7 @@ def create_acgan_model():
       generator_model,
       acgan_discriminator_model,
       real_data=tf.zeros([1, 2]),
-      generator_inputs=tf.random_normal([1, 2]),
+      generator_inputs=tf.random.normal([1, 2]),
       one_hot_labels=tf.one_hot([0, 1, 2], 10))
 
 
@@ -226,7 +231,7 @@ def create_callable_acgan_model():
       Generator(),
       ACGANDiscriminator(),
       real_data=tf.zeros([1, 2]),
-      generator_inputs=tf.random_normal([1, 2]),
+      generator_inputs=tf.random.normal([1, 2]),
       one_hot_labels=tf.one_hot([0, 1, 2], 10))
 
 
@@ -265,9 +270,9 @@ def create_callable_cyclegan_model():
 def get_stargan_model():
   """Similar to get_gan_model()."""
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator') as gen_scope:
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
     pass
-  with tf.variable_scope('discriminator') as dis_scope:
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
     pass
   return tfgan.StarGANModel(
       input_data=tf.ones([1, 2, 2, 3]),
@@ -305,8 +310,8 @@ def create_callable_stargan_model():
 
 
 def get_sync_optimizer():
-  return tf.train.SyncReplicasOptimizer(
-      tf.train.GradientDescentOptimizer(learning_rate=1.0),
+  return tf.compat.v1.train.SyncReplicasOptimizer(
+      tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0),
       replicas_to_aggregate=1)
 
 
@@ -360,9 +365,9 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
     # Verify that creating 2 GANModels with the same scope names does not create
     # double the variables.
     create_gan_model()
-    variables_1 = tf.global_variables()
+    variables_1 = tf.compat.v1.global_variables()
     create_gan_model()
-    variables_2 = tf.global_variables()
+    variables_2 = tf.compat.v1.global_variables()
     self.assertEqual(variables_1, variables_2)
 
 
@@ -375,8 +380,8 @@ class StarGANModelTest(tf.test.TestCase):
     label_tensor_list = []
     for _ in range(num_domains):
       input_tensor_list.append(
-          tf.random_uniform((batch_size, img_size, img_size, c_size)))
-      domain_idx = tf.random_uniform([batch_size],
+          tf.random.uniform((batch_size, img_size, img_size, c_size)))
+      domain_idx = tf.random.uniform([batch_size],
                                      minval=0,
                                      maxval=num_domains,
                                      dtype=tf.int32)
@@ -414,8 +419,8 @@ class StarGANModelTest(tf.test.TestCase):
     self.assertIsInstance(model, tfgan.StarGANModel)
     self.assertTrue(isinstance(model.discriminator_variables, list))
     self.assertTrue(isinstance(model.generator_variables, list))
-    self.assertIsInstance(model.discriminator_scope, tf.VariableScope)
-    self.assertTrue(model.generator_scope, tf.VariableScope)
+    self.assertIsInstance(model.discriminator_scope, tf.compat.v1.VariableScope)
+    self.assertTrue(model.generator_scope, tf.compat.v1.VariableScope)
     self.assertTrue(callable(model.discriminator_fn))
     self.assertTrue(callable(model.generator_fn))
 
@@ -434,7 +439,7 @@ class StarGANModelTest(tf.test.TestCase):
         input_data_domain_label=label_tensor)
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       input_data, generated_data, reconstructed_data = sess.run(
           [model.input_data, model.generated_data, model.reconstructed_data])
@@ -463,7 +468,7 @@ class StarGANModelTest(tf.test.TestCase):
         input_data_domain_label=label_tensor)
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       disc_input_data_source_pred, disc_gen_data_source_pred = sess.run([
           model.discriminator_input_data_source_predication,
@@ -507,7 +512,8 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     """Test output type."""
     loss = tfgan.gan_loss(get_gan_model_fn(), add_summaries=True)
     self.assertIsInstance(loss, tfgan.GANLoss)
-    self.assertNotEmpty(tf.get_collection(tf.GraphKeys.SUMMARIES))
+    self.assertNotEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self.assertEqual(0, loss.generator_loss.shape.ndims)
     self.assertEqual(0, loss.discriminator_loss.shape.ndims)
 
@@ -518,7 +524,8 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
   def test_cyclegan_output_type(self, get_gan_model_fn):
     loss = tfgan.cyclegan_loss(get_gan_model_fn(), add_summaries=True)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
-    self.assertNotEmpty(tf.get_collection(tf.GraphKeys.SUMMARIES))
+    self.assertNotEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self.assertEqual(0, loss.loss_x2y.discriminator_loss.shape.ndims)
     self.assertEqual(0, loss.loss_x2y.generator_loss.shape.ndims)
     self.assertEqual(0, loss.loss_y2x.discriminator_loss.shape.ndims)
@@ -532,15 +539,17 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
         'aux_cond_discriminator_weight': 1.0}),
   )
   def test_reduction(self, get_gan_model_fn, kwargs):
-    loss = tfgan.gan_loss(get_gan_model_fn(),
-                          reduction=tf.losses.Reduction.NONE, **kwargs)
+    loss = tfgan.gan_loss(
+        get_gan_model_fn(),
+        reduction=tf.compat.v1.losses.Reduction.NONE,
+        **kwargs)
     self.assertIsInstance(loss, tfgan.GANLoss)
     self.assertEqual(3, loss.generator_loss.shape.ndims)
     self.assertEqual(3, loss.discriminator_loss.shape.ndims)
 
   def test_reduction_cyclegan(self):
-    loss = tfgan.cyclegan_loss(create_cyclegan_model(),
-                               reduction=tf.losses.Reduction.NONE)
+    loss = tfgan.cyclegan_loss(
+        create_cyclegan_model(), reduction=tf.compat.v1.losses.Reduction.NONE)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
     self.assertEqual(2, loss.loss_x2y.discriminator_loss.shape.ndims)
     self.assertEqual(2, loss.loss_x2y.generator_loss.shape.ndims)
@@ -585,7 +594,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       loss_gen_np, loss_gen_gp_np = sess.run(
           [loss.generator_loss, loss_gp.generator_loss])
       loss_dis_np, loss_dis_gp_np = sess.run(
@@ -620,10 +629,12 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
       no_reg_loss_gen_np = no_reg_loss.generator_loss.eval()
       no_reg_loss_dis_np = no_reg_loss.discriminator_loss.eval()
 
-    with tf.name_scope(get_gan_model_fn().generator_scope.name):
-      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, tf.constant(3.0))
-    with tf.name_scope(get_gan_model_fn().discriminator_scope.name):
-      tf.add_to_collection(tf.GraphKeys.REGULARIZATION_LOSSES, tf.constant(2.0))
+    with tf.compat.v1.name_scope(get_gan_model_fn().generator_scope.name):
+      tf.compat.v1.add_to_collection(
+          tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES, tf.constant(3.0))
+    with tf.compat.v1.name_scope(get_gan_model_fn().discriminator_scope.name):
+      tf.compat.v1.add_to_collection(
+          tf.compat.v1.GraphKeys.REGULARIZATION_LOSSES, tf.constant(2.0))
 
     # Check that losses now include the correct regularization values.
     reg_loss = tfgan.gan_loss(get_gan_model_fn())
@@ -650,7 +661,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       loss_gen_np, loss_ac_gen_gen_np, loss_ac_dis_gen_np = sess.run([
           loss.generator_loss, loss_ac_gen.generator_loss,
           loss_ac_dis.generator_loss
@@ -678,7 +689,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       (loss_x2y_gen_np, loss_x2y_dis_np, loss_y2x_gen_np,
        loss_y2x_dis_np) = sess.run([
            loss.loss_x2y.generator_loss, loss.loss_x2y.discriminator_loss,
@@ -705,7 +716,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     with self.cached_session() as sess:
 
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       gen_loss, disc_loss = sess.run(
           [model_loss.generator_loss, model_loss.discriminator_loss])
@@ -730,7 +741,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       for _ in range(10):
         sess.run([loss.generator_loss, loss.discriminator_loss])
 
@@ -744,10 +755,10 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
         checker_gen_fn,
         discriminator_model,
         real_data=tf.zeros([]),
-        generator_inputs=tf.random_normal([]))
+        generator_inputs=tf.random.normal([]))
 
     def tensor_pool_fn(_):
-      return (tf.random_uniform([]), tf.random_uniform([]))
+      return (tf.random.uniform([]), tf.random.uniform([]))
 
     def checker_dis_fn(inputs, _):
       """Discriminator that checks that it only sees pooled Tensors."""
@@ -763,12 +774,12 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     tfgan.gan_loss(model, tensor_pool_fn=tensor_pool_fn)
 
   def test_doesnt_crash_when_in_nested_scope(self):
-    with tf.variable_scope('outer_scope'):
+    with tf.compat.v1.variable_scope('outer_scope'):
       gan_model = tfgan.gan_model(
           generator_model,
           discriminator_model,
           real_data=tf.zeros([1, 2]),
-          generator_inputs=tf.random_normal([1, 2]))
+          generator_inputs=tf.random.normal([1, 2]))
 
       # This should work inside a scope.
       tfgan.gan_loss(gan_model, gradient_penalty_weight=1.0)
@@ -783,7 +794,7 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
                                                 pool_size):
     history_values = []
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       for i in range(2 * pool_size):
         t1, t2 = sess.run([tensor1, tensor2])
         history_values.append(t1)
@@ -801,7 +812,8 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
     pool_fn = lambda x: tfgan.features.tensor_pool(x, pool_size=pool_size)
     new_model = tensor_pool_adjusted_model(model, pool_fn)
     # 'Generator/dummy_g:0' and 'Discriminator/dummy_d:0'
-    self.assertEqual(2, len(tf.get_collection(tf.GraphKeys.VARIABLES)))
+    self.assertEqual(
+        2, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.VARIABLES)))
     self.assertIsNot(new_model.discriminator_gen_outputs,
                      model.discriminator_gen_outputs)
 
@@ -860,8 +872,8 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
-    g_opt = tf.train.GradientDescentOptimizer(1.0)
-    d_opt = tf.train.GradientDescentOptimizer(1.0)
+    g_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    d_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
     train_ops = tfgan.gan_train_ops(
         model,
         loss,
@@ -895,24 +907,29 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     loss = tfgan.gan_loss(model)
 
     # Add generator and discriminator update tf.
-    with tf.variable_scope(model.generator_scope):
-      gen_update_count = tf.get_variable('gen_count', initializer=0)
+    with tf.compat.v1.variable_scope(model.generator_scope):
+      gen_update_count = tf.compat.v1.get_variable(
+          'gen_count', initializer=0, use_resource=False)
       gen_update_op = gen_update_count.assign_add(1)
-      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, gen_update_op)
-    with tf.variable_scope(model.discriminator_scope):
-      dis_update_count = tf.get_variable('dis_count', initializer=0)
+      tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS,
+                                     gen_update_op)
+    with tf.compat.v1.variable_scope(model.discriminator_scope):
+      dis_update_count = tf.compat.v1.get_variable(
+          'dis_count', initializer=0, use_resource=False)
       dis_update_op = dis_update_count.assign_add(1)
-      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, dis_update_op)
+      tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS,
+                                     dis_update_op)
 
     # Add an update op outside the generator and discriminator scopes.
     if provide_update_ops:
       kwargs = {'update_ops': [tf.constant(1.0), gen_update_op, dis_update_op]}
     else:
-      tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, tf.constant(1.0))
+      tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS,
+                                     tf.constant(1.0))
       kwargs = {}
 
-    g_opt = tf.train.GradientDescentOptimizer(1.0)
-    d_opt = tf.train.GradientDescentOptimizer(1.0)
+    g_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    d_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
 
     with self.assertRaisesRegexp(ValueError, 'There are unused update ops:'):
       tfgan.gan_train_ops(
@@ -921,7 +938,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
         model, loss, g_opt, d_opt, check_for_unused_update_ops=False, **kwargs)
 
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       self.assertEqual(0, gen_update_count.eval())
       self.assertEqual(0, dis_update_count.eval())
 
@@ -948,9 +965,13 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     num_trainable_vars = len(get_trainable_variables())
 
     if create_global_step:
-      gstep = tf.get_variable(
-          'custom_gstep', dtype=tf.int32, initializer=0, trainable=False)
-      tf.add_to_collection(tf.GraphKeys.GLOBAL_STEP, gstep)
+      gstep = tf.compat.v1.get_variable(
+          'custom_gstep',
+          dtype=tf.int32,
+          initializer=0,
+          trainable=False,
+          use_resource=False)
+      tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.GLOBAL_STEP, gstep)
 
     g_opt = get_sync_optimizer()
     d_opt = get_sync_optimizer()
@@ -971,10 +992,10 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     d_sync_init_op = d_opt.get_init_tokens_op(num_tokens=1)
 
     # Check that update op is run properly.
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.compat.v1.train.get_or_create_global_step()
     with self.cached_session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
-      tf.local_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
+      tf.compat.v1.local_variables_initializer().run()
 
       g_opt.chief_init_op.run()
       d_opt.chief_init_op.run()
@@ -1031,7 +1052,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
   """Tests for `gan_train`."""
 
   def _gan_train_ops(self, generator_add, discriminator_add):
-    step = tf.train.create_global_step()
+    step = tf.compat.v1.train.create_global_step()
     # Increment the global count every time a train op is run so we can count
     # the number of times they're run.
     # NOTE: `use_locking=True` is required to avoid race conditions with
@@ -1052,16 +1073,16 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_acgan', create_callable_acgan_model),
   )
   def test_run_helper(self, create_gan_model_fn):
-    tf.random.set_random_seed(1234)
+    tf.compat.v1.random.set_random_seed(1234)
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
-    g_opt = tf.train.GradientDescentOptimizer(1.0)
-    d_opt = tf.train.GradientDescentOptimizer(1.0)
+    g_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    d_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops, logdir='', hooks=[tf.train.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf.estimator.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 
@@ -1078,13 +1099,13 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
         train_ops,
         get_hooks_fn=get_hooks_fn_fn(train_steps),
         logdir='',
-        hooks=[tf.train.StopAtStepHook(num_steps=1)])
+        hooks=[tf.estimator.StopAtStepHook(num_steps=1)])
 
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(1 + 3 * 10 + 4 * 100, final_step)
 
   def test_supervisor_run_gan_model_train_ops_multiple_steps(self):
-    step = tf.train.create_global_step()
+    step = tf.compat.v1.train.create_global_step()
     train_ops = tfgan.GANTrainOps(
         generator_train_op=tf.constant(3.0),
         discriminator_train_op=tf.constant(2.0),
@@ -1157,16 +1178,16 @@ class PatchGANTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_patchgan(self, create_gan_model_fn):
     """Ensure that patch-based discriminators work end-to-end."""
-    tf.random.set_random_seed(1234)
+    tf.compat.v1.random.set_random_seed(1234)
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
-    g_opt = tf.train.GradientDescentOptimizer(1.0)
-    d_opt = tf.train.GradientDescentOptimizer(1.0)
+    g_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    d_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops, logdir='', hooks=[tf.train.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf.estimator.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 

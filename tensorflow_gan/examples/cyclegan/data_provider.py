@@ -46,17 +46,17 @@ def _sample_patch(image, patch_size):
     A 3D `Tensor` of HWC format which has the shape of
     [patch_size, patch_size, 3].
   """
-  image_shape = tf.shape(image)
+  image_shape = tf.shape(input=image)
   height, width = image_shape[0], image_shape[1]
   target_size = tf.minimum(height, width)
   image = tf.image.resize_image_with_crop_or_pad(image, target_size,
                                                  target_size)
   # tf.image.resize_area only accepts 4D tensor, so expand dims first.
   image = tf.expand_dims(image, axis=0)
-  image = tf.image.resize_images(image, [patch_size, patch_size])
+  image = tf.image.resize(image, [patch_size, patch_size])
   image = tf.squeeze(image, axis=0)
   # Force image num_channels = 3
-  image = tf.tile(image, [1, 1, tf.maximum(1, 4 - tf.shape(image)[2])])
+  image = tf.tile(image, [1, 1, tf.maximum(1, 4 - tf.shape(input=image)[2])])
   image = tf.slice(image, [0, 0, 0], [patch_size, patch_size, 3])
   return image
 
@@ -90,7 +90,7 @@ def _provide_custom_dataset(image_file_pattern,
   Raises:
     ValueError: If no files match `image_file_pattern`.
   """
-  if not tf.gfile.Glob(image_file_pattern):
+  if not tf.io.gfile.glob(image_file_pattern):
     raise ValueError('No file patterns found.')
   filenames_ds = tf.data.Dataset.list_files(image_file_pattern)
   bytes_ds = filenames_ds.map(tf.io.read_file, num_parallel_calls=num_threads)
@@ -178,8 +178,9 @@ def provide_custom_data(image_file_patterns,
 
   tensors = []
   for ds in datasets:
-    iterator = ds.make_initializable_iterator()
-    tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
+    iterator = tf.compat.v1.data.make_initializable_iterator(ds)
+    tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.TABLE_INITIALIZERS,
+                                   iterator.initializer)
     tensors.append(iterator.get_next())
 
   return tensors

@@ -29,7 +29,8 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_pool_unknown_input_shape(self):
     """Checks that `input_value` can have unknown shape."""
-    input_value = tf.placeholder(dtype=tf.int32, shape=[None, None, 3])
+    input_value = tf.compat.v1.placeholder(
+        dtype=tf.int32, shape=[None, None, 3])
     output_value = tfgan.features.tensor_pool(input_value, pool_size=10)
     self.assertEqual(output_value.shape.as_list(), [None, None, 3])
 
@@ -41,7 +42,7 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_pool_sequence(self):
     """Checks that values are pooled and returned maximally twice."""
-    input_value = tf.placeholder(dtype=tf.int32, shape=[])
+    input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     output_value = tfgan.features.tensor_pool(input_value, pool_size=10)
     self.assertEqual(output_value.shape.as_list(), [])
 
@@ -58,7 +59,7 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_never_pool(self):
     """Checks that setting `pooling_probability` to zero works."""
-    input_value = tf.placeholder(dtype=tf.int32, shape=[])
+    input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     output_value = tfgan.features.tensor_pool(
         input_value, pool_size=10, pooling_probability=0.0)
     self.assertEqual(output_value.shape.as_list(), [])
@@ -70,7 +71,7 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_pooling_probability(self):
     """Checks that `pooling_probability` works."""
-    input_value = tf.placeholder(dtype=tf.int32, shape=[])
+    input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     pool_size = 10
     pooling_probability = 0.2
     output_value = tfgan.features.tensor_pool(
@@ -93,8 +94,8 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_input_values_tuple(self):
     """Checks that `input_values` can be a tuple."""
-    input_values = (tf.placeholder(dtype=tf.int32, shape=[]),
-                    tf.placeholder(dtype=tf.int32, shape=[]))
+    input_values = (tf.compat.v1.placeholder(dtype=tf.int32, shape=[]),
+                    tf.compat.v1.placeholder(dtype=tf.int32, shape=[]))
     output_values = tfgan.features.tensor_pool(input_values, pool_size=3)
     self.assertEqual(len(output_values), len(input_values))
     for output_value in output_values:

@@ -466,7 +466,7 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       loss_fns.g_loss_fn,
       loss_fns.d_loss_fn,
       add_summaries=add_summaries,
-      reduction=tf.losses.Reduction.NONE,
+      reduction=tf.compat.v1.losses.Reduction.NONE,
       **kwargs)
 
   # Make the metric function and tensor names.
@@ -478,9 +478,10 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
     metric_fn = _make_default_metric_fn()
     tensors_for_metric_fn = _make_default_metric_tensors(gan_loss_no_reduction)
 
-  scalar_loss = tf.losses.compute_weighted_loss(
-      gan_loss_no_reduction.discriminator_loss, loss_collection=None,
-      reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
+  scalar_loss = tf.compat.v1.losses.compute_weighted_loss(
+      gan_loss_no_reduction.discriminator_loss,
+      loss_collection=None,
+      reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
   return tf.contrib.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
@@ -544,7 +545,7 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
     Returns:
       An Op that performs a single generator training substep.
     """
-    with tf.name_scope('generator_train'):
+    with tf.compat.v1.name_scope('generator_train'):
       return contrib.create_train_op(
           total_loss=gan_loss.generator_loss,
           optimizer=optimizers.gopt,
@@ -561,7 +562,7 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
     Returns:
       An Op that performs a single discriminator training substep.
     """
-    with tf.name_scope('discriminator_train'):
+    with tf.compat.v1.name_scope('discriminator_train'):
       return contrib.create_train_op(
           total_loss=gan_loss.discriminator_loss,
           optimizer=optimizers.dopt,
@@ -665,8 +666,8 @@ def _make_default_metric_fn():
   """Returns the default metric function."""
   def metric_fn(generator_loss, discriminator_loss):
     return {
-        'generator_loss': tf.metrics.mean(generator_loss),
-        'discriminator_loss': tf.metrics.mean(discriminator_loss),
+        'generator_loss': tf.compat.v1.metrics.mean(generator_loss),
+        'discriminator_loss': tf.compat.v1.metrics.mean(discriminator_loss),
     }
   return metric_fn
 

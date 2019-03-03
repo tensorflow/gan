@@ -24,7 +24,7 @@ import tensorflow as tf
 
 from tensorflow_gan.examples.stargan import data_provider
 
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase):

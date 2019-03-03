@@ -53,7 +53,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
   Returns:
     The largest singular value (the spectral norm) of w.
   """
-  with tf.variable_scope(name, 'spectral_norm'):
+  with tf.compat.v1.variable_scope(name, 'spectral_norm'):
     # The paper says to flatten convnet kernel weights from
     # (C_out, C_in, KH, KW) to (C_out, C_in * KH * KW). But TensorFlow's Conv2D
     # kernel weight shape is (KH, KW, C_in, C_out), so it should be reshaped to
@@ -63,18 +63,19 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
     w = tf.reshape(w_tensor, (-1, w_tensor.get_shape()[-1]))
 
     # Persisted approximation of first left singular vector of matrix `w`.
-    u_var = tf.get_variable(
+    u_var = tf.compat.v1.get_variable(
         _PERSISTED_U_VARIABLE_SUFFIX,
         shape=(w.shape[0], 1),
         dtype=w.dtype,
-        initializer=tf.random_normal_initializer(),
-        trainable=False)
+        initializer=tf.compat.v1.initializers.random_normal(),
+        trainable=False,
+        use_resource=False)
     u = u_var
 
     # Use power iteration method to approximate spectral norm.
     for _ in range(power_iteration_rounds):
       # `v` approximates the first right singular vector of matrix `w`.
-      v = tf.nn.l2_normalize(tf.matmul(tf.transpose(w), u))
+      v = tf.nn.l2_normalize(tf.matmul(tf.transpose(a=w), u))
       u = tf.nn.l2_normalize(tf.matmul(w, v))
 
     # Update persisted approximation.
@@ -85,8 +86,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
     v = tf.stop_gradient(v)
 
     # Largest singular value of `w`.
-    spectral_norm = tf.matmul(
-        tf.matmul(tf.transpose(u), w), v)
+    spectral_norm = tf.matmul(tf.matmul(tf.transpose(a=u), w), v)
     spectral_norm.shape.assert_is_fully_defined()
     spectral_norm.shape.assert_is_compatible_with([1, 1])
 
@@ -105,7 +105,7 @@ def spectral_normalize(w, power_iteration_rounds=1, name=None):
   Returns:
     A normalized weight matrix tensor.
   """
-  with tf.variable_scope(name, 'spectral_normalize'):
+  with tf.compat.v1.variable_scope(name, 'spectral_normalize'):
     w_normalized = w / compute_spectral_norm(
         w, power_iteration_rounds=power_iteration_rounds)
     return tf.reshape(w_normalized, w.get_shape())
@@ -137,14 +137,15 @@ def spectral_norm_regularizer(scale, power_iteration_rounds=1, scope=None):
       raise ValueError(
           'Setting a scale less than 0 on a regularizer: %g' % scale)
     if scale == 0.0:
-      tf.logging.info('Scale of 0 disables regularizer.')
+      tf.compat.v1.logging.info('Scale of 0 disables regularizer.')
       return lambda _: None
 
   def sn(weights, name=None):
     """Applies spectral norm regularization to weights."""
-    with tf.name_scope(scope, 'SpectralNormRegularizer', [weights]) as name:
+    with tf.compat.v1.name_scope(scope, 'SpectralNormRegularizer',
+                                 [weights]) as name:
       scale_t = tf.convert_to_tensor(
-          scale, dtype=weights.dtype.base_dtype, name='scale')
+          value=scale, dtype=weights.dtype.base_dtype, name='scale')
       return tf.multiply(
           scale_t,
           compute_spectral_norm(

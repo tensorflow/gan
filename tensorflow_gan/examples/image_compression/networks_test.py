@@ -42,12 +42,12 @@ class NetworksTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 16, 16, 3])
     model_output = networks.compression_model(img_batch)
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_graph(self):
     for i, batch_size in zip(xrange(3, 7), xrange(3, 11, 2)):
-      tf.reset_default_graph()
+      tf.compat.v1.reset_default_graph()
       patch_size = 2 ** i
       bits = 2 ** i
       img = tf.ones([batch_size, patch_size, patch_size, 3])
@@ -64,7 +64,7 @@ class NetworksTest(tf.test.TestCase):
     with self.assertRaisesRegexp(ValueError, 'Shape .* must have rank 4'):
       networks.compression_model(wrong_dim_input)
 
-    not_fully_defined = tf.placeholder(tf.float32, [3, None, 32, 3])
+    not_fully_defined = tf.compat.v1.placeholder(tf.float32, [3, None, 32, 3])
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       networks.compression_model(not_fully_defined)
 
@@ -72,14 +72,14 @@ class NetworksTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 70, 70, 3])
     disc_output = networks.discriminator(img_batch)
     with self.test_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(disc_output)
 
   def test_discriminator_graph(self):
     # Check graph construction for a number of image size/depths and batch
     # sizes.
     for batch_size, patch_size in zip([3, 6], [70, 128]):
-      tf.reset_default_graph()
+      tf.compat.v1.reset_default_graph()
       img = tf.ones([batch_size, patch_size, patch_size, 3])
       disc_output = networks.discriminator(img)
 
@@ -91,7 +91,7 @@ class NetworksTest(tf.test.TestCase):
     with self.assertRaisesRegexp(ValueError, 'Shape must be rank 4'):
       networks.discriminator(wrong_dim_input)
 
-    not_fully_defined = tf.placeholder(tf.float32, [3, None, 32, 3])
+    not_fully_defined = tf.compat.v1.placeholder(tf.float32, [3, None, 32, 3])
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       networks.compression_model(not_fully_defined)
 

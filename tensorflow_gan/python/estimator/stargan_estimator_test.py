@@ -37,15 +37,16 @@ from tensorflow_gan.python.estimator.stargan_estimator import get_gan_model
 def dummy_generator_fn(input_data, input_data_domain_label, mode):
   del input_data_domain_label, mode
 
-  return tf.get_variable('dummy_g', initializer=0.5) * input_data
+  return tf.compat.v1.get_variable(
+      'dummy_g', initializer=0.5, use_resource=False) * input_data
 
 
 def dummy_discriminator_fn(input_data, num_domains, mode):
   del mode
 
-  hidden = tf.layers.flatten(input_data)
-  output_src = tf.reduce_mean(hidden, axis=1)
-  output_cls = tf.layers.dense(hidden, num_domains, name='debug')
+  hidden = tf.compat.v1.layers.flatten(input_data)
+  output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
+  output_cls = tf.compat.v1.layers.dense(hidden, num_domains, name='debug')
 
   return output_src, output_cls
 
@@ -108,10 +109,12 @@ class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
 def get_dummy_gan_model():
   """Similar to get_gan_model()."""
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator') as gen_scope:
-    gen_var = tf.get_variable('dummy_var', initializer=0.0)
-  with tf.variable_scope('discriminator') as dis_scope:
-    dis_var = tf.get_variable('dummy_var', initializer=0.0)
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
+    gen_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
+    dis_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
   return tfgan.StarGANModel(
       input_data=tf.ones([1, 2, 2, 3]),
       input_data_domain_label=tf.ones([1, 2]),
@@ -134,17 +137,18 @@ def get_dummy_gan_model():
 
 def dummy_loss_fn(gan_model):
   loss = tf.reduce_sum(
-      gan_model.discriminator_input_data_domain_predication -
+      input_tensor=gan_model.discriminator_input_data_domain_predication -
       gan_model.discriminator_generated_data_domain_predication)
-  loss += tf.reduce_sum(gan_model.input_data - gan_model.generated_data)
+  loss += tf.reduce_sum(input_tensor=gan_model.input_data -
+                        gan_model.generated_data)
   return tfgan.GANLoss(loss, loss)
 
 
 def get_metrics(gan_model):
   return {
       'mse_custom_metric':
-          tf.metrics.mean_squared_error(gan_model.input_data,
-                                        gan_model.generated_data)
+          tf.compat.v1.metrics.mean_squared_error(gan_model.input_data,
+                                                  gan_model.generated_data)
   }
 
 
@@ -154,8 +158,9 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
   @classmethod
   def setUpClass(cls):
     super(GetEstimatorSpecTest, cls).setUpClass()
-    cls._generator_optimizer = tf.train.GradientDescentOptimizer(1.0)
-    cls._discriminator_optimizer = tf.train.GradientDescentOptimizer(1.0)
+    cls._generator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    cls._discriminator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
 
   @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
                                   ('eval', tf.estimator.ModeKeys.EVAL),
@@ -192,7 +197,7 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
 
   def tearDown(self):
     if self._model_dir:
-      tf.summary.FileWriterCache.clear()
+      tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
   def _test_complete_flow(self,
@@ -203,12 +208,14 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
                           lr_decay=False):
 
     def make_opt():
-      gstep = tf.train.get_or_create_global_step()
-      lr = tf.train.exponential_decay(1.0, gstep, 10, 0.9)
-      return tf.train.GradientDescentOptimizer(lr)
+      gstep = tf.compat.v1.train.get_or_create_global_step()
+      lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
+      return tf.compat.v1.train.GradientDescentOptimizer(lr)
 
-    gopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
-    dopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
+    gopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
+    dopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
     est = tfgan.estimator.StarGANEstimator(
         generator_fn=dummy_generator_fn,
         discriminator_fn=dummy_discriminator_fn,
@@ -224,7 +231,7 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
 
     # EVALUTE
     scores = est.evaluate(eval_input_fn)
-    self.assertEqual(num_steps, scores[tf.GraphKeys.GLOBAL_STEP])
+    self.assertEqual(num_steps, scores[tf.compat.v1.GraphKeys.GLOBAL_STEP])
     self.assertIn('loss', six.iterkeys(scores))
     self.assertEqual(scores['discriminator_loss'] + scores['generator_loss'],
                      scores['loss'])
@@ -266,14 +273,14 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
     label_size = 3
     image_data = np.zeros([batch_size, img_size, img_size, channel_size],
                           dtype=np.float32)
-    train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': image_data},
         batch_size=batch_size,
         num_epochs=None,
         shuffle=True)
-    eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': image_data}, batch_size=batch_size, shuffle=False)
-    predict_input_fn = tf.estimator.inputs.numpy_input_fn(
+    predict_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': image_data}, shuffle=False)
 
     train_input_fn = self._numpy_input_fn_wrapper(train_input_fn, batch_size,
@@ -299,7 +306,7 @@ class StarGANEstimatorParamsTest(tf.test.TestCase):
     self._model_dir = self.get_temp_dir()
 
   def tearDown(self):
-    tf.summary.FileWriterCache.clear()
+    tf.compat.v1.summary.FileWriterCache.clear()
 
   def test_params_used(self):
     def train_input_fn(params):
@@ -311,8 +318,9 @@ class StarGANEstimatorParamsTest(tf.test.TestCase):
         generator_fn=dummy_generator_fn,
         discriminator_fn=dummy_discriminator_fn,
         loss_fn=dummy_loss_fn,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         model_dir=self._model_dir,
         params={'batch_size': 4})
 

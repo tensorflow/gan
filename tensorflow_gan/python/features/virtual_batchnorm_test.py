@@ -43,12 +43,12 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_statistics(self):
     """Check that `_statistics` gives the same result as `nn.moments`."""
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
-    tensors = tf.random_normal([4, 5, 7, 3])
+    tensors = tf.random.normal([4, 5, 7, 3])
     for axes in [(3), (0, 2), (1, 2, 3)]:
       vb_mean, mean_sq = vbn_statistics(tensors, axes)
-      mom_mean, mom_var = tf.nn.moments(tensors, axes)
+      mom_mean, mom_var = tf.nn.moments(x=tensors, axes=axes)
       vb_var = mean_sq - tf.square(vb_mean)
 
       with self.cached_session(use_gpu=True) as sess:
@@ -60,18 +60,18 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_virtual_statistics(self):
     """Check that `_virtual_statistics` gives same result as `nn.moments`."""
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
     batch_axis = 0
-    partial_batch = tf.random_normal([4, 5, 7, 3])
-    single_example = tf.random_normal([1, 5, 7, 3])
+    partial_batch = tf.random.normal([4, 5, 7, 3])
+    single_example = tf.random.normal([1, 5, 7, 3])
     full_batch = tf.concat([partial_batch, single_example], axis=0)
 
     for reduction_axis in range(1, 4):
       # Get `nn.moments` on the full batch.
       reduction_axes = list(range(4))
       del reduction_axes[reduction_axis]
-      mom_mean, mom_variance = tf.nn.moments(full_batch, reduction_axes)
+      mom_mean, mom_variance = tf.nn.moments(x=full_batch, axes=reduction_axes)
 
       # Get virtual batch statistics.
       vb_reduction_axes = list(range(4))
@@ -94,13 +94,14 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_reference_batch_normalization(self):
     """Check that batch norm from VBN agrees with opensource implementation."""
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
-    batch = tf.random_normal([6, 5, 7, 3, 3])
+    batch = tf.random.normal([6, 5, 7, 3, 3])
 
     for axis in range(5):
       # Get `layers` batchnorm result.
-      bn_normalized = tf.layers.batch_normalization(batch, axis, training=True)
+      bn_normalized = tf.compat.v1.layers.batch_normalization(
+          batch, axis, training=True)
 
       # Get VBN's batch normalization on reference batch.
       batch_axis = 0 if axis is not 0 else 1  # axis and batch_axis can't same
@@ -108,7 +109,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vbn_normalized = vbn.reference_batch_normalization()
 
       with self.cached_session(use_gpu=True) as sess:
-        tf.global_variables_initializer().run()
+        tf.compat.v1.global_variables_initializer().run()
 
         bn_normalized_np, vbn_normalized_np = sess.run(
             [bn_normalized, vbn_normalized])
@@ -116,13 +117,13 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_same_as_batchnorm(self):
     """Check that batch norm on set X is the same as ref of X / y on `y`."""
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
     num_examples = 4
-    examples = [tf.random_normal([5, 7, 3]) for _ in range(num_examples)]
+    examples = [tf.random.normal([5, 7, 3]) for _ in range(num_examples)]
 
     # Get the result of the opensource batch normalization.
-    batch_normalized = tf.layers.batch_normalization(
+    batch_normalized = tf.compat.v1.layers.batch_normalization(
         tf.stack(examples), training=True)
 
     for i in range(num_examples):
@@ -132,7 +133,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vb_normed = tf.squeeze(vbn(tf.expand_dims(examples[i], [0])), [0])
 
       with self.cached_session(use_gpu=True) as sess:
-        tf.global_variables_initializer().run()
+        tf.compat.v1.global_variables_initializer().run()
         bn_np, vb_np = sess.run([batch_normalized, vb_normed])
       self.assertAllClose(bn_np[i, ...], vb_np)
 
@@ -143,7 +144,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     that the virtual batch normalized value of an example is independent of the
     other examples in the minibatch. In this test, we verify this property.
     """
-    tf.set_random_seed(1234)
+    tf.compat.v1.set_random_seed(1234)
 
     # These can be random, but must be the same for all session calls.
     reference_batch = tf.constant(
@@ -155,19 +156,19 @@ class VirtualBatchnormTest(tf.test.TestCase):
     vbn = tfgan.features.VBN(reference_batch)
     vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)), 0)
     with self.session(use_gpu=True):
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       vbn_fixed_example_np = vbn_fixed_example.eval()
 
     # Check that the value is the same for different minibatches, and different
     # sized minibatches.
     for minibatch_size in range(1, 6):
-      examples = [tf.random_normal([7, 3]) for _ in range(minibatch_size)]
+      examples = [tf.random.normal([7, 3]) for _ in range(minibatch_size)]
 
       minibatch = tf.stack([fixed_example] + examples)
       vbn_minibatch = vbn(minibatch)
       cur_vbn_fixed_example = vbn_minibatch[0, ...]
       with self.cached_session(use_gpu=True):
-        tf.global_variables_initializer().run()
+        tf.compat.v1.global_variables_initializer().run()
         cur_vbn_fixed_example_np = cur_vbn_fixed_example.eval()
       self.assertAllClose(vbn_fixed_example_np, cur_vbn_fixed_example_np)
 
@@ -178,7 +179,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     tensor2_ref = tf.zeros([4, 2, 3])
     tensor2_examples = tf.zeros([2, 2, 3])
 
-    with tf.variable_scope('dummy_scope', reuse=True):
+    with tf.compat.v1.variable_scope('dummy_scope', reuse=True):
       with self.assertRaisesRegexp(
           ValueError, 'does not exist, or was not created with '
           'tf.get_variable()'):
@@ -196,7 +197,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     to_fetch.append(vbn1(tensor1_examples))
     to_fetch.append(vbn2(tensor2_examples))
 
-    tf.get_variable_scope().reuse_variables()
+    tf.compat.v1.get_variable_scope().reuse_variables()
 
     to_fetch.append(vbn1.reference_batch_normalization())
     to_fetch.append(vbn2.reference_batch_normalization())
@@ -206,14 +207,14 @@ class VirtualBatchnormTest(tf.test.TestCase):
     self.assertEqual(4, len(tf.contrib.framework.get_variables()))
 
     with self.session(use_gpu=True) as sess:
-      tf.global_variables_initializer().run()
+      tf.compat.v1.global_variables_initializer().run()
       sess.run(to_fetch)
 
   def test_invalid_input(self):
     # Reference batch has unknown dimensions.
     with self.assertRaisesRegexp(ValueError,
                                  '`reference_batch` has unknown dimensions.'):
-      tfgan.features.VBN(tf.placeholder(tf.float32), name='vbn1')
+      tfgan.features.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
 
     # Axis too negative.
     with self.assertRaisesRegexp(ValueError,

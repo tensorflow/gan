@@ -51,7 +51,7 @@ def generator(inputs, targets):
     Tensor of shape (batch_size, h, w, c) as the inputs.
   """
 
-  with tf.variable_scope('generator'):
+  with tf.compat.v1.variable_scope('generator'):
 
     input_with_condition = ops.condition_input_with_pixel_padding(
         inputs, targets)
@@ -88,13 +88,13 @@ def discriminator(input_net, class_num):
     logit representing whether the image is in the associated domain.
   """
 
-  with tf.variable_scope('discriminator'):
+  with tf.compat.v1.variable_scope('discriminator'):
 
     hidden = layers.discriminator_input_hidden(input_net)
 
     output_src = layers.discriminator_output_source(hidden)
     output_src = tf.contrib.layers.flatten(output_src)
-    output_src = tf.reduce_mean(output_src, axis=1)
+    output_src = tf.reduce_mean(input_tensor=output_src, axis=1)
 
     output_cls = layers.discriminator_output_class(hidden, class_num)
 

@@ -30,6 +30,8 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_gan.python import contrib_utils as contrib
+
 __all__ = ['sliced_wasserstein_distance']
 
 _GAUSSIAN_FILTER = np.float32([[1, 4, 6, 4, 1], [4, 16, 24, 16, 4],
@@ -54,23 +56,30 @@ def laplacian_pyramid(batch, num_levels):
   gaussian_filter = tf.constant(_GAUSSIAN_FILTER)
 
   def spatial_conv(batch, gain):
-    s = tf.shape(batch)
-    padded = tf.pad(batch, [[0, 0], [2, 2], [2, 2], [0, 0]], 'REFLECT')
-    xt = tf.transpose(padded, [0, 3, 1, 2])
+    """Custom conv2d."""
+    s = tf.shape(input=batch)
+    padded = tf.pad(
+        tensor=batch, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode='REFLECT')
+    xt = tf.transpose(a=padded, perm=[0, 3, 1, 2])
     xt = tf.reshape(xt, [s[0] * s[3], s[1] + 4, s[2] + 4, 1])
-    conv_out = tf.nn.conv2d(xt, gaussian_filter * gain, [1] * 4, 'VALID')
+    conv_out = contrib.nn_conv2d(
+        input=xt,
+        filters=gaussian_filter * gain,
+        strides=[1] * 4,
+        padding='VALID')
     conv_xt = tf.reshape(conv_out, [s[0], s[3], s[1], s[2]])
-    conv_xt = tf.transpose(conv_xt, [0, 2, 3, 1])
+    conv_xt = tf.transpose(a=conv_xt, perm=[0, 2, 3, 1])
     return conv_xt
 
   def pyr_down(batch):  # matches cv2.pyrDown()
     return spatial_conv(batch, 1)[:, ::2, ::2]
 
   def pyr_up(batch):  # matches cv2.pyrUp()
-    s = tf.shape(batch)
+    s = tf.shape(input=batch)
     zeros = tf.zeros([3 * s[0], s[1], s[2], s[3]])
     res = tf.concat([batch, zeros], 0)
-    res = tf.batch_to_space(res, crops=[[0, 0], [0, 0]], block_size=2)
+    res = contrib.batch_to_space(
+        input=res, crops=[[0, 0], [0, 0]], block_shape=2)
     res = spatial_conv(res, 4)
     return res
 
@@ -111,7 +120,7 @@ def _batch_to_patches(batch, patches_per_image, patch_size):
     patches = batch.flat[idx]
     return patches
 
-  patches = tf.py_func(
+  patches = tf.compat.v1.py_func(
       py_func_random_patches, [batch], batch.dtype, stateful=False)
   return patches
 
@@ -126,9 +135,9 @@ def _normalize_patches(patches):
       Tensor (batch, size, size, channels) of the normalized patches.
   """
   patches = tf.concat(patches, 0)
-  mean, variance = tf.nn.moments(patches, [1, 2, 3], keep_dims=True)
+  mean, variance = contrib.nn_moments(x=patches, axes=[1, 2, 3], keepdims=True)
   patches = (patches - mean) / tf.sqrt(variance)
-  return tf.reshape(patches, [tf.shape(patches)[0], -1])
+  return tf.reshape(patches, [tf.shape(input=patches)[0], -1])
 
 
 def _sort_rows(matrix, num_rows):
@@ -141,9 +150,9 @@ def _sort_rows(matrix, num_rows):
   Returns:
       Tensor (num_rows, col) of the sorted matrix top K rows.
   """
-  tmatrix = tf.transpose(matrix, [1, 0])
+  tmatrix = tf.transpose(a=matrix, perm=[1, 0])
   sorted_tmatrix = tf.nn.top_k(tmatrix, num_rows)[0]
-  return tf.transpose(sorted_tmatrix, [1, 0])
+  return tf.transpose(a=sorted_tmatrix, perm=[1, 0])
 
 
 def _sliced_wasserstein(a, b, random_sampling_count, random_projection_dim):
@@ -158,21 +167,22 @@ def _sliced_wasserstein(a, b, random_sampling_count, random_projection_dim):
   Returns:
       Float containing the approximate distance between "a" and "b".
   """
-  s = tf.shape(a)
+  s = tf.shape(input=a)
   means = []
   for _ in range(random_sampling_count):
     # Random projection matrix.
-    proj = tf.random_normal([tf.shape(a)[1], random_projection_dim])
-    proj *= tf.rsqrt(tf.reduce_sum(tf.square(proj), 0, keepdims=True))
+    proj = tf.random.normal([tf.shape(input=a)[1], random_projection_dim])
+    proj *= tf.math.rsqrt(
+        tf.reduce_sum(input_tensor=tf.square(proj), axis=0, keepdims=True))
     # Project both distributions and sort them.
     proj_a = tf.matmul(a, proj)
     proj_b = tf.matmul(b, proj)
     proj_a = _sort_rows(proj_a, s[0])
     proj_b = _sort_rows(proj_b, s[0])
     # Pairwise Wasserstein distance.
-    wdist = tf.reduce_mean(tf.abs(proj_a - proj_b))
+    wdist = tf.reduce_mean(input_tensor=tf.abs(proj_a - proj_b))
     means.append(wdist)
-  return tf.reduce_mean(means)
+  return tf.reduce_mean(input_tensor=means)
 
 
 def _sliced_wasserstein_svd(a, b):
@@ -188,14 +198,14 @@ def _sliced_wasserstein_svd(a, b):
   Returns:
       Float containing the approximate distance between "a" and "b".
   """
-  s = tf.shape(a)
+  s = tf.shape(input=a)
   # Random projection matrix.
-  sig, u = tf.svd(tf.concat([a, b], 0))[:2]
+  sig, u = tf.linalg.svd(tf.concat([a, b], 0))[:2]
   proj_a, proj_b = tf.split(u * sig, 2, axis=0)
   proj_a = _sort_rows(proj_a[:, ::-1], s[0])
   proj_b = _sort_rows(proj_b[:, ::-1], s[0])
   # Pairwise Wasserstein distance.
-  wdist = tf.reduce_mean(tf.abs(proj_a - proj_b))
+  wdist = tf.reduce_mean(input_tensor=tf.abs(proj_a - proj_b))
   return wdist
 
 

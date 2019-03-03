@@ -98,13 +98,15 @@ def gan_model(
       `real_data`.
   """
   # Create models
-  with tf.variable_scope(generator_scope, reuse=tf.AUTO_REUSE) as gen_scope:
+  with tf.compat.v1.variable_scope(
+      generator_scope, reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
     generator_inputs = _convert_tensor_or_l_or_d(generator_inputs)
     generated_data = generator_fn(generator_inputs)
-  with tf.variable_scope(discriminator_scope, reuse=tf.AUTO_REUSE) as dis_scope:
+  with tf.compat.v1.variable_scope(
+      discriminator_scope, reuse=tf.compat.v1.AUTO_REUSE) as dis_scope:
     discriminator_gen_outputs = discriminator_fn(generated_data,
                                                  generator_inputs)
-  with tf.variable_scope(dis_scope, reuse=True):
+  with tf.compat.v1.variable_scope(dis_scope, reuse=True):
     real_data = _convert_tensor_or_l_or_d(real_data)
     discriminator_real_outputs = discriminator_fn(real_data, generator_inputs)
 
@@ -167,7 +169,7 @@ def infogan_model(
     ValueError: If the discriminator output is malformed.
   """
   # Create models
-  with tf.variable_scope(generator_scope) as gen_scope:
+  with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     unstructured_generator_inputs = _convert_tensor_or_l_or_d(
         unstructured_generator_inputs)
     structured_generator_inputs = _convert_tensor_or_l_or_d(
@@ -175,12 +177,12 @@ def infogan_model(
     generator_inputs = (
         unstructured_generator_inputs + structured_generator_inputs)
     generated_data = generator_fn(generator_inputs)
-  with tf.variable_scope(discriminator_scope) as disc_scope:
+  with tf.compat.v1.variable_scope(discriminator_scope) as disc_scope:
     dis_gen_outputs, predicted_distributions = discriminator_fn(
         generated_data, generator_inputs)
   _validate_distributions(predicted_distributions, structured_generator_inputs)
-  with tf.variable_scope(disc_scope, reuse=True):
-    real_data = tf.convert_to_tensor(real_data)
+  with tf.compat.v1.variable_scope(disc_scope, reuse=True):
+    real_data = tf.convert_to_tensor(value=real_data)
     dis_real_outputs, _ = discriminator_fn(real_data, generator_inputs)
 
   if not generated_data.get_shape().is_compatible_with(real_data.get_shape()):
@@ -265,17 +267,17 @@ def acgan_model(
     (discrimination logits, classification logits).
   """
   # Create models
-  with tf.variable_scope(generator_scope) as gen_scope:
+  with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     generator_inputs = _convert_tensor_or_l_or_d(generator_inputs)
     generated_data = generator_fn(generator_inputs)
-  with tf.variable_scope(discriminator_scope) as dis_scope:
-    with tf.name_scope(dis_scope.name + '/generated/'):
+  with tf.compat.v1.variable_scope(discriminator_scope) as dis_scope:
+    with tf.compat.v1.name_scope(dis_scope.name + '/generated/'):
       (discriminator_gen_outputs, discriminator_gen_classification_logits
       ) = _validate_acgan_discriminator_outputs(
           discriminator_fn(generated_data, generator_inputs))
-  with tf.variable_scope(dis_scope, reuse=True):
-    with tf.name_scope(dis_scope.name + '/real/'):
-      real_data = tf.convert_to_tensor(real_data)
+  with tf.compat.v1.variable_scope(dis_scope, reuse=True):
+    with tf.compat.v1.name_scope(dis_scope.name + '/real/'):
+      real_data = tf.convert_to_tensor(value=real_data)
       (discriminator_real_outputs, discriminator_real_classification_logits
       ) = _validate_acgan_discriminator_outputs(
           discriminator_fn(real_data, generator_inputs))
@@ -356,14 +358,14 @@ def cyclegan_model(
         discriminator_scope=discriminator_scope,
         check_shapes=check_shapes)
 
-  with tf.variable_scope(model_x2y_scope):
+  with tf.compat.v1.variable_scope(model_x2y_scope):
     model_x2y = _define_partial_model(data_x, data_y)
-  with tf.variable_scope(model_y2x_scope):
+  with tf.compat.v1.variable_scope(model_y2x_scope):
     model_y2x = _define_partial_model(data_y, data_x)
 
-  with tf.variable_scope(model_y2x.generator_scope, reuse=True):
+  with tf.compat.v1.variable_scope(model_y2x.generator_scope, reuse=True):
     reconstructed_x = model_y2x.generator_fn(model_x2y.generated_data)
-  with tf.variable_scope(model_x2y.generator_scope, reuse=True):
+  with tf.compat.v1.variable_scope(model_x2y.generator_scope, reuse=True):
     reconstructed_y = model_x2y.generator_fn(model_y2x.generated_data)
 
   return namedtuples.CycleGANModel(model_x2y, model_y2x, reconstructed_x,
@@ -416,11 +418,11 @@ def stargan_model(generator_fn,
 
   # Convert list of tensor to a single tensor if applicable.
   if isinstance(input_data, (list, tuple)):
-    input_data = tf.concat(
-        [tf.convert_to_tensor(x) for x in input_data], 0)
+    input_data = tf.concat([tf.convert_to_tensor(value=x) for x in input_data],
+                           0)
   if isinstance(input_data_domain_label, (list, tuple)):
     input_data_domain_label = tf.concat(
-        [tf.convert_to_tensor(x) for x in input_data_domain_label], 0)
+        [tf.convert_to_tensor(value=x) for x in input_data_domain_label], 0)
 
   # Get batch_size, num_domains from the labels.
   input_data_domain_label.shape.assert_has_rank(2)
@@ -428,23 +430,22 @@ def stargan_model(generator_fn,
   batch_size, num_domains = input_data_domain_label.shape.as_list()
 
   # Transform input_data to random target domains.
-  with tf.variable_scope(generator_scope) as generator_scope:
+  with tf.compat.v1.variable_scope(generator_scope) as generator_scope:
     generated_data_domain_target = generate_stargan_random_domain_target(
         batch_size, num_domains)
     generated_data = generator_fn(input_data, generated_data_domain_target)
 
   # Transform generated_data back to the original input_data domain.
-  with tf.variable_scope(generator_scope, reuse=True):
+  with tf.compat.v1.variable_scope(generator_scope, reuse=True):
     reconstructed_data = generator_fn(generated_data, input_data_domain_label)
 
   # Predict source and domain for the generated_data using the discriminator.
-  with tf.variable_scope(
-      discriminator_scope) as discriminator_scope:
+  with tf.compat.v1.variable_scope(discriminator_scope) as discriminator_scope:
     disc_gen_data_source_pred, disc_gen_data_domain_pred = discriminator_fn(
         generated_data, num_domains)
 
   # Predict source and domain for the input_data using the discriminator.
-  with tf.variable_scope(discriminator_scope, reuse=True):
+  with tf.compat.v1.variable_scope(discriminator_scope, reuse=True):
     disc_input_data_source_pred, disc_input_data_domain_pred = discriminator_fn(
         input_data, num_domains)
 
@@ -477,7 +478,7 @@ def _validate_aux_loss_weight(aux_loss_weight, name='aux_loss_weight'):
   if isinstance(aux_loss_weight, tf.Tensor):
     aux_loss_weight.shape.assert_is_compatible_with([])
     with tf.control_dependencies(
-        [tf.debugging.assert_greater_equal(aux_loss_weight, 0.0)]):
+        [tf.compat.v1.debugging.assert_greater_equal(aux_loss_weight, 0.0)]):
       aux_loss_weight = tf.identity(aux_loss_weight)
   elif aux_loss_weight is not None and aux_loss_weight < 0:
     raise ValueError('`%s` must be greater than 0. Instead, was %s' %
@@ -516,7 +517,7 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
   if isinstance(model, namedtuples.GANModel):
     pooled_generator_inputs, pooled_generated_data = tensor_pool_fn(
         (model.generator_inputs, model.generated_data))
-    with tf.variable_scope(model.discriminator_scope, reuse=True):
+    with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
       dis_gen_outputs = model.discriminator_fn(pooled_generated_data,
                                                pooled_generator_inputs)
     return model._replace(
@@ -526,7 +527,7 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
   elif isinstance(model, namedtuples.ACGANModel):
     pooled_generator_inputs, pooled_generated_data = tensor_pool_fn(
         (model.generator_inputs, model.generated_data))
-    with tf.variable_scope(model.discriminator_scope, reuse=True):
+    with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
       (pooled_discriminator_gen_outputs,
        pooled_discriminator_gen_classification_logits) = model.discriminator_fn(
            pooled_generated_data, pooled_generator_inputs)
@@ -540,7 +541,7 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
     pooled_generator_inputs, pooled_generated_data, pooled_structured_input = (
         tensor_pool_fn((model.generator_inputs, model.generated_data,
                         model.structured_generator_inputs)))
-    with tf.variable_scope(model.discriminator_scope, reuse=True):
+    with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
       (pooled_discriminator_gen_outputs,
        pooled_predicted_distributions) = model.discriminator_and_aux_fn(
            pooled_generated_data, pooled_generator_inputs)
@@ -570,7 +571,7 @@ def gan_loss(
     aux_cond_discriminator_weight=None,
     tensor_pool_fn=None,
     # Options.
-    reduction=tf.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
+    reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=True):
   """Returns losses necessary to train generator and discriminator.
 
@@ -701,11 +702,12 @@ def gan_loss(
     dis_loss += aux_cond_discriminator_weight * ac_disc_loss
   # Gathers auxiliary losses.
   if model.generator_scope:
-    gen_reg_loss = tf.losses.get_regularization_loss(model.generator_scope.name)
+    gen_reg_loss = tf.compat.v1.losses.get_regularization_loss(
+        model.generator_scope.name)
   else:
     gen_reg_loss = 0
   if model.discriminator_scope:
-    dis_reg_loss = tf.losses.get_regularization_loss(
+    dis_reg_loss = tf.compat.v1.losses.get_regularization_loss(
         model.discriminator_scope.name)
   else:
     dis_reg_loss = 0
@@ -768,9 +770,9 @@ def cyclegan_loss(
     return partial_loss._replace(generator_loss=partial_loss.generator_loss +
                                  aux_loss)
 
-  with tf.name_scope('cyclegan_loss_x2y'):
+  with tf.compat.v1.name_scope('cyclegan_loss_x2y'):
     loss_x2y = _partial_loss(model.model_x2y)
-  with tf.name_scope('cyclegan_loss_y2x'):
+  with tf.compat.v1.name_scope('cyclegan_loss_y2x'):
     loss_y2x = _partial_loss(model.model_y2x)
 
   return namedtuples.CycleGANLoss(loss_x2y, loss_y2x)
@@ -789,9 +791,9 @@ def stargan_loss(
     gradient_penalty_epsilon=1e-10,
     gradient_penalty_target=1.0,
     gradient_penalty_one_sided=False,
-    reconstruction_loss_fn=tf.losses.absolute_difference,
+    reconstruction_loss_fn=tf.compat.v1.losses.absolute_difference,
     reconstruction_loss_weight=10.0,
-    classification_loss_fn=tf.losses.softmax_cross_entropy,
+    classification_loss_fn=tf.compat.v1.losses.softmax_cross_entropy,
     classification_loss_weight=1.0,
     classification_one_hot=True,
     add_summaries=True):
@@ -847,17 +849,18 @@ def stargan_loss(
       Single scalar tensor representing the classification loss.
     """
 
-    with tf.name_scope(scope_name, values=(true_labels, predict_logits)):
+    with tf.compat.v1.name_scope(
+        scope_name, values=(true_labels, predict_logits)):
 
       loss = classification_loss_fn(
           onehot_labels=true_labels, logits=predict_logits)
 
       if not classification_one_hot:
-        loss = tf.reduce_sum(loss, axis=1)
-      loss = tf.reduce_mean(loss)
+        loss = tf.reduce_sum(input_tensor=loss, axis=1)
+      loss = tf.reduce_mean(input_tensor=loss)
 
       if add_summaries:
-        tf.summary.scalar(scope_name, loss)
+        tf.compat.v1.summary.scalar(scope_name, loss)
 
       return loss
 
@@ -885,7 +888,7 @@ def stargan_loss(
                                                model.reconstructed_data)
   generator_loss += reconstruction_loss * reconstruction_loss_weight
   if add_summaries:
-    tf.summary.scalar('reconstruction_loss', reconstruction_loss)
+    tf.compat.v1.summary.scalar('reconstruction_loss', reconstruction_loss)
 
   # Classification Loss.
   generator_loss += _classification_loss_helper(
@@ -923,10 +926,13 @@ def _get_update_ops(kwargs, gen_scope, dis_scope, check_for_unused_ops=True):
     update_ops = set(kwargs['update_ops'])
     del kwargs['update_ops']
   else:
-    update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
+    update_ops = set(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
 
-  all_gen_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS, gen_scope))
-  all_dis_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS, dis_scope))
+  all_gen_ops = set(
+      tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, gen_scope))
+  all_dis_ops = set(
+      tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, dis_scope))
 
   if check_for_unused_ops:
     unused_ops = update_ops - all_gen_ops - all_dis_ops
@@ -980,20 +986,20 @@ def gan_train_ops(
     saved_params.pop('loss', None)
     kwargs = saved_params.pop('kwargs', {})
     saved_params.update(kwargs)
-    with tf.name_scope('cyclegan_x2y_train'):
+    with tf.compat.v1.name_scope('cyclegan_x2y_train'):
       train_ops_x2y = gan_train_ops(model.model_x2y, loss.loss_x2y,
                                     **saved_params)
-    with tf.name_scope('cyclegan_y2x_train'):
+    with tf.compat.v1.name_scope('cyclegan_y2x_train'):
       train_ops_y2x = gan_train_ops(model.model_y2x, loss.loss_y2x,
                                     **saved_params)
     return namedtuples.GANTrainOps(
         (train_ops_x2y.generator_train_op, train_ops_y2x.generator_train_op),
         (train_ops_x2y.discriminator_train_op,
          train_ops_y2x.discriminator_train_op),
-        tf.train.get_or_create_global_step().assign_add(1))
+        tf.compat.v1.train.get_or_create_global_step().assign_add(1))
 
   # Create global step increment op.
-  global_step = tf.train.get_or_create_global_step()
+  global_step = tf.compat.v1.train.get_or_create_global_step()
   global_step_inc = global_step.assign_add(1)
 
   # Get generator and discriminator update ops. We split them so that update
@@ -1008,21 +1014,22 @@ def gan_train_ops(
   sync_hooks = []
 
   generator_global_step = None
-  if isinstance(generator_optimizer, tf.train.SyncReplicasOptimizer):
+  if isinstance(generator_optimizer, tf.compat.v1.train.SyncReplicasOptimizer):
     # TODO(joelshor): Figure out a way to get this work without including the
     # dummy global step in the checkpoint.
     # WARNING: Making this variable a local variable causes sync replicas to
     # hang forever.
-    generator_global_step = tf.get_variable(
+    generator_global_step = tf.compat.v1.get_variable(
         'dummy_global_step_generator',
         shape=[],
         dtype=global_step.dtype.base_dtype,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.initializers.zeros(),
         trainable=False,
-        collections=[tf.GraphKeys.GLOBAL_VARIABLES])
+        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES],
+        use_resource=False)
     gen_update_ops += [generator_global_step.assign(global_step)]
     sync_hooks.append(generator_optimizer.make_session_run_hook(is_chief))
-  with tf.name_scope('generator_train'):
+  with tf.compat.v1.name_scope('generator_train'):
     gen_train_op = contrib.create_train_op(
         total_loss=loss.generator_loss,
         optimizer=generator_optimizer,
@@ -1032,18 +1039,20 @@ def gan_train_ops(
         **kwargs)
 
   discriminator_global_step = None
-  if isinstance(discriminator_optimizer, tf.train.SyncReplicasOptimizer):
+  if isinstance(discriminator_optimizer,
+                tf.compat.v1.train.SyncReplicasOptimizer):
     # See comment above `generator_global_step`.
-    discriminator_global_step = tf.get_variable(
+    discriminator_global_step = tf.compat.v1.get_variable(
         'dummy_global_step_discriminator',
         shape=[],
         dtype=global_step.dtype.base_dtype,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.initializers.zeros(),
         trainable=False,
-        collections=[tf.GraphKeys.GLOBAL_VARIABLES])
+        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES],
+        use_resource=False)
     dis_update_ops += [discriminator_global_step.assign(global_step)]
     sync_hooks.append(discriminator_optimizer.make_session_run_hook(is_chief))
-  with tf.name_scope('discriminator_train'):
+  with tf.compat.v1.name_scope('discriminator_train'):
     disc_train_op = contrib.create_train_op(
         total_loss=loss.discriminator_loss,
         optimizer=discriminator_optimizer,
@@ -1058,7 +1067,7 @@ def gan_train_ops(
 
 # TODO(joelshor): Implement a dynamic GAN train loop, as in `Real-Time Adaptive
 # Image Compression` (https://arxiv.org/abs/1705.05823)
-class RunTrainOpsHook(tf.train.SessionRunHook):
+class RunTrainOpsHook(tf.estimator.SessionRunHook):
   """A hook to run train ops a fixed number of times."""
 
   def __init__(self, train_ops, train_steps):
@@ -1286,11 +1295,13 @@ def get_sequential_train_steps(train_steps=namedtuples.GANTrainSteps(1, 1)):
 def _convert_tensor_or_l_or_d(tensor_or_l_or_d):
   """Convert input, list of inputs, or dictionary of inputs to Tensors."""
   if isinstance(tensor_or_l_or_d, (list, tuple)):
-    return [tf.convert_to_tensor(x) for x in tensor_or_l_or_d]
+    return [tf.convert_to_tensor(value=x) for x in tensor_or_l_or_d]
   elif isinstance(tensor_or_l_or_d, dict):
-    return {k: tf.convert_to_tensor(v) for k, v in tensor_or_l_or_d.items()}
+    return {
+        k: tf.convert_to_tensor(value=v) for k, v in tensor_or_l_or_d.items()
+    }
   else:
-    return tf.convert_to_tensor(tensor_or_l_or_d)
+    return tf.convert_to_tensor(value=tensor_or_l_or_d)
 
 
 def _validate_distributions(distributions_l, noise_l):
@@ -1323,8 +1334,10 @@ def generate_stargan_random_domain_target(batch_size, num_domains):
   Returns:
     Tensor of shape (batch_size, num_domains) representing random label.
   """
-  domain_idx = tf.random_uniform(
-      [batch_size], minval=0, maxval=num_domains, dtype=tf.int32)
+  domain_idx = tf.random.uniform([batch_size],
+                                 minval=0,
+                                 maxval=num_domains,
+                                 dtype=tf.int32)
 
   return tf.one_hot(domain_idx, num_domains)
 
@@ -1356,9 +1369,9 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
       raise ValueError('logdir must be present in train_step_kwargs when '
                        'should_trace is present')
     if sess.run(train_step_kwargs['should_trace']):
-      trace_run_options = tf.RunOptions(
-          trace_level=tf.RunOptions.FULL_TRACE)
-      run_metadata = tf.RunMetadata()
+      trace_run_options = tf.compat.v1.RunOptions(
+          trace_level=tf.compat.v1.RunOptions.FULL_TRACE)
+      run_metadata = tf.compat.v1.RunMetadata()
 
   total_loss, np_global_step = sess.run([train_op, global_step],
                                         options=trace_run_options,
@@ -1368,7 +1381,7 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
   if run_metadata is not None:
     trace_filename = os.path.join(train_step_kwargs['logdir'],
                                   'tf_trace-%d.json' % np_global_step)
-    tf.logging.info('Writing trace to %s', trace_filename)
+    tf.compat.v1.logging.info('Writing trace to %s', trace_filename)
     if 'summary_writer' in train_step_kwargs:
       train_step_kwargs['summary_writer'].add_run_metadata(run_metadata,
                                                            'run_metadata-%d' %
@@ -1376,8 +1389,8 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
 
   if 'should_log' in train_step_kwargs:
     if sess.run(train_step_kwargs['should_log']):
-      tf.logging.info('global step %d: loss = %.4f (%.3f sec/step)',
-                      np_global_step, total_loss, time_elapsed)
+      tf.compat.v1.logging.info('global step %d: loss = %.4f (%.3f sec/step)',
+                                np_global_step, total_loss, time_elapsed)
 
   # TODO(joelshor): Figure out why we can't put this into sess.run. The
   # issue right now is that the stop check depends on the global step. The

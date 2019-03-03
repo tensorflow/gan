@@ -32,6 +32,8 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
+
 
 __all__ = [
     'tensor_pool',
@@ -81,11 +83,12 @@ def tensor_pool(input_values,
     return input_values
 
   original_input_values = input_values
-  input_values = tf.contrib.framework.nest.flatten(input_values)
+  input_values = contrib.nest_flatten(input_values)
 
-  with tf.name_scope('{}_pool_queue'.format(name),
-                     values=input_values + [pooling_probability]):
-    pool_queue = tf.RandomShuffleQueue(
+  with tf.compat.v1.name_scope(
+      '{}_pool_queue'.format(name),
+      values=input_values + [pooling_probability]):
+    pool_queue = tf.queue.RandomShuffleQueue(
         capacity=pool_size,
         min_after_dequeue=0,
         dtypes=[v.dtype for v in input_values],
@@ -113,17 +116,20 @@ def tensor_pool(input_values,
       with tf.control_dependencies(dequeue_values):
         enqueue_op = pool_queue.enqueue(input_values)
         with tf.control_dependencies([enqueue_op]):
-          prob = tf.random_uniform(
-              (), dtype=tf.float32) < pooling_probability
-          return tf.cond(prob, lambda: dequeue_values, lambda: input_values)
+          prob = tf.random.uniform((), dtype=tf.float32) < pooling_probability
+          return tf.cond(
+              pred=prob,
+              true_fn=lambda: dequeue_values,
+              false_fn=lambda: input_values)
 
-    output_values = _to_list(tf.cond(
-        pool_queue.size() < pool_size, _get_input_value_pooled,
-        _get_random_pool_value_and_enqueue_input))
+    output_values = _to_list(
+        tf.cond(
+            pred=pool_queue.size() < pool_size,
+            true_fn=_get_input_value_pooled,
+            false_fn=_get_random_pool_value_and_enqueue_input))
 
     # Make sure that the shape of `output_value` is set.
     for input_value, output_value in zip(input_values, output_values):
       output_value.set_shape(input_value.shape)
 
-  return tf.contrib.framework.nest.pack_sequence_as(
-      original_input_values, output_values)
+  return contrib.nest_pack_sequence_as(original_input_values, output_values)

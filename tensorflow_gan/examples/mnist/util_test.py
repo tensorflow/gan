@@ -54,7 +54,7 @@ def one_hot1():
 class MnistScoreTest(tf.test.TestCase):
 
   def test_any_batch_size(self):
-    inputs = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     mscore = util.mnist_score(inputs)
     for batch_size in [4, 16, 30]:
       with self.test_session() as sess:
@@ -96,7 +96,7 @@ class MnistScoreTest(tf.test.TestCase):
 class MnistFrechetDistanceTest(tf.test.TestCase):
 
   def test_any_batch_size(self):
-    inputs = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     fdistance = util.mnist_frechet_distance(inputs, inputs)
     for batch_size in [4, 16, 30]:
       with self.test_session() as sess:
@@ -145,8 +145,9 @@ class MnistCrossEntropyTest(tf.test.TestCase):
   def test_any_batch_size(self):
     num_classes = 10
     one_label = np.array([[1] + [0] * (num_classes - 1)])
-    inputs = tf.placeholder(tf.float32, shape=[None, 28, 28, 1])
-    one_hot_label = tf.placeholder(tf.int32, shape=[None, num_classes])
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
+    one_hot_label = tf.compat.v1.placeholder(
+        tf.int32, shape=[None, num_classes])
     entropy = util.mnist_cross_entropy(inputs, one_hot_label)
     for batch_size in [4, 16, 30]:
       with self.test_session() as sess:

@@ -25,18 +25,19 @@ import tensorflow as tf
 from tensorflow_gan.examples.stargan_estimator import train
 
 FLAGS = flags.FLAGS
-mock = tf.test.mock
+mock = tf.compat.v1.test.mock
 
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.compat.v1.get_variable(
+      'dummy_g', initializer=2.0, use_resource=False)
 
 
 def _test_discriminator(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
   hidden = tf.contrib.layers.flatten(inputs)
-  output_src = tf.reduce_mean(hidden, axis=1)
+  output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
   output_cls = tf.contrib.layers.fully_connected(
       inputs=hidden,
       num_outputs=num_domains,

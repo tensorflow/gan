@@ -41,7 +41,7 @@ from tensorflow_gan.python.estimator.tpu_gan_estimator import Optimizers
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
 
-class TestOptimizerWrapper(tf.train.Optimizer):
+class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
   """An optimizer wrapper that is designed to share a real optimizer.
 
   The idea is that multiple instances of this class can share the real optimizer
@@ -70,7 +70,7 @@ class TestOptimizerWrapper(tf.train.Optimizer):
       self._create_non_slot_variable(
           initial_value=0.0, name='last_loss', colocate_with=var_list[0])
 
-    graph = None if tf.executing_eagerly() else tf.get_default_graph()
+    graph = None if tf.executing_eagerly() else tf.compat.v1.get_default_graph()
     last_loss = self._get_non_slot_variable('last_loss', graph=graph)
 
     if self._first_call:
@@ -117,7 +117,7 @@ class TestOptimizerWrapper(tf.train.Optimizer):
       return self._track_calls()
 
   def _track_calls(self):
-    graph = None if tf.executing_eagerly() else tf.get_default_graph()
+    graph = None if tf.executing_eagerly() else tf.compat.v1.get_default_graph()
     substep_counter = self._opt._get_non_slot_variable(
         'substep_counter', graph=graph)
 
@@ -126,9 +126,10 @@ class TestOptimizerWrapper(tf.train.Optimizer):
     current_substep_mask = tf.bitwise.left_shift(1, substep_counter)
     updated_substep_mask = tf.bitwise.bitwise_or(current_substep_mask,
                                                  substep_mask)
-    assign_op = tf.assign(substep_mask, updated_substep_mask, use_locking=True)
+    assign_op = tf.compat.v1.assign(
+        substep_mask, updated_substep_mask, use_locking=True)
     with tf.control_dependencies([assign_op]):
-      inc_op = tf.assign_add(substep_counter, 1, use_locking=True)
+      inc_op = tf.compat.v1.assign_add(substep_counter, 1, use_locking=True)
 
     return inc_op
 
@@ -137,22 +138,26 @@ def generator_fn(noise, mode):
   del mode
   # TODO(joelshor): Use `tf.compat.dimension_value` when I figure out how to
   # use it in open source.
-  return tf.layers.dense(noise, noise.shape[1].value)
+  return tf.compat.v1.layers.dense(noise, noise.shape[1].value)
 
 
 def discriminator_fn(data, unused_conditioning, mode):
   del unused_conditioning, mode
-  return tf.layers.dense(data, 1)
+  return tf.compat.v1.layers.dense(data, 1)
 
 
 def get_dummy_gan_model(generated_data=None):
   if generated_data is None:
     generated_data = tf.ones([3, 4])
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as gen_scope:
-    gen_var = tf.get_variable('dummy_var', initializer=0.0)
-  with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as dis_scope:
-    dis_var = tf.get_variable('dummy_var', initializer=0.0)
+  with tf.compat.v1.variable_scope(
+      'generator', reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
+    gen_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
+  with tf.compat.v1.variable_scope(
+      'discriminator', reuse=tf.compat.v1.AUTO_REUSE) as dis_scope:
+    dis_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
   return tfgan.GANModel(
       generator_inputs=None,
       generated_data=generated_data,
@@ -172,7 +177,7 @@ def get_metrics(generator_inputs, generated_data, real_data,
   del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
   return {
       'mse_custom_metric':
-          tf.metrics.mean_squared_error(real_data, generated_data)
+          tf.compat.v1.metrics.mean_squared_error(real_data, generated_data)
   }
 
 
@@ -183,9 +188,9 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
   def setUpClass(cls):
     super(GetTPUEstimatorSpecTest, cls).setUpClass()
     cls._generator_optimizer = tf.contrib.tpu.CrossShardOptimizer(
-        tf.train.GradientDescentOptimizer(1.0))
+        tf.compat.v1.train.GradientDescentOptimizer(1.0))
     cls._discriminator_optimizer = tf.contrib.tpu.CrossShardOptimizer(
-        tf.train.GradientDescentOptimizer(1.0))
+        tf.compat.v1.train.GradientDescentOptimizer(1.0))
     cls._optimizers = Optimizers(cls._generator_optimizer,
                                  cls._discriminator_optimizer)
 
@@ -258,7 +263,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
   def tearDown(self):
     super(TPUGANEstimatorIntegrationTest, self).tearDown()
     if self._model_dir:
-      tf.summary.FileWriterCache.clear()
+      tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
   def _test_complete_flow(self,
@@ -270,12 +275,14 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
                           joint_train=True):
 
     def make_opt():
-      gstep = tf.train.get_or_create_global_step()
-      lr = tf.train.exponential_decay(1.0, gstep, 10, 0.9)
-      return tf.train.GradientDescentOptimizer(lr)
+      gstep = tf.compat.v1.train.get_or_create_global_step()
+      lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
+      return tf.compat.v1.train.GradientDescentOptimizer(lr)
 
-    gopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
-    dopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
+    gopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
+    dopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
     est = tfgan.estimator.TPUGANEstimator(
         generator_fn=generator_fn,
         discriminator_fn=discriminator_fn,
@@ -298,7 +305,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     # Evaluate.
     num_steps_eval = 2
     scores = est.evaluate(eval_input_fn, steps=num_steps_eval)
-    self.assertIn(tf.GraphKeys.GLOBAL_STEP, six.iterkeys(scores))
+    self.assertIn(tf.compat.v1.GraphKeys.GLOBAL_STEP, six.iterkeys(scores))
     self.assertIn('loss', six.iterkeys(scores))
     self.assertAlmostEqual(
         scores['discriminator_loss'], scores['loss'], places=4)
@@ -325,7 +332,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
       if return_ds:
         return ds
       else:
-        x, y = ds.make_one_shot_iterator().get_next()
+        x, y = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
         return x, y
 
     def eval_input_fn(params):
@@ -336,7 +343,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
       if return_ds:
         return ds
       else:
-        x, y = ds.make_one_shot_iterator().get_next()
+        x, y = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
         return x, y
 
     predict_size = 10
@@ -369,7 +376,7 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
   def tearDown(self):
     super(TPUGANEstimatorMultiTrainStepTest, self).tearDown()
     if self._model_dir:
-      tf.summary.FileWriterCache.clear()
+      tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
   @parameterized.named_parameters(
@@ -383,7 +390,7 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
       ('0:1 seq', 0, 1, False, 1, None, [0b1]))
   def test_train(self, g_steps, d_steps, joint_train, expected_total_substeps,
                  expected_g_substep_mask, expected_d_substep_mask):
-    real_opt = tf.train.GradientDescentOptimizer(1e-2)
+    real_opt = tf.compat.v1.train.GradientDescentOptimizer(1e-2)
     gopt = TestOptimizerWrapper(real_opt, name='g_opt')
     dopt = TestOptimizerWrapper(real_opt, name='d_opt')
     est = tfgan.estimator.TPUGANEstimator(
@@ -432,16 +439,17 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
     self.new_variable_value = [1.0, 2.0, 3.0]
 
   def tearDown(self):
-    tf.summary.FileWriterCache.clear()
+    tf.compat.v1.summary.FileWriterCache.clear()
 
   def _test_warm_start(self, warm_start_from=None):
     """Tests whether WarmStartSettings work as intended."""
 
     def generator_with_new_variable(noise_dict, mode):
-      tf.get_variable(
+      tf.compat.v1.get_variable(
           name=self.new_variable_name,
           initializer=self.new_variable_value,
-          trainable=True)
+          trainable=True,
+          use_resource=False)
       return generator_fn(noise_dict, mode)
 
     est = tfgan.estimator.TPUGANEstimator(
@@ -449,8 +457,9 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
         discriminator_fn=discriminator_fn,
         generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
         discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         train_batch_size=4,
         use_tpu=flags.FLAGS.use_tpu,
         config=self._config)
@@ -466,8 +475,9 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
         discriminator_fn=discriminator_fn,
         generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
         discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         config=tf.contrib.tpu.RunConfig(
             model_dir=None if warm_start_from else self._model_dir),
         train_batch_size=4,

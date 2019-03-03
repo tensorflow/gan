@@ -32,20 +32,23 @@ def get_trainable_variables(scope=None, suffix=None):
   Returns:
     a list of variables in the trainable collection with scope and suffix.
   """
-  return get_variables(scope, suffix, tf.GraphKeys.TRAINABLE_VARIABLES)
+  return get_variables(scope, suffix,
+                       tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
 
 
 def _with_dependencies(dependencies, output_tensor):
-  with tf.name_scope('control_dependency',
-                     values=list(dependencies) + [output_tensor]):
-    with tf.colocate_with(output_tensor), tf.control_dependencies(dependencies):
-      output_tensor = tf.convert_to_tensor(output_tensor)
+  with tf.compat.v1.name_scope(
+      'control_dependency', values=list(dependencies) + [output_tensor]):
+    with tf.compat.v1.colocate_with(output_tensor), tf.control_dependencies(
+        dependencies):
+      output_tensor = tf.convert_to_tensor(value=output_tensor)
       assert isinstance(output_tensor, tf.Tensor)
       return tf.identity(output_tensor)
 
 
-def get_variables(scope=None, suffix=None,
-                  collection=tf.GraphKeys.GLOBAL_VARIABLES):
+def get_variables(scope=None,
+                  suffix=None,
+                  collection=tf.compat.v1.GraphKeys.GLOBAL_VARIABLES):
   """Gets the list of variables, filtered by scope and/or suffix.
 
   Args:
@@ -58,13 +61,13 @@ def get_variables(scope=None, suffix=None,
   Returns:
     a list of variables in collection with scope and suffix.
   """
-  if isinstance(scope, tf.VariableScope):
+  if isinstance(scope, tf.compat.v1.VariableScope):
     scope = scope.name
   if suffix is not None:
     if ':' not in suffix:
       suffix += ':'
     scope = (scope or '') + '.*' + suffix
-  return tf.get_collection(collection, scope)
+  return tf.compat.v1.get_collection(collection, scope)
 
 
 _USE_GLOBAL_STEP = 0
@@ -77,7 +80,7 @@ def create_train_op(total_loss,
                     variables_to_train=None,
                     transform_grads_fn=None,
                     summarize_gradients=False,
-                    gate_gradients=tf.train.Optimizer.GATE_OP,
+                    gate_gradients=tf.compat.v1.train.Optimizer.GATE_OP,
                     aggregation_method=None,
                     colocate_gradients_with_ops=False,
                     check_numerics=True):
@@ -112,17 +115,19 @@ def create_train_op(total_loss,
       loss value.
   """
   if global_step is _USE_GLOBAL_STEP:
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.compat.v1.train.get_or_create_global_step()
 
   # Update ops use GraphKeys.UPDATE_OPS collection if update_ops is None.
-  global_update_ops = set(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
+  global_update_ops = set(
+      tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
   if update_ops is None:
     update_ops = global_update_ops
   else:
     update_ops = set(update_ops)
   if not global_update_ops.issubset(update_ops):
-    tf.logging.warning('update_ops in create_train_op does not contain all the '
-                       'update_ops in GraphKeys.UPDATE_OPS')
+    tf.compat.v1.logging.warning(
+        'update_ops in create_train_op does not contain all the '
+        'update_ops in GraphKeys.UPDATE_OPS')
 
   # Make sure update_ops are computed before total_loss.
   if update_ops:
@@ -132,11 +137,11 @@ def create_train_op(total_loss,
 
   if variables_to_train is None:
     # Default to tf.trainable_variables()
-    variables_to_train = tf.trainable_variables()
+    variables_to_train = tf.compat.v1.trainable_variables()
   else:
     # Make sure that variables_to_train are in tf.trainable_variables()
     for v in variables_to_train:
-      assert v in tf.trainable_variables()
+      assert v in tf.compat.v1.trainable_variables()
 
   assert variables_to_train
 
@@ -146,31 +151,31 @@ def create_train_op(total_loss,
       total_loss,
       variables_to_train,
       gate_gradients=gate_gradients,
-      aggregation_method=aggregation_method,
-      colocate_gradients_with_ops=colocate_gradients_with_ops)
+      aggregation_method=aggregation_method)
 
   if transform_grads_fn:
     grads = transform_grads_fn(grads)
 
   # Summarize gradients.
   if summarize_gradients:
-    with tf.name_scope('summarize_grads'):
+    with tf.compat.v1.name_scope('summarize_grads'):
       add_gradients_summaries(grads)
 
   # Create gradient updates.
   grad_updates = optimizer.apply_gradients(grads, global_step=global_step)
 
-  with tf.name_scope('train_op'):
+  with tf.compat.v1.name_scope('train_op'):
     # Make sure total_loss is valid.
     if check_numerics:
-      total_loss = tf.check_numerics(total_loss, 'LossTensor is inf or nan')
+      total_loss = tf.debugging.check_numerics(total_loss,
+                                               'LossTensor is inf or nan')
 
     # Ensure the train_tensor computes grad_updates.
 
     train_op = _with_dependencies([grad_updates], total_loss)
 
   # Add the operation used for training to the 'train_op' collection
-  train_ops = tf.get_collection_ref(tf.GraphKeys.TRAIN_OP)
+  train_ops = tf.compat.v1.get_collection_ref(tf.compat.v1.GraphKeys.TRAIN_OP)
   if train_op not in train_ops:
     train_ops.append(train_op)
 
@@ -194,11 +199,81 @@ def add_gradients_summaries(grads_and_vars):
       else:
         grad_values = grad
       summaries.append(
-          tf.summary.histogram(var.op.name + '_gradient', grad_values))
+          tf.compat.v1.summary.histogram(var.op.name + '_gradient',
+                                         grad_values))
       summaries.append(
-          tf.summary.scalar(var.op.name + '_gradient_norm',
-                            tf.global_norm([grad_values])))
+          tf.compat.v1.summary.scalar(var.op.name + '_gradient_norm',
+                                      tf.linalg.global_norm([grad_values])))
     else:
-      tf.logging.info('Var %s has no gradient', var.op.name)
+      tf.compat.v1.logging.info('Var %s has no gradient', var.op.name)
 
   return summaries
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def get_static_value(x):
+  try:
+    return tf.get_static_value(x)
+  except AttributeError:
+    return tf.contrib.util.constant_value(x)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def nest_flatten(x):
+  try:
+    return tf.nest.flatten(x)
+  except AttributeError:
+    return tf.contrib.framework.nest.flatten(x)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def nest_pack_sequence_as(*args, **kwargs):
+  try:
+    return tf.nest.pack_sequence_as(*args, **kwargs)
+  except AttributeError:
+    return tf.contrib.framework.nest.pack_sequence_as(*args, **kwargs)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def nn_conv2d(*args, **kwargs):
+  try:
+    return tf.nn.conv2d(*args, **kwargs)
+  except TypeError:
+    if 'filters' in kwargs:
+      kwargs['filter'] = kwargs['filters']
+      del kwargs['filters']
+    return tf.nn.conv2d(*args, **kwargs)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def nn_moments(*args, **kwargs):
+  try:
+    return tf.nn.moments(*args, **kwargs)
+  except TypeError:
+    if 'keepdims' in kwargs:
+      kwargs['keep_dims'] = kwargs['keepdims']
+      del kwargs['keepdims']
+    return tf.nn.moments(*args, **kwargs)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def nn_avg_pool2d(*args, **kwargs):
+  try:
+    return tf.nn.avg_pool2d(*args, **kwargs)
+  except TypeError:
+    if 'input' in kwargs:
+      kwargs['value'] = kwargs['input']
+      del kwargs['input']
+    return tf.nn.avg_pool2d(*args, **kwargs)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
+def batch_to_space(*args, **kwargs):
+  try:
+    return tf.batch_to_space(*args, **kwargs)
+  except TypeError:
+    if 'block_shape' in kwargs:
+      kwargs['block_size'] = kwargs['block_shape']
+      del kwargs['block_shape']
+    return tf.batch_to_space(*args, **kwargs)
+

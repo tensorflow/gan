@@ -108,7 +108,7 @@ def provide_data(split, batch_size, patch_size, num_parallel_calls=None,
   ds = provide_dataset(split, batch_size, patch_size, num_parallel_calls,
                        shuffle, domains)
 
-  next_batch = ds.make_one_shot_iterator().get_next()
+  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   domains = next_batch.keys()
   images = [next_batch[domain]['images'] for domain in domains]
   labels = [next_batch[domain]['labels'] for domain in domains]

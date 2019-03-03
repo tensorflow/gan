@@ -54,7 +54,7 @@ def _encoder(img_batch, is_training=True, bits=64, depth=64):
   net = _last_conv_layer(end_points)
 
   # Transform the features to the proper number of bits.
-  with tf.variable_scope('EncoderTransformer'):
+  with tf.compat.v1.variable_scope('EncoderTransformer'):
     encoded = tf.contrib.layers.conv2d(net, bits, kernel_size=1, stride=1,
                                        padding='VALID', normalizer_fn=None,
                                        activation_fn=None)
@@ -86,10 +86,7 @@ def _binarizer(prebinary_codes, is_training):
     # In order to train codes that can be binarized during eval, we add noise as
     # in https://arxiv.org/pdf/1611.01704.pdf. Another option is to use a
     # stochastic node, as in https://arxiv.org/abs/1608.05148.
-    noise = tf.random_uniform(
-        prebinary_codes.shape,
-        minval=-1.0,
-        maxval=1.0)
+    noise = tf.random.uniform(prebinary_codes.shape, minval=-1.0, maxval=1.0)
     return prebinary_codes + noise
   else:
     return tf.sign(prebinary_codes)
@@ -129,7 +126,7 @@ def compression_model(image_batch, num_bits=64, depth=64, is_training=True):
   Returns:
     uncompressed images, binary codes, prebinary codes
   """
-  image_batch = tf.convert_to_tensor(image_batch)
+  image_batch = tf.convert_to_tensor(value=image_batch)
   _validate_image_inputs(image_batch)
   final_size = image_batch.shape.as_list()[1]
 
@@ -143,4 +140,4 @@ def discriminator(image_batch, unused_conditioning=None, depth=64):
   """A thin wrapper around the pix2pix discriminator to conform to TFGAN API."""
   logits, _ = pix2pix.pix2pix_discriminator(
       image_batch, num_filters=[depth, 2 * depth, 4 * depth, 8 * depth])
-  return tf.layers.flatten(logits)
+  return tf.compat.v1.layers.flatten(logits)

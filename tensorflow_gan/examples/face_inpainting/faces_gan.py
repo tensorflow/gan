@@ -54,9 +54,11 @@ FLAGS = flags.FLAGS
 
 def open_image(fp, imshape, augment_image=True):
   """Takes filepath and returns a resized tensor with range [-1, 1]."""
-  float_im = tf.to_float(tf.image.decode_png(tf.read_file(fp), channels=3))
+  float_im = tf.cast(
+      tf.image.decode_png(tf.io.read_file(fp), channels=3), dtype=tf.float32)
   expanded_im = tf.expand_dims(float_im, 0)
-  resized_im = tf.image.resize_area(expanded_im, imshape, align_corners=True)
+  resized_im = tf.image.resize(
+      expanded_im, imshape, method=tf.image.ResizeMethod.AREA)
   normalized_im = (resized_im - 128.0)/128.0
   if augment_image:
     augmented_im = tf.image.random_flip_left_right(normalized_im)
@@ -75,8 +77,8 @@ def get_get_batch(data_dir, batch_size, z, imshape):
     prefetched_data = image_data.prefetch(4 * batch_size)
     shuffled_data = prefetched_data.shuffle(buffer_size=batch_size)
     batched_data = shuffled_data.repeat().batch(batch_size, drop_remainder=True)
-    data_iterator = batched_data.make_one_shot_iterator()
-    noise = tf.random_normal([batch_size, z])
+    data_iterator = tf.compat.v1.data.make_one_shot_iterator(batched_data)
+    noise = tf.random.normal([batch_size, z])
     return noise, data_iterator.get_next()
   return get_batch
 
@@ -151,12 +153,11 @@ def get_model(runconf=None, add_summaries=True):
       generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
       discriminator_loss_fn=_d_loss,
       generator_optimizer=tf.contrib.estimator.clip_gradients_by_norm(
-          tf.train.AdamOptimizer(FLAGS.learning_rate, beta1=0.5), 2),
+          tf.compat.v1.train.AdamOptimizer(FLAGS.learning_rate, beta1=0.5), 2),
       discriminator_optimizer=tf.contrib.estimator.clip_gradients_by_norm(
-          tf.train.AdamOptimizer(FLAGS.learning_rate, beta1=0.5), 2),
+          tf.compat.v1.train.AdamOptimizer(FLAGS.learning_rate, beta1=0.5), 2),
       add_summaries=summary_types,
-      config=runconf
-  )
+      config=runconf)
 
   return gan_estimator
 
@@ -180,4 +181,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.app.run(main)
+  tf.compat.v1.app.run(main)

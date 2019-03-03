@@ -65,7 +65,7 @@ class FacesInpainterTest(tf.test.TestCase):
         input_fn = faces_inpainter.get_input_fn('dummy', 2, mask_shape, 10)
         features, labels = input_fn()
 
-    sess = tf.Session()
+    sess = tf.compat.v1.Session()
     output_images = sess.run(labels)
     output_mask = sess.run(features['mask'])
     weighted_mask = sess.run(features['weighted_mask'])

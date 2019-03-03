@@ -30,8 +30,8 @@ def batchnorm_classifier(inputs):
   inputs = bn_layer(inputs, training=True)
   assert bn_layer.updates
   for update in bn_layer.updates:
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update)
-  return tf.layers.dense(inputs, 1, activation=tf.sigmoid)
+    tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS, update)
+  return tf.compat.v1.layers.dense(inputs, 1, activation=tf.sigmoid)
 
 
 def get_variables_by_name(given_name, scope=None):
@@ -64,17 +64,20 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = batchnorm_classifier(tf_inputs)
-      self.assertNotEmpty(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-      loss = tf.losses.log_loss(tf_labels, tf_predictions)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      self.assertNotEmpty(
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
+      loss = tf.compat.v1.losses.log_loss(tf_labels, tf_predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib_utils.create_train_op(loss, optimizer)
 
       # Make sure the training op was recorded in the proper collection
-      self.assertIn(train_op, tf.get_collection(tf.GraphKeys.TRAIN_OP))
+      self.assertIn(
+          train_op,
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.TRAIN_OP))
 
   def testUseUpdateOps(self):
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
@@ -82,9 +85,10 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
       expected_var = np.var(self._inputs, axis=(0))
 
       tf_predictions = batchnorm_classifier(tf_inputs)
-      self.assertNotEmpty(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-      loss = tf.losses.log_loss(tf_labels, tf_predictions)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      self.assertNotEmpty(
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
+      loss = tf.compat.v1.losses.log_loss(tf_labels, tf_predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
 
       train_op = contrib_utils.create_train_op(loss, optimizer)
 
@@ -93,7 +97,7 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
       with self.cached_session() as session:
         # Initialize all variables
-        session.run(tf.global_variables_initializer())
+        session.run(tf.compat.v1.global_variables_initializer())
         mean, variance = session.run([moving_mean, moving_variance])
         # After initialization moving_mean == 0 and moving_variance == 1.
         self.assertAllClose(mean, [0] * 4)
@@ -111,14 +115,15 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
   def testEmptyUpdateOps(self):
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = batchnorm_classifier(tf_inputs)
-      self.assertNotEmpty(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-      loss = tf.losses.log_loss(tf_labels, tf_predictions)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      self.assertNotEmpty(
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
+      loss = tf.compat.v1.losses.log_loss(tf_labels, tf_predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib_utils.create_train_op(loss, optimizer, update_ops=[])
 
       moving_mean = get_variables_by_name('moving_mean')[0]
@@ -126,7 +131,7 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
       with self.cached_session() as session:
         # Initialize all variables
-        session.run(tf.global_variables_initializer())
+        session.run(tf.compat.v1.global_variables_initializer())
         mean, variance = session.run([moving_mean, moving_variance])
         # After initialization moving_mean == 0 and moving_variance == 1.
         self.assertAllClose(mean, [0] * 4)
@@ -144,21 +149,22 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
   def testGlobalStepIsIncrementedByDefault(self):
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = batchnorm_classifier(tf_inputs)
-      self.assertNotEmpty(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-      loss = tf.losses.log_loss(tf_labels, tf_predictions)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      self.assertNotEmpty(
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
+      loss = tf.compat.v1.losses.log_loss(tf_labels, tf_predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib_utils.create_train_op(loss, optimizer)
 
-      global_step = tf.train.get_or_create_global_step()
+      global_step = tf.compat.v1.train.get_or_create_global_step()
 
       with self.cached_session() as session:
         # Initialize all variables
-        session.run(tf.global_variables_initializer())
+        session.run(tf.compat.v1.global_variables_initializer())
 
         for _ in range(10):
           session.run(train_op)
@@ -168,22 +174,23 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
   def testGlobalStepNotIncrementedWhenSetToNone(self):
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = batchnorm_classifier(tf_inputs)
-      self.assertNotEmpty(tf.get_collection(tf.GraphKeys.UPDATE_OPS))
-      loss = tf.losses.log_loss(tf_labels, tf_predictions)
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      self.assertNotEmpty(
+          tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS))
+      loss = tf.compat.v1.losses.log_loss(tf_labels, tf_predictions)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib_utils.create_train_op(
           loss, optimizer, global_step=None)
 
-      global_step = tf.train.get_or_create_global_step()
+      global_step = tf.compat.v1.train.get_or_create_global_step()
 
       with self.cached_session() as session:
         # Initialize all variables
-        session.run(tf.global_variables_initializer())
+        session.run(tf.compat.v1.global_variables_initializer())
 
         for _ in range(10):
           session.run(train_op)

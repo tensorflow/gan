@@ -145,7 +145,7 @@ def mnist_cross_entropy(images,
 
   logits = tfgan.eval.run_image_classifier(images, graph_def, input_tensor,
                                            output_tensor)
-  return tf.losses.softmax_cross_entropy(
+  return tf.compat.v1.losses.softmax_cross_entropy(
       one_hot_labels, logits, loss_collection=None)
 
 
@@ -309,7 +309,7 @@ def get_infogan_noise(batch_size, categorical_dim, structured_continuous_dim,
     (categorical structured noise, continuous structured noise).
   """
   # Get unstructurd noise.
-  unstructured_noise = tf.random_normal(
+  unstructured_noise = tf.random.normal(
       [batch_size, total_continuous_noise_dims - structured_continuous_dim])
 
   # Get categorical noise Tensor.

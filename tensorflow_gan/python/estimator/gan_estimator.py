@@ -286,7 +286,7 @@ def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
   if 'mode' in inspect.getargspec(generator_fn).args:
     generator_fn = functools.partial(
         generator_fn, mode=tf.estimator.ModeKeys.PREDICT)
-  with tf.variable_scope(generator_scope) as gen_scope:
+  with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     generator_inputs = tfgan_train._convert_tensor_or_l_or_d(generator_inputs)  # pylint:disable=protected-access
     generated_data = generator_fn(generator_inputs)
   generator_variables = contrib.get_trainable_variables(gen_scope)
@@ -307,11 +307,12 @@ def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
 
 def get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None):
   """Return an EstimatorSpec for the eval case."""
-  with tf.name_scope(None, 'metrics',
-                     [gan_loss.generator_loss, gan_loss.discriminator_loss]):
+  with tf.compat.v1.name_scope(name='metrics'):
     eval_metric_ops = {
-        'generator_loss': tf.metrics.mean(gan_loss.generator_loss),
-        'discriminator_loss': tf.metrics.mean(gan_loss.discriminator_loss),
+        'generator_loss':
+            tf.compat.v1.metrics.mean(gan_loss.generator_loss),
+        'discriminator_loss':
+            tf.compat.v1.metrics.mean(gan_loss.discriminator_loss),
     }
     if get_eval_metric_ops_fn is not None:
       custom_eval_metric_ops = get_eval_metric_ops_fn(gan_model)

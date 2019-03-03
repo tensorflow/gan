@@ -39,8 +39,8 @@ from tensorflow_gan.python.estimator.gan_estimator import Optimizers
 
 
 def get_sync_optimizer():
-  return tf.train.SyncReplicasOptimizer(
-      tf.train.GradientDescentOptimizer(learning_rate=1.0),
+  return tf.compat.v1.train.SyncReplicasOptimizer(
+      tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0),
       replicas_to_aggregate=1)
 
 
@@ -55,7 +55,7 @@ def generator_fn(noise_dict, mode):
   noise = noise_dict['x']
   # TODO(joelshor): Use `tf.compat.dimension_value` when I figure out how to
   # use it in open source.
-  return tf.layers.dense(noise, noise.shape[1].value)
+  return tf.compat.v1.layers.dense(noise, noise.shape[1].value)
 
 
 def discriminator_fn(data, unused_conditioning, mode):
@@ -104,10 +104,12 @@ class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):
 
 def get_dummy_gan_model():
   # TODO(joelshor): Find a better way of creating a variable scope.
-  with tf.variable_scope('generator') as gen_scope:
-    gen_var = tf.get_variable('dummy_var', initializer=0.0)
-  with tf.variable_scope('discriminator') as dis_scope:
-    dis_var = tf.get_variable('dummy_var', initializer=0.0)
+  with tf.compat.v1.variable_scope('generator') as gen_scope:
+    gen_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
+  with tf.compat.v1.variable_scope('discriminator') as dis_scope:
+    dis_var = tf.compat.v1.get_variable(
+        'dummy_var', initializer=0.0, use_resource=False)
   return tfgan.GANModel(
       generator_inputs=None,
       generated_data=tf.ones([3, 4]),
@@ -124,15 +126,15 @@ def get_dummy_gan_model():
 
 def dummy_loss_fn(gan_model, add_summaries=True):
   del add_summaries
-  return tf.reduce_sum(gan_model.discriminator_real_outputs -
+  return tf.reduce_sum(input_tensor=gan_model.discriminator_real_outputs -
                        gan_model.discriminator_gen_outputs)
 
 
 def get_metrics(gan_model):
   return {
       'mse_custom_metric':
-          tf.metrics.mean_squared_error(gan_model.real_data,
-                                        gan_model.generated_data)
+          tf.compat.v1.metrics.mean_squared_error(gan_model.real_data,
+                                                  gan_model.generated_data)
   }
 
 
@@ -142,8 +144,9 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
   @classmethod
   def setUpClass(cls):
     super(GetEstimatorSpecTest, cls).setUpClass()
-    cls._generator_optimizer = tf.train.GradientDescentOptimizer(1.0)
-    cls._discriminator_optimizer = tf.train.GradientDescentOptimizer(1.0)
+    cls._generator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(1.0)
+    cls._discriminator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
 
   def test_get_train_estimator_spec(self):
     with tf.Graph().as_default():
@@ -214,7 +217,7 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
 
   def tearDown(self):
     if self._model_dir:
-      tf.summary.FileWriterCache.clear()
+      tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
 
   def _test_complete_flow(self,
@@ -225,12 +228,14 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
                           lr_decay=False):
 
     def make_opt():
-      gstep = tf.train.get_or_create_global_step()
-      lr = tf.train.exponential_decay(1.0, gstep, 10, 0.9)
-      return tf.train.GradientDescentOptimizer(lr)
+      gstep = tf.compat.v1.train.get_or_create_global_step()
+      lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
+      return tf.compat.v1.train.GradientDescentOptimizer(lr)
 
-    gopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
-    dopt = make_opt if lr_decay else tf.train.GradientDescentOptimizer(1.0)
+    gopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
+    dopt = make_opt if lr_decay else tf.compat.v1.train.GradientDescentOptimizer(
+        1.0)
     est = tfgan.estimator.GANEstimator(
         generator_fn=generator_fn,
         discriminator_fn=discriminator_fn,
@@ -247,7 +252,7 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
 
     # Evaluate.
     scores = est.evaluate(eval_input_fn)
-    self.assertEqual(num_steps, scores[tf.GraphKeys.GLOBAL_STEP])
+    self.assertEqual(num_steps, scores[tf.compat.v1.GraphKeys.GLOBAL_STEP])
     self.assertIn('loss', six.iterkeys(scores))
     self.assertEqual(scores['discriminator_loss'], scores['loss'])
     self.assertIn('mse_custom_metric', six.iterkeys(scores))
@@ -262,15 +267,15 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
     input_dim = 4
     batch_size = 5
     data = np.zeros([batch_size, input_dim])
-    train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data},
         y=data,
         batch_size=batch_size,
         num_epochs=None,
         shuffle=True)
-    eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data}, y=data, batch_size=batch_size, shuffle=False)
-    predict_input_fn = tf.estimator.inputs.numpy_input_fn(
+    predict_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data}, batch_size=batch_size, shuffle=False)
 
     self._test_complete_flow(
@@ -284,15 +289,15 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
     input_dim = 4
     batch_size = 5
     data = np.zeros([batch_size, input_dim])
-    train_input_fn = tf.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data},
         y=data,
         batch_size=batch_size,
         num_epochs=None,
         shuffle=True)
-    eval_input_fn = tf.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data}, y=data, batch_size=batch_size, shuffle=False)
-    predict_input_fn = tf.estimator.inputs.numpy_input_fn(
+    predict_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
         x={'x': data}, batch_size=batch_size, shuffle=False)
 
     self._test_complete_flow(
@@ -328,23 +333,26 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
     }
 
     def _train_input_fn():
-      feature_map = tf.io.parse_example(serialized_examples, feature_spec)
+      feature_map = tf.io.parse_example(
+          serialized=serialized_examples, features=feature_spec)
       features = {'x': feature_map['x']}
       labels = feature_map['y']
       return features, labels
 
     def _eval_input_fn():
       feature_map = tf.io.parse_example(
-          tf.train.limit_epochs(serialized_examples, num_epochs=1),
-          feature_spec)
+          serialized=tf.compat.v1.train.limit_epochs(
+              serialized_examples, num_epochs=1),
+          features=feature_spec)
       features = {'x': feature_map['x']}
       labels = feature_map['y']
       return features, labels
 
     def _predict_input_fn():
       feature_map = tf.io.parse_example(
-          tf.train.limit_epochs(serialized_examples, num_epochs=1),
-          feature_spec)
+          serialized=tf.compat.v1.train.limit_epochs(
+              serialized_examples, num_epochs=1),
+          features=feature_spec)
       features = {'x': feature_map['x']}
       return features, None
 
@@ -363,16 +371,17 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
     self.new_variable_value = [1, 2, 3]
 
   def tearDown(self):
-    tf.summary.FileWriterCache.clear()
+    tf.compat.v1.summary.FileWriterCache.clear()
 
   def _test_warm_start(self, warm_start_from=None):
     """Tests whether WarmStartSettings work as intended."""
 
     def generator_with_new_variable(noise_dict, mode):
-      tf.get_variable(
+      tf.compat.v1.get_variable(
           name=self.new_variable_name,
           initializer=self.new_variable_value,
-          trainable=True)
+          trainable=True,
+          use_resource=False)
       return generator_fn(noise_dict, mode)
 
     def train_input_fn():
@@ -384,8 +393,9 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
         discriminator_fn=discriminator_fn,
         generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
         discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         model_dir=self._model_dir)
 
     est.train(train_input_fn, steps=1)
@@ -395,8 +405,9 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
         discriminator_fn=discriminator_fn,
         generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
         discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         model_dir=None if warm_start_from else self._model_dir,
         warm_start_from=warm_start_from)
 
@@ -432,7 +443,7 @@ class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
 
   def tearDown(self):
     super(GANEstimatorParamsTest, self).tearDown()
-    tf.summary.FileWriterCache.clear()
+    tf.compat.v1.summary.FileWriterCache.clear()
 
   @parameterized.named_parameters(
       ('mi_penalty', 1.0),
@@ -448,11 +459,14 @@ class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
         discriminator_fn=discriminator_fn,
         generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
         discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-        generator_optimizer=tf.train.GradientDescentOptimizer(1.0),
-        discriminator_optimizer=tf.train.GradientDescentOptimizer(1.0),
+        generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
+        discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
+            1.0),
         model_dir=self._model_dir,
-        params={'batch_size': 4,
-                'mutual_information_penalty_weight': mi_penalty})
+        params={
+            'batch_size': 4,
+            'mutual_information_penalty_weight': mi_penalty
+        })
 
     if mi_penalty:
       with self.assertRaises(ValueError):

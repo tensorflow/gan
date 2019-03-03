@@ -103,7 +103,7 @@ def provide_data(split,
   ds = provide_dataset(split, batch_size, patch_size, num_parallel_calls,
                        shuffle)
 
-  next_batch = ds.make_one_shot_iterator().get_next()
+  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   images, labels = next_batch['images'], next_batch['labels']
 
   return images, labels

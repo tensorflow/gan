@@ -85,7 +85,7 @@ def clip_variables(optimizer, variables, weight_clip):
 
 # Copied from
 # `tensorflow/contrib/opt/python/training/variable_clipping_optimizer.py`.
-class VariableClippingOptimizer(tf.train.Optimizer):
+class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
   """Wrapper optimizer that clips the norm of specified variables after update.
 
   This optimizer delegates all aspects of gradient calculation and application
@@ -144,7 +144,7 @@ class VariableClippingOptimizer(tf.train.Optimizer):
     return self._opt.get_slot_names(*args, **kwargs)
 
   def apply_gradients(self, grads_and_vars, global_step=None, name=None):
-    with tf.name_scope(name, self._name) as name:
+    with tf.compat.v1.name_scope(name, self._name) as name:
       update_op = self._opt.apply_gradients(
           grads_and_vars, global_step=global_step)
       clip_update_ops = []
@@ -152,7 +152,7 @@ class VariableClippingOptimizer(tf.train.Optimizer):
         for grad, var in grads_and_vars:
           if grad is None or var not in self._vars_to_clip_dims:
             continue
-          with tf.name_scope('clip_' + var.op.name):
+          with tf.compat.v1.name_scope('clip_' + var.op.name):
             if isinstance(grad, tf.Tensor):
               clip_update_ops.append(self._clip_dense(var))
             else:
@@ -167,33 +167,33 @@ class VariableClippingOptimizer(tf.train.Optimizer):
       normalized_var = tf.clip_by_norm(
           updated_var_value, self._max_norm, self._vars_to_clip_dims[var])
       delta = updated_var_value - normalized_var
-    with tf.colocate_with(var):
+    with tf.compat.v1.colocate_with(var):
       return var.assign_sub(delta, use_locking=self._use_locking)
 
   def _clip_sparse(self, grad, var):
     assert isinstance(grad, tf.IndexedSlices)
     clip_dims = self._vars_to_clip_dims[var]
     if 0 in clip_dims:
-      tf.logging.warning('Clipping norm across dims %s for %s is inefficient '
-                         'when including sparse dimension 0.', clip_dims,
-                         var.op.name)
+      tf.compat.v1.logging.warning(
+          'Clipping norm across dims %s for %s is inefficient '
+          'when including sparse dimension 0.', clip_dims, var.op.name)
       return self._clip_dense(var)
 
-    with tf.colocate_with(var):
+    with tf.compat.v1.colocate_with(var):
       var_subset = tf.gather(var, grad.indices)
     with self._maybe_colocate_with(var):
       normalized_var_subset = tf.clip_by_norm(
           var_subset, self._max_norm, clip_dims)
       delta = tf.IndexedSlices(
           var_subset - normalized_var_subset, grad.indices, grad.dense_shape)
-    with tf.colocate_with(var):
+    with tf.compat.v1.colocate_with(var):
       return var.scatter_sub(delta, use_locking=self._use_locking)
 
   @contextlib.contextmanager
   def _maybe_colocate_with(self, var):
     """Context to colocate with `var` if `colocate_clip_ops_with_vars`."""
     if self._colocate_clip_ops_with_vars:
-      with tf.colocate_with(var):
+      with tf.compat.v1.colocate_with(var):
         yield
     else:
       yield
