@@ -19,13 +19,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import parameterized
 import numpy as np
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
 
-class SpectralNormalizationTest(tf.test.TestCase):
+class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
   def testComputeSpectralNorm(self):
     weights = tf.compat.v1.get_variable(
@@ -207,9 +208,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           biases_initializer=b_initializer,
           variables_collections=var_collection)
       weight_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_CONV2D_WEIGHTS')
-      self.assertEquals(1, len(weight_vars))
+      self.assertLen(weight_vars, 1)
       bias_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_CONV2D_BIASES')
-      self.assertEquals(1, len(bias_vars))
+      self.assertLen(bias_vars, 1)
       expected_normalized_vars = {
           'contrib.layers.conv2d.weights': weight_vars[0]
       }
@@ -236,9 +237,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           biases_initializer=b_initializer,
           variables_collections=var_collection)
       weight_vars = tf.compat.v1.get_collection('SLIM_CONV2D_WEIGHTS')
-      self.assertEquals(1, len(weight_vars))
+      self.assertLen(weight_vars, 1)
       bias_vars = tf.compat.v1.get_collection('SLIM_CONV2D_BIASES')
-      self.assertEquals(1, len(bias_vars))
+      self.assertLen(bias_vars, 1)
       expected_normalized_vars = {'slim.conv2d.weights': weight_vars[0]}
       expected_not_normalized_vars = {'slim.conv2d.bias': bias_vars[0]}
 
@@ -296,9 +297,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           biases_initializer=b_initializer,
           variables_collections=var_collection)
       weight_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_FC_WEIGHTS')
-      self.assertEquals(1, len(weight_vars))
+      self.assertLen(weight_vars, 1)
       bias_vars = tf.compat.v1.get_collection('CONTRIB_LAYERS_FC_BIASES')
-      self.assertEquals(1, len(bias_vars))
+      self.assertLen(bias_vars, 1)
       expected_normalized_vars = {
           'contrib.layers.fully_connected.weights': weight_vars[0]
       }
@@ -325,9 +326,9 @@ class SpectralNormalizationTest(tf.test.TestCase):
           biases_initializer=b_initializer,
           variables_collections=var_collection)
       weight_vars = tf.compat.v1.get_collection('SLIM_FC_WEIGHTS')
-      self.assertEquals(1, len(weight_vars))
+      self.assertLen(weight_vars, 1)
       bias_vars = tf.compat.v1.get_collection('SLIM_FC_BIASES')
-      self.assertEquals(1, len(bias_vars))
+      self.assertLen(bias_vars, 1)
       expected_normalized_vars = {
           'slim.fully_connected.weights': weight_vars[0]
       }
@@ -336,6 +337,57 @@ class SpectralNormalizationTest(tf.test.TestCase):
       return net, expected_normalized_vars, expected_not_normalized_vars
 
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+
+  @parameterized.parameters(
+      {'repeat_type': 'double', 'training': True, 'expect_same': True},
+      {'repeat_type': 'with_dep', 'training': True, 'expect_same': False},
+      {'repeat_type': 'map_fn', 'training': True, 'expect_same': False},
+      {'repeat_type': 'double', 'training': False, 'expect_same': True},
+      {'repeat_type': 'with_dep', 'training': False, 'expect_same': True},
+      {'repeat_type': 'map_fn', 'training': False, 'expect_same': True},
+  )
+  def test_multiple_calls(self, repeat_type, training, expect_same):
+    """Tests that multiple calls don't change variables."""
+    sn_gettr = tfgan.features.spectral_normalization_custom_getter
+    output_size = 100
+    def generator(x):
+      with tf.variable_scope(
+          'gen', custom_getter=sn_gettr(training=training),
+          reuse=tf.AUTO_REUSE):
+        return tf.layers.dense(
+            x, units=output_size,
+            kernel_initializer=tf.truncated_normal_initializer(),
+            bias_initializer=tf.truncated_normal_initializer())
+    i = tf.random.uniform([1, 10])
+    if repeat_type == 'double':
+      output1 = generator(i)
+      output2 = generator(i)
+    elif repeat_type == 'with_dep':
+      output1 = generator(i)
+      with tf.control_dependencies([output1]):
+        output2 = generator(i)
+    else:  # map_fn
+      num_loops = 2
+      input_list = [i] * num_loops
+      outputs = tf.map_fn(
+          generator,
+          tf.stack(input_list),
+          parallel_iterations=1,
+          back_prop=False,
+          swap_memory=True)
+      outputs.shape.assert_is_compatible_with((num_loops, 1, output_size))
+      output1 = tf.expand_dims(outputs[0, 0, :], 0)
+      output2 = tf.expand_dims(outputs[1, 0, :], 0)
+
+    with tf.train.MonitoredSession() as sess:
+      o1, o2 = sess.run([output1, output2])
+    self.assertAllEqual((1, output_size), o1.shape)
+    self.assertAllEqual((1, output_size), o2.shape)
+
+    if expect_same:
+      self.assertAllEqual(o1, o2)
+    else:
+      self.assertFalse(np.array_equal(o1, o2))
 
 
 if __name__ == '__main__':

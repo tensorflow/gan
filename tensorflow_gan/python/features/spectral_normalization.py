@@ -41,13 +41,21 @@ _OK_DTYPES_FOR_SPECTRAL_NORM = (tf.float16, tf.float32, tf.float64)
 _PERSISTED_U_VARIABLE_SUFFIX = 'spectral_norm_u'
 
 
-def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
+def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
+                          training=True, name=None):
   """Estimates the largest singular value in the weight tensor.
+
+  **NOTE**: When `training=True`, repeatedly running inference actually changes
+  the variables, since the spectral norm is repeatedly approximated by a power
+  iteration method.
 
   Args:
     w_tensor: The weight matrix whose spectral norm should be computed.
     power_iteration_rounds: The number of iterations of the power method to
       perform. A higher number yeilds a better approximation.
+    training: Whether to update the spectral normalization on variable
+      access. This is useful to turn off during eval, for example, to not affect
+      the graph during evaluation.
     name: An optional scope name.
 
   Returns:
@@ -79,8 +87,9 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
       u = tf.nn.l2_normalize(tf.matmul(w, v))
 
     # Update persisted approximation.
-    with tf.control_dependencies([u_var.assign(u, name='update_u')]):
-      u = tf.identity(u)
+    if training:
+      with tf.control_dependencies([u_var.assign(u, name='update_u')]):
+        u = tf.identity(u)
 
     u = tf.stop_gradient(u)
     v = tf.stop_gradient(v)
@@ -93,13 +102,21 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1, name=None):
     return spectral_norm[0][0]
 
 
-def spectral_normalize(w, power_iteration_rounds=1, name=None):
+def spectral_normalize(w, power_iteration_rounds=1, training=True,
+                       name=None):
   """Normalizes a weight matrix by its spectral norm.
+
+  **NOTE**: When `training=True`, repeatedly running inference actually changes
+  the variables, since the spectral norm is repeatedly approximated by a power
+  iteration method.
 
   Args:
     w: The weight matrix to be normalized.
     power_iteration_rounds: The number of iterations of the power method to
       perform. A higher number yeilds a better approximation.
+    training: Whether to update the spectral normalization on variable
+      access. This is useful to turn off during eval, for example, to not affect
+      the graph during evaluation.
     name: An optional scope name.
 
   Returns:
@@ -107,20 +124,28 @@ def spectral_normalize(w, power_iteration_rounds=1, name=None):
   """
   with tf.compat.v1.variable_scope(name, 'spectral_normalize'):
     w_normalized = w / compute_spectral_norm(
-        w, power_iteration_rounds=power_iteration_rounds)
+        w, power_iteration_rounds=power_iteration_rounds,
+        training=training)
     return tf.reshape(w_normalized, w.get_shape())
 
 
-def spectral_norm_regularizer(scale, power_iteration_rounds=1, scope=None):
-  """Returns a functions that can be used to apply spectral norm regularization.
+def spectral_norm_regularizer(scale, power_iteration_rounds=1,
+                              training=True, scope=None):
+  """Returns a function that can be used to apply spectral norm regularization.
 
   Small spectral norms enforce a small Lipschitz constant, which is necessary
   for Wasserstein GANs.
+
+  **NOTE**: Repeatedly running inference actually changes the variables, since
+  the spectral norm is repeatedly approximated by a power iteration method.
 
   Args:
     scale: A scalar multiplier. 0.0 disables the regularizer.
     power_iteration_rounds: The number of iterations of the power method to
       perform. A higher number yeilds a better approximation.
+    training: Whether to update the spectral normalization on variable
+      access. This is useful to turn off during eval, for example, to not affect
+      the graph during evaluation.
     scope: An optional scope name.
 
   Returns:
@@ -149,7 +174,8 @@ def spectral_norm_regularizer(scale, power_iteration_rounds=1, scope=None):
       return tf.multiply(
           scale_t,
           compute_spectral_norm(
-              weights, power_iteration_rounds=power_iteration_rounds),
+              weights, power_iteration_rounds=power_iteration_rounds,
+              training=training),
           name=name)
 
   return sn
@@ -170,7 +196,8 @@ def _default_name_filter(name):
 
 
 def spectral_normalization_custom_getter(name_filter=_default_name_filter,
-                                         power_iteration_rounds=1):
+                                         power_iteration_rounds=1,
+                                         training=True):
   """Custom getter that performs Spectral Normalization on a weight tensor.
 
   Specifically it divides the weight tensor by its largest singular value. This
@@ -224,6 +251,9 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     power_iteration_rounds: The number of iterations of the power method to
       perform per step. A higher number yeilds a better approximation of the
       true spectral norm.
+    training: Whether to update the spectral normalization on variable
+      access. This is useful to turn off during eval, for example, to not affect
+      the graph during evaluation.
 
   Returns:
     A custom getter function that applies Spectral Normalization to all
@@ -274,6 +304,7 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     return spectral_normalize(
         w_tensor,
         power_iteration_rounds=power_iteration_rounds,
+        training=training,
         name=(name + '/spectral_normalize'))
 
   return _internal_getter
