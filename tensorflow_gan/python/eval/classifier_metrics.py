@@ -33,6 +33,7 @@ import os
 import sys
 import tarfile
 
+import six
 from six.moves import urllib
 
 import tensorflow as tf
@@ -298,6 +299,10 @@ def sample_and_run_inception(sample_fn,
   running inception on large batches, since it may be impossible to hold all the
   images in memory at once.
 
+  NOTE: Running the sampler can affect the original weights if, for instance,
+  there are assign ops in the sampler. See
+  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
+
   Args:
     sample_fn: A function that takes a single argument and returns images. This
       function samples from an image distribution.
@@ -366,7 +371,7 @@ def run_image_classifier(tensor,
   Raises:
     ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
   """
-  if isinstance(output_tensor, str):
+  if isinstance(output_tensor, six.string_types):
     output_tensor = [output_tensor]
     output_is_tensor = True
   elif len(output_tensor) == 1:
@@ -418,6 +423,10 @@ def sample_and_run_image_classifier(sample_fn,
 
   If there are multiple outputs, cast them to tf.float32.
 
+  NOTE: Running the sampler can affect the original weights if, for instance,
+  there are assign ops in the sampler. See
+  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
+
   Args:
     sample_fn: A function that takes a single argument and returns images. This
       function samples from an image distribution.
@@ -437,7 +446,7 @@ def sample_and_run_image_classifier(sample_fn,
   Raises:
     ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
   """
-  if not isinstance(output_tensor, str):
+  if not isinstance(output_tensor, six.string_types):
     dtypes = dtypes or [tf.float32] * len(output_tensor)
 
   def _fn(x):

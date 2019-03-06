@@ -288,6 +288,14 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
     # Check that none of the model variables are trainable.
     self.assertListEqual([], tf.compat.v1.trainable_variables())
 
+  def test_run_inception_unicode(self):
+    """Test `run_inception` with unicode input and output names."""
+    batch_size = 8
+    img = tf.ones([batch_size, 299, 299, 3])
+
+    tfgan.eval.run_inception(
+        img, _get_dummy_graphdef(), output_tensor=u'pool_3:0', num_batches=2)
+
   def test_run_inception_multiple_outputs(self):
     """Test `run_inception` graph construction with multiple outputs."""
     batch_size = 3
@@ -418,6 +426,40 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
       self.assertLen(logits, 2)
       logits[0].shape.assert_is_compatible_with([batch_size, 1001])
       logits[1].shape.assert_is_compatible_with([batch_size, 2048])
+
+  def test_assign_variables_in_sampler_runs(self):
+    """Clarify that variables are changed by sampling function.
+
+    This is generally an undesirable property, but rarely happens. This test is
+    here to make sure that the behavior doesn't accidentally change unnoticed.
+    If the sampler is ever changed to not modify the graph and this test fails,
+    this test should modified or simply removed.
+    """
+
+    def sample_fn(x):
+      with tf.variable_scope('test', reuse=tf.AUTO_REUSE):
+        u = tf.get_variable(
+            'u', [1, 100], initializer=tf.truncated_normal_initializer())
+        with tf.control_dependencies([u.assign(u * 2)]):
+          return tf.layers.flatten(x * u)
+
+    tf.random.set_random_seed(1023)
+    sample_input = tf.random.uniform([1, 100])
+    sample_inputs = [sample_input] * 10
+    g = tf.Graph()
+    with g.as_default():
+      input_tensor = tf.placeholder(tf.float32, shape=[None, 1], name='input')
+      output = input_tensor * 2
+    outputs = tfgan.eval.sample_and_run_image_classifier(
+        sample_fn, sample_inputs, g.as_graph_def(), input_tensor.name,
+        output.name)
+    with self.cached_session() as sess:
+      sess.run(tf.initializers.global_variables())
+      outputs_np = sess.run(outputs)
+    self.assertEqual((10, 100), outputs_np.shape)
+
+    for i in range(1, 10):
+      self.assertFalse(np.array_equal(outputs_np[0], outputs_np[i]))
 
 
 class FIDTest(tf.test.TestCase, parameterized.TestCase):
