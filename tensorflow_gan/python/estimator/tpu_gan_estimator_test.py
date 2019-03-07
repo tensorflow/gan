@@ -415,6 +415,8 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
 
     est.train(train_input_fn, steps=1)
 
+    self.assertEqual(1, est.get_variable_value('global_step'))
+
     substep_counter_name = 'discriminator_train/substep_counter'
     if d_steps == 0:
       substep_counter_name = 'generator_train/substep_counter'

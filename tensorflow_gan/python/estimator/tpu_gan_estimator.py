@@ -550,6 +550,7 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
           total_loss=gan_loss.generator_loss,
           optimizer=optimizers.gopt,
           variables_to_train=gan_model.generator_variables,
+          global_step=None,
           update_ops=update_ops(gan_model)[0])
 
   def dis_train_op(gan_model, gan_loss):
@@ -567,6 +568,7 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
           total_loss=gan_loss.discriminator_loss,
           optimizer=optimizers.dopt,
           variables_to_train=gan_model.discriminator_variables,
+          global_step=None,
           update_ops=update_ops(gan_model)[1])
 
   # Either optimize the generator and discriminator sequentially or jointly.
@@ -602,7 +604,11 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
       else:
         prev_op = gen_train_op(gan_model, gan_loss)
 
-  return prev_op, scalar_loss
+  with tf.control_dependencies([prev_op]):
+    global_step = tf.train.get_or_create_global_step()
+    train_op = global_step.assign_add(1)
+
+  return train_op, scalar_loss
 
 
 def _maybe_construct_optimizers(optimizers):
