@@ -45,6 +45,7 @@ __all__ = [
     'preprocess_image',
     'run_image_classifier',
     'sample_and_run_image_classifier',
+    'sample_and_run_classifier_fn',
     'run_inception',
     'sample_and_run_inception',
     'inception_score',
@@ -449,10 +450,58 @@ def sample_and_run_image_classifier(sample_fn,
   if not isinstance(output_tensor, six.string_types):
     dtypes = dtypes or [tf.float32] * len(output_tensor)
 
-  def _fn(x):
-    tensor = sample_fn(x)
+  def _classifier_fn(tensor):
     return run_image_classifier(
         tensor, graph_def, input_tensor, output_tensor)
+
+  classifier_outputs = sample_and_run_classifier_fn(
+      sample_fn, sample_inputs, _classifier_fn, dtypes, scope)
+
+  if (isinstance(output_tensor, list) and
+      not isinstance(classifier_outputs, list)):
+    classifier_outputs = [classifier_outputs]
+
+  return classifier_outputs
+
+
+def sample_and_run_classifier_fn(sample_fn,
+                                 sample_inputs,
+                                 classifier_fn,
+                                 dtypes=None,
+                                 scope='SampleAndRunClassifierFn'):
+  """Sampes Tensors from distribution then runs them through a function.
+
+  This is the same as `sample_and_run_image_classifier`, but instead of taking
+  a classifier GraphDef it takes a function.
+
+  If there are multiple outputs, cast them to tf.float32.
+
+  NOTE: Running the sampler can affect the original weights if, for instance,
+  there are assign ops in the sampler. See
+  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
+
+  Args:
+    sample_fn: A function that takes a single argument and returns images. This
+      function samples from an image distribution.
+    sample_inputs: A list of inputs to pass to `sample_fn`.
+    classifier_fn: A function that takes a single argument and returns the
+      outputs of the classifier.
+    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
+      every output. If `dtypes` is `None` in this case, assume every output type
+      is `tf.float32`.
+    scope: Name scope for classifier.
+
+  Returns:
+    Classifier output if `output_tensor` is a string, or a list of outputs if
+    `output_tensor` is a list.
+
+  Raises:
+    ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
+  """
+
+  def _fn(x):
+    tensor = sample_fn(x)
+    return classifier_fn(tensor)
   if len(sample_inputs) > 1:
     classifier_outputs = tf.map_fn(
         fn=_fn,
@@ -465,9 +514,6 @@ def sample_and_run_image_classifier(sample_fn,
     classifier_outputs = _combine_outputs_after_while_loop(classifier_outputs)
   else:
     classifier_outputs = _fn(sample_inputs[0])
-  if (isinstance(output_tensor, list) and
-      not isinstance(classifier_outputs, list)):
-    classifier_outputs = [classifier_outputs]
 
   return classifier_outputs
 
