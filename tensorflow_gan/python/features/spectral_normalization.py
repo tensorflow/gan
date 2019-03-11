@@ -76,8 +76,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
         shape=(w.shape[0], 1),
         dtype=w.dtype,
         initializer=tf.compat.v1.initializers.random_normal(),
-        trainable=False,
-        use_resource=False)
+        trainable=False)
     u = u_var
 
     # Use power iteration method to approximate spectral norm.
