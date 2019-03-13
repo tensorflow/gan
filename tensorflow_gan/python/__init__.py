@@ -28,6 +28,7 @@ tfgan
 -> .features
 -> .losses
   -> .wargs
+-> .tpu
 """
 # pylint:disable=g-import-not-at-top,g-bad-import-order
 
@@ -37,6 +38,7 @@ from tensorflow_gan.python import estimator
 from tensorflow_gan.python import eval  # pylint:disable=redefined-builtin
 from tensorflow_gan.python import features
 from tensorflow_gan.python import losses
+from tensorflow_gan.python import tpu
 
 # Modules to wildcard import.
 from tensorflow_gan.python.namedtuples import *  # pylint:disable=wildcard-import
@@ -51,6 +53,7 @@ __all__ = [
     'eval',
     'features',
     'losses',
+    'tpu',
     '__version__',
 ]
 from tensorflow_gan.python.namedtuples import __all__ as namedtuple_symbols
