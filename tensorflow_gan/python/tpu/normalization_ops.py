@@ -251,46 +251,20 @@ def moving_moments_for_inference(mean, variance, is_training, decay):
   Returns:
     Tuple of (mean, variance) to use. This can the same as the inputs.
   """
-  # Create the moving average variables and add them to the appropriate
-  # collections.
-  variable_collections = [
-      tf.GraphKeys.MOVING_AVERAGE_VARIABLES,
-      tf.GraphKeys.MODEL_VARIABLES, tf.GraphKeys.GLOBAL_VARIABLES,
-  ]
-  # Disable partition setting for moving_mean and moving_variance
-  # as assign_moving_average op below doesn't support partitioned variable.
-  moving_mean = tf.get_variable(
-      'moving_mean',
-      shape=mean.shape,
-      initializer=tf.zeros_initializer(),
-      trainable=False,
-      partitioner=None,
-      collections=variable_collections)
-  moving_variance = tf.get_variable(
-      'moving_variance',
-      shape=variance.shape,
-      initializer=tf.ones_initializer(),
-      trainable=False,
-      partitioner=None,
-      collections=variable_collections)
+  ema = tf.train.ExponentialMovingAverage(decay=decay)
+  # EMAs from Tensors are initialized to 0, so track the variance - 1 since we
+  # want it to be "initialized" to 0.
+  var_to_track = variance - 1.0
+  update_op = ema.apply([mean, var_to_track])
   if is_training:
+    # Add ops to update the EMA shadow variables and return the original
+    # Tensors.
     logging.debug('Adding update ops for moving averages of mean and variance.')
-    # Update variables for mean and variance during training.
-    update_moving_mean = tf.assign_moving_average(
-        moving_mean,
-        tf.cast(mean, moving_mean.dtype),
-        decay,
-        zero_debias=False)
-    update_moving_variance = tf.assign_moving_average(
-        moving_variance,
-        tf.cast(variance, moving_variance.dtype),
-        decay,
-        zero_debias=False)
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_mean)
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_moving_variance)
+    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS, update_op)
     return mean, variance
-  logging.debug('Using moving mean and variance.')
-  return moving_mean, moving_variance
+  else:
+    logging.debug('Using moving mean and variance.')
+    return ema.average(mean), ema.average(var_to_track) + 1.0
 
 
 def accumulated_moments_for_inference(mean, variance, is_training):

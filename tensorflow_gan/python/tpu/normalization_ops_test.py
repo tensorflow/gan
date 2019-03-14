@@ -27,6 +27,7 @@ import tensorflow_gan as tfgan
 
 # Private functions for testing.
 from tensorflow_gan.python.tpu.normalization_ops import accumulated_moments_for_inference
+from tensorflow_gan.python.tpu.normalization_ops import moving_moments_for_inference
 
 
 class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
@@ -49,7 +50,7 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
       contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
       onehot_labels = tf.one_hot([0, 1, 2, 1], 5) if conditional else None
       custom_bn = tfgan.tpu.batch_norm(
-          x, is_training=True, onehot_labels=onehot_labels)
+          x, is_training=True, conditional_class_labels=onehot_labels)
       with self.cached_session() as sess:
         sess.run(tf.global_variables_initializer())
         core_bn, contrib_bn, custom_bn = sess.run(
@@ -69,6 +70,9 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
           [[1.02088118, 0.22471881, -0.98050523]]]],
         dtype=np.float32)
     self.assertAllClose(custom_bn, expected_values, atol=1e-4)
+
+
+class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringTraining(self):
     with tf.Graph().as_default():
@@ -138,6 +142,78 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllClose(am, [6.0, 8.0])
         self.assertAllClose(av, [10.0, 12.0])
         self.assertAllClose([ac], [2.0])
+
+
+class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
+
+  @parameterized.parameters(
+      {"decay": 0.1},
+      {"decay": 0.999},
+  )
+  def testMovingMomentsDuringTrain(self, decay):
+    mean_in = tf.placeholder(tf.float32, shape=[2])
+    variance_in = tf.placeholder(tf.float32, shape=[2])
+    mean, variance = moving_moments_for_inference(
+        mean=mean_in, variance=variance_in, is_training=True, decay=decay)
+    self.assertLen(tf.global_variables(), 2)
+    variables_by_name = {v.op.name: v for v in tf.global_variables()}
+    self.assertLen(variables_by_name, 2)
+    ema_mean = variables_by_name["Placeholder/ExponentialMovingAverage"]
+    ema_var = variables_by_name["sub/ExponentialMovingAverage"]
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    self.assertLen(update_ops, 1)
+    with self.cached_session() as sess:
+      sess.run(tf.global_variables_initializer())
+
+      m_exp = np.array([0.0, 0.0])  # init values
+      v_exp = np.array([1.0, 1.0])  # init values
+
+      # Run a bunch of rounds and update the EMA.
+      for m_in, v_in in [([1.0, 2.0], [3.0, 4.0]),
+                         ([2.0, 4.0], [5.0, 6.0]),
+                         ([-1.0, 2.0], [6.0, 7.0]),]:
+        m_in = np.array(m_in)
+        v_in = np.array(v_in)
+        m, v, m_ema, v_ema, _ = sess.run(
+            [mean, variance, ema_mean, ema_var] + update_ops,
+            feed_dict={mean_in: m_in, variance_in: v_in})
+        self.assertAllClose(m, m_in)
+        self.assertAllClose(v, v_in)
+        m_exp = m_exp * decay + (1 - decay) * m_in
+        v_exp = v_exp * decay + (1 - decay) * v_in
+        self.assertAllClose(m_ema, m_exp)
+        self.assertAllClose(v_ema + 1.0, v_exp)
+
+  def testMovingMomentsDuringEval(self):
+    mean_in = tf.placeholder(tf.float32, shape=[2])
+    variance_in = tf.placeholder(tf.float32, shape=[2])
+    mean, variance = moving_moments_for_inference(
+        mean=mean_in, variance=variance_in, is_training=False, decay=0.5)
+    self.assertLen(tf.global_variables(), 2)
+    variables_by_name = {v.op.name: v for v in tf.global_variables()}
+    self.assertLen(variables_by_name, 2)
+    ema_mean = variables_by_name["Placeholder/ExponentialMovingAverage"]
+    ema_var = variables_by_name["sub/ExponentialMovingAverage"]
+    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    self.assertEmpty(update_ops)
+    with self.cached_session() as sess:
+      sess.run(tf.global_variables_initializer())
+
+      m_exp = np.array([0.0, 0.0])  # init values
+      v_exp = np.array([1.0, 1.0])  # init values
+
+      # Run a bunch of rounds and update the EMA.
+      for m_in, v_in in [([1.0, 2.0], [3.0, 4.0]),
+                         ([2.0, 4.0], [5.0, 6.0])]:
+        m_in = np.array(m_in)
+        v_in = np.array(v_in)
+        m, v, ema_m, ema_v = sess.run(
+            [mean, variance, ema_mean, ema_var],
+            feed_dict={mean_in: m_in, variance_in: v_in})
+        self.assertAllClose(m, m_exp)
+        self.assertAllClose(m, ema_m)
+        self.assertAllClose(v, v_exp)
+        self.assertAllClose(v, ema_v + 1.0)
 
 
 if __name__ == "__main__":
