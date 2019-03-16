@@ -23,7 +23,7 @@ from absl import logging
 
 from six.moves import range
 import tensorflow as tf
-from tensorflow_gan.python.tpu import cross_replica_ops
+from tensorflow_gan.python.tpu.cross_replica_ops import cross_replica_moments
 
 from tensorflow.contrib.tpu.python.tpu import tpu_function
 
@@ -206,8 +206,7 @@ def standardize_batch(inputs,
   inputs = tf.cast(inputs, tf.float32)
   reduction_axes = [i for i in range(4) if i != axis]
   if use_cross_replica_mean:
-    mean, variance = cross_replica_ops.cross_replica_moments(
-        inputs, reduction_axes)
+    mean, variance = cross_replica_moments(inputs, reduction_axes)
   else:
     counts, mean_ss, variance_ss, _ = tf.nn.sufficient_statistics(
         inputs, reduction_axes, keep_dims=False)

@@ -14,14 +14,16 @@
 # limitations under the License.
 
 """TF-GAN TPU support."""
-# pylint: disable=wildcard-import,g-bad-import-order
+# pylint: disable=wildcard-import,g-bad-import-order,line-too-long,g-no-space-after-comment
 
 # Collapse losses into a single namespace.
-from tensorflow_gan.python.tpu.cross_replica_ops import *
+# TODO(joelshor): Figure out why including this line breaks the open source
+# build
+# from tensorflow_gan.python.tpu.cross_replica_ops import *
 from tensorflow_gan.python.tpu.normalization_ops import *
 
 # Collect list of exposed symbols.
-from tensorflow_gan.python.tpu import cross_replica_ops
-from tensorflow_gan.python.tpu import normalization_ops
-__all__ = cross_replica_ops.__all__
-__all__ += normalization_ops.__all__
+#from tensorflow_gan.python.tpu.cross_replica_ops import __all__ as cross_replica_ops_symbols
+from tensorflow_gan.python.tpu.normalization_ops import __all__ as normalization_ops_symbols
+__all__ = normalization_ops_symbols
+# __all__ += cross_replica_ops_symbols
