@@ -55,7 +55,7 @@ def cross_replica_moments(inputs, axis, parallel=True, group_size=None):
   Args:
     inputs: A tensor with 2 or more dimensions.
     axis: Array of ints. Axes along which to compute mean and variance.
-    parallel: Use E[x^2] - (E[x])^2 to compute variance. Then can be done
+    parallel: Use E[x^2] - (E[x])^2 to compute variance. This can be done
       in parallel to computing the mean and reducing the communication overhead.
     group_size: Integer, the number of replicas to compute moments arcoss.
       None or 0 will use all replicas (global).

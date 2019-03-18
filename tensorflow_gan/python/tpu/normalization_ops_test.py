@@ -36,24 +36,23 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
       {"conditional": False},
   )
   def testBatchNorm(self, conditional):
-    with tf.Graph().as_default():
-      # 4 images with resolution 2x1 and 3 channels.
-      x1 = tf.constant([[[5, 7, 2]], [[5, 8, 8]]], dtype=tf.float32)
-      x2 = tf.constant([[[1, 2, 0]], [[4, 0, 4]]], dtype=tf.float32)
-      x3 = tf.constant([[[6, 2, 6]], [[5, 0, 5]]], dtype=tf.float32)
-      x4 = tf.constant([[[2, 4, 2]], [[6, 4, 1]]], dtype=tf.float32)
-      x = tf.stack([x1, x2, x3, x4])
-      self.assertAllEqual(x.shape.as_list(), [4, 2, 1, 3])
+    # 4 images with resolution 2x1 and 3 channels.
+    x1 = tf.constant([[[5, 7, 2]], [[5, 8, 8]]], dtype=tf.float32)
+    x2 = tf.constant([[[1, 2, 0]], [[4, 0, 4]]], dtype=tf.float32)
+    x3 = tf.constant([[[6, 2, 6]], [[5, 0, 5]]], dtype=tf.float32)
+    x4 = tf.constant([[[2, 4, 2]], [[6, 4, 1]]], dtype=tf.float32)
+    x = tf.stack([x1, x2, x3, x4])
+    self.assertAllEqual(x.shape.as_list(), [4, 2, 1, 3])
 
-      core_bn = tf.layers.batch_normalization(x, training=True)
-      contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
-      onehot_labels = tf.one_hot([0, 1, 2, 1], 5) if conditional else None
-      custom_bn = tfgan.tpu.batch_norm(
-          x, is_training=True, conditional_class_labels=onehot_labels)
-      with self.cached_session() as sess:
-        sess.run(tf.global_variables_initializer())
-        core_bn, contrib_bn, custom_bn = sess.run(
-            [core_bn, contrib_bn, custom_bn])
+    core_bn = tf.layers.batch_normalization(x, training=True)
+    contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
+    onehot_labels = tf.one_hot([0, 1, 2, 1], 5) if conditional else None
+    custom_bn = tfgan.tpu.batch_norm(
+        x, is_training=True, conditional_class_labels=onehot_labels)
+    with self.cached_session() as sess:
+      sess.run(tf.global_variables_initializer())
+      core_bn, contrib_bn, custom_bn = sess.run(
+          [core_bn, contrib_bn, custom_bn])
     bn_tol = 1e-5
     self.assertAllClose(contrib_bn, core_bn, atol=bn_tol)  # sanity check
     self.assertAllClose(custom_bn, core_bn, atol=bn_tol)
@@ -69,6 +68,30 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
           [[1.02088118, 0.22471881, -0.98050523]]]],
         dtype=np.float32)
     self.assertAllClose(custom_bn, expected_values, atol=1e-4)
+
+  @parameterized.parameters(
+      {"same_name": True},
+      {"same_name": False},
+  )
+  def testEvalBatchNormInLoop(self, same_name):
+    """Check that same / different name works as expected.
+
+    If the name is the same, we expect variables in eval mode to be shared. If
+    they are different, we want different variables.
+
+    Args:
+      same_name: Whether to use the same layer name.
+    """
+    def _name(i):
+      return "batch_norm" if same_name else "batch_norm_%i" % i
+    tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(0))
+    num_vars = len(tf.global_variables())
+    for i in range(1, 4):
+      tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(i))
+      if same_name:
+        self.assertLen(tf.global_variables(), num_vars)
+      else:
+        self.assertLen(tf.global_variables(), num_vars + i * 4)
 
 
 class AccumulatedMomentsTest(tf.test.TestCase):
@@ -154,11 +177,12 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
     variance_in = tf.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(
         mean=mean_in, variance=variance_in, is_training=True, decay=decay)
-    self.assertLen(tf.global_variables(), 2)
     variables_by_name = {v.op.name: v for v in tf.global_variables()}
     self.assertLen(variables_by_name, 2)
-    ema_mean = variables_by_name["Placeholder/ExponentialMovingAverage"]
-    ema_var = variables_by_name["sub/ExponentialMovingAverage"]
+    self.assertIn("moving_mean", variables_by_name)
+    self.assertIn("moving_variance", variables_by_name)
+    ema_mean = variables_by_name["moving_mean"]
+    ema_var = variables_by_name["moving_variance"]
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     self.assertLen(update_ops, 1)
     with self.cached_session() as sess:
@@ -181,18 +205,19 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
         m_exp = m_exp * decay + (1 - decay) * m_in
         v_exp = v_exp * decay + (1 - decay) * v_in
         self.assertAllClose(m_ema, m_exp)
-        self.assertAllClose(v_ema + 1.0, v_exp)
+        self.assertAllClose(v_ema, v_exp)
 
   def testMovingMomentsDuringEval(self):
     mean_in = tf.placeholder(tf.float32, shape=[2])
     variance_in = tf.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(
         mean=mean_in, variance=variance_in, is_training=False, decay=0.5)
-    self.assertLen(tf.global_variables(), 2)
     variables_by_name = {v.op.name: v for v in tf.global_variables()}
     self.assertLen(variables_by_name, 2)
-    ema_mean = variables_by_name["Placeholder/ExponentialMovingAverage"]
-    ema_var = variables_by_name["sub/ExponentialMovingAverage"]
+    self.assertIn("moving_mean", variables_by_name)
+    self.assertIn("moving_variance", variables_by_name)
+    ema_mean = variables_by_name["moving_mean"]
+    ema_var = variables_by_name["moving_variance"]
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     self.assertEmpty(update_ops)
     with self.cached_session() as sess:
@@ -212,7 +237,7 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllClose(m, m_exp)
         self.assertAllClose(m, ema_m)
         self.assertAllClose(v, v_exp)
-        self.assertAllClose(v, ema_v + 1.0)
+        self.assertAllClose(v, ema_v)
 
 
 if __name__ == "__main__":
