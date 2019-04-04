@@ -447,7 +447,9 @@ def sample_and_run_image_classifier(sample_fn,
   Raises:
     ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
   """
-  if not isinstance(output_tensor, six.string_types):
+  if isinstance(output_tensor, six.string_types):
+    dtypes = dtypes or tf.float32
+  else:
     dtypes = dtypes or [tf.float32] * len(output_tensor)
 
   def _classifier_fn(tensor):
