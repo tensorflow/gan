@@ -55,6 +55,18 @@ flags.DEFINE_integer(
 FLAGS = flags.FLAGS
 
 
+def clip_gradient_norms_fn(max_norm):
+  """Returns a `transform_grads_fn` function for gradient clipping."""
+  def clip_norms(gradients_to_variables):
+    clipped_grads_and_vars = []
+    for grad, var in gradients_to_variables:
+      if grad is not None:
+        grad = tf.clip_by_norm(grad, max_norm)
+      clipped_grads_and_vars.append((grad, var))
+    return clipped_grads_and_vars
+  return clip_norms
+
+
 def main(_):
   if not tf.io.gfile.exists(FLAGS.train_log_dir):
     tf.io.gfile.makedirs(FLAGS.train_log_dir)
@@ -108,7 +120,7 @@ def main(_):
           summarize_gradients=True,
           colocate_gradients_with_ops=True,
           aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N,
-          transform_grads_fn=tf.contrib.training.clip_gradient_norms_fn(1e3))
+          transform_grads_fn=clip_gradient_norms_fn(1e3))
       tf.compat.v1.summary.scalar('generator_lr', gen_lr)
       tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
 
