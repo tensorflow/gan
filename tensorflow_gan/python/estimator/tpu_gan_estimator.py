@@ -129,7 +129,7 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
       generator_optimizer: The optimizer for generator updates, or a function
         that takes no arguments and returns an optimizer. This function will
         be called when the default graph is the `GANEstimator`'s graph, so
-        utilities like `tf.contrib.framework.get_or_create_global_step` will
+        utilities like `tf.train.get_or_create_global_step` will
         work.
       discriminator_optimizer: Same as `generator_optimizer`, but for the
         discriminator updates.
