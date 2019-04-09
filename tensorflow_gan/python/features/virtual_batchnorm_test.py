@@ -22,23 +22,25 @@ from __future__ import print_function
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_gan as tfgan
+from tensorflow_gan.python import contrib_utils as contrib
+from tensorflow_gan.python.features import virtual_batchnorm as vbn_lib
+#import tensorflow_gan as tfgan
 
-from tensorflow_gan.python.features.virtual_batchnorm import vbn_statistics
+#from tensorflow_gan.python.features.virtual_batchnorm import vbn_statistics
 
 
 class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_syntax(self):
     reference_batch = tf.zeros([5, 3, 16, 9, 15])
-    vbn = tfgan.features.VBN(reference_batch, batch_axis=1)
+    vbn = vbn_lib.VBN(reference_batch, batch_axis=1)
     vbn(tf.ones([5, 7, 16, 9, 15]))
 
   def test_no_broadcast_needed(self):
     """When `axis` and `batch_axis` are at the end, no broadcast is needed."""
     reference_batch = tf.zeros([5, 3, 16, 9, 15])
     minibatch = tf.zeros([5, 3, 16, 3, 15])
-    vbn = tfgan.features.VBN(reference_batch, axis=-1, batch_axis=-2)
+    vbn = vbn_lib.VBN(reference_batch, axis=-1, batch_axis=-2)
     vbn(minibatch)
 
   def test_statistics(self):
@@ -47,7 +49,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
     tensors = tf.random.normal([4, 5, 7, 3])
     for axes in [(3), (0, 2), (1, 2, 3)]:
-      vb_mean, mean_sq = vbn_statistics(tensors, axes)
+      vb_mean, mean_sq = vbn_lib.vbn_statistics(tensors, axes)
       mom_mean, mom_var = tf.nn.moments(x=tensors, axes=axes)
       vb_var = mean_sq - tf.square(vb_mean)
 
@@ -77,7 +79,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vb_reduction_axes = list(range(4))
       del vb_reduction_axes[reduction_axis]
       del vb_reduction_axes[batch_axis]
-      vbn = tfgan.features.VBN(partial_batch, reduction_axis)
+      vbn = vbn_lib.VBN(partial_batch, reduction_axis)
       vb_mean, mean_sq = vbn._virtual_statistics(single_example,
                                                  vb_reduction_axes)
       vb_variance = mean_sq - tf.square(vb_mean)
@@ -105,7 +107,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
       # Get VBN's batch normalization on reference batch.
       batch_axis = 0 if axis is not 0 else 1  # axis and batch_axis can't same
-      vbn = tfgan.features.VBN(batch, axis, batch_axis=batch_axis)
+      vbn = vbn_lib.VBN(batch, axis, batch_axis=batch_axis)
       vbn_normalized = vbn.reference_batch_normalization()
 
       with self.cached_session(use_gpu=True) as sess:
@@ -129,7 +131,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     for i in range(num_examples):
       examples_except_i = tf.stack(examples[:i] + examples[i + 1:])
       # Get the result of VBN's batch normalization.
-      vbn = tfgan.features.VBN(examples_except_i)
+      vbn = vbn_lib.VBN(examples_except_i)
       vb_normed = tf.squeeze(vbn(tf.expand_dims(examples[i], [0])), [0])
 
       with self.cached_session(use_gpu=True) as sess:
@@ -153,7 +155,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
     # Get the VBN object and the virtual batch normalized value for
     # `fixed_example`.
-    vbn = tfgan.features.VBN(reference_batch)
+    vbn = vbn_lib.VBN(reference_batch)
     vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)), 0)
     with self.session(use_gpu=True):
       tf.compat.v1.global_variables_initializer().run()
@@ -183,10 +185,10 @@ class VirtualBatchnormTest(tf.test.TestCase):
       with self.assertRaisesRegexp(
           ValueError, 'does not exist, or was not created with '
           'tf.get_variable()'):
-        tfgan.features.VBN(tensor1_ref)
+        vbn_lib.VBN(tensor1_ref)
 
-    vbn1 = tfgan.features.VBN(tensor1_ref, name='vbn1')
-    vbn2 = tfgan.features.VBN(tensor2_ref, name='vbn2')
+    vbn1 = vbn_lib.VBN(tensor1_ref, name='vbn1')
+    vbn2 = vbn_lib.VBN(tensor2_ref, name='vbn2')
 
     # Fetch reference and examples after virtual batch normalization. Also
     # fetch in variable reuse case.
@@ -204,7 +206,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     to_fetch.append(vbn1(tensor1_examples))
     to_fetch.append(vbn2(tensor2_examples))
 
-    self.assertEqual(4, len(tf.contrib.framework.get_variables()))
+    self.assertEqual(4, len(contrib.get_variables()))
 
     with self.session(use_gpu=True) as sess:
       tf.compat.v1.global_variables_initializer().run()
@@ -214,37 +216,37 @@ class VirtualBatchnormTest(tf.test.TestCase):
     # Reference batch has unknown dimensions.
     with self.assertRaisesRegexp(ValueError,
                                  '`reference_batch` has unknown dimensions.'):
-      tfgan.features.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
+      vbn_lib.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
 
     # Axis too negative.
     with self.assertRaisesRegexp(ValueError,
                                  'Value of `axis` argument .* is out of range'):
-      tfgan.features.VBN(tf.zeros([1, 2]), axis=-3, name='vbn2')
+      vbn_lib.VBN(tf.zeros([1, 2]), axis=-3, name='vbn2')
 
     # Axis too large.
     with self.assertRaisesRegexp(ValueError,
                                  'Value of `axis` argument .* is out of range'):
-      tfgan.features.VBN(tf.zeros([1, 2]), axis=2, name='vbn3')
+      vbn_lib.VBN(tf.zeros([1, 2]), axis=2, name='vbn3')
 
     # Batch axis too negative.
     with self.assertRaisesRegexp(ValueError,
                                  'Value of `axis` argument .* is out of range'):
-      tfgan.features.VBN(tf.zeros([1, 2]), name='vbn4', batch_axis=-3)
+      vbn_lib.VBN(tf.zeros([1, 2]), name='vbn4', batch_axis=-3)
 
     # Batch axis too large.
     with self.assertRaisesRegexp(ValueError,
                                  'Value of `axis` argument .* is out of range'):
-      tfgan.features.VBN(tf.zeros([1, 2]), name='vbn5', batch_axis=2)
+      vbn_lib.VBN(tf.zeros([1, 2]), name='vbn5', batch_axis=2)
 
     # Axis and batch axis are the same.
     with self.assertRaisesRegexp(ValueError,
                                  '`axis` and `batch_axis` cannot be the same.'):
-      tfgan.features.VBN(tf.zeros([1, 2]), axis=1, name='vbn6', batch_axis=1)
+      vbn_lib.VBN(tf.zeros([1, 2]), axis=1, name='vbn6', batch_axis=1)
 
     # Reference Tensor and example Tensor have incompatible shapes.
     tensor_ref = tf.zeros([5, 2, 3])
     tensor_examples = tf.zeros([3, 2, 3])
-    vbn = tfgan.features.VBN(tensor_ref, name='vbn7', batch_axis=1)
+    vbn = vbn_lib.VBN(tensor_ref, name='vbn7', batch_axis=1)
     with self.assertRaisesRegexp(ValueError, 'Shapes .* are incompatible'):
       vbn(tensor_examples)
 
