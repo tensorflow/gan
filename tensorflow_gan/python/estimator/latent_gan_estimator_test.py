@@ -13,10 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for latent_gan_estimator.
-
-See g3.tp.tensorflow.contrib.gan.python.estimator.python.latent_gan_estimator.
-"""
+"""Tests for latent_gan_estimator."""
 
 from __future__ import absolute_import
 from __future__ import division
