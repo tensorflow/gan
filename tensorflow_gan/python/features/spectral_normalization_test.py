@@ -195,6 +195,11 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
   def testConv2D_ContribLayers(self):
 
+    try:
+      tf.contrib.layers.conv2d
+    except AttributeError:  # if contrib doesn't exist, skip this test.
+      return True
+
     def build_layer_fn(x, w_initializer, b_initializer):
       var_collection = {
           'weights': ['CONTRIB_LAYERS_CONV2D_WEIGHTS'],
@@ -223,6 +228,11 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
   def testConv2D_Slim(self):
+
+    try:
+      tf.contrib.slim.conv2d
+    except AttributeError:  # if contrib doesn't exist, skip this test.
+      return True
 
     def build_layer_fn(x, w_initializer, b_initializer):
       var_collection = {
