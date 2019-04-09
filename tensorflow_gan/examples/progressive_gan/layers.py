@@ -274,7 +274,7 @@ def custom_dense(x,
   Returns:
     A `Tensor` where the last dimension has size `units`.
   """
-  x = tf.contrib.layers.flatten(x)
+  x = tf.layers.flatten(x)
 
   def _apply_kernel(kernel_shape, kernel_initializer):
     return tf.layers.dense(

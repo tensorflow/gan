@@ -287,7 +287,7 @@ def generator(z,
 
   with tf.variable_scope(scope, reuse=reuse):
     with tf.name_scope('input'):
-      x = tf.contrib.layers.flatten(z)
+      x = tf.layers.flatten(z)
       end_points['latent_vector'] = x
 
     with tf.variable_scope(block_name(1)):

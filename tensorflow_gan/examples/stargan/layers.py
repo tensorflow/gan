@@ -376,7 +376,7 @@ def discriminator_output_class(input_net, class_num):
 
   with tf.compat.v1.variable_scope('discriminator_output_class'):
 
-    output_cls = tf.contrib.layers.flatten(input_net, scope='flatten')
+    output_cls = tf.layers.flatten(input_net, name='flatten')
     output_cls = tf.contrib.layers.fully_connected(
         inputs=output_cls,
         num_outputs=class_num,
