@@ -45,7 +45,10 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
     self.assertAllEqual(x.shape.as_list(), [4, 2, 1, 3])
 
     core_bn = tf.layers.batch_normalization(x, training=True)
-    contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
+    try:
+      contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
+    except AttributeError:  # TF 2.0 doesn't have contrib.
+      contrib_bn = core_bn
     onehot_labels = tf.one_hot([0, 1, 2, 1], 5) if conditional else None
     custom_bn = tfgan.tpu.batch_norm(
         x, is_training=True, conditional_class_labels=onehot_labels)
