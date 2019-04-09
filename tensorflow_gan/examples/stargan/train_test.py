@@ -38,17 +38,10 @@ def _test_generator(input_images, _):
 
 def _test_discriminator(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
-
   hidden = tf.layers.flatten(inputs)
-
   output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
+  output_cls = tf.layers.dense(inputs=hidden, units=num_domains)
 
-  output_cls = tf.contrib.layers.fully_connected(
-      inputs=hidden,
-      num_outputs=num_domains,
-      activation_fn=None,
-      normalizer_fn=None,
-      biases_initializer=None)
   return output_src, output_cls
 
 

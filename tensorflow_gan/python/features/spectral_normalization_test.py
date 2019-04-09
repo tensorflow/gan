@@ -283,6 +283,10 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   def testFC_ContribLayers(self):
+    try:
+      tf.contrib.layers.fully_connected
+    except AttributeError:  # if contrib doesn't exist, skip this test.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       var_collection = {
@@ -312,6 +316,11 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   def testFC_Slim(self):
+
+    try:
+      tf.contrib.slim.fully_connected
+    except AttributeError:  # if contrib doesn't exist, skip this test.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       var_collection = {
