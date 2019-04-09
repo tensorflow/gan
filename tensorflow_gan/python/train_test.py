@@ -1105,6 +1105,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(1 + 3 * 10 + 4 * 100, final_step)
 
   def test_supervisor_run_gan_model_train_ops_multiple_steps(self):
+    """Test that the train ops work with the old-style supervisor."""
     step = tf.compat.v1.train.create_global_step()
     train_ops = tfgan.GANTrainOps(
         generator_train_op=tf.constant(3.0),
@@ -1112,15 +1113,24 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
         global_step_inc_op=step.assign_add(1))
     train_steps = tfgan.GANTrainSteps(
         generator_train_steps=3, discriminator_train_steps=4)
+    number_of_steps = 1
 
-    final_loss = tf.contrib.slim.learning.train(
-        train_op=train_ops,
-        logdir='',
-        global_step=step,
-        number_of_steps=1,
-        train_step_fn=tfgan.get_sequential_train_steps(train_steps))
-    self.assertTrue(np.isscalar(final_loss))
-    self.assertEqual(17.0, final_loss)
+    # Typical simple Supervisor use.
+    train_step_kwargs = {}
+    train_step_kwargs['should_stop'] = tf.greater_equal(step, number_of_steps)
+    train_step_fn = tfgan.get_sequential_train_steps(train_steps)
+    sv = tf.train.Supervisor(logdir='', global_step=step)
+    with sv.managed_session(master='') as sess:
+      while not sv.should_stop():
+        total_loss, should_stop = train_step_fn(
+            sess, train_ops, step, train_step_kwargs)
+        if should_stop:
+          sv.request_stop()
+          break
+
+    # Correctness checks.
+    self.assertTrue(np.isscalar(total_loss))
+    self.assertEqual(17.0, total_loss)
 
   @parameterized.named_parameters(
       ('gan', create_gan_model),

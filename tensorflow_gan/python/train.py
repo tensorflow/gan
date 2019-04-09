@@ -1180,6 +1180,7 @@ def gan_train(train_ops,
               chief_only_hooks=None,
               save_checkpoint_secs=600,
               save_summaries_steps=100,
+              max_wait_secs=7200,
               config=None):
   """A wrapper around `contrib.training.train` that uses GAN hooks.
 
@@ -1203,27 +1204,49 @@ def gan_train(train_ops,
       summaries are written to disk using a default summary saver. If
       `save_summaries_steps` is set to `None`, then the default summary saver
       isn't used.
+    max_wait_secs: Maximum time workers should wait for the session to
+      become available. This should be kept relatively short to help detect
+      incorrect code, but sometimes may need to be increased if the chief takes
+      a while to start up.
     config: An instance of `tf.ConfigProto`.
 
   Returns:
     Output of the call to `training.train`.
   """
+  _validate_gan_train_inputs(logdir, is_chief, save_summaries_steps,
+                             save_checkpoint_secs)
   new_hooks = get_hooks_fn(train_ops)
   if hooks is not None:
     hooks = list(hooks) + list(new_hooks)
   else:
     hooks = new_hooks
-  return tf.contrib.training.train(
-      train_ops.global_step_inc_op,
-      logdir,
+
+  with tf.train.MonitoredTrainingSession(
       master=master,
       is_chief=is_chief,
+      checkpoint_dir=logdir,
       scaffold=scaffold,
       hooks=hooks,
       chief_only_hooks=chief_only_hooks,
       save_checkpoint_secs=save_checkpoint_secs,
       save_summaries_steps=save_summaries_steps,
-      config=config)
+      config=config,
+      max_wait_secs=max_wait_secs) as session:
+    gstep = None
+    while not session.should_stop():
+      gstep = session.run(train_ops.global_step_inc_op)
+  return gstep
+
+
+def _validate_gan_train_inputs(logdir, is_chief, save_summaries_steps,
+                               save_checkpoint_secs):
+  if logdir is None and is_chief:
+    if save_summaries_steps:
+      raise ValueError(
+          'logdir cannot be None when save_summaries_steps is not None')
+    if save_checkpoint_secs:
+      raise ValueError(
+          'logdir cannot be None when save_checkpoint_secs is not None')
 
 
 def get_sequential_train_steps(train_steps=namedtuples.GANTrainSteps(1, 1)):
