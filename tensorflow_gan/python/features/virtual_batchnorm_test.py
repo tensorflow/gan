@@ -24,9 +24,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python.features import virtual_batchnorm as vbn_lib
-#import tensorflow_gan as tfgan
-
-#from tensorflow_gan.python.features.virtual_batchnorm import vbn_statistics
 
 
 class VirtualBatchnormTest(tf.test.TestCase):
