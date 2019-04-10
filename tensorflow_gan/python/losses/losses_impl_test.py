@@ -21,8 +21,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
-
 from tensorflow_gan.python.losses.losses_impl import numerically_stable_global_norm
+import tensorflow_probability as tfp
 
 
 class _LossesTest(object):
@@ -575,8 +575,8 @@ class MutualInformationPenaltyTest(tf.test.TestCase, _PenaltyTest):
     self._penalty_fn = tfgan.losses.wargs.mutual_information_penalty
     self._structured_generator_inputs = [1.0, 2.0]
     self._predicted_distributions = [
-        tf.compat.v1.distributions.Categorical(logits=[1.0, 2.0]),
-        tf.compat.v1.distributions.Normal([0.0], [1.0]),
+        tfp.distributions.Categorical(logits=[1.0, 2.0]),
+        tfp.distributions.Normal([0.0], [1.0]),
     ]
     self._expected_dtype = tf.float32
 
