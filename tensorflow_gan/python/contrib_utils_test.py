@@ -34,20 +34,6 @@ def batchnorm_classifier(inputs):
   return tf.compat.v1.layers.dense(inputs, 1, activation=tf.sigmoid)
 
 
-def get_variables_by_name(given_name, scope=None):
-  """Gets the list of variables that were given that name.
-
-  Args:
-    given_name: name given to the variable without any scope.
-    scope: an optional scope for filtering the variables to return.
-
-  Returns:
-    a copied list of variables with the given name and scope.
-  """
-  suffix = '/' + given_name + ':|^' + given_name + ':'
-  return contrib_utils.get_variables(scope=scope, suffix=suffix)
-
-
 class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
   def setUp(self):
@@ -92,8 +78,9 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
       train_op = contrib_utils.create_train_op(loss, optimizer)
 
-      moving_mean = get_variables_by_name('moving_mean')[0]
-      moving_variance = get_variables_by_name('moving_variance')[0]
+      moving_mean = contrib_utils.get_variables_by_name('moving_mean')[0]
+      moving_variance = contrib_utils.get_variables_by_name(
+          'moving_variance')[0]
 
       with self.cached_session() as session:
         # Initialize all variables
@@ -126,8 +113,9 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
       optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib_utils.create_train_op(loss, optimizer, update_ops=[])
 
-      moving_mean = get_variables_by_name('moving_mean')[0]
-      moving_variance = get_variables_by_name('moving_variance')[0]
+      moving_mean = contrib_utils.get_variables_by_name('moving_mean')[0]
+      moving_variance = contrib_utils.get_variables_by_name(
+          'moving_variance')[0]
 
       with self.cached_session() as session:
         # Initialize all variables

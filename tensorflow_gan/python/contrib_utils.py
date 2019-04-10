@@ -36,6 +36,20 @@ def get_trainable_variables(scope=None, suffix=None):
                        tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES)
 
 
+def get_variables_by_name(given_name, scope=None):
+  """Gets the list of variables that were given that name.
+
+  Args:
+    given_name: name given to the variable without any scope.
+    scope: an optional scope for filtering the variables to return.
+
+  Returns:
+    a copied list of variables with the given name and scope.
+  """
+  suffix = '/' + given_name + ':|^' + given_name + ':'
+  return get_variables(scope=scope, suffix=suffix)
+
+
 def _with_dependencies(dependencies, output_tensor):
   with tf.compat.v1.name_scope(
       'control_dependency', values=list(dependencies) + [output_tensor]):
@@ -90,7 +104,7 @@ def create_train_op(total_loss,
     total_loss: A `Tensor` representing the total loss.
     optimizer: A tf.Optimizer to use for computing the gradients.
     global_step: A `Tensor` representing the global step variable. If left as
-      `_USE_GLOBAL_STEP`, then tf.contrib.framework.global_step() is used.
+      `_USE_GLOBAL_STEP`, then tf.train.global_step() is used.
     update_ops: An optional list of updates to execute. If `update_ops` is
       `None`, then the update ops are set to the contents of the
       `tf.GraphKeys.UPDATE_OPS` collection. If `update_ops` is not `None`, but
@@ -276,4 +290,3 @@ def batch_to_space(*args, **kwargs):
       kwargs['block_size'] = kwargs['block_shape']
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
-
