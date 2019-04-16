@@ -53,7 +53,7 @@ def mnist_score(images,
                 input_tensor=INPUT_TENSOR,
                 output_tensor=OUTPUT_TENSOR,
                 num_batches=1):
-  """Get MNIST logits of a fully-trained classifier.
+  """Get MNIST classifier score.
 
   Args:
     images: A minibatch tensor of MNIST digits. Shape must be [batch, 28, 28,
@@ -66,7 +66,7 @@ def mnist_score(images,
       efficiently run them through Inception.
 
   Returns:
-    A logits tensor of [batch, 10].
+    The classifier score, a floating-point scalar.
   """
   images.shape.assert_is_compatible_with([None, 28, 28, 1])
 
