@@ -57,7 +57,8 @@ def provide_dataset(split,
     # [-1, 1], so that network outputs aren't forced to the extreme ranges.
     images = (images - 128.0) / 142.0
 
-    patches = tf.image.resize_with_crop_or_pad(images, patch_size, patch_size)
+    patches = tf.image.resize_image_with_crop_or_pad(images, patch_size,
+                                                     patch_size)
 
     patches.shape.assert_is_compatible_with([patch_size, patch_size, 3])
     patches.set_shape([patch_size, patch_size, 3])

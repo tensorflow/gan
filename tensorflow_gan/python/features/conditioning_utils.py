@@ -67,10 +67,9 @@ def condition_tensor(tensor, conditioning):
     raise ValueError('conditioning must be at least 2D, but saw shape: %s'
                      % conditioning.shape)
 
-  mapped_conditioning = tf.compat.v1.layers.dense(
-      tf.compat.v1.layers.flatten(conditioning),
-      num_features,
-      kernel_initializer=tf.compat.v1.glorot_uniform_initializer())
+  mapped_conditioning = tf.layers.dense(
+      tf.compat.v1.layers.flatten(conditioning), num_features,
+      kernel_initializer=tf.glorot_uniform_initializer())
   if not mapped_conditioning.shape.is_compatible_with(tensor.shape):
     mapped_conditioning = tf.reshape(mapped_conditioning, _get_shape(tensor))
   return tensor + mapped_conditioning

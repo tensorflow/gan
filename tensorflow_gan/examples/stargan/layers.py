@@ -376,8 +376,8 @@ def discriminator_output_class(input_net, class_num):
 
   with tf.compat.v1.variable_scope('discriminator_output_class'):
 
-    output_cls = tf.compat.v1.layers.flatten(input_net, name='flatten')
-    output_cls = tf.compat.v1.layers.dense(
+    output_cls = tf.layers.flatten(input_net, name='flatten')
+    output_cls = tf.layers.dense(
         inputs=output_cls,
         units=class_num,
         use_bias=False,

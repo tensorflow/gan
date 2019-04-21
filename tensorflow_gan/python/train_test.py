@@ -1119,7 +1119,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
     train_step_kwargs = {}
     train_step_kwargs['should_stop'] = tf.greater_equal(step, number_of_steps)
     train_step_fn = tfgan.get_sequential_train_steps(train_steps)
-    sv = tf.compat.v1.train.Supervisor(logdir='', global_step=step)
+    sv = tf.train.Supervisor(logdir='', global_step=step)
     with sv.managed_session(master='') as sess:
       while not sv.should_stop():
         total_loss, should_stop = train_step_fn(

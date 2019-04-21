@@ -437,26 +437,24 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
     """
 
     def sample_fn(x):
-      with tf.compat.v1.variable_scope('test', reuse=tf.compat.v1.AUTO_REUSE):
-        u = tf.compat.v1.get_variable(
-            'u', [1, 100],
-            initializer=tf.compat.v1.truncated_normal_initializer())
+      with tf.variable_scope('test', reuse=tf.AUTO_REUSE):
+        u = tf.get_variable(
+            'u', [1, 100], initializer=tf.truncated_normal_initializer())
         with tf.control_dependencies([u.assign(u * 2)]):
-          return tf.compat.v1.layers.flatten(x * u)
+          return tf.layers.flatten(x * u)
 
-    tf.compat.v1.random.set_random_seed(1023)
+    tf.random.set_random_seed(1023)
     sample_input = tf.random.uniform([1, 100])
     sample_inputs = [sample_input] * 10
     g = tf.Graph()
     with g.as_default():
-      input_tensor = tf.compat.v1.placeholder(
-          tf.float32, shape=[None, 1], name='input')
+      input_tensor = tf.placeholder(tf.float32, shape=[None, 1], name='input')
       output = input_tensor * 2
     outputs = tfgan.eval.sample_and_run_image_classifier(
         sample_fn, sample_inputs, g.as_graph_def(), input_tensor.name,
         output.name)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.initializers.global_variables())
+      sess.run(tf.initializers.global_variables())
       outputs_np = sess.run(outputs)
     self.assertEqual((10, 100), outputs_np.shape)
 

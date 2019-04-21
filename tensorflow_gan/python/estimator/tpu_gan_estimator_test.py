@@ -41,21 +41,6 @@ from tensorflow_gan.python.estimator.tpu_gan_estimator import Optimizers
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
 
-# Where these symbols live depends on TF version.
-try:
-  TpuRunConfig = tf.compat.v1.estimator.tpu.RunConfig
-except AttributeError:
-  TpuRunConfig = tf.contrib.tpu.RunConfig
-try:
-  CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
-except AttributeError:
-  CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer
-try:
-  TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
-except AttributeError:
-  TPUEstimatorSpec = tf.contrib.tpu.TPUEstimatorSpec
-
-
 class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
   """An optimizer wrapper that is designed to share a real optimizer.
 
@@ -202,9 +187,9 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
   @classmethod
   def setUpClass(cls):
     super(GetTPUEstimatorSpecTest, cls).setUpClass()
-    cls._generator_optimizer = CrossShardOptimizer(
+    cls._generator_optimizer = tf.contrib.tpu.CrossShardOptimizer(
         tf.compat.v1.train.GradientDescentOptimizer(1.0))
-    cls._discriminator_optimizer = CrossShardOptimizer(
+    cls._discriminator_optimizer = tf.contrib.tpu.CrossShardOptimizer(
         tf.compat.v1.train.GradientDescentOptimizer(1.0))
     cls._optimizers = Optimizers(cls._generator_optimizer,
                                  cls._discriminator_optimizer)
@@ -232,7 +217,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           gan_train_steps=tfgan.GANTrainSteps(1, 1),
           add_summaries=not flags.FLAGS.use_tpu)
 
-    self.assertIsInstance(spec, TPUEstimatorSpec)
+    self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
 
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
@@ -250,7 +235,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           get_eval_metric_ops_fn=get_metrics,
           add_summaries=not flags.FLAGS.use_tpu)
 
-    self.assertIsInstance(spec, TPUEstimatorSpec)
+    self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
 
     self.assertEqual(generated_data, spec.predictions)
@@ -263,7 +248,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       gan_model_fns = [functools.partial(get_dummy_gan_model, generated_data)]
       spec = get_predict_estimator_spec(gan_model_fns)
 
-    self.assertIsInstance(spec, TPUEstimatorSpec)
+    self.assertIsInstance(spec, tf.contrib.tpu.TPUEstimatorSpec)
     self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
     self.assertEqual({'generated_data': generated_data}, spec.predictions)
 
@@ -273,7 +258,7 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
   def setUp(self):
     super(TPUGANEstimatorIntegrationTest, self).setUp()
     self._model_dir = tempfile.mkdtemp()
-    self._config = TpuRunConfig(model_dir=self._model_dir)
+    self._config = tf.contrib.tpu.RunConfig(model_dir=self._model_dir)
 
   def tearDown(self):
     super(TPUGANEstimatorIntegrationTest, self).tearDown()
@@ -386,7 +371,7 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
   def setUp(self):
     super(TPUGANEstimatorMultiTrainStepTest, self).setUp()
     self._model_dir = tempfile.mkdtemp()
-    self._config = TpuRunConfig(model_dir=self._model_dir)
+    self._config = tf.contrib.tpu.RunConfig(model_dir=self._model_dir)
 
   def tearDown(self):
     super(TPUGANEstimatorMultiTrainStepTest, self).tearDown()
@@ -451,7 +436,7 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
 
   def setUp(self):
     self._model_dir = self.get_temp_dir()
-    self._config = TpuRunConfig(model_dir=self._model_dir)
+    self._config = tf.contrib.tpu.RunConfig(model_dir=self._model_dir)
     self.new_variable_name = 'new_var'
     self.new_variable_value = [1.0, 2.0, 3.0]
 
@@ -495,7 +480,7 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
         generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(1.0),
         discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
             1.0),
-        config=TpuRunConfig(
+        config=tf.contrib.tpu.RunConfig(
             model_dir=None if warm_start_from else self._model_dir),
         train_batch_size=4,
         use_tpu=flags.FLAGS.use_tpu,

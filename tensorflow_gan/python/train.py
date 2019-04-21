@@ -1221,7 +1221,7 @@ def gan_train(train_ops,
   else:
     hooks = new_hooks
 
-  with tf.compat.v1.train.MonitoredTrainingSession(
+  with tf.train.MonitoredTrainingSession(
       master=master,
       is_chief=is_chief,
       checkpoint_dir=logdir,

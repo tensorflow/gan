@@ -60,7 +60,7 @@ def generator_fn(noise_dict, mode):
 
 def discriminator_fn(data, unused_conditioning, mode):
   del unused_conditioning, mode
-  return tf.compat.v1.layers.dense(data, 1)
+  return tf.layers.dense(data, 1)
 
 
 class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):

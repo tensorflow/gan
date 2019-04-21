@@ -49,7 +49,8 @@ def _sample_patch(image, patch_size):
   image_shape = tf.shape(input=image)
   height, width = image_shape[0], image_shape[1]
   target_size = tf.minimum(height, width)
-  image = tf.image.resize_with_crop_or_pad(image, target_size, target_size)
+  image = tf.image.resize_image_with_crop_or_pad(image, target_size,
+                                                 target_size)
   # tf.image.resize_area only accepts 4D tensor, so expand dims first.
   image = tf.expand_dims(image, axis=0)
   image = tf.image.resize(image, [patch_size, patch_size])
