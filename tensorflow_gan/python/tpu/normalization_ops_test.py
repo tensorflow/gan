@@ -44,7 +44,7 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
     x = tf.stack([x1, x2, x3, x4])
     self.assertAllEqual(x.shape.as_list(), [4, 2, 1, 3])
 
-    core_bn = tf.layers.batch_normalization(x, training=True)
+    core_bn = tf.compat.v1.layers.batch_normalization(x, training=True)
     try:
       contrib_bn = tf.contrib.layers.batch_norm(x, is_training=True)
     except AttributeError:  # TF 2.0 doesn't have contrib.
@@ -53,7 +53,7 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
     custom_bn = tfgan.tpu.batch_norm(
         x, is_training=True, conditional_class_labels=onehot_labels)
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       core_bn, contrib_bn, custom_bn = sess.run(
           [core_bn, contrib_bn, custom_bn])
     bn_tol = 1e-5
@@ -88,29 +88,31 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
     def _name(i):
       return "batch_norm" if same_name else "batch_norm_%i" % i
     tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(0))
-    num_vars = len(tf.global_variables())
+    num_vars = len(tf.compat.v1.global_variables())
     for i in range(1, 4):
       tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(i))
       if same_name:
-        self.assertLen(tf.global_variables(), num_vars)
+        self.assertLen(tf.compat.v1.global_variables(), num_vars)
       else:
-        self.assertLen(tf.global_variables(), num_vars + i * 4)
+        self.assertLen(tf.compat.v1.global_variables(), num_vars + i * 4)
 
 
 class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringTraining(self):
     with tf.Graph().as_default():
-      mean_in = tf.placeholder(tf.float32, shape=[2])
-      variance_in = tf.placeholder(tf.float32, shape=[2])
+      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
       mean, variance = accumulated_moments_for_inference(
           mean=mean_in, variance=variance_in, is_training=True)
-      variables_by_name = {v.op.name: v for v in tf.global_variables()}
+      variables_by_name = {
+          v.op.name: v for v in tf.compat.v1.global_variables()
+      }
       accu_mean = variables_by_name["accu/accu_mean"]
       accu_variance = variables_by_name["accu/accu_variance"]
       accu_counter = variables_by_name["accu/accu_counter"]
       with self.cached_session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         m1, v1 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
@@ -128,19 +130,21 @@ class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringEval(self):
     with tf.Graph().as_default():
-      mean_in = tf.placeholder(tf.float32, shape=[2])
-      variance_in = tf.placeholder(tf.float32, shape=[2])
+      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
       mean, variance = accumulated_moments_for_inference(
           mean=mean_in, variance=variance_in, is_training=False)
-      variables_by_name = {v.op.name: v for v in tf.global_variables()}
+      variables_by_name = {
+          v.op.name: v for v in tf.compat.v1.global_variables()
+      }
       accu_mean = variables_by_name["accu/accu_mean"]
       accu_variance = variables_by_name["accu/accu_variance"]
       accu_counter = variables_by_name["accu/accu_counter"]
       update_accus = variables_by_name["accu/update_accus"]
       with self.cached_session() as sess:
-        sess.run(tf.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
         # Fill accumulators.
-        sess.run(tf.assign(update_accus, 1))
+        sess.run(tf.compat.v1.assign(update_accus, 1))
         m1, v1 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
@@ -157,7 +161,7 @@ class AccumulatedMomentsTest(tf.test.TestCase):
         self.assertAllClose(av, [10.0, 12.0])
         self.assertAllClose([ac], [2.0])
         # Use accumulators.
-        sess.run(tf.assign(update_accus, 0))
+        sess.run(tf.compat.v1.assign(update_accus, 0))
         m3, v3 = sess.run(
             [mean, variance],
             feed_dict={mean_in: [2.0, 2.0], variance_in: [3.0, 3.0]})
@@ -176,20 +180,20 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
       {"decay": 0.999},
   )
   def testMovingMomentsDuringTrain(self, decay):
-    mean_in = tf.placeholder(tf.float32, shape=[2])
-    variance_in = tf.placeholder(tf.float32, shape=[2])
+    mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(
         mean=mean_in, variance=variance_in, is_training=True, decay=decay)
-    variables_by_name = {v.op.name: v for v in tf.global_variables()}
+    variables_by_name = {v.op.name: v for v in tf.compat.v1.global_variables()}
     self.assertLen(variables_by_name, 2)
     self.assertIn("moving_mean", variables_by_name)
     self.assertIn("moving_variance", variables_by_name)
     ema_mean = variables_by_name["moving_mean"]
     ema_var = variables_by_name["moving_variance"]
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
     self.assertLen(update_ops, 1)
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       m_exp = np.array([0.0, 0.0])  # init values
       v_exp = np.array([1.0, 1.0])  # init values
@@ -211,20 +215,20 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllClose(v_ema, v_exp)
 
   def testMovingMomentsDuringEval(self):
-    mean_in = tf.placeholder(tf.float32, shape=[2])
-    variance_in = tf.placeholder(tf.float32, shape=[2])
+    mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(
         mean=mean_in, variance=variance_in, is_training=False, decay=0.5)
-    variables_by_name = {v.op.name: v for v in tf.global_variables()}
+    variables_by_name = {v.op.name: v for v in tf.compat.v1.global_variables()}
     self.assertLen(variables_by_name, 2)
     self.assertIn("moving_mean", variables_by_name)
     self.assertIn("moving_variance", variables_by_name)
     ema_mean = variables_by_name["moving_mean"]
     ema_var = variables_by_name["moving_variance"]
-    update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+    update_ops = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.UPDATE_OPS)
     self.assertEmpty(update_ops)
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
 
       m_exp = np.array([0.0, 0.0])  # init values
       v_exp = np.array([1.0, 1.0])  # init values

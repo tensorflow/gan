@@ -23,6 +23,7 @@ from absl import logging
 
 from six.moves import range
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python.tpu.cross_replica_ops import cross_replica_moments
 
 from tensorflow.contrib.tpu.python.tpu import tpu_function
@@ -76,7 +77,8 @@ def batch_norm(inputs,
   Returns:
     Output tensor.
   """
-  with tf.variable_scope(name, values=[inputs], reuse=tf.AUTO_REUSE):
+  with tf.compat.v1.variable_scope(
+      name, values=[inputs], reuse=tf.compat.v1.AUTO_REUSE):
     # Determine the variable shape.
     var_shape = [1] * inputs.shape.rank
     var_shape[axis] = inputs.shape[axis].value
@@ -85,7 +87,8 @@ def batch_norm(inputs,
     if conditional_class_labels is not None:
       num_categories = conditional_class_labels.shape[-1].value
       var_shape[batch_axis] = num_categories
-      labels = tf.math.argmax(conditional_class_labels, axis=1)  # to integer
+      labels = tf.math.argmax(
+          input=conditional_class_labels, axis=1)  # to integer
       if center:
         beta = tf.compat.v1.get_variable(
             'beta', var_shape, initializer=beta_initializer)
@@ -96,10 +99,10 @@ def batch_norm(inputs,
         gamma = tf.gather(gamma, labels)
     else:
       if center:
-        beta = tf.get_variable(
+        beta = tf.compat.v1.get_variable(
             'beta', var_shape, initializer=beta_initializer)
       if scale:
-        gamma = tf.get_variable(
+        gamma = tf.compat.v1.get_variable(
             'gamma', var_shape, initializer=gamma_initializer)
     outputs = standardize_batch(
         inputs, is_training=is_training, epsilon=variance_epsilon, offset=beta,
@@ -180,7 +183,7 @@ def standardize_batch(inputs,
     logging.debug('Automatically determined use_cross_replica_mean=%s.',
                   use_cross_replica_mean)
 
-  inputs = tf.convert_to_tensor(inputs)
+  inputs = tf.convert_to_tensor(value=inputs)
   inputs_dtype = inputs.dtype
   inputs_shape = inputs.get_shape()
 
@@ -209,8 +212,8 @@ def standardize_batch(inputs,
   if use_cross_replica_mean:
     mean, variance = cross_replica_moments(inputs, reduction_axes)
   else:
-    counts, mean_ss, variance_ss, _ = tf.nn.sufficient_statistics(
-        inputs, reduction_axes, keep_dims=False)
+    counts, mean_ss, variance_ss, _ = contrib.sufficient_statistics(
+        inputs, reduction_axes, keepdims=False)
     mean, variance = tf.nn.normalize_moments(
         counts, mean_ss, variance_ss, shift=None)
 
@@ -254,22 +257,23 @@ def moving_moments_for_inference(mean, variance, is_training, decay):
   # Create the moving average variables and add them to the appropriate
   # collections.
   variable_collections = [
-      tf.GraphKeys.MOVING_AVERAGE_VARIABLES,
-      tf.GraphKeys.MODEL_VARIABLES, tf.GraphKeys.GLOBAL_VARIABLES,
+      tf.compat.v1.GraphKeys.MOVING_AVERAGE_VARIABLES,
+      tf.compat.v1.GraphKeys.MODEL_VARIABLES,
+      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
   ]
   # Disable partition setting for moving_mean and moving_variance
   # as assign_moving_average op below doesn"t support partitioned variable.
-  moving_mean = tf.get_variable(
+  moving_mean = tf.compat.v1.get_variable(
       'moving_mean',
       shape=mean.shape,
-      initializer=tf.zeros_initializer(),
+      initializer=tf.compat.v1.zeros_initializer(),
       trainable=False,
       partitioner=None,
       collections=variable_collections)
-  moving_variance = tf.get_variable(
+  moving_variance = tf.compat.v1.get_variable(
       'moving_variance',
       shape=variance.shape,
-      initializer=tf.ones_initializer(),
+      initializer=tf.compat.v1.ones_initializer(),
       trainable=False,
       partitioner=None,
       collections=variable_collections)
@@ -286,9 +290,10 @@ def moving_moments_for_inference(mean, variance, is_training, decay):
         tf.cast(variance, moving_variance.dtype),
         decay,
         zero_debias=False)
-    tf.add_to_collection(tf.GraphKeys.UPDATE_OPS,
-                         tf.group(update_moving_mean, update_moving_variance,
-                                  name='ema_update_ops'))
+    tf.compat.v1.add_to_collection(
+        tf.compat.v1.GraphKeys.UPDATE_OPS,
+        tf.group(
+            update_moving_mean, update_moving_variance, name='ema_update_ops'))
     return mean, variance
   logging.debug('Using moving mean and variance.')
   return moving_mean, moving_variance
@@ -311,35 +316,36 @@ def accumulated_moments_for_inference(mean, variance, is_training):
     Tuple of (mean, variance) to use. This can the same as the inputs.
   """
   variable_collections = [
-      tf.GraphKeys.MODEL_VARIABLES, tf.GraphKeys.GLOBAL_VARIABLES,
+      tf.compat.v1.GraphKeys.MODEL_VARIABLES,
+      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
   ]
-  with tf.variable_scope('accu', values=[mean, variance]):
+  with tf.compat.v1.variable_scope('accu', values=[mean, variance]):
     # Create variables for accumulating batch statistic and use them during
     # inference. The ops for filling the accumulators must be created and run
     # before eval. See docstring above.
-    accu_mean = tf.get_variable(
+    accu_mean = tf.compat.v1.get_variable(
         'accu_mean',
         shape=mean.shape,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.zeros_initializer(),
         trainable=False,
         collections=variable_collections)
-    accu_variance = tf.get_variable(
+    accu_variance = tf.compat.v1.get_variable(
         'accu_variance',
         shape=variance.shape,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.zeros_initializer(),
         trainable=False,
         collections=variable_collections)
-    accu_counter = tf.get_variable(
+    accu_counter = tf.compat.v1.get_variable(
         'accu_counter',
         shape=[],
-        initializer=tf.initializers.constant(1e-12),
+        initializer=tf.compat.v1.initializers.constant(1e-12),
         trainable=False,
         collections=variable_collections)
-    update_accus = tf.get_variable(
+    update_accus = tf.compat.v1.get_variable(
         'update_accus',
         shape=[],
         dtype=tf.int32,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.zeros_initializer(),
         trainable=False,
         collections=variable_collections)
 
@@ -354,13 +360,14 @@ def accumulated_moments_for_inference(mean, variance, is_training):
     # to accumulators if update_accus variables equals 1.
     def update_accus_fn():
       return tf.group([
-          tf.assign_add(accu_mean, mean),
-          tf.assign_add(accu_variance, variance),
-          tf.assign_add(accu_counter, 1),
+          tf.compat.v1.assign_add(accu_mean, mean),
+          tf.compat.v1.assign_add(accu_variance, variance),
+          tf.compat.v1.assign_add(accu_counter, 1),
       ])
+
     dep = tf.cond(
-        tf.equal(update_accus, 1),
-        update_accus_fn,
-        tf.no_op)
+        pred=tf.equal(update_accus, 1),
+        true_fn=update_accus_fn,
+        false_fn=tf.no_op)
     with tf.control_dependencies([dep]):
       return accu_mean / accu_counter, accu_variance / accu_counter

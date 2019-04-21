@@ -93,7 +93,7 @@ def discriminator(input_net, class_num):
     hidden = layers.discriminator_input_hidden(input_net)
 
     output_src = layers.discriminator_output_source(hidden)
-    output_src = tf.layers.flatten(output_src)
+    output_src = tf.compat.v1.layers.flatten(output_src)
     output_src = tf.reduce_mean(input_tensor=output_src, axis=1)
 
     output_cls = layers.discriminator_output_class(hidden, class_num)

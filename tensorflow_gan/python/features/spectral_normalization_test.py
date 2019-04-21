@@ -370,13 +370,16 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     sn_gettr = tfgan.features.spectral_normalization_custom_getter
     output_size = 100
     def generator(x):
-      with tf.variable_scope(
-          'gen', custom_getter=sn_gettr(training=training),
-          reuse=tf.AUTO_REUSE):
-        return tf.layers.dense(
-            x, units=output_size,
-            kernel_initializer=tf.truncated_normal_initializer(),
-            bias_initializer=tf.truncated_normal_initializer())
+      with tf.compat.v1.variable_scope(
+          'gen',
+          custom_getter=sn_gettr(training=training),
+          reuse=tf.compat.v1.AUTO_REUSE):
+        return tf.compat.v1.layers.dense(
+            x,
+            units=output_size,
+            kernel_initializer=tf.compat.v1.truncated_normal_initializer(),
+            bias_initializer=tf.compat.v1.truncated_normal_initializer())
+
     i = tf.random.uniform([1, 10])
     if repeat_type == 'double':
       output1 = generator(i)
@@ -398,7 +401,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
       output1 = tf.expand_dims(outputs[0, 0, :], 0)
       output2 = tf.expand_dims(outputs[1, 0, :], 0)
 
-    with tf.train.MonitoredSession() as sess:
+    with tf.compat.v1.train.MonitoredSession() as sess:
       o1, o2 = sess.run([output1, output2])
     self.assertAllEqual((1, output_size), o1.shape)
     self.assertAllEqual((1, output_size), o2.shape)

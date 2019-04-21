@@ -38,7 +38,7 @@ def _test_generator(input_images):
 
 def _test_discriminator(image_batch, unused_conditioning=None):
   """Simple discriminator function."""
-  return tf.layers.flatten(
+  return tf.compat.v1.layers.flatten(
       image_batch *
       tf.compat.v1.get_variable('dummy_d', initializer=2.0, use_resource=False))
 

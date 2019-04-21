@@ -22,6 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+from tensorflow_gan.python import contrib_utils as contrib
 
 
 __all__ = [
@@ -82,7 +83,7 @@ def instance_norm(inputs,
     ValueError: If the rank of `inputs` is undefined.
     ValueError: If rank or channels dimension of `inputs` is undefined.
   """
-  inputs = tf.convert_to_tensor(inputs)
+  inputs = tf.convert_to_tensor(value=inputs)
   inputs_shape = inputs.shape
   inputs_rank = inputs.shape.ndims
 
@@ -91,7 +92,8 @@ def instance_norm(inputs,
   if data_format not in (DATA_FORMAT_NCHW, DATA_FORMAT_NHWC):
     raise ValueError('data_format has to be either NCHW or NHWC.')
 
-  with tf.variable_scope(scope, 'InstanceNorm', [inputs], reuse=reuse):
+  with tf.compat.v1.variable_scope(
+      scope, 'InstanceNorm', [inputs], reuse=reuse):
     if data_format == DATA_FORMAT_NCHW:
       reduction_axis = 1
       # For NCHW format, rather than relying on implicit broadcasting, we
@@ -116,8 +118,9 @@ def instance_norm(inputs,
     if param_initializers is None:
       param_initializers = {}
     if center:
-      beta_initializer = param_initializers.get('beta', tf.initializers.zeros())
-      beta = tf.get_variable(
+      beta_initializer = param_initializers.get(
+          'beta', tf.compat.v1.initializers.zeros())
+      beta = tf.compat.v1.get_variable(
           name='beta',
           shape=params_shape,
           dtype=dtype,
@@ -126,9 +129,9 @@ def instance_norm(inputs,
       if params_shape_broadcast:
         beta = tf.reshape(beta, params_shape_broadcast)
     if scale:
-      gamma_initializer = param_initializers.get('gamma',
-                                                 tf.initializers.ones())
-      gamma = tf.get_variable(
+      gamma_initializer = param_initializers.get(
+          'gamma', tf.compat.v1.initializers.ones())
+      gamma = tf.compat.v1.get_variable(
           name='gamma',
           shape=params_shape,
           dtype=dtype,
@@ -138,7 +141,8 @@ def instance_norm(inputs,
         gamma = tf.reshape(gamma, params_shape_broadcast)
 
     # Calculate the moments (instance activations).
-    mean, variance = tf.nn.moments(inputs, moments_axes, keep_dims=True)
+    mean, variance = contrib.nn_moments(
+        x=inputs, axes=moments_axes, keepdims=True)
 
     # Compute instance normalization.
     outputs = tf.nn.batch_normalization(
@@ -147,7 +151,7 @@ def instance_norm(inputs,
       outputs = activation_fn(outputs)
 
     if outputs_collections:
-      tf.add_to_collections(outputs_collections, outputs)
+      tf.compat.v1.add_to_collections(outputs_collections, outputs)
 
     return outputs
 
@@ -235,7 +239,7 @@ def group_norm(inputs,
     ValueError: If reduction_axes are not mutually exclusive with channels_axis.
   """
   # TODO(shlens): Support partially defined shapes for the inputs.
-  inputs = tf.convert_to_tensor(inputs)
+  inputs = tf.convert_to_tensor(value=inputs)
 
   if inputs.shape.ndims is None:
     raise ValueError('Inputs %s has undefined rank.' % inputs.name)
@@ -243,7 +247,7 @@ def group_norm(inputs,
     raise ValueError('Axis is out of bounds.')
 
   # Use dynamic shape for not fully defined dimensions in the inputs.
-  dyanmic_shape = tf.shape(inputs)
+  dyanmic_shape = tf.shape(input=inputs)
   input_shape_list = []
   for i, dim in enumerate(inputs.shape):
     if dim.value is None:
@@ -305,7 +309,7 @@ def group_norm(inputs,
     else:
       moments_axes.append(a)
 
-  with tf.variable_scope(scope, 'GroupNorm', [inputs], reuse=reuse):
+  with tf.compat.v1.variable_scope(scope, 'GroupNorm', [inputs], reuse=reuse):
     # Note that the params_shape is the number of channels always.
     params_shape = [channels]
 
@@ -315,8 +319,9 @@ def group_norm(inputs,
     if param_initializers is None:
       param_initializers = {}
     if center:
-      beta_initializer = param_initializers.get('beta', tf.initializers.zeros())
-      beta = tf.get_variable(
+      beta_initializer = param_initializers.get(
+          'beta', tf.compat.v1.initializers.zeros())
+      beta = tf.compat.v1.get_variable(
           name='beta',
           shape=params_shape,
           dtype=dtype,
@@ -325,9 +330,9 @@ def group_norm(inputs,
       beta = tf.reshape(beta, params_shape_broadcast)
 
     if scale:
-      gamma_initializer = param_initializers.get('gamma',
-                                                 tf.initializers.ones())
-      gamma = tf.get_variable(
+      gamma_initializer = param_initializers.get(
+          'gamma', tf.compat.v1.initializers.ones())
+      gamma = tf.compat.v1.get_variable(
           name='gamma',
           shape=params_shape,
           dtype=dtype,
@@ -338,17 +343,18 @@ def group_norm(inputs,
     # Calculate the moments.
     if mean_close_to_zero:
       # One pass algorithm returns better result when mean is close to zero.
-      counts, means_ss, variance_ss, _ = tf.nn.sufficient_statistics(
-          inputs, moments_axes, keep_dims=True)
+      counts, means_ss, variance_ss, _ = contrib.sufficient_statistics(
+          inputs, moments_axes, keepdims=True)
       mean, variance = tf.nn.normalize_moments(
           counts, means_ss, variance_ss, shift=None)
     else:
-      mean, variance = tf.nn.moments(inputs, moments_axes, keep_dims=True)
+      mean, variance = contrib.nn_moments(
+          x=inputs, axes=moments_axes, keepdims=True)
 
     # Compute normalization.
     # TODO(shlens): Fix tf.nn.batch_normalization to handle the 5-D Tensor
     # appropriately so that this operation may be faster.
-    gain = tf.rsqrt(variance + epsilon)
+    gain = tf.math.rsqrt(variance + epsilon)
     offset = -mean * gain
     if gamma is not None:
       gain *= gamma
@@ -364,6 +370,6 @@ def group_norm(inputs,
       outputs = activation_fn(outputs)
 
     if outputs_collections:
-      tf.add_to_collections(outputs_collections, outputs)
+      tf.compat.v1.add_to_collections(outputs_collections, outputs)
 
     return outputs
