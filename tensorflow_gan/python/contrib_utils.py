@@ -165,7 +165,8 @@ def create_train_op(total_loss,
       total_loss,
       variables_to_train,
       gate_gradients=gate_gradients,
-      aggregation_method=aggregation_method)
+      aggregation_method=aggregation_method,
+      colocate_gradients_with_ops=colocate_gradients_with_ops)
 
   if transform_grads_fn:
     grads = transform_grads_fn(grads)
@@ -224,7 +225,6 @@ def add_gradients_summaries(grads_and_vars):
   return summaries
 
 
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def get_static_value(x):
   try:
     return tf.get_static_value(x)
@@ -232,7 +232,6 @@ def get_static_value(x):
     return tf.contrib.util.constant_value(x)
 
 
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def nest_flatten(x):
   try:
     return tf.nest.flatten(x)
@@ -240,7 +239,6 @@ def nest_flatten(x):
     return tf.contrib.framework.nest.flatten(x)
 
 
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def nest_pack_sequence_as(*args, **kwargs):
   try:
     return tf.nest.pack_sequence_as(*args, **kwargs)
@@ -271,6 +269,17 @@ def nn_moments(*args, **kwargs):
 
 
 # TODO(joelshor): Remove this when the last TF 1.x is released.
+def sufficient_statistics(*args, **kwargs):
+  try:
+    return tf.nn.sufficient_statistics(*args, **kwargs)
+  except TypeError:
+    if 'keepdims' in kwargs:
+      kwargs['keep_dims'] = kwargs['keepdims']
+      del kwargs['keepdims']
+    return tf.nn.sufficient_statistics(*args, **kwargs)
+
+
+# TODO(joelshor): Remove this when the last TF 1.x is released.
 def nn_avg_pool2d(*args, **kwargs):
   try:
     return tf.nn.avg_pool2d(*args, **kwargs)
@@ -290,3 +299,19 @@ def batch_to_space(*args, **kwargs):
       kwargs['block_size'] = kwargs['block_shape']
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
+
+
+try:
+  TPUEstimator = tf.compat.v1.estimator.tpu.TPUEstimator
+except AttributeError:
+  TPUEstimator = tf.contrib.tpu.TPUEstimator
+
+try:
+  TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
+except AttributeError:
+  TPUEstimatorSpec = tf.contrib.tpu.TPUEstimatorSpec
+
+try:
+  CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
+except AttributeError:
+  CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer

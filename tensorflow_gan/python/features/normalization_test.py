@@ -30,23 +30,23 @@ from tensorflow_gan.python.features import normalization as norm
 class InstanceNormTest(tf.test.TestCase):
 
   def testUnknownShape(self):
-    inputs = tf.placeholder(tf.float32)
+    inputs = tf.compat.v1.placeholder(tf.float32)
     with self.assertRaisesRegexp(ValueError, 'undefined rank'):
       norm.instance_norm(inputs)
 
   def testBadDataFormat(self):
-    inputs = tf.placeholder(tf.float32, shape=(2, 5, 5))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(2, 5, 5))
     with self.assertRaisesRegexp(ValueError,
                                  'data_format has to be either NCHW or NHWC.'):
       norm.instance_norm(inputs, data_format='NHCW')
 
   def testParamsShapeNotFullyDefinedNCHW(self):
-    inputs = tf.placeholder(tf.float32, shape=(3, None, 4))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(3, None, 4))
     with self.assertRaisesRegexp(ValueError, 'undefined channels dimension'):
       norm.instance_norm(inputs, data_format='NCHW')
 
   def testParamsShapeNotFullyDefinedNHWC(self):
-    inputs = tf.placeholder(tf.float32, shape=(3, 4, None))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(3, 4, None))
     with self.assertRaisesRegexp(ValueError, 'undefined channels dimension'):
       norm.instance_norm(inputs, data_format='NHWC')
 
@@ -103,7 +103,7 @@ class InstanceNormTest(tf.test.TestCase):
     output_train = norm.instance_norm(images, scope='IN')
     output_eval = norm.instance_norm(images, scope='IN', reuse=True)
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       # output_train and output_eval should be the same.
       train_np, eval_np = sess.run([output_train, output_eval])
       self.assertAllClose(train_np, eval_np)
@@ -127,7 +127,7 @@ class InstanceNormTest(tf.test.TestCase):
         output_op = norm.instance_norm(
             inputs, center=False, scale=False, data_format=data_format)
         with self.cached_session() as sess:
-          sess.run(tf.global_variables_initializer())
+          sess.run(tf.compat.v1.global_variables_initializer())
           outputs = sess.run(output_op)
           # Make sure that there are no NaNs
           self.assertFalse(np.isnan(outputs).any())
@@ -166,14 +166,14 @@ class InstanceNormTest(tf.test.TestCase):
 class GroupNormTest(tf.test.TestCase):
 
   def testInvalidGroupSize(self):
-    inputs = tf.placeholder(tf.float32, shape=(5, 2, 10, 10))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(5, 2, 10, 10))
     with self.assertRaisesRegexp(ValueError,
                                  'Invalid groups 10 for 2 channels.'):
       norm.group_norm(
           inputs, groups=10, reduction_axes=[-2, -1], channels_axis=-3)
 
   def testBadCommensurateGroup(self):
-    inputs = tf.placeholder(tf.float32, shape=(5, 4, 10, 10))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(5, 4, 10, 10))
     with self.assertRaisesRegexp(ValueError,
                                  '4 channels is not commensurate with '
                                  '3 groups.'):
@@ -181,7 +181,7 @@ class GroupNormTest(tf.test.TestCase):
           inputs, groups=3, reduction_axes=[-2, -1], channels_axis=-3)
 
   def testAxisIsBad(self):
-    inputs = tf.placeholder(tf.float32, shape=(1, 2, 4, 5))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 2, 4, 5))
     with self.assertRaisesRegexp(ValueError,
                                  'Axis is out of bounds.'):
       norm.group_norm(inputs, channels_axis=5)
@@ -190,7 +190,7 @@ class GroupNormTest(tf.test.TestCase):
       norm.group_norm(inputs, reduction_axes=[1, 5])
 
   def testNotMutuallyExclusiveAxis(self):
-    inputs = tf.placeholder(tf.float32, shape=(10, 32, 32, 32))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(10, 32, 32, 32))
     # Specify axis with negative values.
     with self.assertRaisesRegexp(ValueError, 'mutually exclusive'):
       norm.group_norm(inputs, channels_axis=-2, reduction_axes=[-2])
@@ -202,23 +202,24 @@ class GroupNormTest(tf.test.TestCase):
       norm.group_norm(inputs, channels_axis=-2, reduction_axes=[2])
 
   def testUnknownShape(self):
-    inputs = tf.placeholder(tf.float32)
+    inputs = tf.compat.v1.placeholder(tf.float32)
     with self.assertRaisesRegexp(ValueError, 'undefined rank'):
       norm.group_norm(inputs)
 
   def testParamsShapeNotFullyDefinedReductionAxes(self):
-    inputs = tf.placeholder(tf.float32, shape=(1, 32, None, 4))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 32, None, 4))
     with self.assertRaisesRegexp(ValueError, 'undefined dimensions'):
       norm.group_norm(inputs)
 
   def testParamsShapeNotFullyDefinedChannelsAxis(self):
-    inputs = tf.placeholder(tf.float32, shape=(1, 3, 4, None))
+    inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 3, 4, None))
     with self.assertRaisesRegexp(ValueError, 'undefined channel dimension'):
       norm.group_norm(inputs, channels_axis=-1, reduction_axes=[-3, -2])
 
   def testParamsShapeNotFullyDefinedBatchAxis(self):
     height, width, groups = 3, 3, 4
-    inputs = tf.placeholder(tf.float32, shape=(None, height, width, 2 * groups))
+    inputs = tf.compat.v1.placeholder(
+        tf.float32, shape=(None, height, width, 2 * groups))
     output = norm.group_norm(
         inputs, channels_axis=-1, reduction_axes=[-3, -2], groups=groups)
     self.assertListEqual([None, height, width, 2 * groups],
@@ -298,7 +299,7 @@ class GroupNormTest(tf.test.TestCase):
     output_train = norm.group_norm(images, groups=2, scope='IN')
     output_eval = norm.group_norm(images, groups=2, scope='IN', reuse=True)
     with self.cached_session() as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       # output_train and output_eval should be the same.
       train_np, eval_np = sess.run([output_train, output_eval])
       self.assertAllClose(train_np, eval_np)
@@ -360,7 +361,7 @@ class GroupNormTest(tf.test.TestCase):
             reduction_axes=reduction_axes,
             mean_close_to_zero=mean_close_to_zero)
         with self.cached_session() as sess:
-          sess.run(tf.global_variables_initializer())
+          sess.run(tf.compat.v1.global_variables_initializer())
           outputs = sess.run(output_op)
           # Make sure that there are no NaNs
           self.assertFalse(np.isnan(outputs).any())
