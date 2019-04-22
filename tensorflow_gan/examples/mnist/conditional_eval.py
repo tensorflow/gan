@@ -25,6 +25,7 @@ from absl import flags
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
+from tensorflow_gan.examples import evaluation_helper as evaluation
 from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
@@ -92,11 +93,11 @@ def main(_, run_eval_loop=True):
   # For unit testing, use `run_eval_loop=False`.
   if not run_eval_loop:
     return
-  tf.contrib.training.evaluate_repeatedly(
+  evaluation.evaluate_repeatedly(
       FLAGS.checkpoint_dir,
       hooks=[
-          tf.contrib.training.SummaryAtEndHook(FLAGS.eval_dir),
-          tf.contrib.training.StopAfterNEvalsHook(1)
+          evaluation.SummaryAtEndHook(FLAGS.eval_dir),
+          evaluation.StopAfterNEvalsHook(1)
       ],
       eval_ops=image_write_ops,
       max_number_of_evaluations=FLAGS.max_number_of_evaluations)
