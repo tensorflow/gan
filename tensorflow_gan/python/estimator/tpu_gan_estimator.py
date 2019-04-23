@@ -39,7 +39,7 @@ LossFns = collections.namedtuple('_loss_fns', ['g_loss_fn', 'd_loss_fn'])
 Optimizers = collections.namedtuple('Optimizers', ['gopt', 'dopt'])
 
 
-class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
+class TPUGANEstimator(contrib.TPUEstimator):
   """An estimator for Generative Adversarial Networks (GANs) on TPU.
 
   This Estimator is backed by TFGAN. It is similar to `tfgan.GANEstimator`,
@@ -267,7 +267,7 @@ class TPUGANEstimator(tf.contrib.tpu.TPUEstimator):
             add_summaries=summary_types)
       else:  # predict
         estimator_spec = get_predict_estimator_spec(gan_model_fns)
-      assert isinstance(estimator_spec, tf.contrib.tpu.TPUEstimatorSpec)
+      assert isinstance(estimator_spec, contrib.TPUEstimatorSpec)
 
       return estimator_spec
 
@@ -418,7 +418,7 @@ def get_train_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       gan_model_fns, loss_fns, gan_loss_kwargs, optimizers, joint_train,
       gan_train_steps, add_summaries)
 
-  return tf.contrib.tpu.TPUEstimatorSpec(
+  return contrib.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.TRAIN, loss=scalar_loss, train_op=tpu_train_op)
 
 
@@ -483,7 +483,7 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       loss_collection=None,
       reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
-  return tf.contrib.tpu.TPUEstimatorSpec(
+  return contrib.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=_predictions_from_generator_output(gan_model.generated_data),
       loss=scalar_loss,
@@ -498,9 +498,8 @@ def get_predict_estimator_spec(gan_model_fns):
   gan_model = gan_model_fns[0]()
 
   preds = _predictions_from_generator_output(gan_model.generated_data)
-  return tf.contrib.tpu.TPUEstimatorSpec(
-      mode=tf.estimator.ModeKeys.PREDICT,
-      predictions={'generated_data': preds})
+  return contrib.TPUEstimatorSpec(
+      mode=tf.estimator.ModeKeys.PREDICT, predictions={'generated_data': preds})
 
 
 def _get_loss_for_train(gan_model, loss_fns, gan_loss_kwargs, add_summaries):
@@ -605,7 +604,7 @@ def _get_train_op(gan_model_fns, loss_fns, gan_loss_kwargs, optimizers,
         prev_op = gen_train_op(gan_model, gan_loss)
 
   with tf.control_dependencies([prev_op]):
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.compat.v1.train.get_or_create_global_step()
     train_op = global_step.assign_add(1)
 
   return train_op, scalar_loss
@@ -623,8 +622,8 @@ def _maybe_construct_optimizers(optimizers):
 def _maybe_make_cross_shard_optimizers(optimizers):
   def _maybe_make_cross_shard_optimizer(opt):
     assert not callable(optimizers.gopt)
-    if not isinstance(opt, tf.contrib.tpu.CrossShardOptimizer):
-      return tf.contrib.tpu.CrossShardOptimizer(opt)
+    if not isinstance(opt, contrib.CrossShardOptimizer):
+      return contrib.CrossShardOptimizer(opt)
     else:
       return opt
 
