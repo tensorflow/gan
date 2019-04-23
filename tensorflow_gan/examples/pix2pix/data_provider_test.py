@@ -24,7 +24,7 @@ import numpy as np
 
 import tensorflow as tf
 
-from tensorflow_gan.examples.image_compression import data_provider
+from tensorflow_gan.examples.pix2pix import data_provider
 
 mock = tf.compat.v1.test.mock
 

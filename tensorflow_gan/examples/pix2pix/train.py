@@ -23,7 +23,7 @@ from absl import flags
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-from tensorflow_gan.examples.image_compression import data_provider
+from tensorflow_gan.examples.pix2pix import data_provider
 from tensorflow_gan.examples.pix2pix import networks
 
 # ML Hyperparameters.
