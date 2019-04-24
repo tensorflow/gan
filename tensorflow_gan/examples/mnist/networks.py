@@ -27,6 +27,29 @@ ds = tfp.distributions
 layers = tf.contrib.layers
 
 
+def _dense(inputs, units, l2_weight):
+  return tf.layers.dense(
+      inputs, units, use_bias=False,
+      kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
+
+
+def _batch_norm(inputs, is_training):
+  return tf.layers.batch_normalization(
+      inputs, momentum=0.999, epsilon=0.001, training=is_training)
+
+
+def _deconv2d(inputs, filters, kernel_size, stride, l2_weight):
+  return tf.layers.conv2d_transpose(
+      inputs, filters, kernel_size, strides=stride, padding='same',
+      kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
+
+
+def _conv2d(inputs, filters, kernel_size, stride, l2_weight):
+  return tf.layers.conv2d(
+      inputs, filters, kernel_size, strides=stride, padding='same',
+      kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
+
+
 def _generator_helper(
     noise, is_conditional, one_hot_labels, weight_decay, is_training):
   """Core MNIST generator.
@@ -46,25 +69,35 @@ def _generator_helper(
   Returns:
     A generated image in the range [-1, 1].
   """
-  with tf.contrib.framework.arg_scope(
-      [layers.fully_connected, layers.conv2d_transpose],
-      activation_fn=tf.nn.relu, normalizer_fn=layers.batch_norm,
-      weights_regularizer=layers.l2_regularizer(weight_decay)):
-    with tf.contrib.framework.arg_scope(
-        [layers.batch_norm], is_training=is_training):
-      net = layers.fully_connected(noise, 1024)
-      if is_conditional:
-        net = tfgan.features.condition_tensor_from_onehot(net, one_hot_labels)
-      net = layers.fully_connected(net, 7 * 7 * 128)
-      net = tf.reshape(net, [-1, 7, 7, 128])
-      net = layers.conv2d_transpose(net, 64, [4, 4], stride=2)
-      net = layers.conv2d_transpose(net, 32, [4, 4], stride=2)
-      # Make sure that generator output is in the same range as `inputs`
-      # ie [-1, 1].
-      net = layers.conv2d(
-          net, 1, [4, 4], normalizer_fn=None, activation_fn=tf.tanh)
+  net = _dense(noise, 1024, weight_decay)
+  net = _batch_norm(net, is_training)
+  net = tf.nn.relu(net)
 
-      return net
+  if is_conditional:
+    net = tfgan.features.condition_tensor_from_onehot(net, one_hot_labels)
+
+  net = _dense(net, 7 * 7 * 128, weight_decay)
+  net = _batch_norm(net, is_training)
+  net = tf.nn.relu(net)
+
+  net = tf.reshape(net, [-1, 7, 7, 128])
+
+  net = _deconv2d(net, 64, 4, 2, weight_decay)
+  net = _batch_norm(net, is_training)
+  net = tf.nn.relu(net)
+
+  net = _deconv2d(net, 32, 4, 2, weight_decay)
+  net = _batch_norm(net, is_training)
+  net = tf.nn.relu(net)
+
+  # Output should have 1 pixel (grayscale).
+  net = _conv2d(net, 1, 4, 1, weight_decay)
+
+  # Make sure that generator output is in the same range as `inputs`
+  # ie [-1, 1].
+  net = tf.tanh(net)
+
+  return net
 
 
 def unconditional_generator(noise, weight_decay=2.5e-5, is_training=True):
