@@ -193,39 +193,5 @@ class MnistCrossEntropyTest(tf.test.TestCase):
       self.assertNear(xent1.eval(), xent2.eval(), 1e-5)
 
 
-class GetNoiseTest(tf.test.TestCase):
-
-  def test_get_noise_categorical_syntax(self):
-    util.get_eval_noise_categorical(
-        noise_samples=4,
-        categorical_sample_points=np.arange(0, 10),
-        continuous_sample_points=np.linspace(-2.0, 2.0, 10),
-        unstructured_noise_dims=62,
-        continuous_noise_dims=2)
-
-  def test_get_noise_continuous_dim1_syntax(self):
-    util.get_eval_noise_continuous_dim1(
-        noise_samples=4,
-        categorical_sample_points=np.arange(0, 10),
-        continuous_sample_points=np.linspace(-2.0, 2.0, 10),
-        unstructured_noise_dims=62,
-        continuous_noise_dims=2)
-
-  def test_get_noise_continuous_dim2_syntax(self):
-    util.get_eval_noise_continuous_dim2(
-        noise_samples=4,
-        categorical_sample_points=np.arange(0, 10),
-        continuous_sample_points=np.linspace(-2.0, 2.0, 10),
-        unstructured_noise_dims=62,
-        continuous_noise_dims=2)
-
-  def test_get_infogan_syntax(self):
-    util.get_infogan_noise(
-        batch_size=4,
-        categorical_dim=10,
-        structured_continuous_dim=3,
-        total_continuous_noise_dims=62)
-
-
 if __name__ == '__main__':
   tf.test.main()

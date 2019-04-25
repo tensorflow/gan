@@ -16,7 +16,6 @@
 #
 #   unconditional: CPU: 800  steps, ~10 min   GPU: 800  steps, ~1 min
 #   conditional:   CPU: 2000 steps, ~20 min   GPU: 2000 steps, ~2 min
-#   infogan:       CPU: 3000 steps, ~20 min   GPU: 3000 steps, ~6 min
 #
 # Usage:
 # cd models/research/gan/mnist
@@ -115,29 +114,4 @@ if [[ "$gan_type" == "conditional" ]]; then
     --classifier_filename=${FROZEN_GRAPH} \
     --max_number_of_evaluations=1
   Banner "Finished conditional evaluation. See ${CONDITIONAL_EVAL_DIR} for output images."
-fi
-
-# Run InfoGAN.
-if [[ "$gan_type" == "infogan" ]]; then
-  INFOGAN_TRAIN_DIR="${TRAIN_DIR}/infogan"
-  INFOGAN_EVAL_DIR="${EVAL_DIR}/infogan"
-  NUM_STEPS=3000
-  # Run training.
-  Banner "Starting training infogan GAN for ${NUM_STEPS} steps..."
-  python "${git_repo}/research/gan/mnist/train.py" \
-    --train_log_dir=${INFOGAN_TRAIN_DIR} \
-    --dataset_dir=${DATASET_DIR} \
-    --max_number_of_steps=${NUM_STEPS} \
-    --gan_type="infogan" \
-    --alsologtostderr
-  Banner "Finished training InfoGAN ${NUM_STEPS} steps."
-
-  # Run evaluation.
-  Banner "Starting evaluation of infogan..."
-  python "${git_repo}/research/gan/mnist/infogan_eval.py" \
-    --checkpoint_dir=${INFOGAN_TRAIN_DIR} \
-    --eval_dir=${INFOGAN_EVAL_DIR} \
-    --classifier_filename=${FROZEN_GRAPH} \
-    --max_number_of_evaluations=1
-  Banner "Finished InfoGAN evaluation. See ${INFOGAN_EVAL_DIR} for output images."
 fi

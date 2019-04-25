@@ -52,8 +52,7 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
     train.main(None)
 
   @parameterized.named_parameters(('Unconditional', 'unconditional'),
-                                  ('Conditional', 'conditional'),
-                                  ('InfoGAN', 'infogan'))
+                                  ('Conditional', 'conditional'))
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_build_graph(self, gan_type, mock_data_provider):
     FLAGS.max_number_of_steps = 0
