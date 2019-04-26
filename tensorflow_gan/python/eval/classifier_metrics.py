@@ -186,7 +186,7 @@ def kl_divergence(p, p_logits, q):
 
 def get_graph_def_from_disk(filename):
   """Get a GraphDef proto from a disk location."""
-  with tf.compat.v1.gfile.FastGFile(filename, 'rb') as f:
+  with tf.compat.v1.gfile.GFile(filename, 'rb') as f:
     return tf.compat.v1.GraphDef.FromString(f.read())
 
 
