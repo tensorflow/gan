@@ -22,7 +22,7 @@ from __future__ import print_function
 from six.moves import range
 import tensorflow as tf
 
-from tensorflow.contrib.tpu.python.tpu import tpu_function
+from tensorflow_gan.python import contrib_utils
 
 __all__ = [
     'cross_replica_mean',
@@ -32,7 +32,7 @@ __all__ = [
 
 def cross_replica_mean(inputs, group_size=None):
   """Calculates the average value of inputs tensor across TPU replicas."""
-  num_replicas = tpu_function.get_tpu_context().number_of_shards
+  num_replicas = contrib_utils.tpu_function.get_tpu_context().number_of_shards
   if not group_size:
     group_size = num_replicas
   if group_size == 1:

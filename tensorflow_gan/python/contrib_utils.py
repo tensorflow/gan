@@ -315,3 +315,10 @@ try:
   CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
 except AttributeError:
   CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer
+
+# pylint:disable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
+try:
+  from tensorflow.python.tpu import tpu_function
+except ImportError:
+  from tensorflow.contrib.tpu.python.tpu import tpu_function
+# pylint:enable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
