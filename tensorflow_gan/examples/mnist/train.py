@@ -84,10 +84,7 @@ def main(_):
   # Get the GANLoss tuple. You can pass a custom function, use one of the
   # already-implemented losses from the losses library, or use the defaults.
   with tf.compat.v1.name_scope('loss'):
-    gan_loss = tfgan.gan_loss(
-        gan_model,
-        gradient_penalty_weight=1.0,
-        add_summaries=True)
+    gan_loss = tfgan.gan_loss(gan_model, add_summaries=True)
     tfgan.eval.add_regularization_loss_summaries(gan_model)
 
   # Get the GANTrain ops using custom optimizers.
