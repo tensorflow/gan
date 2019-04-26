@@ -608,7 +608,7 @@ def gan_loss(
     tensor_pool_fn: A function that takes (generated_data, generator_inputs),
       stores them in an internal pool and returns previous stored
       (generated_data, generator_inputs). For example
-      `tf.gan.features.tensor_pool`. Defaults to None (not using tensor pool).
+      `tfgan.features.tensor_pool`. Defaults to None (not using tensor pool).
     reduction: A `tf.losses.Reduction` to apply to loss, if the loss takes an
       argument called `reduction`. Otherwise, this is ignored.
     add_summaries: Whether or not to add summaries for the losses.
