@@ -26,7 +26,6 @@ import tensorflow as tf
 from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python.tpu.cross_replica_ops import cross_replica_moments
 
-from tensorflow.contrib.tpu.python.tpu import tpu_function
 from tensorflow.python.training import moving_averages  # pylint: disable=g-direct-tensorflow-import
 
 
@@ -179,7 +178,7 @@ def standardize_batch(inputs,
   if use_cross_replica_mean is None:
     # Default to global batch norm only on TPUs.
     use_cross_replica_mean = (
-        tpu_function.get_tpu_context().number_of_shards is not None)
+        contrib.tpu_function.get_tpu_context().number_of_shards is not None)
     logging.debug('Automatically determined use_cross_replica_mean=%s.',
                   use_cross_replica_mean)
 
