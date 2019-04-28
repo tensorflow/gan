@@ -52,7 +52,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
   Args:
     w_tensor: The weight matrix whose spectral norm should be computed.
     power_iteration_rounds: The number of iterations of the power method to
-      perform. A higher number yeilds a better approximation.
+      perform. A higher number yields a better approximation.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
       the graph during evaluation.
@@ -112,7 +112,7 @@ def spectral_normalize(w, power_iteration_rounds=1, training=True,
   Args:
     w: The weight matrix to be normalized.
     power_iteration_rounds: The number of iterations of the power method to
-      perform. A higher number yeilds a better approximation.
+      perform. A higher number yields a better approximation.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
       the graph during evaluation.
@@ -141,7 +141,7 @@ def spectral_norm_regularizer(scale, power_iteration_rounds=1,
   Args:
     scale: A scalar multiplier. 0.0 disables the regularizer.
     power_iteration_rounds: The number of iterations of the power method to
-      perform. A higher number yeilds a better approximation.
+      perform. A higher number yields a better approximation.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
       the graph during evaluation.
@@ -248,7 +248,7 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     name_filter: Optionally, a method that takes a Variable name as input and
       returns whether this Variable should be normalized.
     power_iteration_rounds: The number of iterations of the power method to
-      perform per step. A higher number yeilds a better approximation of the
+      perform per step. A higher number yields a better approximation of the
       true spectral norm.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
