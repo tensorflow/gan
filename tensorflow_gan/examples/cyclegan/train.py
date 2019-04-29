@@ -24,7 +24,7 @@ import tensorflow as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cyclegan import data_provider
-from tensorflow_gan.examples.pix2pix import networks
+from tensorflow_gan.examples.cyclegan import networks
 
 flags.DEFINE_string('image_set_x_file_pattern', None,
                     'File pattern of images in image set X')

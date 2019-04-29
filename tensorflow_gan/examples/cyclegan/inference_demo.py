@@ -28,7 +28,7 @@ import PIL
 import tensorflow as tf
 
 from tensorflow_gan.examples.cyclegan import data_provider
-from tensorflow_gan.examples.pix2pix import networks
+from tensorflow_gan.examples.cyclegan import networks
 
 flags.DEFINE_string(
     'checkpoint_path', '', 'CycleGAN checkpoint path created by train.py. '

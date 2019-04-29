@@ -20,10 +20,10 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_gan.examples.pix2pix import networks
+from tensorflow_gan.examples.cyclegan import networks
 
 
-class Pix2PixTest(tf.test.TestCase):
+class NetworksTest(tf.test.TestCase):
 
   def test_generator_run(self):
     img_batch = tf.zeros([3, 128, 128, 3])
