@@ -79,9 +79,7 @@ def mnist_frechet_distance(real_images,
   """Frechet distance between real and generated images.
 
   This technique is described in detail in https://arxiv.org/abs/1706.08500.
-  Please see TFGAN for implementation details
-  (https://github.com/tensorflow/tensorflow/blob/master/tensorflow/contrib/gan/
-  python/eval/python/classifier_metrics_impl.py).
+  Please see TF-GAN for implementation details.
 
   Args:
     real_images: Real images to use to compute Frechet Inception distance.
