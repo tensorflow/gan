@@ -454,7 +454,7 @@ def wasserstein_gradient_penalty(
     alpha = tf.random.uniform(shape=alpha_shape)
     interpolates = real_data + (alpha * differences)
 
-    with tf.name_scope(None):  # Clear scope so update ops are added properly.
+    with tf.name_scope(''):  # Clear scope so update ops are added properly.
       # Reuse variables if variables already exists.
       with tf.compat.v1.variable_scope(
           discriminator_scope, 'gpenalty_dscope',

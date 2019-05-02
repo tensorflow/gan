@@ -398,7 +398,7 @@ def _maybe_add_summaries(gan_model, add_summaries):
   if add_summaries:
     if not isinstance(add_summaries, (tuple, list)):
       add_summaries = [add_summaries]
-    with tf.name_scope(None):
+    with tf.name_scope(''):  # Clear name scope.
       for summary_type in add_summaries:
         gan_estimator.summary_type_map[summary_type](gan_model)
 
