@@ -30,22 +30,31 @@ from tensorflow_gan.python.features import normalization as norm
 class InstanceNormTest(tf.test.TestCase):
 
   def testUnknownShape(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32)
     with self.assertRaisesRegexp(ValueError, 'undefined rank'):
       norm.instance_norm(inputs)
 
   def testBadDataFormat(self):
-    inputs = tf.compat.v1.placeholder(tf.float32, shape=(2, 5, 5))
+    inputs = tf.zeros((2, 5, 5), dtype=tf.float32)
     with self.assertRaisesRegexp(ValueError,
                                  'data_format has to be either NCHW or NHWC.'):
       norm.instance_norm(inputs, data_format='NHCW')
 
   def testParamsShapeNotFullyDefinedNCHW(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=(3, None, 4))
     with self.assertRaisesRegexp(ValueError, 'undefined channels dimension'):
       norm.instance_norm(inputs, data_format='NCHW')
 
   def testParamsShapeNotFullyDefinedNHWC(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=(3, 4, None))
     with self.assertRaisesRegexp(ValueError, 'undefined channels dimension'):
       norm.instance_norm(inputs, data_format='NHWC')
@@ -166,14 +175,14 @@ class InstanceNormTest(tf.test.TestCase):
 class GroupNormTest(tf.test.TestCase):
 
   def testInvalidGroupSize(self):
-    inputs = tf.compat.v1.placeholder(tf.float32, shape=(5, 2, 10, 10))
+    inputs = tf.zeros((5, 2, 10, 10), dtype=tf.float32)
     with self.assertRaisesRegexp(ValueError,
                                  'Invalid groups 10 for 2 channels.'):
       norm.group_norm(
           inputs, groups=10, reduction_axes=[-2, -1], channels_axis=-3)
 
   def testBadCommensurateGroup(self):
-    inputs = tf.compat.v1.placeholder(tf.float32, shape=(5, 4, 10, 10))
+    inputs = tf.zeros((5, 4, 10, 10), dtype=tf.float32)
     with self.assertRaisesRegexp(ValueError,
                                  '4 channels is not commensurate with '
                                  '3 groups.'):
@@ -181,7 +190,7 @@ class GroupNormTest(tf.test.TestCase):
           inputs, groups=3, reduction_axes=[-2, -1], channels_axis=-3)
 
   def testAxisIsBad(self):
-    inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 2, 4, 5))
+    inputs = tf.zeros((1, 2, 4, 5), dtype=tf.float32)
     with self.assertRaisesRegexp(ValueError,
                                  'Axis is out of bounds.'):
       norm.group_norm(inputs, channels_axis=5)
@@ -190,7 +199,7 @@ class GroupNormTest(tf.test.TestCase):
       norm.group_norm(inputs, reduction_axes=[1, 5])
 
   def testNotMutuallyExclusiveAxis(self):
-    inputs = tf.compat.v1.placeholder(tf.float32, shape=(10, 32, 32, 32))
+    inputs = tf.zeros((10, 32, 32, 32), dtype=tf.float32)
     # Specify axis with negative values.
     with self.assertRaisesRegexp(ValueError, 'mutually exclusive'):
       norm.group_norm(inputs, channels_axis=-2, reduction_axes=[-2])
@@ -202,21 +211,33 @@ class GroupNormTest(tf.test.TestCase):
       norm.group_norm(inputs, channels_axis=-2, reduction_axes=[2])
 
   def testUnknownShape(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32)
     with self.assertRaisesRegexp(ValueError, 'undefined rank'):
       norm.group_norm(inputs)
 
   def testParamsShapeNotFullyDefinedReductionAxes(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 32, None, 4))
     with self.assertRaisesRegexp(ValueError, 'undefined dimensions'):
       norm.group_norm(inputs)
 
   def testParamsShapeNotFullyDefinedChannelsAxis(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 3, 4, None))
     with self.assertRaisesRegexp(ValueError, 'undefined channel dimension'):
       norm.group_norm(inputs, channels_axis=-1, reduction_axes=[-3, -2])
 
   def testParamsShapeNotFullyDefinedBatchAxis(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     height, width, groups = 3, 3, 4
     inputs = tf.compat.v1.placeholder(
         tf.float32, shape=(None, height, width, 2 * groups))

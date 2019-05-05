@@ -29,16 +29,19 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_pool_unknown_input_shape(self):
     """Checks that `input_value` can have unknown shape."""
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     input_value = tf.compat.v1.placeholder(
         dtype=tf.int32, shape=[None, None, 3])
     output_value = tfgan.features.tensor_pool(input_value, pool_size=10)
     self.assertEqual(output_value.shape.as_list(), [None, None, 3])
 
-    with self.session(use_gpu=True) as session:
+    with self.cached_session() as sess:
       for i in range(10):
-        session.run(output_value, {input_value: [[[i] * 3]]})
-        session.run(output_value, {input_value: [[[i] * 3] * 2]})
-        session.run(output_value, {input_value: [[[i] * 3] * 5] * 2})
+        sess.run(output_value, {input_value: [[[i] * 3]]})
+        sess.run(output_value, {input_value: [[[i] * 3] * 2]})
+        sess.run(output_value, {input_value: [[[i] * 3] * 5] * 2})
 
   def test_pool_sequence(self):
     """Checks that values are pooled and returned maximally twice."""
@@ -46,7 +49,7 @@ class TensorPoolTest(tf.test.TestCase):
     output_value = tfgan.features.tensor_pool(input_value, pool_size=10)
     self.assertEqual(output_value.shape.as_list(), [])
 
-    with self.session(use_gpu=True) as session:
+    with self.cached_session() as session:
       outs = []
       for i in range(50):
         out = session.run(output_value, {input_value: i})
@@ -59,18 +62,24 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_never_pool(self):
     """Checks that setting `pooling_probability` to zero works."""
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     output_value = tfgan.features.tensor_pool(
         input_value, pool_size=10, pooling_probability=0.0)
     self.assertEqual(output_value.shape.as_list(), [])
 
-    with self.session(use_gpu=True) as session:
+    with self.cached_session() as session:
       for i in range(50):
         out = session.run(output_value, {input_value: i})
         self.assertEqual(out, i)
 
   def test_pooling_probability(self):
     """Checks that `pooling_probability` works."""
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     pool_size = 10
     pooling_probability = 0.2
@@ -80,7 +89,7 @@ class TensorPoolTest(tf.test.TestCase):
         pooling_probability=pooling_probability)
     self.assertEqual(output_value.shape.as_list(), [])
 
-    with self.session(use_gpu=True) as session:
+    with self.cached_session() as session:
       not_pooled = 0
       total = 1000
       for i in range(total):
@@ -94,6 +103,9 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_input_values_tuple(self):
     """Checks that `input_values` can be a tuple."""
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     input_values = (tf.compat.v1.placeholder(dtype=tf.int32, shape=[]),
                     tf.compat.v1.placeholder(dtype=tf.int32, shape=[]))
     output_values = tfgan.features.tensor_pool(input_values, pool_size=3)
@@ -101,7 +113,7 @@ class TensorPoolTest(tf.test.TestCase):
     for output_value in output_values:
       self.assertEqual(output_value.shape.as_list(), [])
 
-    with self.session(use_gpu=True) as session:
+    with self.cached_session() as session:
       for i in range(10):
         outs = session.run(output_values, {
             input_values[0]: i,

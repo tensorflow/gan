@@ -28,7 +28,7 @@ class NetworksTest(tf.test.TestCase):
   def test_generator_run(self):
     img_batch = tf.zeros([3, 128, 128, 3])
     model_output = networks.generator(img_batch)
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(model_output)
 
@@ -41,6 +41,9 @@ class NetworksTest(tf.test.TestCase):
       self.assertAllEqual(shape + [3], output_imgs.shape.as_list())
 
   def test_generator_graph_unknown_batch_dim(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution.
+      return
     img = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
     output_imgs = networks.generator(img)
 
@@ -53,11 +56,14 @@ class NetworksTest(tf.test.TestCase):
   def test_generator_run_multi_channel(self):
     img_batch = tf.zeros([3, 128, 128, 5])
     model_output = networks.generator(img_batch)
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_invalid_channels(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution.
+      return
     with self.assertRaisesRegexp(
         ValueError, 'Last dimension shape must be known but is None'):
       img = tf.compat.v1.placeholder(tf.float32, shape=[4, 32, 32, None])
@@ -66,7 +72,7 @@ class NetworksTest(tf.test.TestCase):
   def test_discriminator_run(self):
     img_batch = tf.zeros([3, 70, 70, 3])
     disc_output = networks.discriminator(img_batch)
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(disc_output)
 

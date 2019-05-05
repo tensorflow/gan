@@ -21,7 +21,6 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
-from tensorflow.python import tf2  # pylint:disable=g-direct-tensorflow-import
 
 
 class ConditioningUtilsTest(tf.test.TestCase):
@@ -34,8 +33,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
             tf.zeros(conditioning_shape, tf.float32))
 
   def test_condition_tensor_not_fully_defined(self):
-    if tf2.enabled():
-      # Placeholders don't exist in TF 2.0.
+    if tf.executing_eagerly():
       return
     for conditioning_shape in [(4, 1), (4, 8), (4, 5, 3)]:
       tfgan.features.condition_tensor(
@@ -54,8 +52,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
           tf.zeros((5), tf.float32))
 
   def test_condition_tensor_asserts_notfullydefined(self):
-    if int(tf.__version__.split('.')[0]) > 1:
-      # Placeholders don't exist in TF 2.0.
+    if tf.executing_eagerly():
       return
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor(
@@ -79,8 +76,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
           tf.zeros((4, 6), tf.float32))
 
   def test_condition_tensor_from_onehot_asserts_notfullydefined(self):
-    if tf2.enabled():
-      # Placeholders don't exist in TF 2.0.
+    if tf.executing_eagerly():
       return
     with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor_from_onehot(

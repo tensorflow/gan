@@ -211,9 +211,10 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_invalid_input(self):
     # Reference batch has unknown dimensions.
-    with self.assertRaisesRegexp(ValueError,
-                                 '`reference_batch` has unknown dimensions.'):
-      vbn_lib.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
+    if not tf.executing_eagerly():
+      with self.assertRaisesRegexp(ValueError,
+                                   '`reference_batch` has unknown dimensions.'):
+        vbn_lib.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
 
     # Axis too negative.
     with self.assertRaisesRegexp(ValueError,

@@ -58,23 +58,35 @@ class NetworksTest(tf.test.TestCase):
     self.assertEqual(networks.min_total_num_images(7, 8, 4), 52)
 
   def test_compute_progress(self):
-    current_image_id_ph = tf.placeholder(tf.int32, [])
-    progress = networks.compute_progress(
-        current_image_id_ph,
-        stable_stage_num_images=7,
-        transition_stage_num_images=8,
-        num_blocks=2)
-    with self.test_session(use_gpu=True) as sess:
-      progress_output = [
-          sess.run(progress, feed_dict={current_image_id_ph: current_image_id})
-          for current_image_id in [0, 3, 6, 7, 8, 10, 15, 29, 100]
-      ]
+    if tf.executing_eagerly():
+      progress_output = []
+      for current_image_id in [0, 3, 6, 7, 8, 10, 15, 29, 100]:
+        progress = networks.compute_progress(
+            current_image_id,
+            stable_stage_num_images=7,
+            transition_stage_num_images=8,
+            num_blocks=2)
+        with self.cached_session(use_gpu=True) as sess:
+          progress_output.append(sess.run(progress))
+    else:
+      current_image_id_ph = tf.placeholder(tf.int32, [])
+      progress = networks.compute_progress(
+          current_image_id_ph,
+          stable_stage_num_images=7,
+          transition_stage_num_images=8,
+          num_blocks=2)
+      with self.cached_session(use_gpu=True) as sess:
+        progress_output = [
+            sess.run(progress, feed_dict={current_image_id_ph: cur_image_id})
+            for cur_image_id in [0, 3, 6, 7, 8, 10, 15, 29, 100]
+        ]
+
     self.assertArrayNear(progress_output,
                          [0.0, 0.0, 0.0, 0.0, 0.125, 0.375, 1.0, 1.0, 1.0],
                          1.0e-6)
 
   def test_generator_alpha(self):
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       alpha_fixed_block_id = [
           sess.run(
               networks._generator_alpha(2, tf.constant(progress, tf.float32)))
@@ -91,7 +103,7 @@ class NetworksTest(tf.test.TestCase):
     self.assertArrayNear(alpha_fixed_progress, [0, 0.8, 0.2, 0], 1.0e-6)
 
   def test_discriminator_alpha(self):
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       alpha_fixed_block_id = [
           sess.run(
               networks._discriminator_alpha(2, tf.constant(
@@ -117,7 +129,7 @@ class NetworksTest(tf.test.TestCase):
         resolution_schedule=networks.ResolutionSchedule(
             scale_base=2, num_resolutions=2),
         num_blocks=2)
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       x_blend_np = sess.run(x_blend)
       x_blend_expected_np = sess.run(layers.upscale(layers.downscale(x, 2), 2))
     self.assertNDArrayNear(x_blend_np, x_blend_expected_np, 1.0e-6)
@@ -131,7 +143,7 @@ class NetworksTest(tf.test.TestCase):
         resolution_schedule=networks.ResolutionSchedule(
             scale_base=2, num_resolutions=2),
         num_blocks=2)
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       x_blend_np = sess.run(x_blend)
       x_blend_expected_np = 0.8 * sess.run(
           layers.upscale(layers.downscale(x, 2), 2)) + 0.2 * x_np
@@ -167,7 +179,7 @@ class NetworksTest(tf.test.TestCase):
     ]
 
     grad_norms_output = None
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
       x1_np = sess.run(x, feed_dict={current_image_id_ph: 0.12})
       x2_np = sess.run(x, feed_dict={current_image_id_ph: 1.8})
@@ -220,7 +232,7 @@ class NetworksTest(tf.test.TestCase):
     ]
 
     grad_norms_output = None
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.global_variables_initializer())
       grad_norms_output = np.array([
           sess.run(grad_norms, feed_dict={current_image_id_ph: i})

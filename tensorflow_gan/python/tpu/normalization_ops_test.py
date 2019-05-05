@@ -100,77 +100,81 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
 class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringTraining(self):
-    with tf.Graph().as_default():
-      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-      mean, variance = accumulated_moments_for_inference(
-          mean=mean_in, variance=variance_in, is_training=True)
-      variables_by_name = {
-          v.op.name: v for v in tf.compat.v1.global_variables()
-      }
-      accu_mean = variables_by_name["accu/accu_mean"]
-      accu_variance = variables_by_name["accu/accu_variance"]
-      accu_counter = variables_by_name["accu/accu_counter"]
-      with self.cached_session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        m1, v1 = sess.run(
-            [mean, variance],
-            feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
-        self.assertAllClose(m1, [1.0, 2.0])
-        self.assertAllClose(v1, [3.0, 4.0])
-        m2, v2 = sess.run(
-            [mean, variance],
-            feed_dict={mean_in: [5.0, 6.0], variance_in: [7.0, 8.0]})
-        self.assertAllClose(m2, [5.0, 6.0])
-        self.assertAllClose(v2, [7.0, 8.0])
-        am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
-        self.assertAllClose(am, [0.0, 0.0])
-        self.assertAllClose(av, [0.0, 0.0])
-        self.assertAllClose([ac], [0.0])
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
+    mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    mean, variance = accumulated_moments_for_inference(
+        mean=mean_in, variance=variance_in, is_training=True)
+    variables_by_name = {
+        v.op.name: v for v in tf.compat.v1.global_variables()
+    }
+    accu_mean = variables_by_name["accu/accu_mean"]
+    accu_variance = variables_by_name["accu/accu_variance"]
+    accu_counter = variables_by_name["accu/accu_counter"]
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      m1, v1 = sess.run(
+          [mean, variance],
+          feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
+      self.assertAllClose(m1, [1.0, 2.0])
+      self.assertAllClose(v1, [3.0, 4.0])
+      m2, v2 = sess.run(
+          [mean, variance],
+          feed_dict={mean_in: [5.0, 6.0], variance_in: [7.0, 8.0]})
+      self.assertAllClose(m2, [5.0, 6.0])
+      self.assertAllClose(v2, [7.0, 8.0])
+      am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
+      self.assertAllClose(am, [0.0, 0.0])
+      self.assertAllClose(av, [0.0, 0.0])
+      self.assertAllClose([ac], [0.0])
 
   def testAccumulatedMomentsDuringEval(self):
-    with tf.Graph().as_default():
-      mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-      variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-      mean, variance = accumulated_moments_for_inference(
-          mean=mean_in, variance=variance_in, is_training=False)
-      variables_by_name = {
-          v.op.name: v for v in tf.compat.v1.global_variables()
-      }
-      accu_mean = variables_by_name["accu/accu_mean"]
-      accu_variance = variables_by_name["accu/accu_variance"]
-      accu_counter = variables_by_name["accu/accu_counter"]
-      update_accus = variables_by_name["accu/update_accus"]
-      with self.cached_session() as sess:
-        sess.run(tf.compat.v1.global_variables_initializer())
-        # Fill accumulators.
-        sess.run(tf.compat.v1.assign(update_accus, 1))
-        m1, v1 = sess.run(
-            [mean, variance],
-            feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
-        self.assertAllClose(m1, [1.0, 2.0])
-        self.assertAllClose(v1, [3.0, 4.0])
-        m2, v2 = sess.run(
-            [mean, variance],
-            feed_dict={mean_in: [5.0, 6.0], variance_in: [7.0, 8.0]})
-        self.assertAllClose(m2, [3.0, 4.0])
-        self.assertAllClose(v2, [5.0, 6.0])
-        # Check accumulators.
-        am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
-        self.assertAllClose(am, [6.0, 8.0])
-        self.assertAllClose(av, [10.0, 12.0])
-        self.assertAllClose([ac], [2.0])
-        # Use accumulators.
-        sess.run(tf.compat.v1.assign(update_accus, 0))
-        m3, v3 = sess.run(
-            [mean, variance],
-            feed_dict={mean_in: [2.0, 2.0], variance_in: [3.0, 3.0]})
-        self.assertAllClose(m3, [3.0, 4.0])
-        self.assertAllClose(v3, [5.0, 6.0])
-        am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
-        self.assertAllClose(am, [6.0, 8.0])
-        self.assertAllClose(av, [10.0, 12.0])
-        self.assertAllClose([ac], [2.0])
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
+    mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
+    mean, variance = accumulated_moments_for_inference(
+        mean=mean_in, variance=variance_in, is_training=False)
+    variables_by_name = {
+        v.op.name: v for v in tf.compat.v1.global_variables()
+    }
+    accu_mean = variables_by_name["accu/accu_mean"]
+    accu_variance = variables_by_name["accu/accu_variance"]
+    accu_counter = variables_by_name["accu/accu_counter"]
+    update_accus = variables_by_name["accu/update_accus"]
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      # Fill accumulators.
+      sess.run(tf.compat.v1.assign(update_accus, 1))
+      m1, v1 = sess.run(
+          [mean, variance],
+          feed_dict={mean_in: [1.0, 2.0], variance_in: [3.0, 4.0]})
+      self.assertAllClose(m1, [1.0, 2.0])
+      self.assertAllClose(v1, [3.0, 4.0])
+      m2, v2 = sess.run(
+          [mean, variance],
+          feed_dict={mean_in: [5.0, 6.0], variance_in: [7.0, 8.0]})
+      self.assertAllClose(m2, [3.0, 4.0])
+      self.assertAllClose(v2, [5.0, 6.0])
+      # Check accumulators.
+      am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
+      self.assertAllClose(am, [6.0, 8.0])
+      self.assertAllClose(av, [10.0, 12.0])
+      self.assertAllClose([ac], [2.0])
+      # Use accumulators.
+      sess.run(tf.compat.v1.assign(update_accus, 0))
+      m3, v3 = sess.run(
+          [mean, variance],
+          feed_dict={mean_in: [2.0, 2.0], variance_in: [3.0, 3.0]})
+      self.assertAllClose(m3, [3.0, 4.0])
+      self.assertAllClose(v3, [5.0, 6.0])
+      am, av, ac = sess.run([accu_mean, accu_variance, accu_counter])
+      self.assertAllClose(am, [6.0, 8.0])
+      self.assertAllClose(av, [10.0, 12.0])
+      self.assertAllClose([ac], [2.0])
 
 
 class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
@@ -180,6 +184,9 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
       {"decay": 0.999},
   )
   def testMovingMomentsDuringTrain(self, decay):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(
@@ -215,6 +222,9 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
         self.assertAllClose(v_ema, v_exp)
 
   def testMovingMomentsDuringEval(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     mean, variance = moving_moments_for_inference(

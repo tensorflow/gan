@@ -91,6 +91,9 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_d_loss, sess.run(loss), 5)
 
   def test_generator_loss_with_placeholder_for_logits(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     weights = tf.ones_like(logits, dtype=tf.float32)
 
@@ -105,6 +108,9 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
   def test_discriminator_loss_with_placeholder_for_logits(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     logits2 = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     real_weights = tf.ones_like(logits, dtype=tf.float32)
@@ -323,6 +329,9 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_d_loss, sess.run(loss), 5)
 
   def test_generator_loss_with_placeholder_for_logits(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     gen_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     one_hot_labels = tf.compat.v1.placeholder(tf.int32, shape=(None, 4))
 
@@ -336,6 +345,9 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
   def test_discriminator_loss_with_placeholder_for_logits_and_weights(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     gen_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     real_logits = tf.compat.v1.placeholder(tf.float32, shape=(None, 4))
     one_hot_labels = tf.compat.v1.placeholder(tf.int32, shape=(None, 4))
@@ -461,6 +473,9 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
         'dummy_d', initializer=2.0, use_resource=False) * inputs
 
   def test_loss_with_placeholder(self):
+    if tf.executing_eagerly():
+      # Eager execution doesn't support placeholders.
+      return
     generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
     real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
 
@@ -482,35 +497,25 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
       self.assertAlmostEqual(self._expected_loss, loss, 5)
 
   def test_loss_using_one_sided_mode(self):
-    generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
-    real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
-
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
-        generated_data,
-        real_data,
+        tf.constant(self._generated_data_np, dtype=tf.float32),
+        tf.constant(self._real_data_np, dtype=tf.float32),
         self._kwargs['generator_inputs'],
         self._kwargs['discriminator_fn'],
         self._kwargs['discriminator_scope'],
         one_sided=True)
-    self.assertEqual(generated_data.dtype, loss.dtype)
+    self.assertEqual(tf.float32, loss.dtype)
 
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      loss = sess.run(loss,
-                      feed_dict={
-                          generated_data: self._generated_data_np,
-                          real_data: self._real_data_np,
-                      })
+      loss = sess.run(loss)
       self.assertAlmostEqual(self._expected_loss, loss, 5)
 
   def test_loss_with_gradient_norm_target(self):
     """Test loss value with non default gradient norm target."""
-    generated_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
-    real_data = tf.compat.v1.placeholder(tf.float32, shape=(None, None))
-
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
-        generated_data,
-        real_data,
+        self._generated_data_np,
+        self._real_data_np,
         self._kwargs['generator_inputs'],
         self._kwargs['discriminator_fn'],
         self._kwargs['discriminator_scope'],
@@ -518,12 +523,7 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      loss = sess.run(
-          loss,
-          feed_dict={
-              generated_data: self._generated_data_np,
-              real_data: self._real_data_np,
-          })
+      loss = sess.run(loss)
       self.assertAlmostEqual(1.0, loss, 5)
 
   def test_reuses_scope(self):

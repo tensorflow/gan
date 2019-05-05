@@ -54,6 +54,9 @@ def one_hot1():
 class MnistScoreTest(tf.test.TestCase):
 
   def test_any_batch_size(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     mscore = util.mnist_score(inputs)
     for batch_size in [4, 16, 30]:
@@ -96,6 +99,9 @@ class MnistScoreTest(tf.test.TestCase):
 class MnistFrechetDistanceTest(tf.test.TestCase):
 
   def test_any_batch_size(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     fdistance = util.mnist_frechet_distance(inputs, inputs)
     for batch_size in [4, 16, 30]:
@@ -143,6 +149,9 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
 class MnistCrossEntropyTest(tf.test.TestCase):
 
   def test_any_batch_size(self):
+    if tf.executing_eagerly():
+      # Placeholders don't work in eager execution mode.
+      return
     num_classes = 10
     one_label = np.array([[1] + [0] * (num_classes - 1)])
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])

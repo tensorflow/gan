@@ -299,6 +299,9 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     self.assertTrue(final_values['accuracy'] > .99)
 
   def testEvaluationLoopTimeout(self):
+    if tf.executing_eagerly():
+      # This test uses `tf.placeholder`, which doesn't work in eager executing.
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluation_loop_timeout')
     if not tf.gfile.Exists(checkpoint_dir):

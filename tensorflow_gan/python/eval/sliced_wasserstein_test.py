@@ -64,11 +64,10 @@ class ClassifierMetricsTest(tf.test.TestCase):
 
     data = np.random.normal(size=[256, 3, 32, 32]).astype('f')
     pyramid = np_laplacian_pyramid(data, 3)
-    data_tf = tf.compat.v1.placeholder(tf.float32, [256, 32, 32, 3])
+    data_tf = tf.constant(data.transpose(0, 2, 3, 1))
     pyramid_tf = laplacian_pyramid(data_tf, 3)
     with self.cached_session() as sess:
-      pyramid_tf = sess.run(
-          pyramid_tf, feed_dict={data_tf: data.transpose(0, 2, 3, 1)})
+      pyramid_tf = sess.run(pyramid_tf)
     for x in range(3):
       self.assertAllClose(
           pyramid[x].transpose(0, 2, 3, 1), pyramid_tf[x], atol=1e-6)
