@@ -104,9 +104,9 @@ class SummariesTest(tf.test.TestCase):
     self.assertEqual(
         expected_num_summary_ops,
         len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.global_variables_initializer().run()
-      tf.compat.v1.summary.merge_all().eval()
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_gan_model_image_summaries(self):
     self._test_add_gan_model_image_summaries_impl(get_gan_model, 5, True)
@@ -125,9 +125,9 @@ class SummariesTest(tf.test.TestCase):
     self.assertEqual(
         expected_num_summary_ops,
         len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.global_variables_initializer().run()
-      tf.compat.v1.summary.merge_all().eval()
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_gan_model_summaries(self):
     self._test_add_gan_model_summaries_impl(get_gan_model, 3)
@@ -142,8 +142,8 @@ class SummariesTest(tf.test.TestCase):
     self.assertEqual(
         expected_num_summary_ops,
         len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.summary.merge_all().eval()
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_regularization_loss_summaries(self):
     self._test_add_regularization_loss_summaries_impl(get_gan_model, 2)
@@ -160,8 +160,8 @@ class SummariesTest(tf.test.TestCase):
     self.assertEqual(
         expected_num_summary_ops,
         len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.summary.merge_all().eval()
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_image_comparison_summaries(self):
     self._test_add_image_comparison_summaries_impl(get_gan_model, 1)
@@ -171,8 +171,8 @@ class SummariesTest(tf.test.TestCase):
 
     self.assertEqual(
         2, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.summary.merge_all().eval()
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_image_comparison_summaries_for_stargan(self):
 
@@ -183,7 +183,7 @@ class SummariesTest(tf.test.TestCase):
 
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      tf.compat.v1.summary.merge_all().eval()
+      sess.run(tf.compat.v1.summary.merge_all())
 
 
 if __name__ == '__main__':

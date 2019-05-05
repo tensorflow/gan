@@ -48,15 +48,15 @@ class ClipWeightsTest(tf.test.TestCase):
 
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      self.assertEqual(2.0, self.variables[0].eval())
+      self.assertEqual(2.0, sess.run(self.variables[0]))
       sess.run(train_op1)
-      self.assertLess(0.1, self.variables[0].eval())
+      self.assertLess(0.1, sess.run(self.variables[0]))
 
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      self.assertEqual(2.0, self.variables[0].eval())
+      self.assertEqual(2.0, sess.run(self.variables[0]))
       sess.run(train_op2)
-      self.assertNear(0.1, self.variables[0].eval(), 1e-7)
+      self.assertNear(0.1, sess.run(self.variables[0]), 1e-7)
 
   def test_weight_clipping_argsonly(self):
     self._test_weight_clipping_helper(False)

@@ -108,7 +108,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vbn_normalized = vbn.reference_batch_normalization()
 
       with self.cached_session(use_gpu=True) as sess:
-        tf.compat.v1.global_variables_initializer().run()
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         bn_normalized_np, vbn_normalized_np = sess.run(
             [bn_normalized, vbn_normalized])
@@ -132,7 +132,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vb_normed = tf.squeeze(vbn(tf.expand_dims(examples[i], [0])), [0])
 
       with self.cached_session(use_gpu=True) as sess:
-        tf.compat.v1.global_variables_initializer().run()
+        sess.run(tf.compat.v1.global_variables_initializer())
         bn_np, vb_np = sess.run([batch_normalized, vb_normed])
       self.assertAllClose(bn_np[i, ...], vb_np)
 
@@ -154,9 +154,9 @@ class VirtualBatchnormTest(tf.test.TestCase):
     # `fixed_example`.
     vbn = vbn_lib.VBN(reference_batch)
     vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)), 0)
-    with self.session(use_gpu=True):
-      tf.compat.v1.global_variables_initializer().run()
-      vbn_fixed_example_np = vbn_fixed_example.eval()
+    with self.session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      vbn_fixed_example_np = sess.run(vbn_fixed_example)
 
     # Check that the value is the same for different minibatches, and different
     # sized minibatches.
@@ -166,9 +166,9 @@ class VirtualBatchnormTest(tf.test.TestCase):
       minibatch = tf.stack([fixed_example] + examples)
       vbn_minibatch = vbn(minibatch)
       cur_vbn_fixed_example = vbn_minibatch[0, ...]
-      with self.cached_session(use_gpu=True):
-        tf.compat.v1.global_variables_initializer().run()
-        cur_vbn_fixed_example_np = cur_vbn_fixed_example.eval()
+      with self.cached_session(use_gpu=True) as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        cur_vbn_fixed_example_np = sess.run(cur_vbn_fixed_example)
       self.assertAllClose(vbn_fixed_example_np, cur_vbn_fixed_example_np)
 
   def test_variable_reuse(self):
@@ -206,7 +206,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     self.assertEqual(4, len(contrib.get_variables()))
 
     with self.session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(to_fetch)
 
   def test_invalid_input(self):

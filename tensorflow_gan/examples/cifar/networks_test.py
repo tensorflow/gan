@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+
 import numpy as np
 import tensorflow as tf
 from tensorflow_gan.examples.cifar import networks
@@ -31,9 +32,9 @@ class NetworksTest(tf.test.TestCase):
     batch_size = 100
     noise = tf.random.normal([batch_size, 64])
     image = networks.generator(noise)
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      image_np = image.eval()
+      image_np = sess.run(image)
 
     self.assertAllEqual([batch_size, 32, 32, 3], image_np.shape)
     self.assertTrue(np.all(np.abs(image_np) <= 1))
@@ -42,9 +43,9 @@ class NetworksTest(tf.test.TestCase):
     batch_size = 5
     image = tf.random.uniform([batch_size, 32, 32, 3], -1, 1)
     dis_output = networks.discriminator(image, None)
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      dis_output_np = dis_output.eval()
+      dis_output_np = sess.run(dis_output)
 
     self.assertAllEqual([batch_size, 1], dis_output_np.shape)
 

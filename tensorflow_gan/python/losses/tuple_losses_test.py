@@ -116,10 +116,10 @@ def add_loss_consistency_test(test_class, loss_name_str, loss_args):
 
   def consistency_test(self):
     self.assertEqual(arg_loss.__name__, tuple_loss.__name__)
-    with self.cached_session():
+    with self.cached_session() as sess:
       self.assertEqual(
-          arg_loss(**loss_args).eval(),
-          tuple_loss(_tuple_from_dict(loss_args)).eval())
+          sess.run(arg_loss(**loss_args)),
+          sess.run(tuple_loss(_tuple_from_dict(loss_args))))
 
   test_name = 'test_loss_consistency_%s' % loss_name_str
   setattr(test_class, test_name, consistency_test)
@@ -172,9 +172,9 @@ class CycleConsistencyLossTest(tf.test.TestCase):
             model_y2x=self._model_y2x,
             reconstructed_x=tf.constant([9, 8], dtype=tf.float32),
             reconstructed_y=tf.constant([7, 2], dtype=tf.float32)))
-    with self.cached_session(use_gpu=True):
-      tf.compat.v1.global_variables_initializer().run()
-      self.assertNear(5.0, loss.eval(), 1e-5)
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      self.assertNear(5.0, sess.run(loss), 1e-5)
 
 
 class StarGANLossWrapperTest(tf.test.TestCase):

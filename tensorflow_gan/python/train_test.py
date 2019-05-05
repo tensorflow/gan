@@ -625,9 +625,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     """Test regularization loss."""
     # Evaluate losses without regularization.
     no_reg_loss = tfgan.gan_loss(get_gan_model_fn())
-    with self.cached_session(use_gpu=True):
-      no_reg_loss_gen_np = no_reg_loss.generator_loss.eval()
-      no_reg_loss_dis_np = no_reg_loss.discriminator_loss.eval()
+    with self.cached_session(use_gpu=True) as sess:
+      no_reg_loss_g, no_reg_loss_d = sess.run([no_reg_loss.generator_loss,
+                                               no_reg_loss.discriminator_loss])
 
     with tf.compat.v1.name_scope(get_gan_model_fn().generator_scope.name):
       tf.compat.v1.add_to_collection(
@@ -638,12 +638,12 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check that losses now include the correct regularization values.
     reg_loss = tfgan.gan_loss(get_gan_model_fn())
-    with self.cached_session(use_gpu=True):
-      reg_loss_gen_np = reg_loss.generator_loss.eval()
-      reg_loss_dis_np = reg_loss.discriminator_loss.eval()
+    with self.cached_session(use_gpu=True) as sess:
+      reg_loss_g, reg_loss_d = sess.run([reg_loss.generator_loss,
+                                         reg_loss.discriminator_loss])
 
-    self.assertEqual(3.0, reg_loss_gen_np - no_reg_loss_gen_np)
-    self.assertEqual(2.0, reg_loss_dis_np - no_reg_loss_dis_np)
+    self.assertEqual(3.0, reg_loss_g - no_reg_loss_g)
+    self.assertEqual(2.0, reg_loss_d - no_reg_loss_d)
 
   @parameterized.named_parameters(
       ('notcallable', create_acgan_model),
@@ -939,16 +939,16 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
 
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
-      self.assertEqual(0, gen_update_count.eval())
-      self.assertEqual(0, dis_update_count.eval())
+      self.assertEqual(0, sess.run(gen_update_count))
+      self.assertEqual(0, sess.run(dis_update_count))
 
-      train_ops.generator_train_op.eval()
-      self.assertEqual(1, gen_update_count.eval())
-      self.assertEqual(0, dis_update_count.eval())
+      sess.run(train_ops.generator_train_op)
+      self.assertEqual(1, sess.run(gen_update_count))
+      self.assertEqual(0, sess.run(dis_update_count))
 
-      train_ops.discriminator_train_op.eval()
-      self.assertEqual(1, gen_update_count.eval())
-      self.assertEqual(1, dis_update_count.eval())
+      sess.run(train_ops.discriminator_train_op)
+      self.assertEqual(1, sess.run(gen_update_count))
+      self.assertEqual(1, sess.run(dis_update_count))
 
   @parameterized.named_parameters(
       ('gan', create_gan_model, False),
@@ -1000,7 +1000,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       g_opt.chief_init_op.run()
       d_opt.chief_init_op.run()
 
-      gstep_before = global_step.eval()
+      gstep_before = sess.run(global_step)
 
       # Start required queue runner for SyncReplicasOptimizer.
       coord = tf.train.Coordinator()
@@ -1010,13 +1010,13 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       g_sync_init_op.run()
       d_sync_init_op.run()
 
-      train_ops.generator_train_op.eval()
+      sess.run(train_ops.generator_train_op)
       # Check that global step wasn't incremented.
-      self.assertEqual(gstep_before, global_step.eval())
+      self.assertEqual(gstep_before, sess.run(global_step))
 
-      train_ops.discriminator_train_op.eval()
+      sess.run(train_ops.discriminator_train_op)
       # Check that global step wasn't incremented.
-      self.assertEqual(gstep_before, global_step.eval())
+      self.assertEqual(gstep_before, sess.run(global_step))
 
       coord.request_stop()
       coord.join(g_threads + d_threads)

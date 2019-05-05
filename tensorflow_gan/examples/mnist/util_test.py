@@ -57,40 +57,40 @@ class MnistScoreTest(tf.test.TestCase):
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     mscore = util.mnist_score(inputs)
     for batch_size in [4, 16, 30]:
-      with self.test_session() as sess:
+      with self.cached_session() as sess:
         sess.run(mscore, feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
   def test_deterministic(self):
     m_score = util.mnist_score(real_digit())
-    with self.test_session():
-      m_score1 = m_score.eval()
-      m_score2 = m_score.eval()
+    with self.cached_session() as sess:
+      m_score1 = sess.run(m_score)
+      m_score2 = sess.run(m_score)
     self.assertEqual(m_score1, m_score2)
 
-    with self.test_session():
-      m_score3 = m_score.eval()
+    with self.cached_session() as sess:
+      m_score3 = sess.run(m_score)
     self.assertEqual(m_score1, m_score3)
 
   def test_single_example_correct(self):
     real_score = util.mnist_score(real_digit())
     fake_score = util.mnist_score(fake_digit())
-    with self.test_session():
-      self.assertNear(1.0, real_score.eval(), 1e-6)
-      self.assertNear(1.0, fake_score.eval(), 1e-6)
+    with self.cached_session() as sess:
+      self.assertNear(1.0, sess.run(real_score), 1e-6)
+      self.assertNear(1.0, sess.run(fake_score), 1e-6)
 
   def test_minibatch_correct(self):
     mscore = util.mnist_score(
         tf.concat([real_digit(), real_digit(), fake_digit()], 0))
-    with self.test_session():
-      self.assertNear(1.612828, mscore.eval(), 1e-6)
+    with self.cached_session() as sess:
+      self.assertNear(1.612828, sess.run(mscore), 1e-6)
 
   def test_batch_splitting_doesnt_change_value(self):
     for num_batches in [1, 2, 4, 8]:
       mscore = util.mnist_score(
           tf.concat([real_digit()] * 4 + [fake_digit()] * 4, 0),
           num_batches=num_batches)
-      with self.test_session():
-        self.assertNear(1.649209, mscore.eval(), 1e-6)
+      with self.cached_session() as sess:
+        self.assertNear(1.649209, sess.run(mscore), 1e-6)
 
 
 class MnistFrechetDistanceTest(tf.test.TestCase):
@@ -99,7 +99,7 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     fdistance = util.mnist_frechet_distance(inputs, inputs)
     for batch_size in [4, 16, 30]:
-      with self.test_session() as sess:
+      with self.cached_session() as sess:
         sess.run(fdistance,
                  feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
@@ -107,28 +107,28 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit()] * 2, 0),
         tf.concat([fake_digit()] * 2, 0))
-    with self.test_session():
-      fdistance1 = fdistance.eval()
-      fdistance2 = fdistance.eval()
+    with self.cached_session() as sess:
+      fdistance1 = sess.run(fdistance)
+      fdistance2 = sess.run(fdistance)
     self.assertNear(fdistance1, fdistance2, 2e-1)
 
-    with self.test_session():
-      fdistance3 = fdistance.eval()
+    with self.cached_session() as sess:
+      fdistance3 = sess.run(fdistance)
     self.assertNear(fdistance1, fdistance3, 2e-1)
 
   def test_single_example_correct(self):
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit()] * 2, 0),
         tf.concat([real_digit()] * 2, 0))
-    with self.test_session():
-      self.assertNear(0.0, fdistance.eval(), 2e-1)
+    with self.cached_session() as sess:
+      self.assertNear(0.0, sess.run(fdistance), 2e-1)
 
   def test_minibatch_correct(self):
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit(), real_digit(), fake_digit()], 0),
         tf.concat([real_digit(), fake_digit(), fake_digit()], 0))
-    with self.test_session():
-      self.assertNear(43.5, fdistance.eval(), 2e-1)
+    with self.cached_session() as sess:
+      self.assertNear(43.5, sess.run(fdistance), 2e-1)
 
   def test_batch_splitting_doesnt_change_value(self):
     for num_batches in [1, 2, 4, 8]:
@@ -136,8 +136,8 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
           tf.concat([real_digit()] * 6 + [fake_digit()] * 2, 0),
           tf.concat([real_digit()] * 2 + [fake_digit()] * 6, 0),
           num_batches=num_batches)
-      with self.test_session():
-        self.assertNear(97.8, fdistance.eval(), 2e-1)
+      with self.cached_session() as sess:
+        self.assertNear(97.8, sess.run(fdistance), 2e-1)
 
 
 class MnistCrossEntropyTest(tf.test.TestCase):
@@ -150,20 +150,20 @@ class MnistCrossEntropyTest(tf.test.TestCase):
         tf.int32, shape=[None, num_classes])
     entropy = util.mnist_cross_entropy(inputs, one_hot_label)
     for batch_size in [4, 16, 30]:
-      with self.test_session() as sess:
+      with self.cached_session() as sess:
         sess.run(entropy, feed_dict={
             inputs: np.zeros([batch_size, 28, 28, 1]),
             one_hot_label: np.concatenate([one_label] * batch_size)})
 
   def test_deterministic(self):
     xent = util.mnist_cross_entropy(real_digit(), one_hot_real())
-    with self.test_session():
-      ent1 = xent.eval()
-      ent2 = xent.eval()
+    with self.cached_session() as sess:
+      ent1 = sess.run(xent)
+      ent2 = sess.run(xent)
     self.assertEqual(ent1, ent2)
 
-    with self.test_session():
-      ent3 = xent.eval()
+    with self.cached_session() as sess:
+      ent3 = sess.run(xent)
     self.assertEqual(ent1, ent3)
 
   def test_single_example_correct(self):
@@ -174,11 +174,11 @@ class MnistCrossEntropyTest(tf.test.TestCase):
     # A random digit should have medium cross entropy for any label.
     fake_xent1 = util.mnist_cross_entropy(fake_digit(), one_hot_real())
     fake_xent6 = util.mnist_cross_entropy(fake_digit(), one_hot1())
-    with self.test_session():
-      self.assertNear(0.00996, correct_xent.eval(), 1e-5)
-      self.assertNear(18.63073, wrong_xent.eval(), 1e-5)
-      self.assertNear(2.2, fake_xent1.eval(), 1e-1)
-      self.assertNear(2.2, fake_xent6.eval(), 1e-1)
+    with self.cached_session() as sess:
+      self.assertNear(0.00996, sess.run(correct_xent), 1e-5)
+      self.assertNear(18.63073, sess.run(wrong_xent), 1e-5)
+      self.assertNear(2.2, sess.run(fake_xent1), 1e-1)
+      self.assertNear(2.2, sess.run(fake_xent6), 1e-1)
 
   def test_minibatch_correct(self):
     # Reorded minibatches should have the same value.
@@ -188,9 +188,9 @@ class MnistCrossEntropyTest(tf.test.TestCase):
     xent2 = util.mnist_cross_entropy(
         tf.concat([real_digit(), fake_digit(), real_digit()], 0),
         tf.concat([one_hot_real(), one_hot1(), one_hot1()], 0))
-    with self.test_session():
-      self.assertNear(6.972539, xent1.eval(), 1e-5)
-      self.assertNear(xent1.eval(), xent2.eval(), 1e-5)
+    with self.cached_session() as sess:
+      self.assertNear(6.972539, sess.run(xent1), 1e-5)
+      self.assertNear(sess.run(xent1), sess.run(xent2), 1e-5)
 
 
 if __name__ == '__main__':

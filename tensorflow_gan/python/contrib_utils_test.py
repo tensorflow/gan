@@ -82,19 +82,19 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
       moving_variance = contrib_utils.get_variables_by_name(
           'moving_variance')[0]
 
-      with self.cached_session() as session:
+      with self.cached_session() as sess:
         # Initialize all variables
-        session.run(tf.compat.v1.global_variables_initializer())
-        mean, variance = session.run([moving_mean, moving_variance])
+        sess.run(tf.compat.v1.global_variables_initializer())
+        mean, variance = sess.run([moving_mean, moving_variance])
         # After initialization moving_mean == 0 and moving_variance == 1.
         self.assertAllClose(mean, [0] * 4)
         self.assertAllClose(variance, [1] * 4)
 
         for _ in range(10):
-          session.run(train_op)
+          sess.run(train_op)
 
-        mean = moving_mean.eval()
-        variance = moving_variance.eval()
+        mean = sess.run(moving_mean)
+        variance = sess.run(moving_variance)
         # After 10 updates with decay 0.1 moving_mean == expected_mean and
         # moving_variance == expected_var.
         self.assertAllClose(mean, expected_mean)
@@ -117,19 +117,19 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
       moving_variance = contrib_utils.get_variables_by_name(
           'moving_variance')[0]
 
-      with self.cached_session() as session:
+      with self.cached_session() as sess:
         # Initialize all variables
-        session.run(tf.compat.v1.global_variables_initializer())
-        mean, variance = session.run([moving_mean, moving_variance])
+        sess.run(tf.compat.v1.global_variables_initializer())
+        mean, variance = sess.run([moving_mean, moving_variance])
         # After initialization moving_mean == 0 and moving_variance == 1.
         self.assertAllClose(mean, [0] * 4)
         self.assertAllClose(variance, [1] * 4)
 
         for _ in range(10):
-          session.run(train_op)
+          sess.run(train_op)
 
-        mean = moving_mean.eval()
-        variance = moving_variance.eval()
+        mean = sess.run(moving_mean)
+        variance = sess.run(moving_variance)
 
         # Since we skip update_ops the moving_vars are not updated.
         self.assertAllClose(mean, [0] * 4)
@@ -150,15 +150,15 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
       global_step = tf.compat.v1.train.get_or_create_global_step()
 
-      with self.cached_session() as session:
+      with self.cached_session() as sess:
         # Initialize all variables
-        session.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         for _ in range(10):
-          session.run(train_op)
+          sess.run(train_op)
 
         # After 10 updates global_step should be 10.
-        self.assertAllClose(global_step.eval(), 10)
+        self.assertAllClose(sess.run(global_step), 10)
 
   def testGlobalStepNotIncrementedWhenSetToNone(self):
     with tf.Graph().as_default():
@@ -176,15 +176,15 @@ class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
 
       global_step = tf.compat.v1.train.get_or_create_global_step()
 
-      with self.cached_session() as session:
+      with self.cached_session() as sess:
         # Initialize all variables
-        session.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.global_variables_initializer())
 
         for _ in range(10):
-          session.run(train_op)
+          sess.run(train_op)
 
         # Since train_op don't use global_step it shouldn't change.
-        self.assertAllClose(global_step.eval(), 0)
+        self.assertAllClose(sess.run(global_step), 0)
 
 
 if __name__ == '__main__':
