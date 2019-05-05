@@ -30,6 +30,7 @@ import math
 import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
+from tensorflow_gan.python.contrib_utils import dimension_value
 
 
 class ResolutionSchedule(object):
@@ -324,7 +325,7 @@ def generator(z,
         outputs.append(lod * alpha)
 
     predictions = tf.add_n(outputs)
-    batch_size = z.shape[0].value
+    batch_size = dimension_value(z.shape[0])
     predictions.set_shape([batch_size, final_h, final_w, colors])
     end_points['predictions'] = predictions
 

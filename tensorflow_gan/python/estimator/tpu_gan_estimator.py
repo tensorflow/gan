@@ -395,6 +395,7 @@ def _is_on_tpu(mode, use_tpu, eval_on_tpu):
 
 
 def _maybe_add_summaries(gan_model, add_summaries):
+  """Maybe add summaries."""
   if add_summaries:
     if not isinstance(add_summaries, (tuple, list)):
       add_summaries = [add_summaries]

@@ -33,6 +33,19 @@ install_tensorflow() {
   fi
 }
 
+install_tfp() {
+  local tf_version=$1
+
+  if [[ "$tf_version" == "TF1.x" ]]; then
+    pip install tensorflow-probability
+  elif [[ "$tf_version" == "TF2.x" ]]; then
+    pip install tfp-nightly
+  else
+    echo "TensorFlow version not recognized: ${tf_version}"
+    exit -1
+  fi
+}
+
 run_unittests_tests() {
   local py_version=$1
   local tf_version=$2
@@ -46,7 +59,7 @@ run_unittests_tests() {
   # TODO(joelshor): These should get installed in setup.py, but aren't for some
   # reason.
   pip install scipy
-  pip install tensorflow-probability
+  install_tfp "${tf_version}"
 
   # Run the tests.
   python setup.py test

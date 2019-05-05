@@ -29,6 +29,8 @@ import six
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
+from tensorflow_gan.python.contrib_utils import dimension_value
+
 # Private functions to test.
 from tensorflow_gan.python.estimator.gan_estimator import extract_gan_loss_args_from_params
 from tensorflow_gan.python.estimator.gan_estimator import get_eval_estimator_spec
@@ -53,9 +55,8 @@ def get_sync_optimizer_hook_type():
 def generator_fn(noise_dict, mode):
   del mode
   noise = noise_dict['x']
-  # TODO(joelshor): Use `tf.compat.dimension_value` when I figure out how to
-  # use it in open source.
-  return tf.compat.v1.layers.dense(noise, noise.shape[1].value)
+  return tf.compat.v1.layers.dense(
+      noise, dimension_value(noise.shape[1]))
 
 
 def discriminator_fn(data, unused_conditioning, mode):
