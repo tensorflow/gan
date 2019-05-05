@@ -594,7 +594,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       loss_gen_np, loss_gen_gp_np = sess.run(
           [loss.generator_loss, loss_gp.generator_loss])
       loss_dis_np, loss_dis_gp_np = sess.run(
@@ -661,7 +661,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       loss_gen_np, loss_ac_gen_gen_np, loss_ac_dis_gen_np = sess.run([
           loss.generator_loss, loss_ac_gen.generator_loss,
           loss_ac_dis.generator_loss
@@ -689,7 +689,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       (loss_x2y_gen_np, loss_x2y_dis_np, loss_y2x_gen_np,
        loss_y2x_dis_np) = sess.run([
            loss.loss_x2y.generator_loss, loss.loss_x2y.discriminator_loss,
@@ -741,7 +741,7 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
     # Check values.
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       for _ in range(10):
         sess.run([loss.generator_loss, loss.discriminator_loss])
 
@@ -794,7 +794,7 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
                                                 pool_size):
     history_values = []
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
       for i in range(2 * pool_size):
         t1, t2 = sess.run([tensor1, tensor2])
         history_values.append(t1)
@@ -994,11 +994,11 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     # Check that update op is run properly.
     global_step = tf.compat.v1.train.get_or_create_global_step()
     with self.cached_session(use_gpu=True) as sess:
-      tf.compat.v1.global_variables_initializer().run()
-      tf.compat.v1.local_variables_initializer().run()
+      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.compat.v1.local_variables_initializer())
 
-      g_opt.chief_init_op.run()
-      d_opt.chief_init_op.run()
+      sess.run(g_opt.chief_init_op)
+      sess.run(d_opt.chief_init_op)
 
       gstep_before = sess.run(global_step)
 
@@ -1007,8 +1007,8 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       g_threads = g_opt.get_chief_queue_runner().create_threads(sess, coord)
       d_threads = d_opt.get_chief_queue_runner().create_threads(sess, coord)
 
-      g_sync_init_op.run()
-      d_sync_init_op.run()
+      sess.run(g_sync_init_op)
+      sess.run(d_sync_init_op)
 
       sess.run(train_ops.generator_train_op)
       # Check that global step wasn't incremented.
