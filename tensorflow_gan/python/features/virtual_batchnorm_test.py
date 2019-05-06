@@ -50,7 +50,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       mom_mean, mom_var = tf.nn.moments(x=tensors, axes=axes)
       vb_var = mean_sq - tf.square(vb_mean)
 
-      with self.cached_session(use_gpu=True) as sess:
+      with self.cached_session() as sess:
         vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run(
             [vb_mean, vb_var, mom_mean, mom_var])
 
@@ -84,7 +84,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vb_mean = tf.squeeze(vb_mean, batch_axis)
       vb_variance = tf.squeeze(vb_variance, batch_axis)
 
-      with self.cached_session(use_gpu=True) as sess:
+      with self.cached_session() as sess:
         vb_mean_np, vb_var_np, mom_mean_np, mom_var_np = sess.run(
             [vb_mean, vb_variance, mom_mean, mom_variance])
 
@@ -107,7 +107,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vbn = vbn_lib.VBN(batch, axis, batch_axis=batch_axis)
       vbn_normalized = vbn.reference_batch_normalization()
 
-      with self.cached_session(use_gpu=True) as sess:
+      with self.cached_session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
 
         bn_normalized_np, vbn_normalized_np = sess.run(
@@ -131,7 +131,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
       vbn = vbn_lib.VBN(examples_except_i)
       vb_normed = tf.squeeze(vbn(tf.expand_dims(examples[i], [0])), [0])
 
-      with self.cached_session(use_gpu=True) as sess:
+      with self.cached_session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
         bn_np, vb_np = sess.run([batch_normalized, vb_normed])
       self.assertAllClose(bn_np[i, ...], vb_np)
@@ -154,7 +154,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     # `fixed_example`.
     vbn = vbn_lib.VBN(reference_batch)
     vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)), 0)
-    with self.session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       vbn_fixed_example_np = sess.run(vbn_fixed_example)
 
@@ -166,10 +166,23 @@ class VirtualBatchnormTest(tf.test.TestCase):
       minibatch = tf.stack([fixed_example] + examples)
       vbn_minibatch = vbn(minibatch)
       cur_vbn_fixed_example = vbn_minibatch[0, ...]
-      with self.cached_session(use_gpu=True) as sess:
+      with self.cached_session() as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
         cur_vbn_fixed_example_np = sess.run(cur_vbn_fixed_example)
       self.assertAllClose(vbn_fixed_example_np, cur_vbn_fixed_example_np)
+
+  def test_variable_reuse_fail(self):
+    """Test that incorrect usage causes variable fail."""
+    if tf.executing_eagerly():
+      # Variable reuse doesn't work in eager.
+      return
+    tensor1_ref = tf.zeros([6, 5, 7, 3, 3])
+
+    with tf.compat.v1.variable_scope('dummy_scope', reuse=True):
+      with self.assertRaisesRegexp(
+          ValueError, 'does not exist, or was not created with '
+          'tf.get_variable()'):
+        vbn_lib.VBN(tensor1_ref)
 
   def test_variable_reuse(self):
     """Test that variable scopes work and inference on a real-ish case."""
@@ -177,12 +190,6 @@ class VirtualBatchnormTest(tf.test.TestCase):
     tensor1_examples = tf.zeros([4, 5, 7, 3, 3])
     tensor2_ref = tf.zeros([4, 2, 3])
     tensor2_examples = tf.zeros([2, 2, 3])
-
-    with tf.compat.v1.variable_scope('dummy_scope', reuse=True):
-      with self.assertRaisesRegexp(
-          ValueError, 'does not exist, or was not created with '
-          'tf.get_variable()'):
-        vbn_lib.VBN(tensor1_ref)
 
     vbn1 = vbn_lib.VBN(tensor1_ref, name='vbn1')
     vbn2 = vbn_lib.VBN(tensor2_ref, name='vbn2')
@@ -205,7 +212,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
     self.assertEqual(4, len(contrib.get_variables()))
 
-    with self.session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       sess.run(to_fetch)
 

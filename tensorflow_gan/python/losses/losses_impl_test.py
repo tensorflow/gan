@@ -50,12 +50,18 @@ class _LossesTest(object):
       self.assertAlmostEqual(self._expected_d_loss, sess.run(loss), 5)
 
   def test_generator_loss_collection(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._g_loss_fn(
         self._discriminator_gen_outputs, loss_collection='collection')
     self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_discriminator_loss_collection(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs,
@@ -160,6 +166,9 @@ class _LossesTest(object):
                              sess.run(loss), 4)
 
   def test_generator_add_summaries(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._g_loss_fn(self._discriminator_gen_outputs, add_summaries=True)
@@ -167,6 +176,9 @@ class _LossesTest(object):
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
   def test_discriminator_add_summaries(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._d_loss_fn(
@@ -294,11 +306,17 @@ class ACGANLossTest(tf.test.TestCase):
       self.assertAlmostEqual(self._expected_d_loss, sess.run(loss), 5)
 
   def test_generator_loss_collection(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._g_loss_fn(loss_collection='collection', **self._generator_kwargs)
     self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
 
   def test_discriminator_loss_collection(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._d_loss_fn(loss_collection='collection', **self._discriminator_kwargs)
     self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
@@ -393,6 +411,9 @@ class ACGANLossTest(tf.test.TestCase):
                              sess.run(loss), 4)
 
   def test_generator_add_summaries(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._g_loss_fn(add_summaries=True, **self._generator_kwargs)
@@ -400,6 +421,9 @@ class ACGANLossTest(tf.test.TestCase):
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
   def test_discriminator_add_summaries(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
     self._d_loss_fn(add_summaries=True, **self._discriminator_kwargs)
@@ -419,6 +443,9 @@ class _PenaltyTest(object):
       self.assertAlmostEqual(self._expected_loss, sess.run(loss), 6)
 
   def test_loss_collection(self):
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
     self._penalty_fn(loss_collection='collection', **self._kwargs)
     self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
@@ -539,6 +566,9 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
   def test_works_with_get_collection(self):
     """Tests that gradient penalty works inside other scopes."""
+    if tf.executing_eagerly():
+      # Collections don't work in eager.
+      return
     # We ran the discriminator once in the setup, so there should be an op
     # already in the collection.
     self.assertEqual(

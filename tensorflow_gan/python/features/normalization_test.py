@@ -96,6 +96,9 @@ class InstanceNormTest(tf.test.TestCase):
     self.assertEqual('InstanceNorm/gamma', gamma.op.name)
 
   def testReuseVariables(self):
+    if tf.executing_eagerly():
+      # Variable reuse doesn't work with eager.
+      return
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), seed=1)
     norm.instance_norm(images, scale=True, scope='IN')
@@ -304,6 +307,9 @@ class GroupNormTest(tf.test.TestCase):
     self.assertEqual('GroupNorm/gamma', gamma.op.name)
 
   def testReuseVariables(self):
+    if tf.executing_eagerly():
+      # Variable reuse doesn't work with eager.
+      return
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 4), seed=1)
     norm.group_norm(images, groups=2, scale=True, scope='IN')
