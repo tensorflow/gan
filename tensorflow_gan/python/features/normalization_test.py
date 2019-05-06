@@ -63,25 +63,18 @@ class InstanceNormTest(tf.test.TestCase):
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), seed=1)
     output = norm.instance_norm(images)
-    print('name: ', output.op.name)
-    self.assertStartsWith(
-        output.op.name, 'InstanceNorm/instancenorm')
     self.assertListEqual([5, height, width, 3], output.shape.as_list())
 
   def testCreateOpFloat64(self):
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), dtype=tf.float64, seed=1)
     output = norm.instance_norm(images)
-    self.assertStartsWith(
-        output.op.name, 'InstanceNorm/instancenorm')
     self.assertListEqual([5, height, width, 3], output.shape.as_list())
 
   def testCreateOpNoScaleCenter(self):
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), dtype=tf.float64, seed=1)
     output = norm.instance_norm(images, center=False, scale=False)
-    self.assertStartsWith(
-        output.op.name, 'InstanceNorm/instancenorm')
     self.assertListEqual([5, height, width, 3], output.shape.as_list())
     self.assertEqual(0, len(contrib_utils.get_variables_by_name('beta')))
     self.assertEqual(0, len(contrib_utils.get_variables_by_name('gamma')))

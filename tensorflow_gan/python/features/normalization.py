@@ -100,7 +100,8 @@ def instance_norm(inputs,
       # explicitly reshape the params to params_shape_broadcast when computing
       # the moments and the batch normalization.
       params_shape_broadcast = list(
-          [1, inputs_shape[1].value] + [1 for _ in range(2, inputs_rank)])
+          [1, contrib.dimension_value(inputs_shape[1])] +
+          [1 for _ in range(2, inputs_rank)])
     else:
       reduction_axis = inputs_rank - 1
       params_shape_broadcast = None
@@ -250,7 +251,7 @@ def group_norm(inputs,
   dyanmic_shape = tf.shape(input=inputs)
   input_shape_list = []
   for i, dim in enumerate(inputs.shape):
-    if dim.value is None:
+    if contrib.dimension_value(dim) is None:
       input_shape_list.append(dyanmic_shape[i])
     else:
       input_shape_list.append(dim)
@@ -258,7 +259,7 @@ def group_norm(inputs,
   # Standardize the channels_axis to be positive and identify # of channels.
   if channels_axis < 0:
     channels_axis = inputs.shape.ndims + channels_axis
-  channels = inputs.shape[channels_axis].value
+  channels = contrib.dimension_value(inputs.shape[channels_axis])
 
   if channels is None:
     raise ValueError('Inputs %s has undefined channel dimension: %d.' % (
@@ -273,7 +274,7 @@ def group_norm(inputs,
   for a in reduction_axes:
     if a > inputs.shape.ndims:
       raise ValueError('Axis is out of bounds.')
-    if inputs.shape[a].value is None:
+    if contrib.dimension_value(inputs.shape[a]) is None:
       raise ValueError('Inputs %s has undefined dimensions %d.' % (
           inputs.name, a))
     if channels_axis == a:
