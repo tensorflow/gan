@@ -152,7 +152,9 @@ class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
         for grad, var in grads_and_vars:
           if grad is None or var not in self._vars_to_clip_dims:
             continue
-          with tf.compat.v1.name_scope('clip_' + var.op.name):
+          # `x.op` doesn't work in eager execution.
+          suffix = var.name if tf.executing_eagerly() else var.op.name
+          with tf.compat.v1.name_scope('clip_' + suffix):
             if isinstance(grad, tf.Tensor):
               clip_update_ops.append(self._clip_dense(var))
             else:
@@ -174,9 +176,11 @@ class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
     assert isinstance(grad, tf.IndexedSlices)
     clip_dims = self._vars_to_clip_dims[var]
     if 0 in clip_dims:
+      # `x.op` doesn't work in eager execution.
+      name = var.name if tf.executing_eagerly() else var.op.name
       tf.compat.v1.logging.warning(
           'Clipping norm across dims %s for %s is inefficient '
-          'when including sparse dimension 0.', clip_dims, var.op.name)
+          'when including sparse dimension 0.', clip_dims, name)
       return self._clip_dense(var)
 
     with tf.compat.v1.colocate_with(var):

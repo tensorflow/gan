@@ -752,6 +752,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_discriminator_only_sees_pool(self):
     """Checks that discriminator only sees pooled values."""
+    if tf.executing_eagerly():
+      # This test involves '.op', which doesn't work in eager.
+      return
 
     def checker_gen_fn(_):
       return tf.constant(0.0)

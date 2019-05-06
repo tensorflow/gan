@@ -101,7 +101,7 @@ class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringTraining(self):
     if tf.executing_eagerly():
-      # Eager execution doesn't support placeholders.
+      # Eager execution doesn't support placeholders or `x.op`.
       return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
@@ -132,7 +132,7 @@ class AccumulatedMomentsTest(tf.test.TestCase):
 
   def testAccumulatedMomentsDuringEval(self):
     if tf.executing_eagerly():
-      # Eager execution doesn't support placeholders.
+      # Eager execution doesn't support placeholders or `x.op`.
       return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
@@ -185,7 +185,7 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
   )
   def testMovingMomentsDuringTrain(self, decay):
     if tf.executing_eagerly():
-      # Eager execution doesn't support placeholders.
+      # Eager execution doesn't support placeholders or `x.op`.
       return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
@@ -223,7 +223,7 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
 
   def testMovingMomentsDuringEval(self):
     if tf.executing_eagerly():
-      # Eager execution doesn't support placeholders.
+      # Eager execution doesn't support placeholders or `x.op`.
       return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
     variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
