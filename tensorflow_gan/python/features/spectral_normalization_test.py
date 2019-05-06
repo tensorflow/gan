@@ -92,7 +92,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
       self.assertGreater(abs(s0 - 1.), abs(s1 - 1.))
 
   def _testLayerHelper(self, build_layer_fn, w_shape, b_shape):
-    x = tf.compat.v1.placeholder(tf.float32, shape=[2, 10, 10, 3])
+    x = tf.zeros([2, 10, 10, 3], dtype=tf.float32)
 
     w_initial = np.random.randn(*w_shape) * 10
     w_initializer = tf.compat.v1.initializers.constant(w_initial)
