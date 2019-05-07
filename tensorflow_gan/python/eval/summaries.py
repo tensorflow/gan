@@ -196,7 +196,7 @@ def add_stargan_image_summaries(stargan_model,
   If display_diffs is False, only the first row is shown.
 
   IMPORTANT:
-    Since the model originally does not transformed the image to every domains,
+    Since the model originally does not transformed the image to every domain,
     we will transform them on-the-fly within this function in parallel.
 
   Args:

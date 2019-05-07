@@ -1254,8 +1254,8 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
 
   real_activations.shape.assert_has_rank(2)
   generated_activations.shape.assert_has_rank(2)
-  real_activations.shape[1].assert_is_compatible_with(
-      generated_activations.shape[1])
+  real_activations.shape[1:2].assert_is_compatible_with(
+      generated_activations.shape[1:2])
 
   if dtype is None:
     dtype = real_activations.dtype

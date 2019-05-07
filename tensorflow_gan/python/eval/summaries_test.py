@@ -19,18 +19,19 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import tempfile
+
 import tensorflow as tf
 import tensorflow_gan as tfgan
+from tensorflow.python import tf2  # pylint:disable=g-direct-tensorflow-import
 
 
 def generator_model(inputs):
-  return tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False) * inputs
+  return tf.compat.v1.get_variable('dummy_g', initializer=2.0) * inputs
 
 
 def discriminator_model(inputs, _):
-  return tf.compat.v1.get_variable(
-      'dummy_d', initializer=2.0, use_resource=False) * inputs
+  return tf.compat.v1.get_variable('dummy_d', initializer=2.0) * inputs
 
 
 def stargan_generator_model(inputs, _):
@@ -98,15 +99,20 @@ class SummariesTest(tf.test.TestCase):
 
   def _test_add_gan_model_image_summaries_impl(
       self, get_model_fn, expected_num_summary_ops, model_summaries):
-    tfgan.eval.add_gan_model_image_summaries(get_model_fn(), grid_size=2,
-                                             model_summaries=model_summaries)
-
-    self.assertEqual(
-        expected_num_summary_ops,
-        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
-      sess.run(tf.compat.v1.summary.merge_all())
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_gan_model_image_summaries(
+            get_model_fn(), grid_size=2, model_summaries=model_summaries)
+    else:
+      tfgan.eval.add_gan_model_image_summaries(
+          get_model_fn(), grid_size=2, model_summaries=model_summaries)
+      self.assertEqual(
+          expected_num_summary_ops,
+          len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_gan_model_image_summaries(self):
     self._test_add_gan_model_image_summaries_impl(get_gan_model, 5, True)
@@ -120,14 +126,18 @@ class SummariesTest(tf.test.TestCase):
 
   def _test_add_gan_model_summaries_impl(self, get_model_fn,
                                          expected_num_summary_ops):
-    tfgan.eval.add_gan_model_summaries(get_model_fn())
-
-    self.assertEqual(
-        expected_num_summary_ops,
-        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
-      sess.run(tf.compat.v1.summary.merge_all())
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_gan_model_summaries(get_model_fn())
+    else:
+      tfgan.eval.add_gan_model_summaries(get_model_fn())
+      self.assertEqual(
+          expected_num_summary_ops,
+          len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_gan_model_summaries(self):
     self._test_add_gan_model_summaries_impl(get_gan_model, 3)
@@ -137,13 +147,17 @@ class SummariesTest(tf.test.TestCase):
 
   def _test_add_regularization_loss_summaries_impl(self, get_model_fn,
                                                    expected_num_summary_ops):
-    tfgan.eval.add_regularization_loss_summaries(get_model_fn())
-
-    self.assertEqual(
-        expected_num_summary_ops,
-        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.summary.merge_all())
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_regularization_loss_summaries(get_model_fn())
+    else:
+      tfgan.eval.add_regularization_loss_summaries(get_model_fn())
+      self.assertEqual(
+          expected_num_summary_ops,
+          len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_regularization_loss_summaries(self):
     self._test_add_regularization_loss_summaries_impl(get_gan_model, 2)
@@ -154,36 +168,51 @@ class SummariesTest(tf.test.TestCase):
   # TODO(joelshor): Add correctness test.
   def _test_add_image_comparison_summaries_impl(self, get_model_fn,
                                                 expected_num_summary_ops):
-    tfgan.eval.add_image_comparison_summaries(
-        get_model_fn(), display_diffs=True)
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_image_comparison_summaries(
+            get_model_fn(), display_diffs=True)
+    else:
+      tfgan.eval.add_image_comparison_summaries(
+          get_model_fn(), display_diffs=True)
 
-    self.assertEqual(
-        expected_num_summary_ops,
-        len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.summary.merge_all())
+      self.assertEqual(
+          expected_num_summary_ops,
+          len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_image_comparison_summaries(self):
     self._test_add_image_comparison_summaries_impl(get_gan_model, 1)
 
   def test_add_image_comparison_summaries_for_cyclegan(self):
-    tfgan.eval.add_cyclegan_image_summaries(get_cyclegan_model())
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_cyclegan_image_summaries(get_cyclegan_model())
+    else:
+      tfgan.eval.add_cyclegan_image_summaries(get_cyclegan_model())
 
-    self.assertEqual(
-        2, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.summary.merge_all())
+      self.assertEqual(
+          2, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.summary.merge_all())
 
   def test_add_image_comparison_summaries_for_stargan(self):
+    if tf2.enabled():
+      tmpfile = tempfile.NamedTemporaryFile().name
+      with tf.summary.create_file_writer(tmpfile).as_default():
+        tfgan.eval.add_stargan_image_summaries(get_stargan_model())
+    else:
+      tfgan.eval.add_stargan_image_summaries(get_stargan_model())
 
-    tfgan.eval.add_stargan_image_summaries(get_stargan_model())
+      self.assertEqual(
+          1, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
-    self.assertEqual(
-        1, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
-
-    with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
-      sess.run(tf.compat.v1.summary.merge_all())
+      with self.cached_session() as sess:
+        sess.run(tf.compat.v1.global_variables_initializer())
+        sess.run(tf.compat.v1.summary.merge_all())
 
 
 if __name__ == '__main__':

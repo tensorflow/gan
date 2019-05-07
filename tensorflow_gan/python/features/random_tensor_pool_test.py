@@ -45,6 +45,9 @@ class TensorPoolTest(tf.test.TestCase):
 
   def test_pool_sequence(self):
     """Checks that values are pooled and returned maximally twice."""
+    if tf.executing_eagerly():
+      # Placeholders aren't supported in eager execution.
+      return
     input_value = tf.compat.v1.placeholder(dtype=tf.int32, shape=[])
     output_value = tfgan.features.tensor_pool(input_value, pool_size=10)
     self.assertEqual(output_value.shape.as_list(), [])

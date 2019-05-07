@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
 import numpy as np
 
 import tensorflow as tf
@@ -27,7 +28,7 @@ from tensorflow_gan.python import contrib_utils
 from tensorflow_gan.python.features import normalization as norm
 
 
-class InstanceNormTest(tf.test.TestCase):
+class InstanceNormTest(tf.test.TestCase, absltest.TestCase):
 
   def testUnknownShape(self):
     if tf.executing_eagerly():
@@ -72,21 +73,25 @@ class InstanceNormTest(tf.test.TestCase):
     self.assertListEqual([5, height, width, 3], output.shape.as_list())
 
   def testCreateOpNoScaleCenter(self):
+    if tf.executing_eagerly():
+      # Collections don't work with eager.
+      return
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), dtype=tf.float64, seed=1)
     output = norm.instance_norm(images, center=False, scale=False)
     self.assertListEqual([5, height, width, 3], output.shape.as_list())
-    self.assertEqual(0, len(contrib_utils.get_variables_by_name('beta')))
-    self.assertEqual(0, len(contrib_utils.get_variables_by_name('gamma')))
+    self.assertEmpty(contrib_utils.get_variables_by_name('beta'))
+    self.assertEmpty(contrib_utils.get_variables_by_name('gamma'))
 
   def testCreateVariables(self):
+    if tf.executing_eagerly():
+      # Collections don't work with eager.
+      return
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 3), seed=1)
     norm.instance_norm(images, center=True, scale=True)
-    beta = contrib_utils.get_variables_by_name('beta')[0]
-    gamma = contrib_utils.get_variables_by_name('gamma')[0]
-    self.assertEqual('InstanceNorm/beta', beta.op.name)
-    self.assertEqual('InstanceNorm/gamma', gamma.op.name)
+    self.assertLen(contrib_utils.get_variables_by_name('beta'), 1)
+    self.assertLen(contrib_utils.get_variables_by_name('gamma'), 1)
 
   def testReuseVariables(self):
     if tf.executing_eagerly():
@@ -96,10 +101,8 @@ class InstanceNormTest(tf.test.TestCase):
     images = tf.random.uniform((5, height, width, 3), seed=1)
     norm.instance_norm(images, scale=True, scope='IN')
     norm.instance_norm(images, scale=True, scope='IN', reuse=True)
-    beta = contrib_utils.get_variables_by_name('beta')
-    gamma = contrib_utils.get_variables_by_name('gamma')
-    self.assertEqual(1, len(beta))
-    self.assertEqual(1, len(gamma))
+    self.assertLen(contrib_utils.get_variables_by_name('beta'), 1)
+    self.assertLen(contrib_utils.get_variables_by_name('gamma'), 1)
 
   def testValueCorrectWithReuseVars(self):
     height, width = 3, 3
@@ -168,7 +171,7 @@ class InstanceNormTest(tf.test.TestCase):
     self.doOutputTest((1, 100, 100, 1, 1), 'NCHW', tol=1e-3)
 
 
-class GroupNormTest(tf.test.TestCase):
+class GroupNormTest(tf.test.TestCase, absltest.TestCase):
 
   def testInvalidGroupSize(self):
     inputs = tf.zeros((5, 2, 10, 10), dtype=tf.float32)
@@ -247,7 +250,6 @@ class GroupNormTest(tf.test.TestCase):
     images = tf.random.uniform((5, height, width, 2 * groups), seed=1)
     output = norm.group_norm(
         images, groups=groups, channels_axis=-1, reduction_axes=[-3, -2])
-    print('name: ', output.op.name)
     self.assertListEqual([5, height, width, 2*groups], output.shape.as_list())
 
   def testCreateOpFloat64(self):
@@ -260,16 +262,22 @@ class GroupNormTest(tf.test.TestCase):
     self.assertListEqual([5, height, width, 4*groups], output.shape.as_list())
 
   def testCreateOpNoScaleCenter(self):
+    if tf.executing_eagerly():
+      # Collections don't work with eager.
+      return
     height, width, groups = 3, 3, 7
     images = tf.random.uniform((5, height, width, 3 * groups),
                                dtype=tf.float32,
                                seed=1)
     output = norm.group_norm(images, groups=groups, center=False, scale=False)
     self.assertListEqual([5, height, width, 3*groups], output.shape.as_list())
-    self.assertEqual(0, len(contrib_utils.get_variables_by_name('beta')))
-    self.assertEqual(0, len(contrib_utils.get_variables_by_name('gamma')))
+    self.assertEmpty(contrib_utils.get_variables_by_name('beta'))
+    self.assertEmpty(contrib_utils.get_variables_by_name('gamma'))
 
   def testCreateVariables_NHWC(self):
+    if tf.executing_eagerly():
+      # Collections don't work with eager.
+      return
     height, width = 3, 3
     images = tf.random.uniform((5, height, width, 8), seed=1)
     norm.group_norm(
@@ -279,12 +287,13 @@ class GroupNormTest(tf.test.TestCase):
         reduction_axes=(-3, -2),
         center=True,
         scale=True)
-    beta = contrib_utils.get_variables_by_name('beta')[0]
-    gamma = contrib_utils.get_variables_by_name('gamma')[0]
-    self.assertEqual('GroupNorm/beta', beta.op.name)
-    self.assertEqual('GroupNorm/gamma', gamma.op.name)
+    self.assertLen(contrib_utils.get_variables_by_name('beta'), 1)
+    self.assertLen(contrib_utils.get_variables_by_name('gamma'), 1)
 
   def testCreateVariables_NCHW(self):
+    if tf.executing_eagerly():
+      # Collections don't work with eager.
+      return
     height, width, groups = 3, 3, 4
     images = tf.random.uniform((5, 2 * groups, height, width), seed=1)
     norm.group_norm(
@@ -294,10 +303,8 @@ class GroupNormTest(tf.test.TestCase):
         reduction_axes=(-2, -1),
         center=True,
         scale=True)
-    beta = contrib_utils.get_variables_by_name('beta')[0]
-    gamma = contrib_utils.get_variables_by_name('gamma')[0]
-    self.assertEqual('GroupNorm/beta', beta.op.name)
-    self.assertEqual('GroupNorm/gamma', gamma.op.name)
+    self.assertLen(contrib_utils.get_variables_by_name('beta'), 1)
+    self.assertLen(contrib_utils.get_variables_by_name('gamma'), 1)
 
   def testReuseVariables(self):
     if tf.executing_eagerly():
@@ -307,10 +314,8 @@ class GroupNormTest(tf.test.TestCase):
     images = tf.random.uniform((5, height, width, 4), seed=1)
     norm.group_norm(images, groups=2, scale=True, scope='IN')
     norm.group_norm(images, groups=2, scale=True, scope='IN', reuse=True)
-    beta = contrib_utils.get_variables_by_name('beta')
-    gamma = contrib_utils.get_variables_by_name('gamma')
-    self.assertEqual(1, len(beta))
-    self.assertEqual(1, len(gamma))
+    self.assertLen(contrib_utils.get_variables_by_name('beta'), 1)
+    self.assertLen(contrib_utils.get_variables_by_name('gamma'), 1)
 
   def testValueCorrectWithReuseVars(self):
     height, width = 3, 3
