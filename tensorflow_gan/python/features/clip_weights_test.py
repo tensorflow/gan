@@ -59,9 +59,15 @@ class ClipWeightsTest(tf.test.TestCase):
       self.assertNear(0.1, sess.run(self.variables[0]), 1e-7)
 
   def test_weight_clipping_argsonly(self):
+    if tf.executing_eagerly():
+      # Optimizers work differently in eager.
+      return
     self._test_weight_clipping_helper(False)
 
   def test_weight_clipping_ganmodel(self):
+    if tf.executing_eagerly():
+      # Optimizers work differently in eager.
+      return
     self._test_weight_clipping_helper(True)
 
   def _test_incorrect_weight_clip_value_helper(self, use_tuple):

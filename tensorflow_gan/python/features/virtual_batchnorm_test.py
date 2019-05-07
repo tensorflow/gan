@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
 import numpy as np
 
 import tensorflow as tf
@@ -26,7 +27,7 @@ from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python.features import virtual_batchnorm as vbn_lib
 
 
-class VirtualBatchnormTest(tf.test.TestCase):
+class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
 
   def test_syntax(self):
     reference_batch = tf.zeros([5, 3, 16, 9, 15])
@@ -186,6 +187,9 @@ class VirtualBatchnormTest(tf.test.TestCase):
 
   def test_variable_reuse(self):
     """Test that variable scopes work and inference on a real-ish case."""
+    if tf.executing_eagerly():
+      # Variable reuse doesn't work in eager.
+      return
     tensor1_ref = tf.zeros([6, 5, 7, 3, 3])
     tensor1_examples = tf.zeros([4, 5, 7, 3, 3])
     tensor2_ref = tf.zeros([4, 2, 3])
@@ -210,7 +214,7 @@ class VirtualBatchnormTest(tf.test.TestCase):
     to_fetch.append(vbn1(tensor1_examples))
     to_fetch.append(vbn2(tensor2_examples))
 
-    self.assertEqual(4, len(contrib.get_variables()))
+    self.assertLen(contrib.get_variables(), 4)
 
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())

@@ -190,7 +190,7 @@ class _LossesTest(object):
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
 
 
-class LeastSquaresLossTest(tf.test.TestCase, _LossesTest):
+class LeastSquaresLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
   """Tests for least_squares_xxx_loss."""
 
   def setUp(self):
@@ -202,7 +202,7 @@ class LeastSquaresLossTest(tf.test.TestCase, _LossesTest):
     self._d_loss_fn = tfgan.losses.wargs.least_squares_discriminator_loss
 
 
-class ModifiedLossTest(tf.test.TestCase, _LossesTest):
+class ModifiedLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
   """Tests for modified_xxx_loss."""
 
   def setUp(self):
@@ -214,7 +214,7 @@ class ModifiedLossTest(tf.test.TestCase, _LossesTest):
     self._d_loss_fn = tfgan.losses.wargs.modified_discriminator_loss
 
 
-class MinimaxLossTest(tf.test.TestCase, _LossesTest):
+class MinimaxLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
   """Tests for minimax_xxx_loss."""
 
   def setUp(self):
@@ -226,7 +226,7 @@ class MinimaxLossTest(tf.test.TestCase, _LossesTest):
     self._d_loss_fn = tfgan.losses.wargs.minimax_discriminator_loss
 
 
-class WassersteinLossTest(tf.test.TestCase, _LossesTest):
+class WassersteinLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
   """Tests for wasserstein_xxx_loss."""
 
   def setUp(self):
@@ -238,7 +238,8 @@ class WassersteinLossTest(tf.test.TestCase, _LossesTest):
     self._d_loss_fn = tfgan.losses.wargs.wasserstein_discriminator_loss
 
 
-class HingeWassersteinLossTest(tf.test.TestCase, _LossesTest):
+class HingeWassersteinLossTest(tf.test.TestCase, absltest.TestCase,
+                               _LossesTest):
   """Tests for wasserstein_hinge_xxx_loss."""
 
   def setUp(self):
@@ -251,7 +252,7 @@ class HingeWassersteinLossTest(tf.test.TestCase, _LossesTest):
 
 
 # TODO(joelshor): Refactor this test to use the same code as the other losses.
-class ACGANLossTest(tf.test.TestCase):
+class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
   """Tests for acgan_loss."""
 
   def setUp(self):
@@ -426,8 +427,8 @@ class ACGANLossTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(
-        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+    self.assertEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self._d_loss_fn(add_summaries=True, **self._discriminator_kwargs)
     self.assertLess(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
@@ -726,11 +727,7 @@ class CombineAdversarialLossTest(tf.test.TestCase):
       self.assertEqual(1.0, sess.run(combined_loss))
 
   def test_no_weight_skips_adversarial_loss_useweightfactor(self):
-    if tf.executing_eagerly():
-      with self.assertRaises(RuntimeError):
-        self._test_no_weight_skips_adversarial_loss_helper(True)
-    else:
-      self._test_no_weight_skips_adversarial_loss_helper(True)
+    self._test_no_weight_skips_adversarial_loss_helper(True)
 
   def test_no_weight_skips_adversarial_loss_nouseweightfactor(self):
     if tf.executing_eagerly():

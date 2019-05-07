@@ -85,6 +85,9 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
     Args:
       same_name: Whether to use the same layer name.
     """
+    if tf.executing_eagerly():
+      # Eager execution doesn't support collections.
+      return
     def _name(i):
       return "batch_norm" if same_name else "batch_norm_%i" % i
     tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(0))
