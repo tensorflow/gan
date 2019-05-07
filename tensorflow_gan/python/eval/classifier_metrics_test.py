@@ -239,6 +239,10 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
   def test_run_inception_graph(self, use_default_graph_def, singleton,
                                num_batches):
     """Test `run_inception` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
     output_tensor = INCEPTION_OUTPUT if singleton else [INCEPTION_OUTPUT]
@@ -270,6 +274,10 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
   def test_run_inception_graph_pool_output(self, use_default_graph_def,
                                            num_batches):
     """Test `run_inception` graph construction with pool output."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
 
@@ -290,6 +298,10 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_run_inception_unicode(self):
     """Test `run_inception` with unicode input and output names."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     batch_size = 8
     img = tf.ones([batch_size, 299, 299, 3])
 
@@ -298,6 +310,10 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_run_inception_multiple_outputs(self):
     """Test `run_inception` graph construction with multiple outputs."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     batch_size = 3
     img = tf.ones([batch_size, 299, 299, 3])
     logits, pool = _run_with_mock(
@@ -315,6 +331,10 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_run_inception_multicall(self):
     """Test that `run_inception` can be called multiple times."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     for batch_size in (7, 3, 2):
       img = tf.ones([batch_size, 299, 299, 3])
       _run_with_mock(tfgan.eval.run_inception, img)
@@ -350,6 +370,10 @@ class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_inception_score_graph(self):
     """Test `inception_score` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     score = _run_with_mock(
         tfgan.eval.inception_score, tf.zeros([6, 299, 299, 3]), num_batches=3)
     self.assertIsInstance(score, tf.Tensor)
@@ -360,13 +384,17 @@ class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_inception_score_value(self):
     """Test that `inception_score` gives the correct value."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
+
     logits = np.array(
         [np.array([1, 2] * 500 + [4]),
          np.array([4, 5] * 500 + [6])])
     unused_image = tf.zeros([2, 299, 299, 3])
     incscore = _run_with_mock(tfgan.eval.inception_score, unused_image)
 
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       incscore_np = sess.run(incscore, {'concat:0': logits})
 
     self.assertAllClose(_expected_inception_score(logits), incscore_np)
@@ -391,6 +419,9 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
   def test_sample_and_run_inception_graph(
       self, use_default_graph_def, num_outputs, num_batches):
     """Test `test_sample_and_run_inception_graph` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
     batch_size = 8
     def sample_fn(_):
       return tf.ones([batch_size, 299, 299, 3])
@@ -435,6 +466,9 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
     If the sampler is ever changed to not modify the graph and this test fails,
     this test should modified or simply removed.
     """
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
 
     def sample_fn(x):
       with tf.compat.v1.variable_scope('test', reuse=tf.compat.v1.AUTO_REUSE):
@@ -468,6 +502,9 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_frechet_inception_distance_graph(self):
     """Test `frechet_inception_distance` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
     img = tf.ones([7, 299, 299, 3])
     distance = _run_with_mock(tfgan.eval.frechet_inception_distance, img, img)
 
@@ -479,6 +516,9 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_kernel_inception_distance_graph(self):
     """Test `frechet_inception_distance` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
     img = tf.ones([7, 299, 299, 3])
     distance = _run_with_mock(tfgan.eval.kernel_inception_distance, img, img)
 
@@ -592,7 +632,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
         classifier_fn=lambda x: x,
         max_block_size=600)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       actual_kid, actual_std = sess.run(kid_op)
 
     expected_kid, expected_std = _expected_kid_and_std(test_pool_real_a,
@@ -608,22 +648,37 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     test_pool_real_a = np.float32(np.random.randn(512, 256))
     test_pool_gen_a = np.float32(np.random.randn(768, 256) * 1.1 + .05)
 
-    max_block_size = tf.compat.v1.placeholder(tf.int32, shape=())
-    kid_op = _run_with_mock(
-        tfgan.eval.kernel_classifier_distance_and_std_from_activations,
-        tf.constant(test_pool_real_a),
-        tf.constant(test_pool_gen_a),
-        max_block_size=max_block_size)
+    actual_expected_l = []
+    if tf.executing_eagerly():
+      for block_size in [50, 512, 1000]:
+        actual_kid, actual_std = _run_with_mock(
+            tfgan.eval.kernel_classifier_distance_and_std_from_activations,
+            tf.constant(test_pool_real_a),
+            tf.constant(test_pool_gen_a),
+            max_block_size=block_size)
+        expected_kid, expected_std = _expected_kid_and_std(
+            test_pool_real_a, test_pool_gen_a, max_block_size=block_size)
+        actual_expected_l.append((actual_kid, expected_kid))
+        actual_expected_l.append((actual_std, expected_std))
+    else:
+      max_block_size = tf.compat.v1.placeholder(tf.int32, shape=())
+      kid_op = _run_with_mock(
+          tfgan.eval.kernel_classifier_distance_and_std_from_activations,
+          tf.constant(test_pool_real_a),
+          tf.constant(test_pool_gen_a),
+          max_block_size=max_block_size)
 
-    for block_size in [50, 512, 1000]:
-      with self.test_session() as sess:
-        actual_kid, actual_std = sess.run(kid_op, {max_block_size: block_size})
+      for block_size in [50, 512, 1000]:
+        with self.cached_session() as sess:
+          actual_kid, actual_std = sess.run(kid_op,
+                                            {max_block_size: block_size})
+        expected_kid, expected_std = _expected_kid_and_std(
+            test_pool_real_a, test_pool_gen_a, max_block_size=block_size)
+        actual_expected_l.append((actual_kid, expected_kid))
+        actual_expected_l.append((actual_std, expected_std))
 
-      expected_kid, expected_std = _expected_kid_and_std(
-          test_pool_real_a, test_pool_gen_a, max_block_size=block_size)
-
-      self.assertAllClose(expected_kid, actual_kid, 0.001)
-      self.assertAllClose(expected_std, actual_std, 0.001)
+    for actual, expected in actual_expected_l:
+      self.assertAllClose(expected, actual, 0.001)
 
 
 class UtilsTest(tf.test.TestCase, parameterized.TestCase):
@@ -652,6 +707,9 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_preprocess_image_graph(self):
     """Test `preprocess_image` graph construction."""
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager execution.
+      return
     incorrectly_sized_image = tf.zeros([520, 240, 3])
     correct_image = tfgan.eval.preprocess_image(images=incorrectly_sized_image)
     _run_with_mock(tfgan.eval.run_inception, tf.expand_dims(correct_image, 0))

@@ -176,7 +176,8 @@ def kl_divergence(p, p_logits, q):
   """
   for tensor in [p, p_logits, q]:
     if not tensor.dtype.is_floating:
-      raise ValueError('Input %s must be floating type.' % tensor.name)
+      tensor_name = tensor if tf.executing_eagerly() else tensor.name
+      raise ValueError('Input %s must be floating type.' % tensor_name)
   p.shape.assert_has_rank(2)
   p_logits.shape.assert_has_rank(2)
   q.shape.assert_has_rank(1)
@@ -371,7 +372,11 @@ def run_image_classifier(tensor,
 
   Raises:
     ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
+    ValueError: If executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`run_image_classifier` doesn\'t work in eager.')
+
   if isinstance(output_tensor, six.string_types):
     output_tensor = [output_tensor]
     output_is_tensor = True
