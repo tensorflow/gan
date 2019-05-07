@@ -19,6 +19,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
+
 import tensorflow as tf
 import tensorflow_gan as tfgan
 from tensorflow_gan.python.losses.losses_impl import numerically_stable_global_norm
@@ -53,20 +55,20 @@ class _LossesTest(object):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
+    self.assertEmpty(tf.compat.v1.get_collection('collection'))
     self._g_loss_fn(
         self._discriminator_gen_outputs, loss_collection='collection')
-    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 1)
 
   def test_discriminator_loss_collection(self):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
+    self.assertEmpty(tf.compat.v1.get_collection('collection'))
     self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs,
         loss_collection='collection')
-    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 1)
 
   def test_generator_no_reduction(self):
     loss = self._g_loss_fn(
@@ -169,8 +171,8 @@ class _LossesTest(object):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(
-        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+    self.assertEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self._g_loss_fn(self._discriminator_gen_outputs, add_summaries=True)
     self.assertLess(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
@@ -179,8 +181,8 @@ class _LossesTest(object):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(
-        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+    self.assertEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self._d_loss_fn(
         self._discriminator_real_outputs, self._discriminator_gen_outputs,
         add_summaries=True)
@@ -309,17 +311,17 @@ class ACGANLossTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
+    self.assertEmpty(tf.compat.v1.get_collection('collection'))
     self._g_loss_fn(loss_collection='collection', **self._generator_kwargs)
-    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 1)
 
   def test_discriminator_loss_collection(self):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
+    self.assertEmpty(tf.compat.v1.get_collection('collection'))
     self._d_loss_fn(loss_collection='collection', **self._discriminator_kwargs)
-    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 1)
 
   def test_generator_no_reduction(self):
     loss = self._g_loss_fn(
@@ -414,8 +416,8 @@ class ACGANLossTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(
-        0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
+    self.assertEmpty(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES))
     self._g_loss_fn(add_summaries=True, **self._generator_kwargs)
     self.assertLess(
         0, len(tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.SUMMARIES)))
@@ -436,8 +438,6 @@ class _PenaltyTest(object):
   def test_all_correct(self):
     loss = self._penalty_fn(**self._kwargs)
     self.assertEqual(self._expected_dtype, loss.dtype)
-    # Tests should not depend on op names, as they are subject to change.
-    # self.assertEqual(self._expected_op_name, loss.op.name)
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       self.assertAlmostEqual(self._expected_loss, sess.run(loss), 6)
@@ -446,9 +446,9 @@ class _PenaltyTest(object):
     if tf.executing_eagerly():
       # Collections don't work in eager.
       return
-    self.assertEqual(0, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 0)
     self._penalty_fn(loss_collection='collection', **self._kwargs)
-    self.assertEqual(1, len(tf.compat.v1.get_collection('collection')))
+    self.assertLen(tf.compat.v1.get_collection('collection'), 1)
 
   def test_no_reduction(self):
     loss = self._penalty_fn(
@@ -468,7 +468,7 @@ class _PenaltyTest(object):
       self.assertAlmostEqual(self._expected_loss * 2.3, sess.run(loss), 3)
 
 
-class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
+class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
   """Tests for wasserstein_gradient_penalty."""
 
   def setUp(self):
@@ -499,6 +499,34 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
     return tf.compat.v1.get_variable(
         'dummy_d', initializer=2.0, use_resource=False) * inputs
 
+  def test_all_correct(self):
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        super(GradientPenaltyTest, self).test_all_correct()
+    else:
+      super(GradientPenaltyTest, self).test_all_correct()
+
+  def test_no_reduction(self):
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        super(GradientPenaltyTest, self).test_no_reduction()
+    else:
+      super(GradientPenaltyTest, self).test_no_reduction()
+
+  def test_python_scalar_weight(self):
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        super(GradientPenaltyTest, self).test_python_scalar_weight()
+    else:
+      super(GradientPenaltyTest, self).test_python_scalar_weight()
+
+  def test_scalar_tensor_weight(self):
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        super(GradientPenaltyTest, self).test_scalar_tensor_weight()
+    else:
+      super(GradientPenaltyTest, self).test_scalar_tensor_weight()
+
   def test_loss_with_placeholder(self):
     if tf.executing_eagerly():
       # Eager execution doesn't support placeholders.
@@ -524,6 +552,9 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
       self.assertAlmostEqual(self._expected_loss, loss, 5)
 
   def test_loss_using_one_sided_mode(self):
+    if tf.executing_eagerly():
+      # `tf.gradients` doesn't work in eager execution.
+      return
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
         tf.constant(self._generated_data_np, dtype=tf.float32),
         tf.constant(self._real_data_np, dtype=tf.float32),
@@ -540,6 +571,9 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
   def test_loss_with_gradient_norm_target(self):
     """Test loss value with non default gradient norm target."""
+    if tf.executing_eagerly():
+      # `tf.gradients` doesn't work in eager execution.
+      return
     loss = tfgan.losses.wargs.wasserstein_gradient_penalty(
         self._generated_data_np,
         self._real_data_np,
@@ -555,14 +589,15 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
 
   def test_reuses_scope(self):
     """Test that gradient penalty reuses discriminator scope."""
+    if tf.executing_eagerly():
+      # `tf.gradients` doesn't work in eager execution.
+      return
     num_vars = len(
         tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES))
     tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
-    self.assertEqual(
-        num_vars,
-        len(
-            tf.compat.v1.get_collection(
-                tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)))
+    self.assertLen(
+        tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES),
+        num_vars)
 
   def test_works_with_get_collection(self):
     """Tests that gradient penalty works inside other scopes."""
@@ -571,33 +606,31 @@ class GradientPenaltyTest(tf.test.TestCase, _PenaltyTest):
       return
     # We ran the discriminator once in the setup, so there should be an op
     # already in the collection.
-    self.assertEqual(
-        1,
-        len(
-            tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertLen(
+        tf.compat.v1.get_collection('fake_update_ops',
+                                    self._kwargs['discriminator_scope'].name),
+        1)
 
     # Make sure the op is added to the collection even if it's in a name scope.
     with tf.compat.v1.name_scope('loss'):
       tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
-    self.assertEqual(
-        2,
-        len(
-            tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertLen(
+        tf.compat.v1.get_collection('fake_update_ops',
+                                    self._kwargs['discriminator_scope'].name),
+        2)
 
     # Make sure the op is added to the collection even if it's in a variable
     # scope.
     with tf.compat.v1.variable_scope('loss_vscope'):
       tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
-    self.assertEqual(
-        3,
-        len(
-            tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name)))
+    self.assertLen(
+        tf.compat.v1.get_collection('fake_update_ops',
+                                    self._kwargs['discriminator_scope'].name),
+        3)
 
 
-class MutualInformationPenaltyTest(tf.test.TestCase, _PenaltyTest):
+class MutualInformationPenaltyTest(tf.test.TestCase, absltest.TestCase,
+                                   _PenaltyTest):
   """Tests for mutual_information_penalty."""
 
   def setUp(self):
@@ -656,15 +689,23 @@ class CombineAdversarialLossTest(tf.test.TestCase):
         gradient_ratio_epsilon=gradient_ratio_epsilon,
         variables=variable_list)
 
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       self.assertNear(expected_loss, sess.run(combined_loss), 1e-5)
 
   def test_correct_useweightfactor(self):
-    self._test_correct_helper(True)
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        self._test_correct_helper(True)
+    else:
+      self._test_correct_helper(True)
 
   def test_correct_nouseweightfactor(self):
-    self._test_correct_helper(False)
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        self._test_correct_helper(False)
+    else:
+      self._test_correct_helper(False)
 
   def _test_no_weight_skips_adversarial_loss_helper(self, use_weight_factor):
     """Test the 0 adversarial weight or grad ratio skips adversarial loss."""
@@ -681,14 +722,22 @@ class CombineAdversarialLossTest(tf.test.TestCase):
         gradient_ratio=gradient_ratio,
         gradient_summaries=False)
 
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       self.assertEqual(1.0, sess.run(combined_loss))
 
   def test_no_weight_skips_adversarial_loss_useweightfactor(self):
-    self._test_no_weight_skips_adversarial_loss_helper(True)
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        self._test_no_weight_skips_adversarial_loss_helper(True)
+    else:
+      self._test_no_weight_skips_adversarial_loss_helper(True)
 
   def test_no_weight_skips_adversarial_loss_nouseweightfactor(self):
-    self._test_no_weight_skips_adversarial_loss_helper(False)
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        self._test_no_weight_skips_adversarial_loss_helper(False)
+    else:
+      self._test_no_weight_skips_adversarial_loss_helper(False)
 
   def test_stable_global_norm_avoids_overflow(self):
     tensors = [tf.ones([4]), tf.ones([4, 4]) * 1e19, None]
@@ -696,7 +745,7 @@ class CombineAdversarialLossTest(tf.test.TestCase):
     stable_gnorm_is_inf = tf.math.is_inf(
         numerically_stable_global_norm(tensors))
 
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       self.assertTrue(sess.run(gnorm_is_inf))
       self.assertFalse(sess.run(stable_gnorm_is_inf))
 
@@ -707,7 +756,7 @@ class CombineAdversarialLossTest(tf.test.TestCase):
     gnorm = tf.linalg.global_norm(tensors)
     precond_gnorm = numerically_stable_global_norm(tensors)
 
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       for _ in range(10):  # spot check closeness on more than one sample.
         gnorm_np, precond_gnorm_np = sess.run([gnorm, precond_gnorm])
         self.assertNear(gnorm_np, precond_gnorm_np, 1e-4)
@@ -735,7 +784,7 @@ class CycleConsistencyLossTest(tf.test.TestCase):
     loss = tfgan.losses.wargs.cycle_consistency_loss(
         self._data_x, self._reconstructed_data_x, self._data_y,
         self._reconstructed_data_y)
-    with self.cached_session(use_gpu=True) as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       self.assertNear(5.25, sess.run(loss), 1e-5)
 

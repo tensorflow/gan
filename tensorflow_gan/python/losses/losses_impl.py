@@ -437,7 +437,10 @@ def wasserstein_gradient_penalty(
 
   Raises:
     ValueError: If the rank of data Tensors is unknown.
+    RuntimeError: If TensorFlow is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise RuntimeError('Can\'t use `tf.gradient` when executing eagerly.')
   with tf.compat.v1.name_scope(scope, 'wasserstein_gradient_penalty',
                                (real_data, generated_data)) as scope:
     real_data = tf.convert_to_tensor(value=real_data)
@@ -1016,6 +1019,8 @@ def combine_adversarial_loss(main_loss,
 
   Raises:
     ValueError: Malformed input.
+    RuntimeError: If `tf.gradients` require computing, and TensorFlow is
+      executing eagerly.
   """
   _validate_args([main_loss, adversarial_loss], weight_factor, gradient_ratio)
   if variables is None:
@@ -1025,6 +1030,9 @@ def combine_adversarial_loss(main_loss,
       scope, 'adversarial_loss', values=[main_loss, adversarial_loss]):
     # Compute gradients if we will need them.
     if gradient_summaries or gradient_ratio is not None:
+      # `tf.gradients` doesn't work in eager.
+      if tf.executing_eagerly():
+        raise RuntimeError('`tf.gradients` doesn\'t work in eager.')
       main_loss_grad_mag = numerically_stable_global_norm(
           tf.gradients(ys=main_loss, xs=variables))
       adv_loss_grad_mag = numerically_stable_global_norm(

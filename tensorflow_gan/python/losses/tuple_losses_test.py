@@ -261,6 +261,9 @@ class StarGANLossWrapperTest(tf.test.TestCase):
 
     """
     loss_fn = tfgan.losses.wargs.wasserstein_gradient_penalty
+    if tf.executing_eagerly():
+      with self.assertRaises(RuntimeError):
+        tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)
     wrapped_loss_fn = tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)
 
     loss_result_tensor = loss_fn(
