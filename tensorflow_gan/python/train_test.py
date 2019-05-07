@@ -34,8 +34,7 @@ import tensorflow_probability as tfp
 
 
 def generator_model(inputs):
-  return tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False) * inputs
+  return tf.compat.v1.get_variable('dummy_g', initializer=2.0) * inputs
 
 
 class Generator(object):
@@ -45,8 +44,7 @@ class Generator(object):
 
 
 def infogan_generator_model(inputs):
-  return tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False) * inputs[0]
+  return tf.compat.v1.get_variable('dummy_g', initializer=2.0) * inputs[0]
 
 
 class InfoGANGenerator(object):
@@ -56,8 +54,7 @@ class InfoGANGenerator(object):
 
 
 def discriminator_model(inputs, _):
-  return tf.compat.v1.get_variable(
-      'dummy_d', initializer=2.0, use_resource=False) * inputs
+  return tf.compat.v1.get_variable('dummy_d', initializer=2.0) * inputs
 
 
 class Discriminator(object):
@@ -68,7 +65,7 @@ class Discriminator(object):
 
 def infogan_discriminator_model(inputs, _):
   return (tf.compat.v1.get_variable(
-      'dummy_d', initializer=2.0, use_resource=False) * inputs,
+      'dummy_d', initializer=2.0) * inputs,
           [tfp.distributions.Categorical([1.0])])
 
 
@@ -101,8 +98,7 @@ class ACGANDiscriminator(object):
 def stargan_generator_model(inputs, _):
   """Dummy generator for StarGAN."""
 
-  return tf.compat.v1.get_variable(
-      'dummy_g', initializer=0.5, use_resource=False) * inputs
+  return tf.compat.v1.get_variable('dummy_g', initializer=0.5) * inputs
 
 
 class StarGANGenerator(object):
@@ -337,9 +333,15 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
       ('callabel_stargan', get_callable_stargan_model, tfgan.StarGANModel))
   def test_output_type(self, create_fn, expected_tuple_type):
     """Test that output type is as expected."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     self.assertIsInstance(create_fn(), expected_tuple_type)
 
   def test_no_shape_check(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
 
     def dummy_generator_model(_):
       return (None, None)
@@ -362,6 +364,10 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
         check_shapes=False)
 
   def test_multiple_models(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     # Verify that creating 2 GANModels with the same scope names does not create
     # double the variables.
     create_gan_model()
@@ -403,6 +409,10 @@ class StarGANModelTest(tf.test.TestCase):
         self.assertEqual(1, np.max(target))
 
   def test_stargan_model_output_type(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     batch_size = 2
     img_size = 16
     c_size = 3
@@ -425,6 +435,10 @@ class StarGANModelTest(tf.test.TestCase):
     self.assertTrue(callable(model.generator_fn))
 
   def test_stargan_model_generator_output(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     batch_size = 2
     img_size = 16
     c_size = 3
@@ -454,6 +468,10 @@ class StarGANModelTest(tf.test.TestCase):
           reconstructed_data.shape)
 
   def test_stargan_model_discriminator_output(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     batch_size = 2
     img_size = 16
     c_size = 3
@@ -523,6 +541,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_cyclegan', create_callable_cyclegan_model),
   )
   def test_cyclegan_output_type(self, get_gan_model_fn):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     loss = tfgan.cyclegan_loss(get_gan_model_fn(), add_summaries=True)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
     self.assertEqual(0, loss.loss_x2y.discriminator_loss.shape.ndims)
@@ -541,6 +562,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
         'aux_cond_discriminator_weight': 1.0}),
   )
   def test_reduction(self, get_gan_model_fn, kwargs):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     loss = tfgan.gan_loss(
         get_gan_model_fn(),
         reduction=tf.compat.v1.losses.Reduction.NONE,
@@ -550,6 +574,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(3, loss.discriminator_loss.shape.ndims)
 
   def test_reduction_cyclegan(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     loss = tfgan.cyclegan_loss(
         create_cyclegan_model(), reduction=tf.compat.v1.losses.Reduction.NONE)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
@@ -586,6 +613,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_grad_penalty(self, create_gan_model_fn, one_sided):
     """Test gradient penalty option."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
     loss_gp = tfgan.gan_loss(
@@ -656,6 +686,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_acgan(self, create_gan_model_fn):
     """Test that ACGAN models work."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
     loss_ac_gen = tfgan.gan_loss(model, aux_cond_generator_weight=1.0)
@@ -688,6 +721,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_cyclegan(self, create_gan_model_fn):
     """Test that CycleGan models work."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.cyclegan_loss(model)
     self.assertIsInstance(loss, tfgan.CycleGANLoss)
@@ -713,7 +749,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
       ('callable', create_callable_stargan_model),
   )
   def test_stargan(self, create_gan_model_fn):
-
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     model_loss = tfgan.stargan_loss(model)
 
@@ -739,6 +777,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_tensor_pool(self, create_gan_model_fn):
     """Test tensor pool option."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     tensor_pool_fn = lambda x: tfgan.features.tensor_pool(x, pool_size=5)
     loss = tfgan.gan_loss(model, tensor_pool_fn=tensor_pool_fn)
@@ -782,6 +823,9 @@ class GANLossTest(tf.test.TestCase, parameterized.TestCase):
     tfgan.gan_loss(model, tensor_pool_fn=tensor_pool_fn)
 
   def test_doesnt_crash_when_in_nested_scope(self):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     with tf.compat.v1.variable_scope('outer_scope'):
       gan_model = tfgan.gan_model(
           generator_model,
@@ -830,6 +874,10 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
 
   def test_tensor_pool_adjusted_model_gan(self):
     """Test `_tensor_pool_adjusted_model` for gan model."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     pool_size = 5
     model = create_gan_model()
     new_model = self._make_new_model_and_check(model, pool_size)
@@ -841,6 +889,10 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
 
   def test_tensor_pool_adjusted_model_infogan(self):
     """Test _tensor_pool_adjusted_model for infogan model."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     pool_size = 5
     model = create_infogan_model()
     new_model = self._make_new_model_and_check(model, pool_size)
@@ -854,6 +906,10 @@ class TensorPoolAdjusteModelTest(tf.test.TestCase):
 
   def test_tensor_pool_adjusted_model_acgan(self):
     """Test _tensor_pool_adjusted_model for acgan model."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     pool_size = 5
     model = create_acgan_model()
     new_model = self._make_new_model_and_check(model, pool_size)
@@ -878,6 +934,10 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_acgan', create_callable_acgan_model),
   )
   def test_output_type(self, create_gan_model_fn):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
@@ -912,19 +972,20 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_acgan_provideupdates', create_callable_acgan_model, True),
   )
   def test_unused_update_ops(self, create_gan_model_fn, provide_update_ops):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
     # Add generator and discriminator update tf.
     with tf.compat.v1.variable_scope(model.generator_scope):
-      gen_update_count = tf.compat.v1.get_variable(
-          'gen_count', initializer=0, use_resource=False)
+      gen_update_count = tf.compat.v1.get_variable('gen_count', initializer=0)
       gen_update_op = gen_update_count.assign_add(1)
       tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS,
                                      gen_update_op)
     with tf.compat.v1.variable_scope(model.discriminator_scope):
-      dis_update_count = tf.compat.v1.get_variable(
-          'dis_count', initializer=0, use_resource=False)
+      dis_update_count = tf.compat.v1.get_variable('dis_count', initializer=0)
       dis_update_op = dis_update_count.assign_add(1)
       tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.UPDATE_OPS,
                                      dis_update_op)
@@ -969,6 +1030,9 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
       ('gan_canbeint32', create_gan_model, True),
   )
   def test_sync_replicas(self, create_gan_model_fn, create_global_step):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
     num_trainable_vars = len(get_trainable_variables())
@@ -978,8 +1042,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
           'custom_gstep',
           dtype=tf.int32,
           initializer=0,
-          trainable=False,
-          use_resource=False)
+          trainable=False)
       tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.GLOBAL_STEP, gstep)
 
     g_opt = get_sync_optimizer()
@@ -1036,6 +1099,10 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_is_chief_in_train_hooks(self, is_chief):
     """Make sure is_chief is propagated correctly to sync hooks."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     model = create_gan_model()
     loss = tfgan.gan_loss(model)
     g_opt = get_sync_optimizer()
@@ -1082,6 +1149,9 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_acgan', create_callable_acgan_model),
   )
   def test_run_helper(self, create_gan_model_fn):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     tf.compat.v1.random.set_random_seed(1234)
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
@@ -1101,6 +1171,9 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_multiple_steps(self, get_hooks_fn_fn):
     """Test multiple train steps."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     train_ops = self._gan_train_ops(generator_add=10, discriminator_add=100)
     train_steps = tfgan.GANTrainSteps(
         generator_train_steps=3, discriminator_train_steps=4)
@@ -1115,6 +1188,10 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_supervisor_run_gan_model_train_ops_multiple_steps(self):
     """Test that the train ops work with the old-style supervisor."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     step = tf.compat.v1.train.create_global_step()
     train_ops = tfgan.GANTrainOps(
         generator_train_op=tf.constant(3.0),
@@ -1150,6 +1227,9 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
       ('callable_acgan', create_callable_acgan_model),
   )
   def test_train_hooks_exist_in_get_hooks_fn(self, create_gan_model_fn):
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)
 
@@ -1197,6 +1277,10 @@ class PatchGANTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_patchgan(self, create_gan_model_fn):
     """Ensure that patch-based discriminators work end-to-end."""
+    if tf.executing_eagerly():
+      # None of the usual utilities work in eager.
+      return
+
     tf.compat.v1.random.set_random_seed(1234)
     model = create_gan_model_fn()
     loss = tfgan.gan_loss(model)

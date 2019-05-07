@@ -96,7 +96,10 @@ def gan_model(
   Raises:
     ValueError: If the generator outputs a Tensor that isn't the same shape as
       `real_data`.
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`tfgan.gan_model` doesn\'t work when executing eagerly.')
   # Create models
   with tf.compat.v1.variable_scope(
       generator_scope, reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
@@ -167,7 +170,12 @@ def infogan_model(
     ValueError: If the generator outputs a Tensor that isn't the same shape as
       `real_data`.
     ValueError: If the discriminator output is malformed.
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`tfgan.infogan_model` doesn\'t work when executing '
+                     'eagerly.')
+
   # Create models
   with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     unstructured_generator_inputs = _convert_tensor_or_l_or_d(
@@ -264,8 +272,13 @@ def acgan_model(
     ValueError: If the generator outputs a Tensor that isn't the same shape as
       `real_data`.
     TypeError: If the discriminator does not output a tuple consisting of
-    (discrimination logits, classification logits).
+      (discrimination logits, classification logits).
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`tfgan.acgan_model` doesn\'t work when executing '
+                     'eagerly.')
+
   # Create models
   with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     generator_inputs = _convert_tensor_or_l_or_d(generator_inputs)
@@ -345,7 +358,11 @@ def cyclegan_model(
   Raises:
     ValueError: If `check_shapes` is True and `data_x` or the generator output
       does not have the same shape as `data_y`.
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`tfgan.cyclegan_model` doesn\'t work when executing '
+                     'eagerly.')
 
   # Create models.
   def _define_partial_model(input_data, output_data):
@@ -409,8 +426,12 @@ def stargan_model(generator_fn,
 
   Raises:
     ValueError: If the shape of `input_data_domain_label` is not rank 2 or fully
-    defined in every dimensions.
+      defined in every dimensions.
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    raise ValueError('`tfgan.stargan_model` doesn\'t work when executing '
+                     'eagerly.')
 
   # Convert to tensor.
   input_data = _convert_tensor_or_l_or_d(input_data)
