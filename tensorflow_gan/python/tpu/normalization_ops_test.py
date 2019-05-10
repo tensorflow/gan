@@ -28,6 +28,8 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.python.tpu.normalization_ops import accumulated_moments_for_inference
 from tensorflow_gan.python.tpu.normalization_ops import moving_moments_for_inference
 
+from tensorflow.python import tf2  # pylint:disable=g-direct-tensorflow-import
+
 
 class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
 
@@ -187,7 +189,7 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
       {"decay": 0.999},
   )
   def testMovingMomentsDuringTrain(self, decay):
-    if tf.executing_eagerly():
+    if tf2.enabled():
       # Eager execution doesn't support placeholders or `x.op`.
       return
     mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
