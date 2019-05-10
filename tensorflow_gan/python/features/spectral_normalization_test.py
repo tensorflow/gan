@@ -25,12 +25,14 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
+tf.compat.v1.disable_v2_behavior()
+
 
 class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
   def testComputeSpectralNorm(self):
     weights = tf.compat.v1.get_variable(
-        'w', dtype=tf.float32, shape=[2, 3, 50, 100], use_resource=False)
+        'w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
     s = tf.linalg.svd(
         tf.reshape(weights, [-1, weights.shape[-1]]), compute_uv=False)
@@ -60,7 +62,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
   def testSpectralNormalize(self):
     weights = tf.compat.v1.get_variable(
-        'w', dtype=tf.float32, shape=[2, 3, 50, 100], use_resource=False)
+        'w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
     normalized_weights = tfgan.features.spectral_normalize(
         weights, power_iteration_rounds=1)
