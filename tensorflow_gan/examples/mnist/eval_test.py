@@ -22,14 +22,16 @@ from __future__ import print_function
 from absl import flags
 from absl.testing import absltest
 from absl.testing import parameterized
+import tensorflow as tf
+
 from tensorflow_gan.examples.mnist import eval  # pylint:disable=redefined-builtin
 
 
-class EvalTest(parameterized.TestCase):
+class EvalTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.named_parameters(('RealData', True), ('GeneratedData', False))
-  def test_build_graph(self, eval_real_images):
-    flags.FLAGS.eval_real_images = eval_real_images
+  def test_build_graph(self, eval_real_images_mnist):
+    flags.FLAGS.eval_real_images_mnist = eval_real_images_mnist
     eval.main(None, run_eval_loop=False)
 
 

@@ -28,12 +28,12 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 
-flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
+flags.DEFINE_integer('batch_size_mnist', 32, 'The number of images in each batch.')
 
-flags.DEFINE_string('train_log_dir', '/tmp/mnist/',
+flags.DEFINE_string('train_log_dir_mnist', '/tmp/mnist/',
                     'Directory where to write event logs.')
 
-flags.DEFINE_integer('max_number_of_steps', 20000,
+flags.DEFINE_integer('max_number_of_steps_mnist', 20000,
                      'The maximum number of gradient steps.')
 
 flags.DEFINE_string('gan_type', 'unconditional',
@@ -41,7 +41,7 @@ flags.DEFINE_string('gan_type', 'unconditional',
 
 flags.DEFINE_integer('grid_size', 5, 'Grid size for image visualization.')
 
-flags.DEFINE_integer('noise_dims', 64,
+flags.DEFINE_integer('noise_dims_mnist', 64,
                      'Dimensions of the generator noise vector.')
 
 FLAGS = flags.FLAGS
@@ -56,14 +56,14 @@ def _learning_rate(gan_type):
 
 
 def main(_):
-  if not tf.io.gfile.exists(FLAGS.train_log_dir):
-    tf.io.gfile.makedirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir_mnist):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir_mnist)
 
   # Force all input processing onto CPU in order to reserve the GPU for
   # the forward inference and back-propagation.
   with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
     images, one_hot_labels = data_provider.provide_data(
-        'train', FLAGS.batch_size, num_parallel_calls=4)
+        'train', FLAGS.batch_size_mnist, num_parallel_calls=4)
 
   # Define the GANModel tuple.
   if FLAGS.gan_type == 'unconditional':
@@ -71,9 +71,9 @@ def main(_):
         generator_fn=networks.unconditional_generator,
         discriminator_fn=networks.unconditional_discriminator,
         real_data=images,
-        generator_inputs=tf.random.normal([FLAGS.batch_size, FLAGS.noise_dims]))
+        generator_inputs=tf.random.normal([FLAGS.batch_size_mnist, FLAGS.noise_dims_mnist]))
   elif FLAGS.gan_type == 'conditional':
-    noise = tf.random.normal([FLAGS.batch_size, FLAGS.noise_dims])
+    noise = tf.random.normal([FLAGS.batch_size_mnist, FLAGS.noise_dims_mnist])
     gan_model = tfgan.gan_model(
         generator_fn=networks.conditional_generator,
         discriminator_fn=networks.conditional_discriminator,
@@ -105,15 +105,15 @@ def main(_):
       tf.as_string(tf.compat.v1.train.get_or_create_global_step())
   ],
                                    name='status_message')
-  if FLAGS.max_number_of_steps == 0:
+  if FLAGS.max_number_of_steps_mnist == 0:
     return
   tfgan.gan_train(
       train_ops,
       hooks=[
-          tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
+          tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps_mnist),
           tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
       ],
-      logdir=FLAGS.train_log_dir,
+      logdir=FLAGS.train_log_dir_mnist,
       get_hooks_fn=tfgan.get_joint_train_hooks())
 
 

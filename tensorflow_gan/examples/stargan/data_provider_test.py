@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl.testing import absltest
 import numpy as np
 import tensorflow as tf
 
@@ -27,7 +28,7 @@ from tensorflow_gan.examples.stargan import data_provider
 mock = tf.compat.v1.test.mock
 
 
-class DataProviderTest(tf.test.TestCase):
+class DataProviderTest(tf.test.TestCase, absltest.TestCase):
 
   def setUp(self):
     super(DataProviderTest, self).setUp()
@@ -41,12 +42,12 @@ class DataProviderTest(tf.test.TestCase):
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data(self, mock_tfds):
-    batch_size = 5
-    patch_size = 32
+    batch_size_stargan = 5
+    patch_size_stargan = 32
     mock_tfds.load.return_value = self.mock_ds
 
     images, labels = data_provider.provide_data(
-        'test', batch_size, patch_size=patch_size, domains=('A', 'B', 'C'))
+        'test', batch_size_stargan, patch_size_stargan=patch_size_stargan, domains=('A', 'B', 'C'))
     self.assertLen(images, 3)
     self.assertLen(labels, 3)
 
@@ -54,10 +55,10 @@ class DataProviderTest(tf.test.TestCase):
       images = sess.run(images)
       labels = sess.run(labels)
     for img in images:
-      self.assertTupleEqual(img.shape, (batch_size, patch_size, patch_size, 3))
+      self.assertTupleEqual(img.shape, (batch_size_stargan, patch_size_stargan, patch_size_stargan, 3))
       self.assertTrue(np.all(np.abs(img) <= 1))
     for lbl in labels:
-      expected_lbls_shape = (batch_size, 3)
+      expected_lbls_shape = (batch_size_stargan, 3)
       self.assertTupleEqual(lbl.shape, expected_lbls_shape)
 
 

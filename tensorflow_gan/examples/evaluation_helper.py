@@ -41,20 +41,23 @@ def get_or_create_eval_step():
     ValueError: If multiple `Tensors` have been added to the
       `tf.GraphKeys.EVAL_STEP` collection.
   """
-  graph = tf.get_default_graph()
-  eval_steps = graph.get_collection(tf.GraphKeys.EVAL_STEP)
+  graph = tf.compat.v1.get_default_graph()
+  eval_steps = graph.get_collection(tf.compat.v1.GraphKeys.EVAL_STEP)
   if len(eval_steps) == 1:
     return eval_steps[0]
   elif len(eval_steps) > 1:
     raise ValueError('Multiple tensors added to tf.GraphKeys.EVAL_STEP')
   else:
-    counter = tf.get_variable(
+    counter = tf.compat.v1.get_variable(
         'eval_step',
         shape=[],
         dtype=tf.int64,
-        initializer=tf.zeros_initializer(),
+        initializer=tf.compat.v1.zeros_initializer(),
         trainable=False,
-        collections=[tf.GraphKeys.LOCAL_VARIABLES, tf.GraphKeys.EVAL_STEP])
+        collections=[
+            tf.compat.v1.GraphKeys.LOCAL_VARIABLES,
+            tf.compat.v1.GraphKeys.EVAL_STEP
+        ])
     return counter
 
 
@@ -75,7 +78,7 @@ def get_latest_eval_step_value(update_ops):
     return tf.identity(get_or_create_eval_step().read_value())
 
 
-class MultiStepStopAfterNEvalsHook(tf.train.SessionRunHook):
+class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, steps_per_run=1):
@@ -106,7 +109,8 @@ class MultiStepStopAfterNEvalsHook(tf.train.SessionRunHook):
     self._steps_per_run_variable.load(steps, session=session)
 
   def before_run(self, run_context):
-    return tf.train.SessionRunArgs({'evals_completed': self._evals_completed})
+    return tf.estimator.SessionRunArgs(
+        {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
     evals_completed = run_values.results['evals_completed']
@@ -119,14 +123,15 @@ class MultiStepStopAfterNEvalsHook(tf.train.SessionRunHook):
     self._steps_per_run_variable.load(steps, session=run_context.session)
 
     if self._num_evals is None:
-      tf.logging.info('Evaluation [%d]', evals_completed)
+      tf.compat.v1.logging.info('Evaluation [%d]', evals_completed)
     else:
-      tf.logging.info('Evaluation [%d/%d]', evals_completed, self._num_evals)
+      tf.compat.v1.logging.info('Evaluation [%d/%d]', evals_completed,
+                                self._num_evals)
     if self._num_evals is not None and evals_completed >= self._num_evals:
       run_context.request_stop()
 
 
-class StopAfterNEvalsHook(tf.train.SessionRunHook):
+class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, log_progress=True):
@@ -149,23 +154,24 @@ class StopAfterNEvalsHook(tf.train.SessionRunHook):
     self._evals_completed = updated_eval_step
 
   def before_run(self, run_context):
-    return tf.train.SessionRunArgs({'evals_completed': self._evals_completed})
+    return tf.estimator.SessionRunArgs(
+        {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
     evals_completed = run_values.results['evals_completed']
     if self._log_progress:
       if self._num_evals is None:
-        tf.logging.info('Evaluation [%d]', evals_completed)
+        tf.compat.v1.logging.info('Evaluation [%d]', evals_completed)
       else:
         if ((evals_completed % self._log_frequency) == 0 or
             (self._num_evals == evals_completed)):
-          tf.logging.info('Evaluation [%d/%d]', evals_completed,
-                          self._num_evals)
+          tf.compat.v1.logging.info('Evaluation [%d/%d]', evals_completed,
+                                    self._num_evals)
     if self._num_evals is not None and evals_completed >= self._num_evals:
       run_context.request_stop()
 
 
-class SummaryAtEndHook(tf.train.SessionRunHook):
+class SummaryAtEndHook(tf.estimator.SessionRunHook):
   """A run hook that saves a summary with the results of evaluation."""
 
   def __init__(self,
@@ -199,16 +205,17 @@ class SummaryAtEndHook(tf.train.SessionRunHook):
   def begin(self):
     if self._replace_summary_op:
       # This can still remain None if there are no summaries.
-      self._summary_op = tf.summary.merge_all()
-    self._global_step = tf.train.get_or_create_global_step()
+      self._summary_op = tf.compat.v1.summary.merge_all()
+    self._global_step = tf.compat.v1.train.get_or_create_global_step()
 
   def after_create_session(self, session, coord):
     if self._summary_writer is None and self._log_dir:
-      self._summary_writer = tf.summary.FileWriterCache.get(self._log_dir)
+      self._summary_writer = tf.compat.v1.summary.FileWriterCache.get(
+          self._log_dir)
 
   def end(self, session):
     if self._summary_op is not None:
-      global_step = tf.train.global_step(session, self._global_step)
+      global_step = tf.compat.v1.train.global_step(session, self._global_step)
       summary_str = session.run(self._summary_op, self._feed_dict)
       if self._summary_writer:
         self._summary_writer.add_summary(summary_str, global_step)
@@ -234,7 +241,7 @@ def wait_for_new_checkpoint(checkpoint_dir,
   Returns:
     a new checkpoint path, or None if the timeout was reached.
   """
-  tf.logging.info('Waiting for new checkpoint at %s', checkpoint_dir)
+  tf.compat.v1.logging.info('Waiting for new checkpoint at %s', checkpoint_dir)
   stop_time = time.time() + timeout if timeout is not None else None
   while True:
     checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
@@ -243,7 +250,7 @@ def wait_for_new_checkpoint(checkpoint_dir,
         return None
       time.sleep(seconds_to_sleep)
     else:
-      tf.logging.info('Found new checkpoint at %s', checkpoint_path)
+      tf.compat.v1.logging.info('Found new checkpoint at %s', checkpoint_path)
       return checkpoint_path
 
 
@@ -296,7 +303,7 @@ def checkpoints_iterator(checkpoint_dir,
     if new_checkpoint_path is None:
       if not timeout_fn:
         # timed out
-        tf.logging.info('Timed-out waiting for a checkpoint.')
+        tf.compat.v1.logging.info('Timed-out waiting for a checkpoint.')
         return
       if timeout_fn():
         # The timeout_fn indicated that we are truly done.
@@ -374,12 +381,12 @@ def evaluate_once(checkpoint_path,
     if any(isinstance(h, MultiStepStopAfterNEvalsHook) for h in hooks):
       steps_per_run_variable = \
           basic_session_run_hooks.get_or_create_steps_per_run_variable()
-      update_eval_step = tf.assign_add(
+      update_eval_step = tf.compat.v1.assign_add(
           eval_step,
           tf.cast(steps_per_run_variable, dtype=eval_step.dtype),
           use_locking=True)
     else:
-      update_eval_step = tf.assign_add(eval_step, 1, use_locking=True)
+      update_eval_step = tf.compat.v1.assign_add(eval_step, 1, use_locking=True)
 
     if isinstance(eval_ops, dict):
       eval_ops['update_eval_step'] = update_eval_step
@@ -394,27 +401,29 @@ def evaluate_once(checkpoint_path,
       if isinstance(h, (StopAfterNEvalsHook, MultiStepStopAfterNEvalsHook)):
         h._set_evals_completed_tensor(eval_step_value)  # pylint: disable=protected-access
 
-  tf.logging.info('Starting evaluation at ' +
-                  time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime()))
+  tf.compat.v1.logging.info(
+      'Starting evaluation at ' +
+      time.strftime('%Y-%m-%dT%H:%M:%SZ', time.localtime()))
 
   # Prepare the session creator.
-  session_creator = tf.train.ChiefSessionCreator(
+  session_creator = tf.compat.v1.train.ChiefSessionCreator(
       scaffold=scaffold,
       checkpoint_filename_with_path=checkpoint_path,
       master=master,
       config=config)
 
-  final_ops_hook = tf.train.FinalOpsHook(final_ops, final_ops_feed_dict)
+  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
 
-  with tf.train.MonitoredSession(
+  with tf.compat.v1.train.MonitoredSession(
       session_creator=session_creator, hooks=hooks) as session:
     if eval_ops is not None:
       while not session.should_stop():
         session.run(eval_ops, feed_dict)
 
-  tf.logging.info('Finished evaluation at ' +
-                  time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime()))
+  tf.compat.v1.logging.info(
+      'Finished evaluation at ' +
+      time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime()))
   return final_ops_hook.final_ops_values
 
 
@@ -489,7 +498,7 @@ def evaluate_repeatedly(checkpoint_dir,
   hooks = hooks or []
 
   if eval_ops is not None:
-    update_eval_step = tf.assign_add(eval_step, 1)
+    update_eval_step = tf.compat.v1.assign_add(eval_step, 1)
 
     for h in hooks:
       if isinstance(h, StopAfterNEvalsHook):
@@ -502,7 +511,7 @@ def evaluate_repeatedly(checkpoint_dir,
     else:
       eval_ops = [eval_ops, update_eval_step]
 
-  final_ops_hook = tf.train.FinalOpsHook(final_ops, final_ops_feed_dict)
+  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
   num_evaluations = 0
   for checkpoint_path in checkpoints_iterator(
@@ -511,22 +520,24 @@ def evaluate_repeatedly(checkpoint_dir,
       timeout=timeout,
       timeout_fn=timeout_fn):
 
-    session_creator = tf.train.ChiefSessionCreator(
+    session_creator = tf.compat.v1.train.ChiefSessionCreator(
         scaffold=scaffold,
         checkpoint_filename_with_path=checkpoint_path,
         master=master,
         config=config)
 
-    with tf.train.MonitoredSession(
+    with tf.compat.v1.train.MonitoredSession(
         session_creator=session_creator, hooks=hooks) as session:
-      tf.logging.info('Starting evaluation at ' +
-                      time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
+      tf.compat.v1.logging.info(
+          'Starting evaluation at ' +
+          time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
       if eval_ops is not None:
         while not session.should_stop():
           session.run(eval_ops, feed_dict)
 
-      tf.logging.info('Finished evaluation at ' +
-                      time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
+      tf.compat.v1.logging.info(
+          'Finished evaluation at ' +
+          time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
     num_evaluations += 1
 
     if (max_number_of_evaluations is not None and

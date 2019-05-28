@@ -20,6 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+from absl import flags
 from absl import logging
 import numpy as np
 import PIL
@@ -27,10 +28,26 @@ import PIL
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-from tensorflow_gan.examples.cyclegan import inference_demo
-from tensorflow_gan.examples.cyclegan import train
+# pylint:disable=g-import-not-at-top
+try:
+  from tensorflow_gan.examples.cyclegan import inference_demo
+  from tensorflow_gan.examples.cyclegan import train
+  run_tests = True
+except ImportError:
+  # Some test environments don't have `tensorflow_models`. We skip the tests
+  # in that case.
+  run_tests = False
+  # We need a dummy `train` module for mock to not fail.
+  class Dummy(object):  # pylint:disable=g-wrong-blank-lines
+    pass
+  train = Dummy()
+  train.data_provider = None
+  train.main = None
+  inference_demo = Dummy()
+  inference_demo.main = None
+# pylint:enable=g-import-not-at-top
 
-FLAGS = tf.flags.FLAGS
+FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
@@ -40,7 +57,7 @@ def _basenames_from_glob(file_glob):
   ]
 
 
-class InferenceDemoTest(tf.test.TestCase):
+class InferenceDemoTest(tf.test.TestCase if run_tests else Dummy):
 
   def setUp(self):
     self._export_dir = os.path.join(FLAGS.test_tmpdir, 'export')

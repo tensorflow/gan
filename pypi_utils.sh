@@ -46,6 +46,19 @@ install_tfp() {
   fi
 }
 
+install_tfds() {
+  local tf_version=$1
+
+  if [[ "$tf_version" == "TF1.x" ]]; then
+    pip install tensorflow-datasets
+  elif [[ "$tf_version" == "TF2.x" ]]; then
+    pip install tfds-nightly
+  else
+    echo "TensorFlow version not recognized: ${tf_version}"
+    exit -1
+  fi
+}
+
 run_unittests_tests() {
   local py_version=$1
   local tf_version=$2
@@ -58,8 +71,11 @@ run_unittests_tests() {
 
   # TODO(joelshor): These should get installed in setup.py, but aren't for some
   # reason.
+  pip install Pillow
   pip install scipy
+  pip install matplotlib
   install_tfp "${tf_version}"
+  install_tfds "${tf_version}"
 
   # Run the tests.
   python setup.py test

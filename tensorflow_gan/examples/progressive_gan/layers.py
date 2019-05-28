@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 """Layers for a progressive GAN model.
 
 This module contains basic building blocks to build a progressive GAN model.
@@ -30,6 +31,8 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_gan.examples import compat_utils
+
 
 def pixel_norm(images, epsilon=1.0e-8):
   """Pixel normalization.
@@ -44,8 +47,9 @@ def pixel_norm(images, epsilon=1.0e-8):
   Returns:
     A 4D `Tensor` with pixel-wise normalized channels.
   """
-  return images * tf.rsqrt(
-      tf.reduce_mean(tf.square(images), axis=3, keepdims=True) + epsilon)
+  return images * tf.math.rsqrt(
+      tf.reduce_mean(input_tensor=tf.square(images), axis=3, keepdims=True) +
+      epsilon)
 
 
 def _get_validated_scale(scale):
@@ -72,8 +76,8 @@ def downscale(images, scale):
   scale = _get_validated_scale(scale)
   if scale == 1:
     return images
-  return tf.nn.avg_pool(
-      images,
+  return compat_utils.nn_avg_pool2d(
+      input=images,
       ksize=[1, scale, scale, 1],
       strides=[1, scale, scale, 1],
       padding='VALID')
@@ -95,10 +99,10 @@ def upscale(images, scale):
   scale = _get_validated_scale(scale)
   if scale == 1:
     return images
-  return tf.batch_to_space(
-      tf.tile(images, [scale**2, 1, 1, 1]),
+  return compat_utils.batch_to_space(
+      input=tf.tile(images, [scale**2, 1, 1, 1]),
       crops=[[0, 0], [0, 0]],
-      block_size=scale)
+      block_shape=scale)
 
 
 def minibatch_mean_stddev(x):
@@ -113,9 +117,9 @@ def minibatch_mean_stddev(x):
   Returns:
     A scalar `Tensor` which is the mean variance of variable x.
   """
-  mean, var = tf.nn.moments(x, axes=[0])
+  mean, var = tf.nn.moments(x=x, axes=[0])
   del mean
-  return tf.reduce_mean(tf.sqrt(var))
+  return tf.reduce_mean(input_tensor=tf.sqrt(var))
 
 
 def scalar_concat(tensor, scalar):
@@ -135,7 +139,7 @@ def scalar_concat(tensor, scalar):
   ndims = tensor.shape.ndims
   if ndims < 1:
     raise ValueError('`tensor` must have number of dimensions >= 1.')
-  shape = tf.shape(tensor)
+  shape = tf.shape(input=tensor)
   return tf.concat(
       [tensor,
        tf.ones([shape[i] for i in range(ndims - 1)] + [1]) * scalar],
@@ -178,10 +182,10 @@ def _custom_layer_impl(apply_kernel, kernel_shape, bias_shape, activation,
   if use_weight_scaling:
     init_scale, post_scale = post_scale, init_scale
 
-  kernel_initializer = tf.random_normal_initializer(stddev=init_scale)
+  kernel_initializer = tf.compat.v1.random_normal_initializer(stddev=init_scale)
 
-  bias = tf.get_variable(
-      'bias', shape=bias_shape, initializer=tf.zeros_initializer())
+  bias = tf.compat.v1.get_variable(
+      'bias', shape=bias_shape, initializer=tf.compat.v1.zeros_initializer())
 
   output = post_scale * apply_kernel(kernel_shape, kernel_initializer) + bias
 
@@ -228,7 +232,7 @@ def custom_conv2d(x,
   kernel_size = list(kernel_size)
 
   def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.layers.conv2d(
+    return tf.compat.v1.layers.conv2d(
         x,
         filters=filters,
         kernel_size=kernel_shape[0:2],
@@ -237,7 +241,7 @@ def custom_conv2d(x,
         use_bias=False,
         kernel_initializer=kernel_initializer)
 
-  with tf.variable_scope(scope, reuse=reuse):
+  with tf.compat.v1.variable_scope(scope, reuse=reuse):
     return _custom_layer_impl(
         _apply_kernel,
         kernel_shape=kernel_size + [x.shape.as_list()[3], filters],
@@ -274,16 +278,16 @@ def custom_dense(x,
   Returns:
     A `Tensor` where the last dimension has size `units`.
   """
-  x = tf.layers.flatten(x)
+  x = tf.compat.v1.layers.flatten(x)
 
   def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.layers.dense(
+    return tf.compat.v1.layers.dense(
         x,
         kernel_shape[1],
         use_bias=False,
         kernel_initializer=kernel_initializer)
 
-  with tf.variable_scope(scope, reuse=reuse):
+  with tf.compat.v1.variable_scope(scope, reuse=reuse):
     return _custom_layer_impl(
         _apply_kernel,
         kernel_shape=(x.shape.as_list()[-1], units),

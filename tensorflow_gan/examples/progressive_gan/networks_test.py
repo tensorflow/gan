@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -27,7 +28,10 @@ from tensorflow_gan.examples.progressive_gan import networks
 def _get_grad_norm(ys, xs):
   """Compute 2-norm of dys / dxs."""
   return tf.sqrt(
-      tf.add_n([tf.reduce_sum(tf.square(g)) for g in tf.gradients(ys, xs)]))
+      tf.add_n([
+          tf.reduce_sum(input_tensor=tf.square(g))
+          for g in tf.gradients(ys=ys, xs=xs)
+      ]))
 
 
 def _num_filters_stub(block_id):
@@ -69,7 +73,7 @@ class NetworksTest(tf.test.TestCase):
         with self.cached_session(use_gpu=True) as sess:
           progress_output.append(sess.run(progress))
     else:
-      current_image_id_ph = tf.placeholder(tf.int32, [])
+      current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
       progress = networks.compute_progress(
           current_image_id_ph,
           stable_stage_num_images=7,
@@ -104,18 +108,11 @@ class NetworksTest(tf.test.TestCase):
 
   def test_discriminator_alpha(self):
     with self.cached_session(use_gpu=True) as sess:
-      alpha_fixed_block_id = [
-          sess.run(
-              networks._discriminator_alpha(2, tf.constant(
-                  progress, tf.float32)))
-          for progress in [0, 0.2, 1, 1.2, 2, 2.2, 3]
-      ]
-      alpha_fixed_progress = [
-          sess.run(
-              networks._discriminator_alpha(block_id,
-                                            tf.constant(1.2, tf.float32)))
-          for block_id in range(1, 5)
-      ]
+      alpha_fixed_block_id = [sess.run(networks._discriminator_alpha(
+          2, tf.constant(progress, tf.float32))) for progress in
+                              [0, 0.2, 1, 1.2, 2, 2.2, 3]]
+      alpha_fixed_progress = [sess.run(networks._discriminator_alpha(
+          block_id, tf.constant(1.2, tf.float32))) for block_id in range(1, 5)]
 
     self.assertArrayNear(alpha_fixed_block_id, [1, 1, 1, 0.8, 0, 0, 0], 1.0e-6)
     self.assertArrayNear(alpha_fixed_progress, [0, 0.8, 1, 1], 1.0e-6)
@@ -157,30 +154,33 @@ class NetworksTest(tf.test.TestCase):
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 
-    current_image_id_ph = tf.placeholder(tf.int32, [])
+    current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
     progress = networks.compute_progress(
         current_image_id_ph,
         stable_stage_num_images,
         transition_stage_num_images,
         num_blocks=3)
-    z = tf.random_normal([2, 10], dtype=tf.float32)
+    z = tf.random.normal([2, 10], dtype=tf.float32)
     x, _ = networks.generator(
         z, progress, _num_filters_stub,
         networks.ResolutionSchedule(
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
-    fake_loss = tf.reduce_sum(tf.square(x))
+    fake_loss = tf.reduce_sum(input_tensor=tf.square(x))
     grad_norms = [
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       x1_np = sess.run(x, feed_dict={current_image_id_ph: 0.12})
       x2_np = sess.run(x, feed_dict={current_image_id_ph: 1.8})
       grad_norms_output = np.array([
@@ -210,30 +210,33 @@ class NetworksTest(tf.test.TestCase):
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 
-    current_image_id_ph = tf.placeholder(tf.int32, [])
+    current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
     progress = networks.compute_progress(
         current_image_id_ph,
         stable_stage_num_images,
         transition_stage_num_images,
         num_blocks=3)
-    x = tf.random_normal([2, 16, 16, 3])
+    x = tf.random.normal([2, 16, 16, 3])
     logits, _ = networks.discriminator(
         x, progress, _num_filters_stub,
         networks.ResolutionSchedule(
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
-    fake_loss = tf.reduce_sum(tf.square(logits))
+    fake_loss = tf.reduce_sum(input_tensor=tf.square(logits))
     grad_norms = [
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(fake_loss,
-                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(
+            fake_loss,
+            tf.compat.v1.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.global_variables_initializer())
+      sess.run(tf.compat.v1.global_variables_initializer())
       grad_norms_output = np.array([
           sess.run(grad_norms, feed_dict={current_image_id_ph: i})
           for i in range(15)  # total num of images

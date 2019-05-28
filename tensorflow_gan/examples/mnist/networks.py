@@ -24,25 +24,35 @@ import tensorflow_gan as tfgan
 
 
 def _dense(inputs, units, l2_weight):
-  return tf.layers.dense(
-      inputs, units, use_bias=False,
+  return tf.compat.v1.layers.dense(
+      inputs,
+      units,
+      use_bias=False,
       kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
 
 
 def _batch_norm(inputs, is_training):
-  return tf.layers.batch_normalization(
+  return tf.compat.v1.layers.batch_normalization(
       inputs, momentum=0.999, epsilon=0.001, training=is_training)
 
 
 def _deconv2d(inputs, filters, kernel_size, stride, l2_weight):
-  return tf.layers.conv2d_transpose(
-      inputs, filters, kernel_size, strides=stride, padding='same',
+  return tf.compat.v1.layers.conv2d_transpose(
+      inputs,
+      filters,
+      kernel_size,
+      strides=stride,
+      padding='same',
       kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
 
 
 def _conv2d(inputs, filters, kernel_size, stride, l2_weight):
-  return tf.layers.conv2d(
-      inputs, filters, kernel_size, strides=stride, padding='same',
+  return tf.compat.v1.layers.conv2d(
+      inputs,
+      filters,
+      kernel_size,
+      strides=stride,
+      padding='same',
       kernel_regularizer=tf.keras.regularizers.l2(l=l2_weight))
 
 
@@ -146,17 +156,17 @@ def discriminator_helper(img, is_conditional, one_hot_labels, weight_decay):
     weight_decay: The L2 weight decay.
 
   Returns:
-    Final fully connected discriminator layer. [batch_size, 1024].
+    Final fully connected discriminator layer. [batch_size_mnist, 1024].
   """
   sn_gettr = tfgan.features.spectral_normalization_custom_getter
-  with tf.variable_scope('sn', custom_getter=sn_gettr(training=True)):
+  with tf.compat.v1.variable_scope('sn', custom_getter=sn_gettr(training=True)):
     net = _conv2d(img, 64, 4, 2, weight_decay)
     net = leaky_relu(net)
 
     net = _conv2d(net, 128, 4, 2, weight_decay)
     net = leaky_relu(net)
 
-    net = tf.layers.flatten(net)
+    net = tf.compat.v1.layers.flatten(net)
 
     if is_conditional:
       net = tfgan.features.condition_tensor_from_onehot(net, one_hot_labels)
@@ -183,7 +193,7 @@ def unconditional_discriminator(img, unused_conditioning, weight_decay=2.5e-5):
     Logits for the probability that the image is real.
   """
   net = discriminator_helper(img, False, None, weight_decay)
-  return tf.layers.dense(
+  return tf.compat.v1.layers.dense(
       net, 1, kernel_regularizer=tf.keras.regularizers.l2(l=weight_decay))
 
 
@@ -200,5 +210,5 @@ def conditional_discriminator(img, conditioning, weight_decay=2.5e-5):
   """
   _, one_hot_labels = conditioning
   net = discriminator_helper(img, True, one_hot_labels, weight_decay)
-  return tf.layers.dense(
+  return tf.compat.v1.layers.dense(
       net, 1, kernel_regularizer=tf.keras.regularizers.l2(l=weight_decay))

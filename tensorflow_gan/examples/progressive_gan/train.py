@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 """Train a progressive GAN model.
 
 See https://arxiv.org/abs/1710.10196 for details about the model.
@@ -57,7 +58,7 @@ def get_stage_ids(**kwargs):
         'num_resolutions': An integer of number of progressive resolutions.
   """
   train_sub_dirs = [
-      sub_dir for sub_dir in tf.gfile.ListDirectory(kwargs['train_log_dir'])
+      sub_dir for sub_dir in tf.io.gfile.listdir(kwargs['train_log_dir'])
       if sub_dir.startswith('stage_')
   ]
 
@@ -145,7 +146,7 @@ def get_stage_info(stage_id, **kwargs):
 
 def make_latent_vectors(num, **kwargs):
   """Returns a batch of `num` random latent vectors."""
-  return tf.random_normal([num, kwargs['latent_vector_size']], dtype=tf.float32)
+  return tf.random.normal([num, kwargs['latent_vector_size']], dtype=tf.float32)
 
 
 def make_interpolated_latent_vectors(num_rows, num_columns, **kwargs):
@@ -170,9 +171,10 @@ def make_interpolated_latent_vectors(num_rows, num_columns, **kwargs):
   """
   ans = []
   for _ in range(num_rows):
-    z = tf.random_normal([2, kwargs['latent_vector_size']])
+    z = tf.random.normal([2, kwargs['latent_vector_size']])
     r = tf.reshape(
-        tf.to_float(tf.range(num_columns)) / (num_columns - 1), [-1, 1])
+        tf.cast(tf.range(num_columns), dtype=tf.float32) / (num_columns - 1),
+        [-1, 1])
     dz = z[1] - z[0]
     ans.append(z[0] + tf.stack([dz] * num_columns) * r)
   return tf.concat(ans, axis=0)
@@ -207,8 +209,8 @@ def define_loss(gan_model, **kwargs):
       gradient_penalty_epsilon=0.0)
 
   real_score_penalty = tf.reduce_mean(
-      tf.square(gan_model.discriminator_real_outputs))
-  tf.summary.scalar('real_score_penalty', real_score_penalty)
+      input_tensor=tf.square(gan_model.discriminator_real_outputs))
+  tf.compat.v1.summary.scalar('real_score_penalty', real_score_penalty)
 
   return gan_loss._replace(
       discriminator_loss=(
@@ -232,15 +234,15 @@ def define_train_ops(gan_model, gan_loss, **kwargs):
     A tuple of `GANTrainOps` namedtuple and a list variables tracking the state
     of optimizers.
   """
-  with tf.variable_scope('progressive_gan_train_ops') as var_scope:
+  with tf.compat.v1.variable_scope('progressive_gan_train_ops') as var_scope:
     beta1, beta2 = kwargs['adam_beta1'], kwargs['adam_beta2']
-    gen_opt = tf.train.AdamOptimizer(kwargs['generator_learning_rate'], beta1,
-                                     beta2)
-    dis_opt = tf.train.AdamOptimizer(kwargs['discriminator_learning_rate'],
-                                     beta1, beta2)
+    gen_opt = tf.compat.v1.train.AdamOptimizer(
+        kwargs['generator_learning_rate'], beta1, beta2)
+    dis_opt = tf.compat.v1.train.AdamOptimizer(
+        kwargs['discriminator_learning_rate'], beta1, beta2)
     gan_train_ops = tfgan.gan_train_ops(gan_model, gan_loss, gen_opt, dis_opt)
-  return gan_train_ops, tf.get_collection(
-      tf.GraphKeys.GLOBAL_VARIABLES, scope=var_scope.name)
+  return gan_train_ops, tf.compat.v1.get_collection(
+      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope=var_scope.name)
 
 
 def add_generator_smoothing_ops(generator_ema, gan_model, gan_train_ops):
@@ -300,14 +302,14 @@ def build_model(stage_id, batch_size, real_images, **kwargs):
 
   num_blocks, num_images = get_stage_info(stage_id, **kwargs)
 
-  current_image_id = tf.train.get_or_create_global_step()
+  current_image_id = tf.compat.v1.train.get_or_create_global_step()
   current_image_id_inc_op = current_image_id.assign_add(batch_size)
-  tf.summary.scalar('current_image_id', current_image_id)
+  tf.compat.v1.summary.scalar('current_image_id', current_image_id)
 
   progress = networks.compute_progress(
       current_image_id, kwargs['stable_stage_num_images'],
       kwargs['transition_stage_num_images'], num_blocks)
-  tf.summary.scalar('progress', progress)
+  tf.compat.v1.summary.scalar('progress', progress)
 
   real_images = networks.blend_images(
       real_images, progress, resolution_schedule, num_blocks=num_blocks)
@@ -429,7 +431,7 @@ def add_model_summaries(model, **kwargs):
   interp_images_shape = [interp_batch_size] + image_shape + [colors]
 
   # When making prediction, use the ema smoothed generator vars.
-  with tf.variable_scope(
+  with tf.compat.v1.variable_scope(
       model.gan_model.generator_scope,
       reuse=True,
       custom_getter=make_var_scope_custom_getter_for_ema(model.generator_ema)):
@@ -442,7 +444,7 @@ def add_model_summaries(model, **kwargs):
     interp_images = model.gan_model.generator_fn(z_interp)
     interp_images.set_shape(interp_images_shape)
 
-  tf.summary.image(
+  tf.compat.v1.summary.image(
       'fake_images',
       tfgan.eval.image_grid(
           fake_images,
@@ -451,7 +453,7 @@ def add_model_summaries(model, **kwargs):
           num_channels=colors),
       max_outputs=1)
 
-  tf.summary.image(
+  tf.compat.v1.summary.image(
       'interp_images',
       tfgan.eval.image_grid(
           interp_images,
@@ -461,7 +463,7 @@ def add_model_summaries(model, **kwargs):
       max_outputs=1)
 
   real_grid_size = int(np.sqrt(model.batch_size))
-  tf.summary.image(
+  tf.compat.v1.summary.image(
       'real_images_blend',
       tfgan.eval.image_grid(
           model.gan_model.real_data[:real_grid_size**2],
@@ -512,23 +514,24 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
     new_block_var_list = []
     for block_id in range(prev_num_blocks + 1, num_blocks + 1):
       new_block_var_list.extend(
-          tf.get_collection(
-              tf.GraphKeys.GLOBAL_VARIABLES,
+          tf.compat.v1.get_collection(
+              tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
               scope='.*/{}/'.format(networks.block_name(block_id))))
 
     # Every variables that are 1) not for optimizers and 2) from the new block
     # need to be restored.
     restore_var_list = [
-        var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
+        var for var in tf.compat.v1.get_collection(
+            tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
         if var not in set(optimizer_var_list + new_block_var_list)
     ]
 
   # Add saver op to graph. This saver is used to restore variables from the
   # previous stage.
-  saver_for_restore = tf.train.Saver(
+  saver_for_restore = tf.compat.v1.train.Saver(
       var_list=restore_var_list, allow_empty=True)
   # Add the op to graph that initializes all global variables.
-  init_op = tf.global_variables_initializer()
+  init_op = tf.compat.v1.global_variables_initializer()
 
   def _init_fn(unused_scaffold, sess):
     # First initialize every variables.
@@ -539,18 +542,18 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
       saver_for_restore.restore(sess, prev_ckpt)
 
   # Use a dummy init_op here as all initialization is done in init_fn.
-  return tf.train.Scaffold(init_op=tf.constant([]), init_fn=_init_fn)
+  return tf.compat.v1.train.Scaffold(init_op=tf.constant([]), init_fn=_init_fn)
 
 
 def make_status_message(model):
   """Makes a string `Tensor` of training status."""
-  return tf.string_join([
+  return tf.strings.join([
       'Starting train step: current_image_id: ',
       tf.as_string(model.current_image_id), ', progress: ',
       tf.as_string(model.progress), ', num_blocks: {}'.format(model.num_blocks),
       ', batch_size: {}'.format(model.batch_size)
   ],
-                        name='status_message')
+                         name='status_message')
 
 
 def train(model, **kwargs):
@@ -579,9 +582,9 @@ def train(model, **kwargs):
       logdir=make_train_sub_dir(model.stage_id, **kwargs),
       get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(1, 1)),
       hooks=[
-          tf.train.StopAtStepHook(last_step=model.num_images),
-          tf.train.LoggingTensorHook([make_status_message(model)],
-                                     every_n_iter=10)
+          tf.estimator.StopAtStepHook(last_step=model.num_images),
+          tf.estimator.LoggingTensorHook([make_status_message(model)],
+                                         every_n_iter=10)
       ],
       master=kwargs['master'],
       is_chief=(kwargs['task'] == 0),

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,7 +30,7 @@ FLAGS = flags.FLAGS
 
 
 def provide_random_data(batch_size=2, patch_size=4, colors=1, **unused_kwargs):
-  return tf.random_normal([batch_size, patch_size, patch_size, colors])
+  return tf.random.normal([batch_size, patch_size, patch_size, colors])
 
 
 class TrainTest(absltest.TestCase):
@@ -69,12 +70,12 @@ class TrainTest(absltest.TestCase):
 
   def test_train_success(self):
     train_log_dir = self._config['train_log_dir']
-    if not tf.gfile.Exists(train_log_dir):
-      tf.gfile.MakeDirs(train_log_dir)
+    if not tf.io.gfile.exists(train_log_dir):
+      tf.io.gfile.makedirs(train_log_dir)
 
     for stage_id in train.get_stage_ids(**self._config):
       batch_size = train.get_batch_size(stage_id, **self._config)
-      tf.reset_default_graph()
+      tf.compat.v1.reset_default_graph()
       real_images = provide_random_data(batch_size=batch_size)
       model = train.build_model(stage_id, batch_size, real_images,
                                 **self._config)

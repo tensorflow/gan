@@ -32,14 +32,14 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_build_graph(self, mock_data_provider):
-    FLAGS.max_number_of_steps = 0
-    FLAGS.batch_size = 16
+    FLAGS.max_number_of_steps_cifar = 0
+    FLAGS.batch_size_cifar = 16
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 32, 32, 3], dtype=np.float32)
+    mock_imgs = np.zeros([FLAGS.batch_size_cifar, 32, 32, 3], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.float32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.float32)),
+        (np.ones([FLAGS.batch_size_cifar, 1], dtype=np.float32),
+         np.zeros([FLAGS.batch_size_cifar, 9], dtype=np.float32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 

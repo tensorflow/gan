@@ -35,17 +35,17 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
 
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_run_one_train_step(self, mock_data_provider):
-    FLAGS.max_number_of_steps = 1
+    FLAGS.max_number_of_steps_mnist = 1
     FLAGS.gan_type = 'unconditional'
-    FLAGS.batch_size = 5
+    FLAGS.batch_size_mnist = 5
     FLAGS.grid_size = 1
     tf.compat.v1.set_random_seed(1234)
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
+    mock_imgs = np.zeros([FLAGS.batch_size_mnist, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        (np.ones([FLAGS.batch_size_mnist, 1], dtype=np.int32),
+         np.zeros([FLAGS.batch_size_mnist, 9], dtype=np.int32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
@@ -55,14 +55,14 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
                                   ('Conditional', 'conditional'))
   @mock.patch.object(train, 'data_provider', autospec=True)
   def test_build_graph(self, gan_type, mock_data_provider):
-    FLAGS.max_number_of_steps = 0
+    FLAGS.max_number_of_steps_mnist = 0
     FLAGS.gan_type = gan_type
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
+    mock_imgs = np.zeros([FLAGS.batch_size_mnist, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        (np.ones([FLAGS.batch_size_mnist, 1], dtype=np.int32),
+         np.zeros([FLAGS.batch_size_mnist, 9], dtype=np.int32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 

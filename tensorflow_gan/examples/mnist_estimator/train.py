@@ -34,30 +34,30 @@ from tensorflow_gan.examples.mnist import networks
 flags.DEFINE_integer('batch_size', 32,
                      'The number of images in each train batch.')
 
-flags.DEFINE_integer('max_number_of_steps', 20000,
+flags.DEFINE_integer('max_number_of_steps_mnist_estimator', 20000,
                      'The maximum number of gradient steps.')
 
 flags.DEFINE_integer(
-    'noise_dims', 64, 'Dimensions of the generator noise vector')
+    'noise_dims_mnist_estimator_', 64, 'Dimensions of the generator noise vector')
 
-flags.DEFINE_string('output_dir', '/tmp/mnist-estimator/',
+flags.DEFINE_string('output_dir_mnist_estimator', '/tmp/mnist-estimator/',
                     'Directory where the results are saved to.')
 
 FLAGS = flags.FLAGS
 
 
-def _get_train_input_fn(batch_size, noise_dims, num_parallel_calls=4):
+def _get_train_input_fn(batch_size, noise_dims_mnist_estimator_, num_parallel_calls=4):
   def train_input_fn():
     images, _ = data_provider.provide_data(
         'train', batch_size, num_parallel_calls=num_parallel_calls)
-    noise = tf.random.normal([batch_size, noise_dims])
+    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator_])
     return noise, images
   return train_input_fn
 
 
-def _get_predict_input_fn(batch_size, noise_dims):
+def _get_predict_input_fn(batch_size, noise_dims_mnist_estimator_):
   def predict_input_fn():
-    noise = tf.random.normal([batch_size, noise_dims])
+    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator_])
     return noise
   return predict_input_fn
 
@@ -80,11 +80,11 @@ def main(_):
       add_summaries=tfgan.estimator.SummaryType.IMAGES)
 
   # Train estimator.
-  train_input_fn = _get_train_input_fn(FLAGS.batch_size, FLAGS.noise_dims)
-  gan_estimator.train(train_input_fn, max_steps=FLAGS.max_number_of_steps)
+  train_input_fn = _get_train_input_fn(FLAGS.batch_size, FLAGS.noise_dims_mnist_estimator_)
+  gan_estimator.train(train_input_fn, max_steps=FLAGS.max_number_of_steps_mnist_estimator)
 
   # Run inference.
-  predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims)
+  predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims_mnist_estimator_)
   prediction_iterable = gan_estimator.predict(predict_input_fn)
   predictions = np.array([next(prediction_iterable) for _ in xrange(36)])
 
@@ -92,9 +92,9 @@ def main(_):
   tiled_image = tfgan.eval.python_image_grid(predictions, grid_shape=(6, 6))
 
   # Write to disk.
-  if not tf.io.gfile.exists(FLAGS.output_dir):
-    tf.io.gfile.makedirs(FLAGS.output_dir)
-  scipy.misc.imsave(os.path.join(FLAGS.output_dir, 'unconditional_gan.png'),
+  if not tf.io.gfile.exists(FLAGS.output_dir_mnist_estimator):
+    tf.io.gfile.makedirs(FLAGS.output_dir_mnist_estimator)
+  scipy.misc.imsave(os.path.join(FLAGS.output_dir_mnist_estimator, 'unconditional_gan.png'),
                     np.squeeze(tiled_image, axis=2))
 
 

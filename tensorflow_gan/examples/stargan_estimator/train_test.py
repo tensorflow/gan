@@ -46,16 +46,16 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
   def test_main(self, mock_provide_data):
-    FLAGS.max_number_of_steps = 0
+    FLAGS.max_number_of_steps_stargan_estimator = 0
     FLAGS.steps_per_eval = 1
-    FLAGS.batch_size = 1
-    FLAGS.patch_size = 8
+    FLAGS.batch_size_stargan_estimator = 1
+    FLAGS.patch_size_stargan_estimator = 8
     num_domains = 3
 
     # Construct mock inputs.
-    images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
+    images_shape = [FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3]
     img_list = [tf.zeros(images_shape)] * num_domains
-    lbl_list = [tf.one_hot([0] * FLAGS.batch_size, num_domains)] * num_domains
+    lbl_list = [tf.one_hot([0] * FLAGS.batch_size_stargan_estimator, num_domains)] * num_domains
     mock_provide_data.return_value = (img_list, lbl_list)
 
     train.main(None, _test_generator, _test_discriminator)

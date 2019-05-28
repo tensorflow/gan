@@ -23,6 +23,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
+
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
@@ -32,8 +34,14 @@ __all__ = [
     'mnist_cross_entropy',
 ]
 
+# The references to `MODEL_GRAPH_DEF` below are removed in open source by a
+# copy bara transformation..
 # Prepend `../`, since paths start from `third_party/tensorflow`.
 MODEL_GRAPH_DEF = '../py/tensorflow_gan/examples/mnist/data/classify_mnist_graph_def.pb'
+# The open source code finds the graph def by relative filepath.
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+MODEL_BY_FN = os.path.join(CUR_DIR, 'data', 'classify_mnist_graph_def.pb')
+
 INPUT_TENSOR = 'inputs:0'
 OUTPUT_TENSOR = 'logits:0'
 
@@ -139,6 +147,6 @@ def mnist_cross_entropy(images,
 
 def _graph_def_from_par_or_disk(filename):
   if filename is None:
-    return tfgan.eval.get_graph_def_from_resource(MODEL_GRAPH_DEF)
+    return tfgan.eval.get_graph_def_from_disk(MODEL_BY_FN)
   else:
     return tfgan.eval.get_graph_def_from_disk(filename)

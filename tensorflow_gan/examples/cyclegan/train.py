@@ -28,42 +28,48 @@ from tensorflow_gan.examples.cyclegan import networks
 
 flags.DEFINE_string('image_set_x_file_pattern', None,
                     'File pattern of images in image set X')
-
 flags.DEFINE_string('image_set_y_file_pattern', None,
                     'File pattern of images in image set Y')
-
 flags.DEFINE_integer('batch_size', 1, 'The number of images in each batch.')
-
 flags.DEFINE_integer('patch_size', 64, 'The patch size of images.')
-
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
-
 flags.DEFINE_string('train_log_dir', '/tmp/cyclegan/',
                     'Directory where to write event logs.')
-
 flags.DEFINE_float('generator_lr', 0.0002,
                    'The compression model learning rate.')
-
 flags.DEFINE_float('discriminator_lr', 0.0001,
                    'The discriminator learning rate.')
-
 flags.DEFINE_integer('max_number_of_steps', 500000,
                      'The maximum number of gradient steps.')
-
 flags.DEFINE_integer(
-    'ps_replicas', 0,
+    'ps_replicas_cyclegan', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
-
 flags.DEFINE_integer(
     'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
-
 flags.DEFINE_float('cycle_consistency_loss_weight', 10.0,
                    'The weight of cycle consistency loss')
 
 FLAGS = flags.FLAGS
+
+
+def _get_data(image_set_x_file_pattern, image_set_y_file_pattern, batch_size,
+              patch_size):
+  """Returns image TEnsors from a custom provider or TFDS."""
+  if image_set_x_file_pattern and image_set_y_file_pattern:
+    image_file_patterns = [image_set_x_file_pattern, image_set_y_file_pattern]
+  else:
+    if image_set_x_file_pattern or image_set_y_file_pattern:
+      raise ValueError('Both image patterns or neither must be provided.')
+    image_file_patterns = None
+  images_x, images_y = data_provider.provide_custom_data(
+      batch_size=batch_size,
+      image_file_patterns=image_file_patterns,
+      patch_size=patch_size)
+
+  return images_x, images_y
 
 
 def _define_model(images_x, images_y):
@@ -169,15 +175,11 @@ def main(_):
   if not tf.io.gfile.exists(FLAGS.train_log_dir):
     tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas_cyclegan)):
     with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
-      images_x, images_y = data_provider.provide_custom_data(
-          [FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern],
-          batch_size=FLAGS.batch_size,
-          patch_size=FLAGS.patch_size)
-      # Set batch size for summaries.
-      images_x.set_shape([FLAGS.batch_size, None, None, None])
-      images_y.set_shape([FLAGS.batch_size, None, None, None])
+      images_x, images_y = _get_data(
+          FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern,
+          FLAGS.batch_size, FLAGS.patch_size)
 
     # Define CycleGAN model.
     cyclegan_model = _define_model(images_x, images_y)
@@ -213,6 +215,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.flags.mark_flag_as_required('image_set_x_file_pattern')
-  tf.flags.mark_flag_as_required('image_set_y_file_pattern')
   tf.compat.v1.app.run()

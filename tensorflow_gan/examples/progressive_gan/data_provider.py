@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 """Loading and preprocessing image data."""
 
 from __future__ import absolute_import
@@ -23,6 +24,8 @@ import matplotlib.pyplot
 import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
+
+from tensorflow_gan.examples import compat_utils
 
 
 def _to_int32(tensor):
@@ -44,12 +47,12 @@ def sample_patch(image, patch_height, patch_width, colors):
     image: A 3D `Tensor` of HWC format.
     patch_height: A Python integer. The output images height.
     patch_width: A Python integer. The output images width.
-    colors: Number of output image channels. Defaults to 3.
+    colors: Number of output image channels.
 
   Returns:
     A 3D `Tensor` of HWC format with shape [patch_height, patch_width, colors].
   """
-  image_shape = tf.shape(image)
+  image_shape = tf.shape(input=image)
   h, w = image_shape[0], image_shape[1]
 
   h_major_target_h = h
@@ -57,17 +60,19 @@ def sample_patch(image, patch_height, patch_width, colors):
   w_major_target_h = tf.maximum(1, _to_int32((w * patch_height) / patch_width))
   w_major_target_w = w
   target_hw = tf.cond(
-      h_major_target_w <=
-      w, lambda: tf.convert_to_tensor([h_major_target_h, h_major_target_w]),
-      lambda: tf.convert_to_tensor([w_major_target_h, w_major_target_w]))
+      pred=h_major_target_w <= w,
+      true_fn=lambda: tf.convert_to_tensor(  # pylint:disable=g-long-lambda
+          value=[h_major_target_h, h_major_target_w]),
+      false_fn=lambda: tf.convert_to_tensor(  # pylint:disable=g-long-lambda
+          value=[w_major_target_h, w_major_target_w]))
   # Cut a patch of shape (target_h, target_w).
-  image = tf.image.resize_image_with_crop_or_pad(image, target_hw[0],
-                                                 target_hw[1])
+  image = compat_utils.resize_with_crop_or_pad(
+      image, target_hw[0], target_hw[1])
   # Resize the cropped image to (patch_h, patch_w).
-  image = tf.image.resize_images([image], [patch_height, patch_width])[0]
+  image = tf.image.resize([image], [patch_height, patch_width])[0]
   # Force number of channels: repeat the channel dimension enough
   # number of times and then slice the first `colors` channels.
-  num_repeats = _to_int32(tf.ceil(colors / image_shape[2]))
+  num_repeats = _to_int32(tf.math.ceil(colors / image_shape[2]))
   image = tf.tile(image, [1, 1, num_repeats])
   image = tf.slice(image, [0, 0, 0], [-1, -1, colors])
   image.set_shape([patch_height, patch_width, colors])
@@ -158,7 +163,7 @@ def provide_data(split,
   ds = provide_dataset(split, batch_size, patch_height, patch_width, colors,
                        num_parallel_calls, shuffle)
 
-  next_batch = ds.make_one_shot_iterator().get_next()
+  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   images = next_batch['images']
 
   return images
@@ -186,7 +191,7 @@ def provide_data_from_image_files(file_pattern,
     A float `Tensor` of shape [batch_size, patch_height, patch_width, 3]
     representing a batch of images.
   """
-  dataset_files = tf.gfile.Glob(file_pattern)
+  dataset_files = tf.io.gfile.glob(file_pattern)
   if shuffle:
     dataset_files = np.random.permutation(dataset_files)
   np_data = np.array([matplotlib.pyplot.imread(x) for x in dataset_files])
@@ -203,7 +208,7 @@ def provide_data_from_image_files(file_pattern,
   ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                              num_parallel_calls, shuffle)
 
-  next_batch = ds.make_one_shot_iterator().get_next()
+  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   images = next_batch['images']
 
   return images

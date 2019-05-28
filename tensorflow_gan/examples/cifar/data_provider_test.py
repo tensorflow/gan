@@ -23,8 +23,10 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.cifar import data_provider
 
+tf.compat.v1.disable_v2_behavior()
 mock = tf.compat.v1.test.mock
 
 
@@ -45,29 +47,30 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
   )
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_dataset(self, mock_tfds, one_hot):
-    batch_size = 5
+    batch_size_cifar = 5
     mock_tfds.load.return_value = self.mock_ds
 
-    ds = data_provider.provide_dataset('test', batch_size, one_hot=one_hot)
+    ds = data_provider.provide_dataset('test', batch_size_cifar, one_hot=one_hot)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = ds.output_classes
+    output = compat_utils.ds_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images', 'labels']))
     self.assertEqual(output['images'], tf.Tensor)
     self.assertEqual(output['labels'], tf.Tensor)
 
-    shapes = ds.output_shapes
+    shapes = compat_utils.ds_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images', 'labels']))
-    self.assertListEqual(shapes['images'].as_list(), [batch_size, 32, 32, 3])
+    self.assertIsInstance(shapes['images'], tf.TensorShape)
+    self.assertListEqual(shapes['images'].as_list(), [batch_size_cifar, 32, 32, 3])
     if one_hot:
-      expected_lbls_shape = [batch_size, 10]
+      expected_lbls_shape = [batch_size_cifar, 10]
     else:
-      expected_lbls_shape = [batch_size]
+      expected_lbls_shape = [batch_size_cifar]
     self.assertListEqual(shapes['labels'].as_list(), expected_lbls_shape)
 
-    types = ds.output_types
+    types = compat_utils.ds_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images', 'labels']))
     self.assertEqual(types['images'], tf.float32)
@@ -80,7 +83,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     with self.cached_session() as sess:
       images, labels = sess.run([images, labels])
 
-    self.assertEqual(images.shape, (batch_size, 32, 32, 3))
+    self.assertEqual(images.shape, (batch_size_cifar, 32, 32, 3))
     self.assertTrue(np.all(np.abs(images) <= 1))
     self.assertEqual(labels.shape, tuple(expected_lbls_shape))
 
@@ -90,29 +93,29 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
   )
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data(self, mock_tfds, one_hot):
-    batch_size = 5
+    batch_size_cifar = 5
     mock_tfds.load.return_value = self.mock_ds
 
     images, labels = data_provider.provide_data(
-        'test', batch_size, one_hot=one_hot)
+        'test', batch_size_cifar, one_hot=one_hot)
 
     with self.cached_session() as sess:
       images, labels = sess.run([images, labels])
-    self.assertTupleEqual(images.shape, (batch_size, 32, 32, 3))
+    self.assertTupleEqual(images.shape, (batch_size_cifar, 32, 32, 3))
     self.assertTrue(np.all(np.abs(images) <= 1))
     if one_hot:
-      expected_lbls_shape = (batch_size, 10)
+      expected_lbls_shape = (batch_size_cifar, 10)
     else:
-      expected_lbls_shape = (batch_size,)
+      expected_lbls_shape = (batch_size_cifar,)
     self.assertTupleEqual(labels.shape, expected_lbls_shape)
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data_can_be_reinitialized(self, mock_tfds):
     """Test that the iterator created in `provide_data` can be reused."""
-    batch_size = 5
+    batch_size_cifar = 5
     mock_tfds.load.return_value = self.mock_ds
 
-    images, labels = data_provider.provide_data('test', batch_size)
+    images, labels = data_provider.provide_data('test', batch_size_cifar)
 
     with self.session() as sess:
       sess.run([images, labels])

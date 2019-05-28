@@ -32,7 +32,8 @@ from tensorflow_gan.python import contrib_utils as contrib
 
 
 def _local_variable(val, name):
-  return tf.Variable(val, name=name, collections=[tf.GraphKeys.LOCAL_VARIABLES])
+  return tf.Variable(
+      val, name=name, collections=[tf.compat.v1.GraphKeys.LOCAL_VARIABLES])
 
 
 class CheckpointIteratorTest(tf.test.TestCase):
@@ -47,14 +48,14 @@ class CheckpointIteratorTest(tf.test.TestCase):
 
   def testReturnsSingleCheckpointIfOneCheckpointFound(self):
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'one_checkpoint_found')
-    if not tf.gfile.Exists(checkpoint_dir):
-      tf.gfile.MakeDirs(checkpoint_dir)
+    if not tf.io.gfile.exists(checkpoint_dir):
+      tf.io.gfile.makedirs(checkpoint_dir)
 
-    global_step = tf.train.get_or_create_global_step()
-    saver = tf.train.Saver()  # Saves the global step.
+    global_step = tf.compat.v1.train.get_or_create_global_step()
+    saver = tf.compat.v1.train.Saver()  # Saves the global step.
 
     with self.cached_session() as session:
-      session.run(tf.global_variables_initializer())
+      session.run(tf.compat.v1.global_variables_initializer())
       save_path = os.path.join(checkpoint_dir, 'model.ckpt')
       saver.save(session, save_path, global_step=global_step)
 
@@ -66,10 +67,10 @@ class CheckpointIteratorTest(tf.test.TestCase):
   def testReturnsSingleCheckpointIfOneShardedCheckpoint(self):
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'one_checkpoint_found_sharded')
-    if not tf.gfile.Exists(checkpoint_dir):
-      tf.gfile.MakeDirs(checkpoint_dir)
+    if not tf.io.gfile.exists(checkpoint_dir):
+      tf.io.gfile.makedirs(checkpoint_dir)
 
-    global_step = tf.train.get_or_create_global_step()
+    global_step = tf.compat.v1.train.get_or_create_global_step()
 
     # This will result in 3 different checkpoint shard files.
     with tf.device('/cpu:0'):
@@ -77,12 +78,13 @@ class CheckpointIteratorTest(tf.test.TestCase):
     with tf.device('/cpu:1'):
       tf.Variable(20, name='v1')
 
-    saver = tf.train.Saver(sharded=True)
+    saver = tf.compat.v1.train.Saver(sharded=True)
 
-    with tf.Session(
-        target='', config=tf.ConfigProto(device_count={'CPU': 2})) as session:
+    with tf.compat.v1.Session(
+        target='',
+        config=tf.compat.v1.ConfigProto(device_count={'CPU': 2})) as session:
 
-      session.run(tf.global_variables_initializer())
+      session.run(tf.compat.v1.global_variables_initializer())
       save_path = os.path.join(checkpoint_dir, 'model.ckpt')
       saver.save(session, save_path, global_step=global_step)
 
@@ -105,7 +107,7 @@ class CheckpointIteratorTest(tf.test.TestCase):
 
 
 def logistic_classifier(inputs):
-  return tf.layers.dense(inputs, 1, activation=tf.sigmoid)
+  return tf.compat.v1.layers.dense(inputs, 1, activation=tf.sigmoid)
 
 
 class EvaluateOnceTest(tf.test.TestCase):
@@ -134,18 +136,18 @@ class EvaluateOnceTest(tf.test.TestCase):
       num_steps: The number of steps to train for.
     """
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = logistic_classifier(tf_inputs)
-      loss = tf.losses.log_loss(tf_predictions, tf_labels)
+      loss = tf.compat.v1.losses.log_loss(tf_predictions, tf_labels)
 
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib.create_train_op(loss, optimizer)
 
-      with tf.train.MonitoredTrainingSession(
-          hooks=[tf.train.StopAtStepHook(num_steps)],
+      with tf.compat.v1.train.MonitoredTrainingSession(
+          hooks=[tf.estimator.StopAtStepHook(num_steps)],
           checkpoint_dir=checkpoint_dir) as sess:
         loss = None
         while not sess.should_stop():
@@ -167,7 +169,7 @@ class EvaluateOnceTest(tf.test.TestCase):
     logits = logistic_classifier(inputs)
     predictions = tf.round(logits)
 
-    accuracy, update_op = tf.metrics.accuracy(
+    accuracy, update_op = tf.compat.v1.metrics.accuracy(
         predictions=predictions, labels=labels)
 
     checkpoint_path = evaluation.wait_for_new_checkpoint(checkpoint_dir)
@@ -195,8 +197,11 @@ class EvaluateOnceTest(tf.test.TestCase):
     num_evals = 5
     final_increment = 9.0
 
-    my_var = _local_variable(0.0, name='MyVar')
-    eval_ops = tf.assign_add(my_var, 1.0)
+    try:
+      my_var = _local_variable(0.0, name='MyVar')
+    except TypeError:  # `collections` doesn't exist in TF2.
+      return
+    eval_ops = tf.compat.v1.assign_add(my_var, 1.0)
     final_ops = tf.identity(my_var) + final_increment
 
     final_ops_values = evaluation.evaluate_once(
@@ -221,7 +226,10 @@ class EvaluateOnceTest(tf.test.TestCase):
 
     final_increment = 9.0
 
-    my_var = _local_variable(0.0, name='MyVar')
+    try:
+      my_var = _local_variable(0.0, name='MyVar')
+    except TypeError:  # `collections` doesn't exist in TF2.
+      return
     final_ops = tf.identity(my_var) + final_increment
 
     final_ops_values = evaluation.evaluate_once(
@@ -255,18 +263,18 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
       num_steps: The number of steps to train for.
     """
     with tf.Graph().as_default():
-      tf.random.set_random_seed(0)
+      tf.compat.v1.random.set_random_seed(0)
       tf_inputs = tf.constant(self._inputs, dtype=tf.float32)
       tf_labels = tf.constant(self._labels, dtype=tf.float32)
 
       tf_predictions = logistic_classifier(tf_inputs)
-      loss = tf.losses.log_loss(tf_predictions, tf_labels)
+      loss = tf.compat.v1.losses.log_loss(tf_predictions, tf_labels)
 
-      optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0)
+      optimizer = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=1.0)
       train_op = contrib.create_train_op(loss, optimizer)
 
-      with tf.train.MonitoredTrainingSession(
-          hooks=[tf.train.StopAtStepHook(num_steps)],
+      with tf.compat.v1.train.MonitoredTrainingSession(
+          hooks=[tf.estimator.StopAtStepHook(num_steps)],
           checkpoint_dir=checkpoint_dir) as sess:
         loss = None
         while not sess.should_stop():
@@ -285,7 +293,7 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     logits = logistic_classifier(inputs)
     predictions = tf.round(logits)
 
-    accuracy, update_op = tf.metrics.accuracy(
+    accuracy, update_op = tf.compat.v1.metrics.accuracy(
         predictions=predictions, labels=labels)
 
     final_values = evaluation.evaluate_repeatedly(
@@ -304,15 +312,15 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
       return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluation_loop_timeout')
-    if not tf.gfile.Exists(checkpoint_dir):
-      tf.gfile.MakeDirs(checkpoint_dir)
+    if not tf.io.gfile.exists(checkpoint_dir):
+      tf.io.gfile.makedirs(checkpoint_dir)
 
     # We need a variable that the saver will try to restore.
-    tf.train.get_or_create_global_step()
+    tf.compat.v1.train.get_or_create_global_step()
 
     # Run with placeholders. If we actually try to evaluate this, we'd fail
     # since we're not using a feed_dict.
-    cant_run_op = tf.placeholder(dtype=tf.float32)
+    cant_run_op = tf.compat.v1.placeholder(dtype=tf.float32)
 
     start = time.time()
     final_values = evaluation.evaluate_repeatedly(
@@ -343,7 +351,7 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     logits = logistic_classifier(inputs)
     predictions = tf.round(logits)
 
-    accuracy, update_op = tf.metrics.accuracy(
+    accuracy, update_op = tf.compat.v1.metrics.accuracy(
         predictions=predictions, labels=labels)
 
     timeout_fn_calls = [0]
@@ -374,12 +382,15 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     self._train_model(checkpoint_dir, num_steps=1)
 
     # We need a variable that the saver will try to restore.
-    tf.train.get_or_create_global_step()
+    tf.compat.v1.train.get_or_create_global_step()
 
     # Create a variable and an eval op that increments it with a placeholder.
-    my_var = _local_variable(0.0, name='my_var')
-    increment = tf.placeholder(dtype=tf.float32)
-    eval_ops = tf.assign_add(my_var, increment)
+    try:
+      my_var = _local_variable(0.0, name='my_var')
+    except TypeError:  # `collections` doesn't exist in TF2.
+      return
+    increment = tf.compat.v1.placeholder(dtype=tf.float32)
+    eval_ops = tf.compat.v1.assign_add(my_var, increment)
 
     increment_value = 3
     num_evals = 5
@@ -409,7 +420,7 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     output_filepath = glob.glob(os.path.join(output_dir, '*'))
     self.assertEqual(len(output_filepath), 1)
 
-    events = tf.train.summary_iterator(output_filepath[0])
+    events = tf.compat.v1.train.summary_iterator(output_filepath[0])
     summaries = []
     graph_def = None
     for event in events:
@@ -429,8 +440,8 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
   def testSummariesAreFlushedToDisk(self):
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'summaries_are_flushed')
     logdir = os.path.join(self.get_temp_dir(), 'summaries_are_flushed_eval')
-    if tf.gfile.Exists(logdir):
-      tf.gfile.DeleteRecursively(logdir)
+    if tf.io.gfile.exists(logdir):
+      tf.io.gfile.rmtree(logdir)
 
     # Train a Model to completion:
     self._train_model(checkpoint_dir, num_steps=300)
@@ -443,7 +454,7 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
 
     for k in names_to_values:
       v = names_to_values[k]
-      tf.summary.scalar(k, v)
+      tf.compat.v1.summary.scalar(k, v)
 
     evaluation.evaluate_repeatedly(
         checkpoint_dir=checkpoint_dir,
@@ -457,8 +468,8 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
   def testSummaryAtEndHookWithoutSummaries(self):
     logdir = os.path.join(self.get_temp_dir(),
                           'summary_at_end_hook_without_summaires')
-    if tf.gfile.Exists(logdir):
-      tf.gfile.DeleteRecursively(logdir)
+    if tf.io.gfile.exists(logdir):
+      tf.io.gfile.rmtree(logdir)
 
     with tf.Graph().as_default():
       # Purposefully don't add any summaries. The hook will just dump the

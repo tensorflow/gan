@@ -24,7 +24,21 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-from tensorflow_gan.examples.cyclegan import train
+# pylint:disable=g-import-not-at-top
+try:
+  from tensorflow_gan.examples.cyclegan import train
+  run_tests = True
+except ImportError:
+  # Some test environments don't have `tensorflow_models`. We skip the tests
+  # in that case.
+  run_tests = False
+  # We need a dummy `train` module for mock to not fail. Must have a `networks`
+  # submodule.
+  class Dummy(object):  # pylint:disable=g-wrong-blank-lines
+    pass
+  train = Dummy()
+  train.networks = None
+# pylint:enable=g-import-not-at-top
 
 FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
@@ -32,22 +46,21 @@ mock = tf.compat.v1.test.mock
 
 def _test_generator(input_images):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False)
+  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(image_batch, unused_conditioning=None):
   """Simple discriminator function."""
   return tf.compat.v1.layers.flatten(
-      image_batch *
-      tf.compat.v1.get_variable('dummy_d', initializer=2.0, use_resource=False))
+      image_batch * tf.compat.v1.get_variable('dummy_d', initializer=2.0))
 
 
-train.networks.generator = _test_generator
-train.networks.discriminator = _test_discriminator
+class TrainTest(tf.test.TestCase if run_tests else object):
 
-
-class TrainTest(tf.test.TestCase):
+  def setUp(self):
+    super(TrainTest, self).setUp()
+    train.networks.generator = _test_generator
+    train.networks.discriminator = _test_discriminator
 
   @mock.patch.object(tfgan, 'eval', autospec=True)
   def test_define_model(self, mock_eval):
@@ -131,7 +144,8 @@ class TrainTest(tf.test.TestCase):
 
     train.main(None)
     mock_data_provider.provide_custom_data.assert_called_once_with(
-        ['/tmp/x/*.jpg', '/tmp/y/*.jpg'], batch_size=3, patch_size=8)
+        batch_size=3, image_file_patterns=['/tmp/x/*.jpg', '/tmp/y/*.jpg'],
+        patch_size=8)
     mock_define_model.assert_called_once_with(mock.ANY, mock.ANY)
     mock_cyclegan_loss.assert_called_once_with(
         mock_define_model.return_value,

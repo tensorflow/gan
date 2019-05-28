@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# python2 python3
 """Train a progressive GAN model.
 
 See https://arxiv.org/abs/1710.10196 for details about the model.
@@ -132,7 +133,7 @@ def _provide_real_images(batch_size, **kwargs):
       **kwargs).final_resolutions
   if not dataset_file_pattern:
     return data_provider.provide_data(
-        split_name='train',
+        split='train',
         batch_size=batch_size,
         patch_height=final_height,
         patch_width=final_width,
@@ -147,18 +148,18 @@ def _provide_real_images(batch_size, **kwargs):
 
 
 def main(_):
-  if not tf.gfile.Exists(FLAGS.train_log_dir):
-    tf.gfile.MakeDirs(FLAGS.train_log_dir)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
   config = _make_config_from_flags()
   logging.info('\n'.join(['{}={}'.format(k, v) for k, v in config.iteritems()]))
 
   for stage_id in train.get_stage_ids(**config):
     batch_size = train.get_batch_size(stage_id, **config)
-    tf.reset_default_graph()
-    with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
+    tf.compat.v1.reset_default_graph()
+    with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
       real_images = None
-      with tf.device('/cpu:0'), tf.name_scope('inputs'):
+      with tf.device('/cpu:0'), tf.compat.v1.name_scope('inputs'):
         real_images = _provide_real_images(batch_size, **config)
       model = train.build_model(stage_id, batch_size, real_images, **config)
       train.add_model_summaries(model, **config)
@@ -166,4 +167,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.app.run()
+  tf.compat.v1.app.run()

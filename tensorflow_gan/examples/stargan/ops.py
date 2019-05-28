@@ -83,12 +83,12 @@ def condition_input_with_pixel_padding(input_tensor, condition_tensor):
   """Pad image tensor with condition tensor as additional color channel.
 
   Args:
-    input_tensor: Tensor of shape (batch_size, h, w, c) representing images.
-    condition_tensor: Tensor of shape (batch_size, num_domains) representing the
+    input_tensor: Tensor of shape (batch_size_stargan, h, w, c) representing images.
+    condition_tensor: Tensor of shape (batch_size_stargan, num_domains) representing the
       associated domain for the image in input_tensor.
 
   Returns:
-    Tensor of shape (batch_size, h, w, c + num_domains) representing the
+    Tensor of shape (batch_size_stargan, h, w, c + num_domains) representing the
     conditioned data.
 
   Raises:

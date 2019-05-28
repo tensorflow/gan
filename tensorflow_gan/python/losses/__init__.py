@@ -20,7 +20,7 @@ Losses can be used with individual arguments or with GANModel tuples.
 # pylint: disable=wildcard-import,g-bad-import-order
 
 # Collapse losses into a single namespace.
-from tensorflow_gan.python.losses.tuple_losses import *
+from .tuple_losses import *
 from tensorflow_gan.python.losses import losses_wargs as wargs
 
 # Collect list of exposed symbols.

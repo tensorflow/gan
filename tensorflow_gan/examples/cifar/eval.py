@@ -32,60 +32,60 @@ from tensorflow_gan.examples.cifar import util
 FLAGS = flags.FLAGS
 
 
-flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_string('master_eval', '', 'Name of the TensorFlow master_eval to use.')
 
-flags.DEFINE_string('checkpoint_dir', '/tmp/cifar10/',
+flags.DEFINE_string('checkpoint_dir_cifar', '/tmp/cifar10/',
                     'Directory where the model was written to.')
 
 flags.DEFINE_string('eval_dir', '/tmp/cifar10/',
                     'Directory where the results are saved to.')
 
-flags.DEFINE_integer('num_images_generated', 100,
+flags.DEFINE_integer('num_images_generated_cifar', 100,
                      'Number of images to generate at once.')
 
 flags.DEFINE_integer('num_inception_images', 10,
                      'The number of images to run through Inception at once.')
 
-flags.DEFINE_boolean('eval_real_images', False,
+flags.DEFINE_boolean('eval_real_images_cifar', False,
                      'If `True`, run Inception network on real images.')
 
 flags.DEFINE_boolean('eval_frechet_inception_distance', True,
                      'If `True`, compute Frechet Inception distance using real '
                      'images and generated images.')
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
+flags.DEFINE_integer('max_number_of_evaluations_cifar_eval', None,
                      'Number of times to run evaluation. If `None`, run '
                      'forever.')
 
-flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
+flags.DEFINE_boolean('write_to_disk_cifar', True, 'If `True`, run images to disk.')
 
 
 def main(_, run_eval_loop=True):
   # Fetch and generate images to run through Inception.
   with tf.compat.v1.name_scope('inputs'):
     real_data, _ = data_provider.provide_data(
-        'test', FLAGS.num_images_generated, shuffle=False)
-    generated_data = _get_generated_data(FLAGS.num_images_generated)
+        'test', FLAGS.num_images_generated_cifar, shuffle=False)
+    generated_data = _get_generated_data(FLAGS.num_images_generated_cifar)
 
   # Compute Frechet Inception Distance.
   if FLAGS.eval_frechet_inception_distance:
     fid = util.get_frechet_inception_distance(
-        real_data, generated_data, FLAGS.num_images_generated,
+        real_data, generated_data, FLAGS.num_images_generated_cifar,
         FLAGS.num_inception_images)
     tf.compat.v1.summary.scalar('frechet_inception_distance', fid)
 
   # Compute normal Inception scores.
-  if FLAGS.eval_real_images:
+  if FLAGS.eval_real_images_cifar:
     inc_score = util.get_inception_scores(
-        real_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
+        real_data, FLAGS.num_images_generated_cifar, FLAGS.num_inception_images)
   else:
     inc_score = util.get_inception_scores(
-        generated_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
+        generated_data, FLAGS.num_images_generated_cifar, FLAGS.num_inception_images)
   tf.compat.v1.summary.scalar('inception_score', inc_score)
 
   # Create ops that write images to disk.
   image_write_ops = None
-  if FLAGS.num_images_generated >= 100 and FLAGS.write_to_disk:
+  if FLAGS.num_images_generated_cifar >= 100 and FLAGS.write_to_disk_cifar:
     reshaped_imgs = tfgan.eval.image_reshaper(generated_data[:100], num_cols=10)
     uint8_images = data_provider.float_image_to_uint8(reshaped_imgs)
     image_write_ops = tf.io.write_file(
@@ -95,19 +95,19 @@ def main(_, run_eval_loop=True):
   # For unit testing, use `run_eval_loop=False`.
   if not run_eval_loop: return
   evaluation.evaluate_repeatedly(
-      FLAGS.checkpoint_dir,
-      master=FLAGS.master,
+      FLAGS.checkpoint_dir_cifar,
+      master_eval=FLAGS.master_eval,
       hooks=[
           evaluation.SummaryAtEndHook(FLAGS.eval_dir),
           evaluation.StopAfterNEvalsHook(1)
       ],
       eval_ops=image_write_ops,
-      max_number_of_evaluations=FLAGS.max_number_of_evaluations)
+      max_number_of_evaluations_cifar_eval=FLAGS.max_number_of_evaluations_cifar_eval)
 
 
-def _get_generated_data(num_images_generated):
+def _get_generated_data(num_images_generated_cifar):
   """Get generated images."""
-  noise = tf.random.normal([num_images_generated, 64])
+  noise = tf.random.normal([num_images_generated_cifar, 64])
   generator_inputs = noise
   generator_fn = networks.generator
   # In order for variables to load, use the same variable scope as in the

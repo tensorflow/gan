@@ -22,6 +22,7 @@ from __future__ import print_function
 import numpy as np
 import tensorflow as tf
 
+from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.mnist import data_provider
 
 mock = tf.compat.v1.test.mock
@@ -40,25 +41,27 @@ class DataProviderTest(tf.test.TestCase):
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_dataset(self, mock_tfds):
-    batch_size = 5
+    batch_size_mnist = 5
     mock_tfds.load.return_value = self.mock_ds
 
-    ds = data_provider.provide_dataset('test', batch_size)
+    ds = data_provider.provide_dataset('test', batch_size_mnist)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = ds.output_classes
+    output = compat_utils.ds_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images', 'labels']))
     self.assertEqual(output['images'], tf.Tensor)
     self.assertEqual(output['labels'], tf.Tensor)
 
-    shapes = ds.output_shapes
+    shapes = compat_utils.ds_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images', 'labels']))
-    self.assertListEqual(shapes['images'].as_list(), [batch_size, 28, 28, 1])
-    self.assertListEqual(shapes['labels'].as_list(), [batch_size, 10])
+    self.assertIsInstance(shapes['images'], tf.TensorShape)
+    self.assertIsInstance(shapes['labels'], tf.TensorShape)
+    self.assertListEqual(shapes['images'].as_list(), [batch_size_mnist, 28, 28, 1])
+    self.assertListEqual(shapes['labels'].as_list(), [batch_size_mnist, 10])
 
-    types = ds.output_types
+    types = compat_utils.ds_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images', 'labels']))
     self.assertEqual(types['images'], tf.float32)
@@ -71,30 +74,30 @@ class DataProviderTest(tf.test.TestCase):
     with self.cached_session() as sess:
       images, labels = sess.run([images, labels])
 
-    self.assertEqual(images.shape, (batch_size, 28, 28, 1))
+    self.assertEqual(images.shape, (batch_size_mnist, 28, 28, 1))
     self.assertTrue(np.all(np.abs(images) <= 1))
-    self.assertEqual(labels.shape, (batch_size, 10))
+    self.assertEqual(labels.shape, (batch_size_mnist, 10))
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data(self, mock_tfds):
-    batch_size = 5
+    batch_size_mnist = 5
     mock_tfds.load.return_value = self.mock_ds
 
-    images, labels = data_provider.provide_data('test', batch_size)
+    images, labels = data_provider.provide_data('test', batch_size_mnist)
 
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.tables_initializer())
       images, labels = sess.run([images, labels])
-    self.assertTupleEqual(images.shape, (batch_size, 28, 28, 1))
+    self.assertTupleEqual(images.shape, (batch_size_mnist, 28, 28, 1))
     self.assertTrue(np.all(np.abs(images) <= 1))
-    self.assertTupleEqual(labels.shape, (batch_size, 10))
+    self.assertTupleEqual(labels.shape, (batch_size_mnist, 10))
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data_can_be_reinitialized(self, mock_tfds):
-    batch_size = 5
+    batch_size_mnist = 5
     mock_tfds.load.return_value = self.mock_ds
 
-    images, labels = data_provider.provide_data('test', batch_size)
+    images, labels = data_provider.provide_data('test', batch_size_mnist)
 
     with self.session() as sess:
       sess.run([images, labels])

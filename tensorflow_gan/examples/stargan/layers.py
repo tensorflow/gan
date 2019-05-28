@@ -27,8 +27,32 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
+import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.stargan import ops
+
+
+def _conv2d(inputs, filters, kernel_size, stride, name):
+  """Conv2d for the network."""
+  return tf.compat.v1.layers.conv2d(
+      inputs,
+      filters,
+      kernel_size,
+      strides=stride,
+      padding='VALID',
+      use_bias=False,
+      name=name)
+
+
+def _conv2d_transpose(inputs, filters, kernel_size, stride, name):
+  return tf.compat.v1.layers.conv2d_transpose(
+      inputs,
+      filters,
+      kernel_size,
+      strides=stride,
+      padding='VALID',
+      use_bias=False,
+      name=name)
 
 
 def generator_down_sample(input_net, final_num_outputs=256):
@@ -44,11 +68,11 @@ def generator_down_sample(input_net, final_num_outputs=256):
     for the correct down sampling.
 
   Args:
-    input_net: Tensor of shape (batch_size, h, w, c + num_class).
+    input_net: Tensor of shape (batch_size_stargan, h, w, c + num_class).
     final_num_outputs: (int) Number of hidden unit for the final layer.
 
   Returns:
-    Tensor of shape (batch_size, h / 4, w / 4, 256).
+    Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
 
   Raises:
     ValueError: If final_num_outputs are not divisible by 4,
@@ -83,39 +107,37 @@ def generator_down_sample(input_net, final_num_outputs=256):
     raise ValueError('Dimension 2 of the input should be explicitly defined.')
 
   with tf.compat.v1.variable_scope('generator_down_sample'):
+    down_sample = ops.pad(input_net, 3)
+    down_sample = _conv2d(
+        inputs=down_sample,
+        filters=final_num_outputs / 4,
+        kernel_size=7,
+        stride=1,
+        name='conv_0')
+    down_sample = tfgan.features.instance_norm(down_sample)
+    down_sample = tf.nn.relu(down_sample)
 
-    with tf.contrib.framework.arg_scope(
-        [tf.contrib.layers.conv2d],
-        padding='VALID',
-        biases_initializer=None,
-        normalizer_fn=tf.contrib.layers.instance_norm,
-        activation_fn=tf.nn.relu):
+    down_sample = ops.pad(down_sample, 1)
+    down_sample = _conv2d(
+        inputs=down_sample,
+        filters=final_num_outputs / 2,
+        kernel_size=4,
+        stride=2,
+        name='conv_1')
+    down_sample = tfgan.features.instance_norm(down_sample)
+    down_sample = tf.nn.relu(down_sample)
 
-      down_sample = ops.pad(input_net, 3)
-      down_sample = tf.contrib.layers.conv2d(
-          inputs=down_sample,
-          num_outputs=final_num_outputs / 4,
-          kernel_size=7,
-          stride=1,
-          scope='conv_0')
+    down_sample = ops.pad(down_sample, 1)
+    output_net = _conv2d(
+        inputs=down_sample,
+        filters=final_num_outputs,
+        kernel_size=4,
+        stride=2,
+        name='conv_2')
+    down_sample = tfgan.features.instance_norm(down_sample)
+    down_sample = tf.nn.relu(down_sample)
 
-      down_sample = ops.pad(down_sample, 1)
-      down_sample = tf.contrib.layers.conv2d(
-          inputs=down_sample,
-          num_outputs=final_num_outputs / 2,
-          kernel_size=4,
-          stride=2,
-          scope='conv_1')
-
-      down_sample = ops.pad(down_sample, 1)
-      output_net = tf.contrib.layers.conv2d(
-          inputs=down_sample,
-          num_outputs=final_num_outputs,
-          kernel_size=4,
-          stride=2,
-          scope='conv_2')
-
-    return output_net
+  return output_net
 
 
 def _residual_block(input_net,
@@ -146,26 +168,30 @@ def _residual_block(input_net,
   Returns:
     Residual Tensor with the same shape as the input tensor.
   """
-
   with tf.compat.v1.variable_scope(name):
 
-    with tf.contrib.framework.arg_scope([tf.contrib.layers.conv2d],
-                                        num_outputs=num_outputs,
-                                        kernel_size=kernel_size,
-                                        stride=stride,
-                                        padding='VALID',
-                                        normalizer_fn=normalizer_fn,
-                                        activation_fn=None):
+    res_block = ops.pad(input_net, padding_size)
+    res_block = _conv2d(
+        inputs=res_block,
+        filters=num_outputs,
+        kernel_size=kernel_size,
+        stride=stride,
+        name='conv_0')
+    if normalizer_fn:
+      res_block = normalizer_fn(res_block)
+    res_block = activation_fn(res_block, name='activation_0')
 
-      res_block = ops.pad(input_net, padding_size)
-      res_block = tf.contrib.layers.conv2d(inputs=res_block, scope='conv_0')
+    res_block = ops.pad(res_block, padding_size)
+    res_block = _conv2d(
+        inputs=res_block,
+        filters=num_outputs,
+        kernel_size=kernel_size,
+        stride=stride,
+        name='conv_1')
+    if normalizer_fn:
+      res_block = normalizer_fn(res_block)
 
-      res_block = activation_fn(res_block, name='activation_0')
-
-      res_block = ops.pad(res_block, padding_size)
-      res_block = tf.contrib.layers.conv2d(inputs=res_block, scope='conv_1')
-
-      output_net = res_block + input_net
+    output_net = res_block + input_net
 
   return output_net
 
@@ -179,14 +205,14 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L40
 
   Args:
-    input_net: Tensor of shape (batch_size, h / 4, w / 4, 256).
+    input_net: Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
     residual_block_num: (int) Number of residual_block_num. Default to 6 per the
       original implementation.
     num_outputs: (int) Number of hidden unit in the residual bottleneck. Default
       to 256 per the original implementation.
 
   Returns:
-    Tensor of shape (batch_size, h / 4, w / 4, 256).
+    Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
 
   Raises:
     ValueError: If the rank of the input tensor is not 4,
@@ -221,7 +247,7 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
           stride=1,
           padding_size=1,
           activation_fn=tf.nn.relu,
-          normalizer_fn=tf.contrib.layers.instance_norm,
+          normalizer_fn=tfgan.features.instance_norm,
           name='residual_block_{}'.format(i))
 
   return bottleneck
@@ -236,42 +262,35 @@ def generator_up_sample(input_net, num_outputs):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L44
 
   Args:
-    input_net: Tensor of shape (batch_size, h / 4, w / 4, 256).
+    input_net: Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
     num_outputs: (int) Number of channel for the output tensor.
 
   Returns:
-    Tensor of shape (batch_size, h, w, num_outputs).
+    Tensor of shape (batch_size_stargan, h, w, num_outputs).
   """
 
   with tf.compat.v1.variable_scope('generator_up_sample'):
 
-    with tf.contrib.framework.arg_scope(
-        [tf.contrib.layers.conv2d_transpose],
-        kernel_size=4,
-        stride=2,
-        padding='VALID',
-        normalizer_fn=tf.contrib.layers.instance_norm,
-        activation_fn=tf.nn.relu):
+    up_sample = _conv2d_transpose(
+        input_net, filters=128, kernel_size=4, stride=2, name='deconv_0')
+    up_sample = tfgan.features.instance_norm(up_sample)
+    up_sample = tf.nn.relu(up_sample)
+    up_sample = up_sample[:, 1:-1, 1:-1, :]
 
-      up_sample = tf.contrib.layers.conv2d_transpose(
-          inputs=input_net, num_outputs=128, scope='deconv_0')
-      up_sample = up_sample[:, 1:-1, 1:-1, :]
-
-      up_sample = tf.contrib.layers.conv2d_transpose(
-          inputs=up_sample, num_outputs=64, scope='deconv_1')
-      up_sample = up_sample[:, 1:-1, 1:-1, :]
+    up_sample = _conv2d_transpose(
+        up_sample, filters=64, kernel_size=4, stride=2, name='deconv_1')
+    up_sample = tfgan.features.instance_norm(up_sample)
+    up_sample = tf.nn.relu(up_sample)
+    up_sample = up_sample[:, 1:-1, 1:-1, :]
 
     output_net = ops.pad(up_sample, 3)
-    output_net = tf.contrib.layers.conv2d(
+    output_net = _conv2d(
         inputs=output_net,
-        num_outputs=num_outputs,
+        filters=num_outputs,
         kernel_size=7,
         stride=1,
-        padding='VALID',
-        activation_fn=tf.nn.tanh,
-        normalizer_fn=None,
-        biases_initializer=None,
-        scope='conv_0')
+        name='conv_0')
+    output_net = tf.nn.tanh(output_net)
 
   return output_net
 
@@ -285,7 +304,7 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L68
 
   Args:
-    input_net: Tensor of shape (batch_size, h, w, 3) as batch of images.
+    input_net: Tensor of shape (batch_size_stargan, h, w, 3) as batch of images.
     hidden_layer: (int) Number of hidden layers. Default to 6 per the original
       implementation.
     init_num_outputs: (int) Number of hidden unit in the first hidden layer. The
@@ -293,7 +312,7 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
       original implementation.
 
   Returns:
-    Tensor of shape (batch_size, h / 64, w / 64, 2048) as features.
+    Tensor of shape (batch_size_stargan, h / 64, w / 64, 2048) as features.
   """
 
   num_outputs = init_num_outputs
@@ -305,15 +324,12 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
     for i in range(hidden_layer):
 
       hidden = ops.pad(hidden, 1)
-      hidden = tf.contrib.layers.conv2d(
+      hidden = _conv2d(
           inputs=hidden,
-          num_outputs=num_outputs,
+          filters=num_outputs,
           kernel_size=4,
           stride=2,
-          padding='VALID',
-          activation_fn=None,
-          normalizer_fn=None,
-          scope='conv_{}'.format(i))
+          name='conv_{}'.format(i))
       hidden = tf.nn.leaky_relu(hidden, alpha=0.01)
 
       num_outputs = 2 * num_outputs
@@ -325,33 +341,29 @@ def discriminator_output_source(input_net):
   """Output Layer for Source in the Discriminator.
 
   Determine if the image is real/fake based on the feature extracted. We follow
-  the original paper design where the output is not a simple (batch_size) shape
-  Tensor but rather a (batch_size, 2, 2, 2048) shape Tensor. We will get the
+  the original paper design where the output is not a simple (batch_size_stargan) shape
+  Tensor but rather a (batch_size_stargan, 2, 2, 2048) shape Tensor. We will get the
   correct shape later when we piece things together.
 
   PyTorch Version:
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L79
 
   Args:
-    input_net: Tensor of shape (batch_size, h / 64, w / 64, 2048) as features.
+    input_net: Tensor of shape (batch_size_stargan, h / 64, w / 64, 2048) as features.
 
   Returns:
-    Tensor of shape (batch_size, h / 64, w / 64, 1) as the score.
+    Tensor of shape (batch_size_stargan, h / 64, w / 64, 1) as the score.
   """
 
   with tf.compat.v1.variable_scope('discriminator_output_source'):
 
     output_src = ops.pad(input_net, 1)
-    output_src = tf.contrib.layers.conv2d(
+    output_src = _conv2d(
         inputs=output_src,
-        num_outputs=1,
+        filters=1,
         kernel_size=3,
         stride=1,
-        padding='VALID',
-        activation_fn=None,
-        normalizer_fn=None,
-        biases_initializer=None,
-        scope='conv')
+        name='conv')
 
   return output_src
 
@@ -361,17 +373,17 @@ def discriminator_output_class(input_net, class_num):
 
   The original paper use convolution layer where the kernel size is the height
   and width of the Tensor. We use an equivalent operation here where we first
-  flatten the Tensor to shape (batch_size, K) and a fully connected layer.
+  flatten the Tensor to shape (batch_size_stargan, K) and a fully connected layer.
 
   PyTorch Version:
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L80https
 
   Args:
-    input_net: Tensor of shape (batch_size, h / 64, w / 64, 2028).
+    input_net: Tensor of shape (batch_size_stargan, h / 64, w / 64, 2028).
     class_num: Number of output classes to be predicted.
 
   Returns:
-    Tensor of shape (batch_size, class_num).
+    Tensor of shape (batch_size_stargan, class_num).
   """
 
   with tf.compat.v1.variable_scope('discriminator_output_class'):
