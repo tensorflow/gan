@@ -36,7 +36,7 @@ flags.DEFINE_float('discriminator_lr_cifar', 0.0002,
 
 # ML Infrastructure.
 flags.DEFINE_string('master_cifar', '', 'Name of the TensorFlow master to use.')
-flags.DEFINE_string('train_log_dir_cifar', '/tmp/cifar/',
+flags.DEFINE_string('train_log_dir_cifar', '/tmp/tfgan_logdir/cifar/',
                     'Directory where to write event logs.')
 flags.DEFINE_integer(
     'ps_replicas_cifar', 0,

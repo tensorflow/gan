@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Trains a StarGAN model."""
+"""Trains a StarGAN model using tfgan.estimator.StarGANEstimator."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -36,7 +36,7 @@ flags.DEFINE_integer('batch_size_stargan_estimator', 6, 'The number of images in
 flags.DEFINE_integer('patch_size_stargan_estimator', 128, 'The patch size of images.')
 
 # Write-to-disk flags.
-flags.DEFINE_string('output_dir_stargan_estimator', '/tmp/stargan/out/',
+flags.DEFINE_string('output_dir_stargan_estimator', '/tmp/tfgan_logdir/stargan_estimator/out/',
                     'Directory where to write summary image.')
 
 # FLAGS for training hyper-parameters.

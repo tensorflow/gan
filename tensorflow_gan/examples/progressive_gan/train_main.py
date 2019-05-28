@@ -101,7 +101,7 @@ flags.DEFINE_integer('fake_grid_size', 8, 'The fake image grid size for eval.')
 flags.DEFINE_integer('interp_grid_size', 8,
                      'The interp image grid size for eval.')
 
-flags.DEFINE_string('train_log_dir', '/tmp/progressive_gan/',
+flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/progressive_gan/',
                     'Directory where to write event logs.')
 
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')

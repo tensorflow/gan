@@ -33,7 +33,7 @@ flags.DEFINE_string('image_set_y_file_pattern', None,
 flags.DEFINE_integer('batch_size', 1, 'The number of images in each batch.')
 flags.DEFINE_integer('patch_size', 64, 'The patch size of images.')
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
-flags.DEFINE_string('train_log_dir', '/tmp/cyclegan/',
+flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/cyclegan/',
                     'Directory where to write event logs.')
 flags.DEFINE_float('generator_lr', 0.0002,
                    'The compression model learning rate.')

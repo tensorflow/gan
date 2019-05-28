@@ -30,7 +30,7 @@ from tensorflow_gan.examples.stargan import network
 flags.DEFINE_integer('batch_size_stargan', 6, 'The number of images in each batch.')
 flags.DEFINE_integer('patch_size_stargan', 128, 'The patch size of images.')
 
-flags.DEFINE_string('train_log_dir', '/tmp/stargan/',
+flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/stargan/',
                     'Directory where to write event logs.')
 
 # FLAGS for training hyper-parameters.
