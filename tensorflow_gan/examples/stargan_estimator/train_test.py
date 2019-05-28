@@ -20,6 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 from absl import flags
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_gan.examples.stargan_estimator import train
@@ -30,8 +31,7 @@ mock = tf.compat.v1.test.mock
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False)
+  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(inputs, num_domains):
@@ -54,9 +54,8 @@ class TrainTest(tf.test.TestCase):
 
     # Construct mock inputs.
     images_shape = [FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3]
-    img_list = [tf.zeros(images_shape)] * num_domains
-    lbl_list = [tf.one_hot([0] * FLAGS.batch_size_stargan_estimator, num_domains)] * num_domains
-    mock_provide_data.return_value = (img_list, lbl_list)
+    img_list = np.array([tf.zeros(images_shape)] * num_domains)
+    mock_provide_data.return_value = img_list
 
     train.main(None, _test_generator, _test_discriminator)
 

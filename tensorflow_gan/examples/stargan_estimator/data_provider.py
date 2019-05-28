@@ -19,34 +19,48 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
 import numpy as np
-import tensorflow as tf
+import tensorflow_datasets as tfds
+from tensorflow_gan.examples.cyclegan import data_provider as cyclegan_dp
 from tensorflow_gan.examples.stargan import data_provider
 
 
 provide_data = data_provider.provide_data
 
 
-def provide_celeba_test_set():
-  """Provide one example of every class, and labels.
+def provide_celeba_test_set(patch_size_stargan_estimator):
+  """Provide one example of every class.
+
+  Args:
+    patch_size_stargan_estimator: Python int. The patch size to extract.
 
   Returns:
     An `np.array` of shape (num_domains, H, W, C) representing the images.
       Values are in [-1, 1].
-    An `np.array` of shape (num_domains, num_domains) representing the labels.
-
-  Raises:
-    ValueError: If test data is inconsistent or malformed.
   """
-  base_dir = 'tensorflow_gan/examples/stargan_estimator/data'
-  images_fn = os.path.join(base_dir, 'celeba_test_split_images.npy')
-  with tf.io.gfile.GFile(images_fn, 'rb') as f:
-    images_np = np.load(f)
-  labels_fn = os.path.join(base_dir, 'celeba_test_split_labels.npy')
-  with tf.io.gfile.GFile(labels_fn, 'rb') as f:
-    labels_np = np.load(f)
-  if images_np.shape[0] != labels_np.shape[0]:
-    raise ValueError('Test data is malformed.')
+  ds = tfds.load('celeb_a', split='test')
+  def _preprocess(x):
+    return {
+        'image': cyclegan_dp.full_image_to_patch(x['image'], patch_size_stargan_estimator),
+        'attributes': x['attributes'],
+    }
+  ds = ds.map(_preprocess)
+  ds_np = tfds.as_numpy(ds)
 
-  return images_np, labels_np
+  # Get one image of each hair type.
+  images = []
+  labels = []
+  while len(images) < 3:
+    elem = next(ds_np)
+    attr = elem['attributes']
+    cur_lbl = [attr['Black_Hair'], attr['Blond_Hair'], attr['Brown_Hair']]
+    if cur_lbl not in labels:
+      images.append(elem['image'])
+      labels.append(cur_lbl)
+  images = np.array(images, dtype=np.float32)
+
+  assert images.dtype == np.float32
+  assert np.max(np.abs(images)) <= 1.0
+  assert images.shape == (3, patch_size_stargan_estimator, patch_size_stargan_estimator, 3)
+
+  return images

@@ -155,7 +155,7 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
   # Get input function for training and test images.
   train_input_fn = lambda: data_provider.provide_data(  # pylint:disable=g-long-lambda
       'train', FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator)
-  test_images_np, _ = data_provider.provide_celeba_test_set()
+  test_images_np = data_provider.provide_celeba_test_set(FLAGS.patch_size_stargan_estimator)
   filename_str = os.path.join(FLAGS.output_dir_stargan_estimator, 'summary_image_%i.png')
 
   # Periodically train and write prediction output to disk.
