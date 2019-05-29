@@ -45,8 +45,10 @@ def _test_discriminator(inputs, num_domains):
 class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
-  def test_main(self, mock_provide_data):
-    FLAGS.max_number_of_steps_stargan_estimator = 2
+  @mock.patch.object(train.data_provider, 'provide_celeba_test_set',
+                     autospec=True)
+  def test_main(self, mock_provide_celeba_test_set, mock_provide_data):
+    FLAGS.max_number_of_steps_stargan_estimator = 0
     FLAGS.steps_per_eval = 1
     FLAGS.batch_size_stargan_estimator = 1
     FLAGS.patch_size_stargan_estimator = 8
@@ -59,6 +61,8 @@ class TrainTest(tf.test.TestCase):
     # Note: assumes FLAGS.batch_size_stargan_estimator <= num_domains.
     lbl_list = [np.eye(num_domains)[:FLAGS.batch_size_stargan_estimator, :]] * num_domains
     mock_provide_data.return_value = (img_list, lbl_list)
+    mock_provide_celeba_test_set.return_value = np.zeros(
+        [3, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3])
 
     train.main(None, _test_generator, _test_discriminator)
 
