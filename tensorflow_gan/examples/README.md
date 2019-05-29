@@ -59,8 +59,11 @@ An unconditional and conditional GAN trained on [MNIST digits](http://yann.lecun
 
 Author: Joel Shor
 
-Unconditional GAN on MNIST trained using the `tfgan.estimator.GANEstimator`,
+Two examples. Both are unconditional GAN on MNIST trained using the
+`tfgan.estimator.GANEstimator`,
 which reduces code complexity and abstracts away the training details.
+The first uses the `tf.Estimator` "blessed" method using `train_and_evaluate`.
+The second example uses custom estimator calls.
 
 ## CIFAR10
 <a id='cifar10'></a>
