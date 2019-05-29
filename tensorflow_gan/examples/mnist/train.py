@@ -30,7 +30,7 @@ from tensorflow_gan.examples.mnist import networks
 
 flags.DEFINE_integer('batch_size_mnist', 32, 'The number of images in each batch.')
 
-flags.DEFINE_string('train_log_dir_mnist', '/tmp/mnist/',
+flags.DEFINE_string('train_log_dir_mnist', '/tmp/tfgan_logdir/mnist',
                     'Directory where to write event logs.')
 
 flags.DEFINE_integer('max_number_of_steps_mnist', 20000,

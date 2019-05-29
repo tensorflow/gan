@@ -40,7 +40,7 @@ flags.DEFINE_integer('max_number_of_steps_mnist_estimator', 20000,
 flags.DEFINE_integer(
     'noise_dims_mnist_estimator_', 64, 'Dimensions of the generator noise vector')
 
-flags.DEFINE_string('output_dir_mnist_estimator', '/tmp/mnist-estimator/',
+flags.DEFINE_string('output_dir_mnist_estimator', '/tmp/tfgan_logdir/mnist-estimator/',
                     'Directory where the results are saved to.')
 
 FLAGS = flags.FLAGS
