@@ -86,8 +86,8 @@ class TrainTest(tf.test.TestCase):
 
   def test_define_train_ops(self):
     FLAGS.batch_size_stargan = 2
-    FLAGS.generator_lr = 0.1
-    FLAGS.discriminator_lr = 0.01
+    FLAGS.generator_lr_stargan = 0.1
+    FLAGS.discriminator_lr_stargan = 0.01
 
     images_shape = [FLAGS.batch_size_stargan, 4, 4, 3]
     images = tf.zeros(images_shape, dtype=tf.float32)

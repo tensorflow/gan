@@ -38,7 +38,7 @@ flags.DEFINE_integer('max_number_of_steps_mnist_estimator', 20000,
                      'The maximum number of gradient steps.')
 
 flags.DEFINE_integer(
-    'noise_dims_mnist_estimator_', 64, 'Dimensions of the generator noise vector')
+    'noise_dims_mnist_estimator', 64, 'Dimensions of the generator noise vector')
 
 flags.DEFINE_string('output_dir_mnist_estimator', '/tmp/tfgan_logdir/mnist-estimator/',
                     'Directory where the results are saved to.')
@@ -46,18 +46,18 @@ flags.DEFINE_string('output_dir_mnist_estimator', '/tmp/tfgan_logdir/mnist-estim
 FLAGS = flags.FLAGS
 
 
-def _get_train_input_fn(batch_size, noise_dims_mnist_estimator_, num_parallel_calls=4):
+def _get_train_input_fn(batch_size, noise_dims_mnist_estimator, num_parallel_calls=4):
   def train_input_fn():
     images, _ = data_provider.provide_data(
         'train', batch_size, num_parallel_calls=num_parallel_calls)
-    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator_])
+    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator])
     return noise, images
   return train_input_fn
 
 
-def _get_predict_input_fn(batch_size, noise_dims_mnist_estimator_):
+def _get_predict_input_fn(batch_size, noise_dims_mnist_estimator):
   def predict_input_fn():
-    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator_])
+    noise = tf.random.normal([batch_size, noise_dims_mnist_estimator])
     return noise
   return predict_input_fn
 
@@ -80,11 +80,11 @@ def main(_):
       add_summaries=tfgan.estimator.SummaryType.IMAGES)
 
   # Train estimator.
-  train_input_fn = _get_train_input_fn(FLAGS.batch_size, FLAGS.noise_dims_mnist_estimator_)
+  train_input_fn = _get_train_input_fn(FLAGS.batch_size, FLAGS.noise_dims_mnist_estimator)
   gan_estimator.train(train_input_fn, max_steps=FLAGS.max_number_of_steps_mnist_estimator)
 
   # Run inference.
-  predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims_mnist_estimator_)
+  predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims_mnist_estimator)
   prediction_iterable = gan_estimator.predict(predict_input_fn)
   predictions = np.array([next(prediction_iterable) for _ in xrange(36)])
 

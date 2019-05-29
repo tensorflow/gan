@@ -34,8 +34,8 @@ flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/stargan/',
                     'Directory where to write event logs.')
 
 # FLAGS for training hyper-parameters.
-flags.DEFINE_float('generator_lr', 1e-4, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr', 1e-4, 'The discriminator learning rate.')
+flags.DEFINE_float('generator_lr_stargan', 1e-4, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr_stargan', 1e-4, 'The discriminator learning rate.')
 flags.DEFINE_integer('max_number_of_steps_stargan', 1000000,
                      'The maximum number of gradient steps.')
 flags.DEFINE_float('adam_beta1_stargan', 0.5, 'Adam Beta 1 for the Adam optimizer.')
@@ -133,8 +133,8 @@ def _define_train_ops(model, loss):
     A `GANTrainOps` namedtuple.
   """
 
-  gen_lr = _get_lr(FLAGS.generator_lr)
-  dis_lr = _get_lr(FLAGS.discriminator_lr)
+  gen_lr = _get_lr(FLAGS.generator_lr_stargan)
+  dis_lr = _get_lr(FLAGS.discriminator_lr_stargan)
   gen_opt, dis_opt = _get_optimizer(gen_lr, dis_lr)
   train_ops = tfgan.gan_train_ops(
       model,
@@ -145,8 +145,8 @@ def _define_train_ops(model, loss):
       colocate_gradients_with_ops=True,
       aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
-  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
+  tf.compat.v1.summary.scalar('generator_lr_stargan', gen_lr)
+  tf.compat.v1.summary.scalar('discriminator_lr_stargan', dis_lr)
 
   return train_ops
 

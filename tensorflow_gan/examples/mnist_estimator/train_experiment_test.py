@@ -36,7 +36,7 @@ class TrainEstimatorTest(tf.test.TestCase):
   @mock.patch.object(
       train_experiment.util, 'mnist_frechet_distance', autospec=True)
   def test_full_flow(self, mock_mnist_frechet_distance, mock_mnist_score):
-    FLAGS.noise_dims_mnist_estimator_ = 4
+    FLAGS.noise_dims = 4
     FLAGS.batch_size = 16
     FLAGS.num_train_steps = 1
     FLAGS.num_eval_steps = 1

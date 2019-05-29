@@ -36,7 +36,7 @@ class TrainTest(tf.test.TestCase):
     FLAGS.output_dir_mnist_estimator = self.get_temp_dir()
     FLAGS.batch_size = 16
     FLAGS.max_number_of_steps_mnist_estimator = 2
-    FLAGS.noise_dims_mnist_estimator_ = 3
+    FLAGS.noise_dims = 3
 
     # Construct mock inputs.
     mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
