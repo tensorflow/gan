@@ -46,7 +46,7 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
   def test_main(self, mock_provide_data):
-    FLAGS.max_number_of_steps_stargan_estimator = 0
+    FLAGS.max_number_of_steps_stargan_estimator = 2
     FLAGS.steps_per_eval = 1
     FLAGS.batch_size_stargan_estimator = 1
     FLAGS.patch_size_stargan_estimator = 8
@@ -54,8 +54,11 @@ class TrainTest(tf.test.TestCase):
 
     # Construct mock inputs.
     images_shape = [FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3]
-    img_list = np.array([tf.zeros(images_shape)] * num_domains)
-    mock_provide_data.return_value = img_list
+    img_list = [np.zeros(images_shape, dtype=np.float32)] * num_domains
+    # Create a list of num_domains arrays of shape [batch_size_stargan_estimator, num_domains].
+    # Note: assumes FLAGS.batch_size_stargan_estimator <= num_domains.
+    lbl_list = [np.eye(num_domains)[:FLAGS.batch_size_stargan_estimator, :]] * num_domains
+    mock_provide_data.return_value = (img_list, lbl_list)
 
     train.main(None, _test_generator, _test_discriminator)
 

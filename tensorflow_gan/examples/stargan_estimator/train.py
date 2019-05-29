@@ -23,7 +23,7 @@ import os
 
 from absl import flags
 import numpy as np
-import scipy.misc
+import PIL
 from six.moves import xrange  # pylint: disable=redefined-builtin
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -165,7 +165,7 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
     stargan_estimator.train(train_input_fn, steps=cur_step)
     summary_img = _get_summary_image(stargan_estimator, test_images_np)
     with tf.io.gfile.GFile(filename_str % cur_step, 'w') as f:
-      scipy.misc.imsave(f, summary_img)
+      PIL.Image.fromarray((255 * summary_img).astype(np.uint8)).save(f, 'PNG')
 
 
 if __name__ == '__main__':

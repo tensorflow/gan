@@ -22,7 +22,7 @@ from __future__ import print_function
 import os
 from absl import flags
 import numpy as np
-import scipy.misc
+import PIL
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 import tensorflow as tf
@@ -94,8 +94,12 @@ def main(_):
   # Write to disk.
   if not tf.io.gfile.exists(FLAGS.output_dir_mnist_estimator):
     tf.io.gfile.makedirs(FLAGS.output_dir_mnist_estimator)
-  scipy.misc.imsave(os.path.join(FLAGS.output_dir_mnist_estimator, 'unconditional_gan.png'),
-                    np.squeeze(tiled_image, axis=2))
+  with tf.io.gfile.GFile(
+      os.path.join(FLAGS.output_dir_mnist_estimator, 'unconditional_gan.png'), 'w') as f:
+    # Convert tiled_image from float32 in [-1, 1] to unit8 [0, 255].
+    pil_image = PIL.Image.fromarray(
+        np.squeeze((255 / 2.0) * (tiled_image + 1.0), axis=2).astype(np.uint8))
+    pil_image.convert('RGB').save(f, 'PNG')
 
 
 if __name__ == '__main__':
