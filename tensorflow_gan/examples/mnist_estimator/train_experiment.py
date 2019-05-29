@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import collections
 import os
 from absl import app
 from absl import flags
@@ -145,12 +146,12 @@ def write_predictions_to_disk(predictions, out_dir, current_step):
 
 
 def main(_):
-  hparams = tf.contrib.training.HParams(
-      generator_lr_mnist=FLAGS.generator_lr_mnist,
-      discriminator_lr_mnist=FLAGS.discriminator_lr_mnist,
-      joint_train=FLAGS.joint_train,
-      batch_size_mnist_estimator=FLAGS.batch_size_mnist_estimator,
-      noise_dims_mnist_exp=FLAGS.noise_dims_mnist_exp)
+  hparams = collections.namedtuple(
+      'HParams',
+      ['generator_lr_mnist', 'discriminator_lr_mnist', 'joint_train', 'batch_size_mnist_estimator',
+       'noise_dims_mnist_exp'])(
+           FLAGS.generator_lr_mnist, FLAGS.discriminator_lr_mnist, FLAGS.joint_train,
+           FLAGS.batch_size_mnist_estimator, FLAGS.noise_dims_mnist_exp)
   estimator = make_estimator(hparams)
   train_spec = tf.estimator.TrainSpec(
       input_fn=input_fn, max_steps=FLAGS.num_train_steps)
