@@ -76,7 +76,7 @@ def input_fn(mode, params):
   just_noise = (mode == tf.estimator.ModeKeys.PREDICT)
 
   noise_ds = (tf.data.Dataset.from_tensors(0).repeat()
-              .map(lambda _: tf.random_normal([bs, nd])))
+              .map(lambda _: tf.random.normal([bs, nd])))
 
   if just_noise:
     return noise_ds

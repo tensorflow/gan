@@ -44,10 +44,10 @@ def ds_output_types(ds):
 
 def resize_with_crop_or_pad(image, target_height, target_width):
   try:
+    return tf.image.resize_with_crop_or_pad(image, target_height, target_width)
+  except AttributeError:
     return tf.image.resize_image_with_crop_or_pad(
         image, target_height, target_width)
-  except AttributeError:
-    return tf.image.resize_with_crop_or_pad(image, target_height, target_width)
 
 
 def nn_avg_pool2d(*args, **kwargs):
