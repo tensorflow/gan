@@ -139,7 +139,7 @@ def preprocess_image(images,
       images = _to_float(images)
     if is_single:
       images = tf.expand_dims(images, axis=0)
-    resized = tf.image.resize(
+    resized = tf.compat.v1.image.resize(
         images, [height, width], method=tf.image.ResizeMethod.BILINEAR)
     resized = (resized - 128.0) / 128.0
     if is_single:

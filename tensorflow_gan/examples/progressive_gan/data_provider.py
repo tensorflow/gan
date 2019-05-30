@@ -69,7 +69,7 @@ def sample_patch(image, patch_height, patch_width, colors):
   image = compat_utils.resize_with_crop_or_pad(
       image, target_hw[0], target_hw[1])
   # Resize the cropped image to (patch_h, patch_w).
-  image = tf.image.resize([image], [patch_height, patch_width])[0]
+  image = tf.compat.v1.image.resize([image], [patch_height, patch_width])[0]
   # Force number of channels: repeat the channel dimension enough
   # number of times and then slice the first `colors` channels.
   num_repeats = _to_int32(tf.math.ceil(colors / image_shape[2]))

@@ -55,7 +55,7 @@ def _sample_patch(image, patch_size):
   image = compat_utils.resize_with_crop_or_pad(image, target_size, target_size)
   # tf.image.resize_area only accepts 4D tensor, so expand dims first.
   image = tf.expand_dims(image, axis=0)
-  image = tf.image.resize(image, [patch_size, patch_size])
+  image = tf.compat.v1.image.resize(image, [patch_size, patch_size])
   image = tf.squeeze(image, axis=0)
   # Force image num_channels = 3
   image = tf.tile(image, [1, 1, tf.maximum(1, 4 - tf.shape(input=image)[2])])

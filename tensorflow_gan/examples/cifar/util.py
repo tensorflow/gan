@@ -110,7 +110,7 @@ def get_inception_scores(images, batch_size_cifar, num_inception_images):
 
   # Resize images.
   size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_images = tf.image.resize(
+  resized_images = tf.compat.v1.image.resize(
       images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
 
   # Run images through Inception.
@@ -146,9 +146,9 @@ def get_frechet_inception_distance(real_images, generated_images, batch_size_cif
 
   # Resize input images.
   size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_real_images = tf.image.resize(
+  resized_real_images = tf.compat.v1.image.resize(
       real_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
-  resized_generated_images = tf.image.resize(
+  resized_generated_images = tf.compat.v1.image.resize(
       generated_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
 
   # Compute Frechet Inception Distance.
