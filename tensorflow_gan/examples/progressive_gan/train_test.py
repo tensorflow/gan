@@ -21,7 +21,6 @@ from __future__ import print_function
 import os
 
 from absl import flags
-from absl.testing import absltest
 import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import train
@@ -33,7 +32,7 @@ def provide_random_data(batch_size=2, patch_size=4, colors=1, **unused_kwargs):
   return tf.random.normal([batch_size, patch_size, patch_size, colors])
 
 
-class TrainTest(absltest.TestCase):
+class TrainTest(tf.test.TestCase):
 
   def setUp(self):
     super(TrainTest, self).setUp()
@@ -91,4 +90,4 @@ class TrainTest(absltest.TestCase):
 
 
 if __name__ == '__main__':
-  absltest.main()
+  tf.test.main()

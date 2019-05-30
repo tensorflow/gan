@@ -19,15 +19,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl.testing import absltest
+import tensorflow as tf
+
 from tensorflow_gan.examples.mnist import conditional_eval
 
 
-class ConditionalEvalTest(absltest.TestCase):
+class ConditionalEvalTest(tf.test.TestCase):
 
   def test_build_graph(self):
     conditional_eval.main(None, run_eval_loop=False)
 
 
 if __name__ == '__main__':
-  absltest.main()
+  tf.test.main()
