@@ -1,6 +1,6 @@
 ## CycleGAN
 
-Author: Shuo Chen
+Author: Shuo Chen and Cassandra Xia
 
 ### How to run
 

@@ -89,7 +89,7 @@ than **five minutes**, you can train an unconditional GAN on CIFAR10.
 ## CycleGAN
 <a id='cyclegan'></a>
 
-Author: Shuo Chen
+Author: Shuo Chen and Cassandra Xia
 
 Based on the paper ["Unpaired Image-to-Image Translation using Cycle-Consistent
 Adversarial Networks"](https://arxiv.org/abs/1703.10593), this example converts
