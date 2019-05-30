@@ -24,7 +24,7 @@ import tensorflow_datasets as tfds
 
 
 def provide_dataset(split,
-                    batch_size_cifar,
+                    batch_size,
                     num_parallel_calls=None,
                     shuffle=True,
                     one_hot=True):
@@ -32,17 +32,17 @@ def provide_dataset(split,
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_cifar: The number of images in each batch.
+    batch_size: The number of images in each batch.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
     one_hot: Output one hot vector instead of int32 label.
 
   Returns:
     A tf.data.Dataset with:
-      * images: A `Tensor` of size [batch_size_cifar, 32, 32, 3] and type tf.float32.
+      * images: A `Tensor` of size [batch_size, 32, 32, 3] and type tf.float32.
           Output pixel values are in [-1, 1].
-      * labels: A `Tensor` of size [batch_size_cifar, 10] of one-hot label
-          encodings with type tf.int32, or a `Tensor` of size [batch_size_cifar],
+      * labels: A `Tensor` of size [batch_size, 10] of one-hot label
+          encodings with type tf.int32, or a `Tensor` of size [batch_size],
           depending on the value of `one_hot`.
 
   Raises:
@@ -67,14 +67,14 @@ def provide_dataset(split,
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
   ds = (
-      ds.batch(batch_size_cifar,
+      ds.batch(batch_size,
                drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
 
   return ds
 
 
 def provide_data(split,
-                 batch_size_cifar,
+                 batch_size,
                  num_parallel_calls=None,
                  shuffle=True,
                  one_hot=True):
@@ -82,22 +82,22 @@ def provide_data(split,
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_cifar: The number of images in each batch.
+    batch_size: The number of images in each batch.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
     one_hot: Output one hot vector instead of int32 label.
 
   Returns:
-    images: A `Tensor` of size [batch_size_cifar, 32, 32, 3]. Output pixel values are
+    images: A `Tensor` of size [batch_size, 32, 32, 3]. Output pixel values are
       in [-1, 1].
-    labels: A `Tensor` of size [batch_size_cifar, 10] of one-hot label
-      encodings with type tf.int32, or a `Tensor` of size [batch_size_cifar],
+    labels: A `Tensor` of size [batch_size, 10] of one-hot label
+      encodings with type tf.int32, or a `Tensor` of size [batch_size],
       depending on the value of `one_hot`.
 
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size_cifar, num_parallel_calls, shuffle, one_hot)
+  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle, one_hot)
 
   next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   images, labels = next_batch['images'], next_batch['labels']

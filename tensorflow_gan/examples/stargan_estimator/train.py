@@ -32,33 +32,33 @@ from tensorflow_gan.examples.stargan import network
 from tensorflow_gan.examples.stargan_estimator import data_provider
 
 # FLAGS for data.
-flags.DEFINE_integer('batch_size_stargan_estimator', 6, 'The number of images in each batch.')
-flags.DEFINE_integer('patch_size_stargan_estimator', 128, 'The patch size of images.')
+flags.DEFINE_integer('batch_size', 6, 'The number of images in each batch.')
+flags.DEFINE_integer('patch_size', 128, 'The patch size of images.')
 
 # Write-to-disk flags.
-flags.DEFINE_string('output_dir_stargan_estimator', '/tmp/tfgan_logdir/stargan_estimator/out/',
+flags.DEFINE_string('output_dir', '/tmp/tfgan_logdir/stargan_estimator/out/',
                     'Directory where to write summary image.')
 
 # FLAGS for training hyper-parameters.
-flags.DEFINE_float('generator_lr_stargan_estimator', 1e-4, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr_stargan_estimator', 1e-4, 'The discriminator learning rate.')
-flags.DEFINE_integer('max_number_of_steps_stargan_estimator', 1000000,
+flags.DEFINE_float('generator_lr', 1e-4, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr', 1e-4, 'The discriminator learning rate.')
+flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
 flags.DEFINE_integer('steps_per_eval', 1000,
                      'The number of steps after which we write eval to disk.')
-flags.DEFINE_float('adam_beta1_stargan_estimator', 0.5, 'Adam Beta 1 for the Adam optimizer.')
-flags.DEFINE_float('adam_beta2_stargan_estimator', 0.999, 'Adam Beta 2 for the Adam optimizer.')
-flags.DEFINE_float('gen_disc_step_ratio_stargan_estimator', 0.2,
+flags.DEFINE_float('adam_beta1', 0.5, 'Adam Beta 1 for the Adam optimizer.')
+flags.DEFINE_float('adam_beta2', 0.999, 'Adam Beta 2 for the Adam optimizer.')
+flags.DEFINE_float('gen_disc_step_ratio', 0.2,
                    'Generator:Discriminator training step ratio.')
 
 # FLAGS for distributed training.
-flags.DEFINE_string('master_stargan_estimator', '', 'Name of the TensorFlow master_stargan_estimator to use.')
+flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_integer(
-    'ps_task_stargan_estimators', 0,
+    'ps_tasks', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
-    'task_stargan_estimator', 0,
+    'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
 
@@ -78,9 +78,9 @@ def _get_optimizer(gen_lr, dis_lr):
     A tuple of generator optimizer and discriminator optimizer.
   """
   gen_opt = tf.compat.v1.train.AdamOptimizer(
-      gen_lr, beta1=FLAGS.adam_beta1_stargan_estimator, beta2=FLAGS.adam_beta2_stargan_estimator, use_locking=True)
+      gen_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
   dis_opt = tf.compat.v1.train.AdamOptimizer(
-      dis_lr, beta1=FLAGS.adam_beta1_stargan_estimator, beta2=FLAGS.adam_beta2_stargan_estimator, use_locking=True)
+      dis_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
   return gen_opt, dis_opt
 
 
@@ -91,11 +91,11 @@ def _define_train_step():
     GANTrainSteps namedtuple representing the training step configuration.
   """
 
-  if FLAGS.gen_disc_step_ratio_stargan_estimator <= 1:
-    discriminator_step = int(1 / FLAGS.gen_disc_step_ratio_stargan_estimator)
+  if FLAGS.gen_disc_step_ratio <= 1:
+    discriminator_step = int(1 / FLAGS.gen_disc_step_ratio)
     return tfgan.GANTrainSteps(1, discriminator_step)
   else:
-    generator_step = int(FLAGS.gen_disc_step_ratio_stargan_estimator)
+    generator_step = int(FLAGS.gen_disc_step_ratio)
     return tfgan.GANTrainSteps(generator_step, 1)
 
 
@@ -131,16 +131,16 @@ def _get_summary_image(estimator, test_images_np):
 
 def main(_, override_generator_fn=None, override_discriminator_fn=None):
   # Create directories if not exist.
-  if not tf.io.gfile.exists(FLAGS.output_dir_stargan_estimator):
-    tf.io.gfile.makedirs(FLAGS.output_dir_stargan_estimator)
+  if not tf.io.gfile.exists(FLAGS.output_dir):
+    tf.io.gfile.makedirs(FLAGS.output_dir)
 
   # Make sure steps integers are consistent.
-  if FLAGS.max_number_of_steps_stargan_estimator % FLAGS.steps_per_eval != 0:
-    raise ValueError('`max_number_of_steps_stargan_estimator` must be divisible by '
+  if FLAGS.max_number_of_steps % FLAGS.steps_per_eval != 0:
+    raise ValueError('`max_number_of_steps` must be divisible by '
                      '`steps_per_eval`.')
 
   # Create optimizers.
-  gen_opt, dis_opt = _get_optimizer(FLAGS.generator_lr_stargan_estimator, FLAGS.discriminator_lr_stargan_estimator)
+  gen_opt, dis_opt = _get_optimizer(FLAGS.generator_lr, FLAGS.discriminator_lr)
 
   # Create estimator.
   stargan_estimator = tfgan.estimator.StarGANEstimator(
@@ -154,13 +154,13 @@ def main(_, override_generator_fn=None, override_discriminator_fn=None):
 
   # Get input function for training and test images.
   train_input_fn = lambda: data_provider.provide_data(  # pylint:disable=g-long-lambda
-      'train', FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator)
-  test_images_np = data_provider.provide_celeba_test_set(FLAGS.patch_size_stargan_estimator)
-  filename_str = os.path.join(FLAGS.output_dir_stargan_estimator, 'summary_image_%i.png')
+      'train', FLAGS.batch_size, FLAGS.patch_size)
+  test_images_np = data_provider.provide_celeba_test_set(FLAGS.patch_size)
+  filename_str = os.path.join(FLAGS.output_dir, 'summary_image_%i.png')
 
   # Periodically train and write prediction output to disk.
   cur_step = 0
-  while cur_step < FLAGS.max_number_of_steps_stargan_estimator:
+  while cur_step < FLAGS.max_number_of_steps:
     cur_step += FLAGS.steps_per_eval
     stargan_estimator.train(train_input_fn, steps=cur_step)
     summary_img = _get_summary_image(stargan_estimator, test_images_np)

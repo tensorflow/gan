@@ -186,7 +186,7 @@ def discriminator_helper(img, is_conditional, one_hot_labels, weight_decay):
     weight_decay: The L2 weight decay.
 
   Returns:
-    Final fully connected discriminator layer. [batch_size_mnist, 1024].
+    Final fully connected discriminator layer. [batch_size, 1024].
   """
   sn_gettr = tfgan.features.spectral_normalization_custom_getter
   with tf.compat.v1.variable_scope('sn', custom_getter=sn_gettr(training=True)):

@@ -23,19 +23,19 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 
-def provide_dataset(split, batch_size_mnist, num_parallel_calls=None, shuffle=True):
+def provide_dataset(split, batch_size, num_parallel_calls=None, shuffle=True):
   """Provides batches of MNIST digits.
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_mnist: The number of images in each batch.
+    batch_size: The number of images in each batch.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
 
   Returns:
     A tf.data.Dataset with:
-      * images: A `Tensor` of size [batch_size_mnist, 28, 28, 1] and type tf.float32.
-      * one_hot_labels: A `Tensor` of size [batch_size_mnist, 10] of one-hot label
+      * images: A `Tensor` of size [batch_size, 28, 28, 1] and type tf.float32.
+      * one_hot_labels: A `Tensor` of size [batch_size, 10] of one-hot label
           encodings with type tf.int32.
 
   Raises:
@@ -57,30 +57,30 @@ def provide_dataset(split, batch_size_mnist, num_parallel_calls=None, shuffle=Tr
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
   ds = (
-      ds.batch(batch_size_mnist,
+      ds.batch(batch_size,
                drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
 
   return ds
 
 
-def provide_data(split, batch_size_mnist, num_parallel_calls=None, shuffle=True):
+def provide_data(split, batch_size, num_parallel_calls=None, shuffle=True):
   """Provides batches of MNIST digits.
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_mnist: The number of images in each batch.
+    batch_size: The number of images in each batch.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
 
   Returns:
-    images: A `Tensor` of size [batch_size_mnist, 28, 28, 1]
-    one_hot_labels: A `Tensor` of size [batch_size_mnist, 10], where
+    images: A `Tensor` of size [batch_size, 28, 28, 1]
+    one_hot_labels: A `Tensor` of size [batch_size, 10], where
       each row has a single element set to one and the rest set to zeros.
 
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size_mnist, num_parallel_calls, shuffle)
+  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle)
 
   next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
   images, labels = next_batch['images'], next_batch['labels']

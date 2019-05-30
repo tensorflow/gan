@@ -27,23 +27,23 @@ from tensorflow_gan.examples.cifar import data_provider
 from tensorflow_gan.examples.cifar import networks
 
 # ML Hparams.
-flags.DEFINE_integer('batch_size_cifar', 32, 'The number of images in each batch.')
-flags.DEFINE_integer('max_number_of_steps_cifar', 1000000,
+flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
+flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
-flags.DEFINE_float('generator_lr_cifar', 0.0002, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr_cifar', 0.0002,
+flags.DEFINE_float('generator_lr', 0.0002, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr', 0.0002,
                    'The discriminator learning rate.')
 
 # ML Infrastructure.
 flags.DEFINE_string('master_cifar', '', 'Name of the TensorFlow master to use.')
-flags.DEFINE_string('train_log_dir_cifar', '/tmp/tfgan_logdir/cifar/',
+flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/cifar/',
                     'Directory where to write event logs.')
 flags.DEFINE_integer(
-    'ps_replicas_cifar', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
-    'task_cifar', 0,
+    'task', 0,
     'The Task ID. This value is used when training with multiple workers to '
     'identify each worker.')
 
@@ -51,21 +51,21 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  if not tf.io.gfile.exists(FLAGS.train_log_dir_cifar):
-    tf.io.gfile.makedirs(FLAGS.train_log_dir_cifar)
+  if not tf.io.gfile.exists(FLAGS.train_log_dir):
+    tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas_cifar)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
     # Force all input processing onto CPU in order to reserve the GPU for
     # the forward inference and back-propagation.
     with tf.compat.v1.name_scope('inputs'):
       with tf.device('/cpu:0'):
         images, _ = data_provider.provide_data(
-            'train', FLAGS.batch_size_cifar, num_parallel_calls=4)
+            'train', FLAGS.batch_size, num_parallel_calls=4)
 
     # Define the GANModel tuple.
     generator_fn = networks.generator
     discriminator_fn = networks.discriminator
-    generator_inputs = tf.random.normal([FLAGS.batch_size_cifar, 64])
+    generator_inputs = tf.random.normal([FLAGS.batch_size, 64])
     gan_model = tfgan.gan_model(
         generator_fn,
         discriminator_fn,
@@ -96,23 +96,23 @@ def main(_):
         tf.as_string(tf.compat.v1.train.get_or_create_global_step())
     ],
                                      name='status_message')
-    if FLAGS.max_number_of_steps_cifar == 0:
+    if FLAGS.max_number_of_steps == 0:
       return
     tfgan.gan_train(
         train_ops,
         hooks=([
-            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps_cifar),
+            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
             tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ]),
-        logdir=FLAGS.train_log_dir_cifar,
+        logdir=FLAGS.train_log_dir,
         master=FLAGS.master_cifar,
-        is_chief=FLAGS.task_cifar == 0)
+        is_chief=FLAGS.task == 0)
 
 
 def _get_optimizers():
   """Get optimizers that are optionally synchronous."""
-  gen_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.generator_lr_cifar, 0.5)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.discriminator_lr_cifar, 0.5)
+  gen_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.generator_lr, 0.5)
+  dis_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.discriminator_lr, 0.5)
 
   return gen_opt, dis_opt
 

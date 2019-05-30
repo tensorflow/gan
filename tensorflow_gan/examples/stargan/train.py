@@ -27,26 +27,26 @@ from tensorflow_gan.examples.stargan import data_provider
 from tensorflow_gan.examples.stargan import network
 
 # FLAGS for data.
-flags.DEFINE_integer('batch_size_stargan', 6, 'The number of images in each batch.')
-flags.DEFINE_integer('patch_size_stargan', 128, 'The patch size of images.')
+flags.DEFINE_integer('batch_size', 6, 'The number of images in each batch.')
+flags.DEFINE_integer('patch_size', 128, 'The patch size of images.')
 
 flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/stargan/',
                     'Directory where to write event logs.')
 
 # FLAGS for training hyper-parameters.
-flags.DEFINE_float('generator_lr_stargan', 1e-4, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr_stargan', 1e-4, 'The discriminator learning rate.')
-flags.DEFINE_integer('max_number_of_steps_stargan', 1000000,
+flags.DEFINE_float('generator_lr', 1e-4, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr', 1e-4, 'The discriminator learning rate.')
+flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
-flags.DEFINE_float('adam_beta1_stargan', 0.5, 'Adam Beta 1 for the Adam optimizer.')
-flags.DEFINE_float('adam_beta2_stargan', 0.999, 'Adam Beta 2 for the Adam optimizer.')
-flags.DEFINE_float('gen_disc_step_ratio_stargan', 0.2,
+flags.DEFINE_float('adam_beta1', 0.5, 'Adam Beta 1 for the Adam optimizer.')
+flags.DEFINE_float('adam_beta2', 0.999, 'Adam Beta 2 for the Adam optimizer.')
+flags.DEFINE_float('gen_disc_step_ratio', 0.2,
                    'Generator:Discriminator training step ratio.')
 
 # FLAGS for distributed training.
 flags.DEFINE_string('tf_master', '', 'Name of the TensorFlow master.')
 flags.DEFINE_integer(
-    'ps_replicas_stargan', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
@@ -84,17 +84,17 @@ def _get_lr(base_lr):
 
   Returns:
     A scalar float `Tensor` of learning rate which equals `base_lr` when the
-    global training step is less than FLAGS.max_number_of_steps_stargan / 2, afterwards
+    global training step is less than FLAGS.max_number_of_steps / 2, afterwards
     it linearly decays to zero.
   """
   global_step = tf.compat.v1.train.get_or_create_global_step()
-  lr_constant_steps = FLAGS.max_number_of_steps_stargan // 2
+  lr_constant_steps = FLAGS.max_number_of_steps // 2
 
   def _lr_decay():
     return tf.compat.v1.train.polynomial_decay(
         learning_rate=base_lr,
         global_step=(global_step - lr_constant_steps),
-        decay_steps=(FLAGS.max_number_of_steps_stargan - lr_constant_steps),
+        decay_steps=(FLAGS.max_number_of_steps - lr_constant_steps),
         end_learning_rate=0.0)
 
   return tf.cond(
@@ -116,9 +116,9 @@ def _get_optimizer(gen_lr, dis_lr):
     A tuple of generator optimizer and discriminator optimizer.
   """
   gen_opt = tf.compat.v1.train.AdamOptimizer(
-      gen_lr, beta1=FLAGS.adam_beta1_stargan, beta2=FLAGS.adam_beta2_stargan, use_locking=True)
+      gen_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
   dis_opt = tf.compat.v1.train.AdamOptimizer(
-      dis_lr, beta1=FLAGS.adam_beta1_stargan, beta2=FLAGS.adam_beta2_stargan, use_locking=True)
+      dis_lr, beta1=FLAGS.adam_beta1, beta2=FLAGS.adam_beta2, use_locking=True)
   return gen_opt, dis_opt
 
 
@@ -133,8 +133,8 @@ def _define_train_ops(model, loss):
     A `GANTrainOps` namedtuple.
   """
 
-  gen_lr = _get_lr(FLAGS.generator_lr_stargan)
-  dis_lr = _get_lr(FLAGS.discriminator_lr_stargan)
+  gen_lr = _get_lr(FLAGS.generator_lr)
+  dis_lr = _get_lr(FLAGS.discriminator_lr)
   gen_opt, dis_opt = _get_optimizer(gen_lr, dis_lr)
   train_ops = tfgan.gan_train_ops(
       model,
@@ -145,8 +145,8 @@ def _define_train_ops(model, loss):
       colocate_gradients_with_ops=True,
       aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.compat.v1.summary.scalar('generator_lr_stargan', gen_lr)
-  tf.compat.v1.summary.scalar('discriminator_lr_stargan', dis_lr)
+  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
+  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
 
   return train_ops
 
@@ -158,11 +158,11 @@ def _define_train_step():
     GANTrainSteps namedtuple representing the training step configuration.
   """
 
-  if FLAGS.gen_disc_step_ratio_stargan <= 1:
-    discriminator_step = int(1 / FLAGS.gen_disc_step_ratio_stargan)
+  if FLAGS.gen_disc_step_ratio <= 1:
+    discriminator_step = int(1 / FLAGS.gen_disc_step_ratio)
     return tfgan.GANTrainSteps(1, discriminator_step)
   else:
-    generator_step = int(FLAGS.gen_disc_step_ratio_stargan)
+    generator_step = int(FLAGS.gen_disc_step_ratio)
     return tfgan.GANTrainSteps(generator_step, 1)
 
 
@@ -173,12 +173,12 @@ def main(_):
     tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
   # Shard the model to different parameter servers.
-  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas_stargan)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
 
     # Create the input dataset.
     with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
-      images, labels = data_provider.provide_data('train', FLAGS.batch_size_stargan,
-                                                  FLAGS.patch_size_stargan)
+      images, labels = data_provider.provide_data('train', FLAGS.batch_size,
+                                                  FLAGS.patch_size)
 
     # Define the model.
     with tf.compat.v1.name_scope('model'):
@@ -186,7 +186,7 @@ def main(_):
 
     # Add image summary.
     tfgan.eval.add_stargan_image_summaries(
-        model, num_images=3 * FLAGS.batch_size_stargan, display_diffs=True)
+        model, num_images=3 * FLAGS.batch_size, display_diffs=True)
 
     # Define the model loss.
     loss = tfgan.stargan_loss(model)
@@ -211,7 +211,7 @@ def main(_):
         FLAGS.train_log_dir,
         get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps_stargan),
+            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
             tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ],
         master=FLAGS.tf_master,

@@ -12,7 +12,7 @@ Author: Joel Shor
 1. Run:
 
 ```
-python mnist_estimator/train_experiment.py --max_number_of_steps_mnist_estimator=20000 --output_dir_mnist_estimator=/tmp/mnist-estimator-tae --alsologtostderr
+python mnist_estimator/train_experiment.py --max_number_of_steps=20000 --output_dir=/tmp/mnist-estimator-tae --alsologtostderr
 ```
 
 Using custom estimator calls:
@@ -22,7 +22,7 @@ Using custom estimator calls:
 1. Run:
 
 ```
-python mnist_estimator/train.py --max_number_of_steps_mnist_estimator=20000 --output_dir_mnist_estimator=/tmp/mnist-estimator --alsologtostderr
+python mnist_estimator/train.py --max_number_of_steps=20000 --output_dir=/tmp/mnist-estimator --alsologtostderr
 ```
 
 ### Description

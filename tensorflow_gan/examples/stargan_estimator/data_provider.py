@@ -28,11 +28,11 @@ from tensorflow_gan.examples.stargan import data_provider
 provide_data = data_provider.provide_data
 
 
-def provide_celeba_test_set(patch_size_stargan_estimator):
+def provide_celeba_test_set(patch_size):
   """Provide one example of every class.
 
   Args:
-    patch_size_stargan_estimator: Python int. The patch size to extract.
+    patch_size: Python int. The patch size to extract.
 
   Returns:
     An `np.array` of shape (num_domains, H, W, C) representing the images.
@@ -41,7 +41,7 @@ def provide_celeba_test_set(patch_size_stargan_estimator):
   ds = tfds.load('celeb_a', split='test')
   def _preprocess(x):
     return {
-        'image': cyclegan_dp.full_image_to_patch(x['image'], patch_size_stargan_estimator),
+        'image': cyclegan_dp.full_image_to_patch(x['image'], patch_size),
         'attributes': x['attributes'],
     }
   ds = ds.map(_preprocess)
@@ -61,6 +61,6 @@ def provide_celeba_test_set(patch_size_stargan_estimator):
 
   assert images.dtype == np.float32
   assert np.max(np.abs(images)) <= 1.0
-  assert images.shape == (3, patch_size_stargan_estimator, patch_size_stargan_estimator, 3)
+  assert images.shape == (3, patch_size, patch_size, 3)
 
   return images

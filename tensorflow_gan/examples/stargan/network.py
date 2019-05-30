@@ -42,13 +42,13 @@ def generator(inputs, targets):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L22
 
   Args:
-    inputs: Tensor of shape (batch_size_stargan, h, w, c) representing the
+    inputs: Tensor of shape (batch_size, h, w, c) representing the
       images/information that we want to transform.
-    targets: Tensor of shape (batch_size_stargan, num_domains) representing the target
+    targets: Tensor of shape (batch_size, num_domains) representing the target
       domain the generator should transform the image/information to.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h, w, c) as the inputs.
+    Tensor of shape (batch_size, h, w, c) as the inputs.
   """
 
   with tf.compat.v1.variable_scope('generator'):
@@ -78,13 +78,13 @@ def discriminator(input_net, class_num):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/solver.py#L245
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h, w, c) as batch of images.
+    input_net: Tensor of shape (batch_size, h, w, c) as batch of images.
     class_num: (int) number of domain to be predicted
 
   Returns:
-    output_src: Tensor of shape (batch_size_stargan) where each value is a logit
+    output_src: Tensor of shape (batch_size) where each value is a logit
     representing whether the image is real of fake.
-    output_cls: Tensor of shape (batch_size_stargan, class_um) where each value is a
+    output_cls: Tensor of shape (batch_size, class_um) where each value is a
     logit representing whether the image is in the associated domain.
   """
 

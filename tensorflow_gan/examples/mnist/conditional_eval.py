@@ -30,29 +30,29 @@ from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
 from tensorflow_gan.examples.mnist import util
 
-flags.DEFINE_string('conditional_eval_checkpoint_dir_mnist', '/tmp/mnist/',
+flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
                     'Directory where the model was written to.')
 
-flags.DEFINE_string('conditional_eval_dir_mnist', '/tmp/mnist/',
+flags.DEFINE_string('eval_dir', '/tmp/mnist/',
                     'Directory where the results are saved to.')
 
 flags.DEFINE_integer('num_images_per_class', 10,
                      'Number of images to generate per class.')
 
-flags.DEFINE_integer('noise_dims_mnist_eval', 64,
+flags.DEFINE_integer('noise_dims', 64,
                      'Dimensions of the generator noise vector')
 
 flags.DEFINE_string(
-    'classifier_filename_cond_eval', None,
+    'classifier_filename', None,
     'Location of the pretrained classifier. If `None`, use '
     'default.')
 
 flags.DEFINE_integer(
-    'max_number_of_evaluations_mnist_cond_eval', None,
+    'max_number_of_evaluations', None,
     'Number of times to run evaluation. If `None`, run '
     'forever.')
 
-flags.DEFINE_boolean('write_to_disk_mnist_cond_eval', True, 'If `True`, run images to disk.')
+flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
 FLAGS = flags.FLAGS
 NUM_CLASSES = 10
@@ -61,7 +61,7 @@ NUM_CLASSES = 10
 def main(_, run_eval_loop=True):
   with tf.compat.v1.name_scope('inputs'):
     noise, one_hot_labels = _get_generator_inputs(FLAGS.num_images_per_class,
-                                                  NUM_CLASSES, FLAGS.noise_dims_mnist_eval)
+                                                  NUM_CLASSES, FLAGS.noise_dims)
 
   # Generate images.
   with tf.compat.v1.variable_scope('Generator'):  # Same scope as in train job.
@@ -76,17 +76,17 @@ def main(_, run_eval_loop=True):
   # Calculate evaluation metrics.
   tf.compat.v1.summary.scalar(
       'MNIST_Classifier_score',
-      util.mnist_score(images, FLAGS.classifier_filename_cond_eval))
+      util.mnist_score(images, FLAGS.classifier_filename))
   tf.compat.v1.summary.scalar(
       'MNIST_Cross_entropy',
       util.mnist_cross_entropy(images, one_hot_labels,
-                               FLAGS.classifier_filename_cond_eval))
+                               FLAGS.classifier_filename))
 
   # Write images to disk.
   image_write_ops = None
-  if FLAGS.write_to_disk_mnist_cond_eval:
+  if FLAGS.write_to_disk:
     image_write_ops = tf.io.write_file(
-        '%s/%s' % (FLAGS.conditional_eval_dir_mnist, 'conditional_gan.png'),
+        '%s/%s' % (FLAGS.eval_dir, 'conditional_gan.png'),
         tf.image.encode_png(
             data_provider.float_image_to_uint8(reshaped_img[0])))
 
@@ -94,21 +94,21 @@ def main(_, run_eval_loop=True):
   if not run_eval_loop:
     return
   evaluation.evaluate_repeatedly(
-      FLAGS.conditional_eval_checkpoint_dir_mnist,
+      FLAGS.checkpoint_dir,
       hooks=[
-          evaluation.SummaryAtEndHook(FLAGS.conditional_eval_dir_mnist),
+          evaluation.SummaryAtEndHook(FLAGS.eval_dir),
           evaluation.StopAfterNEvalsHook(1)
       ],
       eval_ops=image_write_ops,
-      max_number_of_evaluations_mnist_cond_eval=FLAGS.max_number_of_evaluations_mnist_cond_eval)
+      max_number_of_evaluations=FLAGS.max_number_of_evaluations)
 
 
-def _get_generator_inputs(num_images_per_class, num_classes, noise_dims_mnist_eval):
+def _get_generator_inputs(num_images_per_class, num_classes, noise_dims):
   """Return generator inputs for evaluation."""
   # Since we want a grid of numbers for the conditional generator, manually
   # construct the desired class labels.
-  num_images_generated_mnist = num_images_per_class * num_classes
-  noise = tf.random.normal([num_images_generated_mnist, noise_dims_mnist_eval])
+  num_images_generated = num_images_per_class * num_classes
+  noise = tf.random.normal([num_images_generated, noise_dims])
   # pylint:disable=g-complex-comprehension
   labels = [
       lbl for lbl in range(num_classes) for _ in range(num_images_per_class)

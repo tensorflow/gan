@@ -42,7 +42,7 @@ flags.DEFINE_float('discriminator_lr', 0.0001,
 flags.DEFINE_integer('max_number_of_steps', 500000,
                      'The maximum number of gradient steps.')
 flags.DEFINE_integer(
-    'ps_replicas_cyclegan', 0,
+    'ps_replicas', 0,
     'The number of parameter servers. If the value is 0, then the parameters '
     'are handled locally by the worker.')
 flags.DEFINE_integer(
@@ -175,7 +175,7 @@ def main(_):
   if not tf.io.gfile.exists(FLAGS.train_log_dir):
     tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas_cyclegan)):
+  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
     with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
       images_x, images_y = _get_data(
           FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern,

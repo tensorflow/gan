@@ -24,25 +24,25 @@ import tensorflow_datasets as tfds
 from tensorflow_gan.examples.cyclegan import data_provider
 
 
-def provide_dataset(split, batch_size_stargan, patch_size_stargan, num_parallel_calls=None,
+def provide_dataset(split, batch_size, patch_size, num_parallel_calls=None,
                     shuffle=True,
                     domains=('Black_Hair', 'Blond_Hair', 'Brown_Hair')):
   """Provides batches of CelebA image patches.
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_stargan: The number of images in each batch.
-    patch_size_stargan: Python int. The patch size to extract.
+    batch_size: The number of images in each batch.
+    patch_size: Python int. The patch size to extract.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
     domains: Name of domains to transform between. Must be in Celeb A dataset.
 
   Returns:
     A tf.data.Dataset with:
-      * images:  `Tensor` of size [batch_size_stargan, 32, 32, 3] and type tf.float32.
+      * images:  `Tensor` of size [batch_size, 32, 32, 3] and type tf.float32.
           Output pixel values are in [-1, 1].
-      * labels: A `Tensor` of size [batch_size_stargan, 10] of one-hot label
-          encodings with type tf.int32, or a `Tensor` of size [batch_size_stargan],
+      * labels: A `Tensor` of size [batch_size, 10] of one-hot label
+          encodings with type tf.int32, or a `Tensor` of size [batch_size],
           depending on the value of `one_hot`.
 
   Raises:
@@ -63,7 +63,7 @@ def provide_dataset(split, batch_size_stargan, patch_size_stargan, num_parallel_
     num_domains = len(elements)
     for idx, (domain, elem) in enumerate(zip(domains, elements)):
       uint8_img = elem['image']
-      patch = data_provider.full_image_to_patch(uint8_img, patch_size_stargan)
+      patch = data_provider.full_image_to_patch(uint8_img, patch_size)
       label = tf.one_hot(idx, num_domains)
       output_dict[domain] = {'images': patch, 'labels': label}
     return output_dict
@@ -75,37 +75,37 @@ def provide_dataset(split, batch_size_stargan, patch_size_stargan, num_parallel_
   if shuffle:
     ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
   ds = (ds
-        .batch(batch_size_stargan, drop_remainder=True)
+        .batch(batch_size, drop_remainder=True)
         .prefetch(tf.data.experimental.AUTOTUNE))
 
   return ds
 
 
-def provide_data(split, batch_size_stargan, patch_size_stargan, num_parallel_calls=None,
+def provide_data(split, batch_size, patch_size, num_parallel_calls=None,
                  shuffle=True,
                  domains=('Black_Hair', 'Blond_Hair', 'Brown_Hair')):
   """Provides batches of CelebA image patches.
 
   Args:
     split: Either 'train' or 'test'.
-    batch_size_stargan: The number of images in each batch.
-    patch_size_stargan: Python int. The patch size to extract.
+    batch_size: The number of images in each batch.
+    patch_size: Python int. The patch size to extract.
     num_parallel_calls: Number of threads dedicated to parsing.
     shuffle: Whether to shuffle.
     domains: Name of domains to transform between. Must be in Celeb A dataset.
 
   Returns:
     A tf.data.Dataset with:
-      * images:  `Tensor` of size [batch_size_stargan, patch_size_stargan, patch_size_stargan, 3] and
+      * images:  `Tensor` of size [batch_size, patch_size, patch_size, 3] and
           type tf.float32. Output pixel values are in [-1, 1].
-      * labels: A `Tensor` of size [batch_size_stargan, 10] of one-hot label
-          encodings with type tf.int32, or a `Tensor` of size [batch_size_stargan],
+      * labels: A `Tensor` of size [batch_size, 10] of one-hot label
+          encodings with type tf.int32, or a `Tensor` of size [batch_size],
           depending on the value of `one_hot`.
 
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size_stargan, patch_size_stargan, num_parallel_calls,
+  ds = provide_dataset(split, batch_size, patch_size, num_parallel_calls,
                        shuffle, domains)
 
   next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()

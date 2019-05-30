@@ -53,15 +53,15 @@ def one_hot1():
 
 class MnistScoreTest(tf.test.TestCase):
 
-  def test_any_batch_size_mnist(self):
+  def test_any_batch_size(self):
     if tf.executing_eagerly():
       # Placeholders don't work in eager execution mode.
       return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     mscore = util.mnist_score(inputs)
-    for batch_size_mnist in [4, 16, 30]:
+    for batch_size in [4, 16, 30]:
       with self.cached_session() as sess:
-        sess.run(mscore, feed_dict={inputs: np.zeros([batch_size_mnist, 28, 28, 1])})
+        sess.run(mscore, feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
   def test_deterministic(self):
     m_score = util.mnist_score(real_digit())
@@ -98,16 +98,16 @@ class MnistScoreTest(tf.test.TestCase):
 
 class MnistFrechetDistanceTest(tf.test.TestCase):
 
-  def test_any_batch_size_mnist(self):
+  def test_any_batch_size(self):
     if tf.executing_eagerly():
       # Placeholders don't work in eager execution mode.
       return
     inputs = tf.compat.v1.placeholder(tf.float32, shape=[None, 28, 28, 1])
     fdistance = util.mnist_frechet_distance(inputs, inputs)
-    for batch_size_mnist in [4, 16, 30]:
+    for batch_size in [4, 16, 30]:
       with self.cached_session() as sess:
         sess.run(fdistance,
-                 feed_dict={inputs: np.zeros([batch_size_mnist, 28, 28, 1])})
+                 feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
   def test_deterministic(self):
     fdistance = util.mnist_frechet_distance(
@@ -148,7 +148,7 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
 
 class MnistCrossEntropyTest(tf.test.TestCase):
 
-  def test_any_batch_size_mnist(self):
+  def test_any_batch_size(self):
     if tf.executing_eagerly():
       # Placeholders don't work in eager execution mode.
       return
@@ -158,11 +158,11 @@ class MnistCrossEntropyTest(tf.test.TestCase):
     one_hot_label = tf.compat.v1.placeholder(
         tf.int32, shape=[None, num_classes])
     entropy = util.mnist_cross_entropy(inputs, one_hot_label)
-    for batch_size_mnist in [4, 16, 30]:
+    for batch_size in [4, 16, 30]:
       with self.cached_session() as sess:
         sess.run(entropy, feed_dict={
-            inputs: np.zeros([batch_size_mnist, 28, 28, 1]),
-            one_hot_label: np.concatenate([one_label] * batch_size_mnist)})
+            inputs: np.zeros([batch_size, 28, 28, 1]),
+            one_hot_label: np.concatenate([one_label] * batch_size)})
 
   def test_deterministic(self):
     xent = util.mnist_cross_entropy(real_digit(), one_hot_real())
@@ -230,7 +230,7 @@ class GetNoiseTest(tf.test.TestCase):
 
   def test_get_infogan_syntax(self):
     util.get_infogan_noise(
-        batch_size_mnist=4,
+        batch_size=4,
         categorical_dim=10,
         structured_continuous_dim=3,
         total_continuous_noise_dims=62)

@@ -29,25 +29,25 @@ class NetworksTest(tf.test.TestCase):
 
   def test_generator(self):
     tf.compat.v1.set_random_seed(1234)
-    batch_size_cifar = 100
-    noise = tf.random.normal([batch_size_cifar, 64])
+    batch_size = 100
+    noise = tf.random.normal([batch_size, 64])
     image = networks.generator(noise)
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       image_np = sess.run(image)
 
-    self.assertAllEqual([batch_size_cifar, 32, 32, 3], image_np.shape)
+    self.assertAllEqual([batch_size, 32, 32, 3], image_np.shape)
     self.assertTrue(np.all(np.abs(image_np) <= 1))
 
   def test_discriminator(self):
-    batch_size_cifar = 5
-    image = tf.random.uniform([batch_size_cifar, 32, 32, 3], -1, 1)
+    batch_size = 5
+    image = tf.random.uniform([batch_size, 32, 32, 3], -1, 1)
     dis_output = networks.discriminator(image, None)
     with self.cached_session(use_gpu=True) as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       dis_output_np = sess.run(dis_output)
 
-    self.assertAllEqual([batch_size_cifar, 1], dis_output_np.shape)
+    self.assertAllEqual([batch_size, 1], dis_output_np.shape)
 
 
 if __name__ == '__main__':

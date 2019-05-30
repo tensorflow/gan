@@ -30,8 +30,8 @@ from tensorflow_gan.examples.mnist import eval  # pylint:disable=redefined-built
 class EvalTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.named_parameters(('RealData', True), ('GeneratedData', False))
-  def test_build_graph(self, eval_real_images_mnist):
-    flags.FLAGS.eval_real_images_mnist = eval_real_images_mnist
+  def test_build_graph(self, eval_real_images):
+    flags.FLAGS.eval_real_images = eval_real_images
     eval.main(None, run_eval_loop=False)
 
 

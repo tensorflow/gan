@@ -53,11 +53,11 @@ train.network.discriminator = _test_discriminator
 class TrainTest(tf.test.TestCase):
 
   def test_define_model(self):
-    FLAGS.batch_size_stargan = 2
-    images_shape = [FLAGS.batch_size_stargan, 4, 4, 3]
+    FLAGS.batch_size = 2
+    images_shape = [FLAGS.batch_size, 4, 4, 3]
     images_np = np.zeros(shape=images_shape)
     images = tf.constant(images_np, dtype=tf.float32)
-    labels = tf.one_hot([0] * FLAGS.batch_size_stargan, 2)
+    labels = tf.one_hot([0] * FLAGS.batch_size, 2)
 
     model = train._define_model(images, labels)
     self.assertIsInstance(model, tfgan.StarGANModel)
@@ -73,7 +73,7 @@ class TrainTest(tf.test.TestCase):
   @mock.patch.object(
       tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step):
-    FLAGS.max_number_of_steps_stargan = 10
+    FLAGS.max_number_of_steps = 10
     base_lr = 0.01
     with self.test_session(use_gpu=True) as sess:
       mock_get_or_create_global_step.return_value = tf.constant(2)
@@ -85,13 +85,13 @@ class TrainTest(tf.test.TestCase):
     self.assertAlmostEqual(base_lr * 0.2, lr_step9)
 
   def test_define_train_ops(self):
-    FLAGS.batch_size_stargan = 2
-    FLAGS.generator_lr_stargan = 0.1
-    FLAGS.discriminator_lr_stargan = 0.01
+    FLAGS.batch_size = 2
+    FLAGS.generator_lr = 0.1
+    FLAGS.discriminator_lr = 0.01
 
-    images_shape = [FLAGS.batch_size_stargan, 4, 4, 3]
+    images_shape = [FLAGS.batch_size, 4, 4, 3]
     images = tf.zeros(images_shape, dtype=tf.float32)
-    labels = tf.one_hot([0] * FLAGS.batch_size_stargan, 2)
+    labels = tf.one_hot([0] * FLAGS.batch_size, 2)
 
     model = train._define_model(images, labels)
     loss = tfgan.stargan_loss(model)
@@ -100,26 +100,26 @@ class TrainTest(tf.test.TestCase):
     self.assertIsInstance(train_ops, tfgan.GANTrainOps)
 
   def test_get_train_step(self):
-    FLAGS.gen_disc_step_ratio_stargan = 0.5
+    FLAGS.gen_disc_step_ratio = 0.5
     train_steps = train._define_train_step()
     self.assertEqual(1, train_steps.generator_train_steps)
     self.assertEqual(2, train_steps.discriminator_train_steps)
 
-    FLAGS.gen_disc_step_ratio_stargan = 3
+    FLAGS.gen_disc_step_ratio = 3
     train_steps = train._define_train_step()
     self.assertEqual(3, train_steps.generator_train_steps)
     self.assertEqual(1, train_steps.discriminator_train_steps)
 
   @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
   def test_main(self, mock_provide_data):
-    FLAGS.max_number_of_steps_stargan = 10
-    FLAGS.batch_size_stargan = 2
+    FLAGS.max_number_of_steps = 10
+    FLAGS.batch_size = 2
     num_domains = 3
 
     # Construct mock inputs.
-    images_shape = [FLAGS.batch_size_stargan, FLAGS.patch_size_stargan, FLAGS.patch_size_stargan, 3]
+    images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
     img_list = [tf.zeros(images_shape)] * num_domains
-    lbl_list = [tf.one_hot([0] * FLAGS.batch_size_stargan, num_domains)] * num_domains
+    lbl_list = [tf.one_hot([0] * FLAGS.batch_size, num_domains)] * num_domains
     mock_provide_data.return_value = (img_list, lbl_list)
 
     train.main(None)

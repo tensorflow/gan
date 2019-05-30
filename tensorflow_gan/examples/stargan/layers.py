@@ -68,11 +68,11 @@ def generator_down_sample(input_net, final_num_outputs=256):
     for the correct down sampling.
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h, w, c + num_class).
+    input_net: Tensor of shape (batch_size, h, w, c + num_class).
     final_num_outputs: (int) Number of hidden unit for the final layer.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
+    Tensor of shape (batch_size, h / 4, w / 4, 256).
 
   Raises:
     ValueError: If final_num_outputs are not divisible by 4,
@@ -205,14 +205,14 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L40
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
+    input_net: Tensor of shape (batch_size, h / 4, w / 4, 256).
     residual_block_num: (int) Number of residual_block_num. Default to 6 per the
       original implementation.
     num_outputs: (int) Number of hidden unit in the residual bottleneck. Default
       to 256 per the original implementation.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
+    Tensor of shape (batch_size, h / 4, w / 4, 256).
 
   Raises:
     ValueError: If the rank of the input tensor is not 4,
@@ -262,11 +262,11 @@ def generator_up_sample(input_net, num_outputs):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L44
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h / 4, w / 4, 256).
+    input_net: Tensor of shape (batch_size, h / 4, w / 4, 256).
     num_outputs: (int) Number of channel for the output tensor.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h, w, num_outputs).
+    Tensor of shape (batch_size, h, w, num_outputs).
   """
 
   with tf.compat.v1.variable_scope('generator_up_sample'):
@@ -304,7 +304,7 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L68
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h, w, 3) as batch of images.
+    input_net: Tensor of shape (batch_size, h, w, 3) as batch of images.
     hidden_layer: (int) Number of hidden layers. Default to 6 per the original
       implementation.
     init_num_outputs: (int) Number of hidden unit in the first hidden layer. The
@@ -312,7 +312,7 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
       original implementation.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h / 64, w / 64, 2048) as features.
+    Tensor of shape (batch_size, h / 64, w / 64, 2048) as features.
   """
 
   num_outputs = init_num_outputs
@@ -341,18 +341,18 @@ def discriminator_output_source(input_net):
   """Output Layer for Source in the Discriminator.
 
   Determine if the image is real/fake based on the feature extracted. We follow
-  the original paper design where the output is not a simple (batch_size_stargan) shape
-  Tensor but rather a (batch_size_stargan, 2, 2, 2048) shape Tensor. We will get the
+  the original paper design where the output is not a simple (batch_size) shape
+  Tensor but rather a (batch_size, 2, 2, 2048) shape Tensor. We will get the
   correct shape later when we piece things together.
 
   PyTorch Version:
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L79
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h / 64, w / 64, 2048) as features.
+    input_net: Tensor of shape (batch_size, h / 64, w / 64, 2048) as features.
 
   Returns:
-    Tensor of shape (batch_size_stargan, h / 64, w / 64, 1) as the score.
+    Tensor of shape (batch_size, h / 64, w / 64, 1) as the score.
   """
 
   with tf.compat.v1.variable_scope('discriminator_output_source'):
@@ -373,17 +373,17 @@ def discriminator_output_class(input_net, class_num):
 
   The original paper use convolution layer where the kernel size is the height
   and width of the Tensor. We use an equivalent operation here where we first
-  flatten the Tensor to shape (batch_size_stargan, K) and a fully connected layer.
+  flatten the Tensor to shape (batch_size, K) and a fully connected layer.
 
   PyTorch Version:
   https://github.com/yunjey/StarGAN/blob/fbdb6a6ce2a4a92e1dc034faec765e0dbe4b8164/model.py#L80https
 
   Args:
-    input_net: Tensor of shape (batch_size_stargan, h / 64, w / 64, 2028).
+    input_net: Tensor of shape (batch_size, h / 64, w / 64, 2028).
     class_num: Number of output classes to be predicted.
 
   Returns:
-    Tensor of shape (batch_size_stargan, class_num).
+    Tensor of shape (batch_size, class_num).
   """
 
   with tf.compat.v1.variable_scope('discriminator_output_class'):

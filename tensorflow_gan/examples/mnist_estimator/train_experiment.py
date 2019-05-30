@@ -36,12 +36,12 @@ from tensorflow_gan.examples.mnist import util
 
 
 # ML Hparams.
-flags.DEFINE_integer('batch_size_mnist_estimator', 32,
+flags.DEFINE_integer('batch_size', 32,
                      'The number of images in each batch.')
 flags.DEFINE_integer(
-    'noise_dims_mnist_exp', 64, 'Dimensions of the generator noise vector')
-flags.DEFINE_float('generator_lr_mnist', 0.000076421, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr_mnist', 0.0031938,
+    'noise_dims', 64, 'Dimensions of the generator noise vector')
+flags.DEFINE_float('generator_lr', 0.000076421, 'The generator learning rate.')
+flags.DEFINE_float('discriminator_lr', 0.0031938,
                    'The discriminator learning rate.')
 flags.DEFINE_bool('joint_train', False,
                   'Whether to jointly or sequentially train the generator and '
@@ -65,12 +65,12 @@ FLAGS = flags.FLAGS
 
 def input_fn(mode, params):
   """Input function for GANEstimator."""
-  if 'batch_size_mnist_estimator' not in params:
-    raise ValueError('batch_size_mnist_estimator must be in params')
-  if 'noise_dims_mnist_exp' not in params:
-    raise ValueError('noise_dims_mnist_exp must be in params')
-  bs = params['batch_size_mnist_estimator']
-  nd = params['noise_dims_mnist_exp']
+  if 'batch_size' not in params:
+    raise ValueError('batch_size must be in params')
+  if 'noise_dims' not in params:
+    raise ValueError('noise_dims must be in params')
+  bs = params['batch_size']
+  nd = params['noise_dims']
   split = 'train' if mode == tf.estimator.ModeKeys.TRAIN else 'test'
   shuffle = (mode == tf.estimator.ModeKeys.TRAIN)
   just_noise = (mode == tf.estimator.ModeKeys.PREDICT)
@@ -119,12 +119,12 @@ def make_estimator(hparams):
       discriminator_fn=networks.unconditional_discriminator,
       generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-      params={'batch_size_mnist_estimator': hparams.batch_size_mnist_estimator,
-              'noise_dims_mnist_exp': hparams.noise_dims_mnist_exp},
+      params={'batch_size': hparams.batch_size,
+              'noise_dims': hparams.noise_dims},
       generator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.generator_lr_mnist, 0.5),
+          hparams.generator_lr, 0.5),
       discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.discriminator_lr_mnist, 0.5),
+          hparams.discriminator_lr, 0.5),
       add_summaries=tfgan.estimator.SummaryType.IMAGES,
       get_eval_metric_ops_fn=get_metrics)
 
@@ -148,10 +148,10 @@ def write_predictions_to_disk(predictions, out_dir, current_step):
 def main(_):
   hparams = collections.namedtuple(
       'HParams',
-      ['generator_lr_mnist', 'discriminator_lr_mnist', 'joint_train', 'batch_size_mnist_estimator',
-       'noise_dims_mnist_exp'])(
-           FLAGS.generator_lr_mnist, FLAGS.discriminator_lr_mnist, FLAGS.joint_train,
-           FLAGS.batch_size_mnist_estimator, FLAGS.noise_dims_mnist_exp)
+      ['generator_lr', 'discriminator_lr', 'joint_train', 'batch_size',
+       'noise_dims'])(
+           FLAGS.generator_lr, FLAGS.discriminator_lr, FLAGS.joint_train,
+           FLAGS.batch_size, FLAGS.noise_dims)
   estimator = make_estimator(hparams)
   train_spec = tf.estimator.TrainSpec(
       input_fn=input_fn, max_steps=FLAGS.num_train_steps)

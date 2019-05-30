@@ -34,7 +34,7 @@ class UtilTest(tf.test.TestCase):
   def test_get_image_grid(self):
     util.get_image_grid(
         tf.zeros([6, 28, 28, 1]),
-        batch_size_cifar=6,
+        batch_size=6,
         num_classes=3,
         num_images_per_class=1)
 
@@ -42,10 +42,10 @@ class UtilTest(tf.test.TestCase):
   @mock.patch.object(util.tfgan.eval, 'inception_score', autospec=True)
   def test_get_inception_scores(self, mock_inception_score):
     mock_inception_score.return_value = 1.0
-    batch_size_cifar = 100
+    batch_size = 100
     util.get_inception_scores(
-        tf.zeros([batch_size_cifar, 28, 28, 3], dtype=tf.float32),
-        batch_size_cifar=batch_size_cifar,
+        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
+        batch_size=batch_size,
         num_inception_images=10)
 
   # Mock `frechet_inception_distance` which is expensive.
@@ -53,11 +53,11 @@ class UtilTest(tf.test.TestCase):
                      autospec=True)
   def test_get_frechet_inception_distance(self, mock_fid):
     mock_fid.return_value = 1.0
-    batch_size_cifar = 100
+    batch_size = 100
     util.get_frechet_inception_distance(
-        tf.zeros([batch_size_cifar, 28, 28, 3], dtype=tf.float32),
-        tf.zeros([batch_size_cifar, 28, 28, 3], dtype=tf.float32),
-        batch_size_cifar=batch_size_cifar,
+        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
+        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
+        batch_size=batch_size,
         num_inception_images=10)
 
 

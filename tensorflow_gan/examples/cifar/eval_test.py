@@ -31,23 +31,23 @@ mock = tf.compat.v1.test.mock
 class EvalTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.parameters(
-      {'eval_real_images_cifar': True},
+      {'eval_real_images': True},
       {
-          'eval_real_images_cifar': False,
+          'eval_real_images': False,
       },
   )
   @mock.patch.object(eval.util, 'get_frechet_inception_distance', autospec=True)
   @mock.patch.object(eval.util, 'get_inception_scores', autospec=True)
   @mock.patch.object(eval.data_provider, 'provide_data', autospec=True)
   def test_build_graph(self, mock_provide_data, mock_iscore, mock_fid,
-                       eval_real_images_cifar):
-    FLAGS.eval_real_images_cifar = eval_real_images_cifar
-    FLAGS.num_images_generated_cifar = 100
+                       eval_real_images):
+    FLAGS.eval_real_images = eval_real_images
+    FLAGS.num_images_generated = 100
 
     # Mock reads from disk.
     mock_provide_data.return_value = (tf.ones(
-        [FLAGS.num_images_generated_cifar, 32, 32, 3]),
-                                      tf.zeros([FLAGS.num_images_generated_cifar]))
+        [FLAGS.num_images_generated, 32, 32, 3]),
+                                      tf.zeros([FLAGS.num_images_generated]))
 
     # Mock `frechet_inception_distance` and `inception_score`, which are
     # expensive.

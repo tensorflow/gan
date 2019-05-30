@@ -48,21 +48,21 @@ class TrainTest(tf.test.TestCase):
   @mock.patch.object(train.data_provider, 'provide_celeba_test_set',
                      autospec=True)
   def test_main(self, mock_provide_celeba_test_set, mock_provide_data):
-    FLAGS.max_number_of_steps_stargan_estimator = 0
+    FLAGS.max_number_of_steps = 0
     FLAGS.steps_per_eval = 1
-    FLAGS.batch_size_stargan_estimator = 1
-    FLAGS.patch_size_stargan_estimator = 8
+    FLAGS.batch_size = 1
+    FLAGS.patch_size = 8
     num_domains = 3
 
     # Construct mock inputs.
-    images_shape = [FLAGS.batch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3]
+    images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
     img_list = [np.zeros(images_shape, dtype=np.float32)] * num_domains
-    # Create a list of num_domains arrays of shape [batch_size_stargan_estimator, num_domains].
-    # Note: assumes FLAGS.batch_size_stargan_estimator <= num_domains.
-    lbl_list = [np.eye(num_domains)[:FLAGS.batch_size_stargan_estimator, :]] * num_domains
+    # Create a list of num_domains arrays of shape [batch_size, num_domains].
+    # Note: assumes FLAGS.batch_size <= num_domains.
+    lbl_list = [np.eye(num_domains)[:FLAGS.batch_size, :]] * num_domains
     mock_provide_data.return_value = (img_list, lbl_list)
     mock_provide_celeba_test_set.return_value = np.zeros(
-        [3, FLAGS.patch_size_stargan_estimator, FLAGS.patch_size_stargan_estimator, 3])
+        [3, FLAGS.patch_size, FLAGS.patch_size, 3])
 
     train.main(None, _test_generator, _test_discriminator)
 
