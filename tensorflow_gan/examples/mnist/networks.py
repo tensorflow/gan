@@ -21,6 +21,9 @@ from __future__ import print_function
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
+import tensorflow_probability as tfp
+
+ds = tfp.distributions
 
 
 def _dense(inputs, units, l2_weight):
@@ -140,6 +143,33 @@ def conditional_generator(inputs, weight_decay=2.5e-5, is_training=True):
                           is_training)
 
 
+def infogan_generator(inputs, categorical_dim, weight_decay=2.5e-5,
+                      is_training=True):
+  """InfoGAN generator network on MNIST digits.
+
+  Based on a paper https://arxiv.org/abs/1606.03657, their code
+  https://github.com/openai/InfoGAN, and code by pooleb@.
+
+  Args:
+    inputs: A 3-tuple of Tensors (unstructured_noise, categorical structured
+      noise, continuous structured noise). `inputs[0]` and `inputs[2]` must be
+      2D, and `inputs[1]` must be 1D. All must have the same first dimension.
+    categorical_dim: Dimensions of the incompressible categorical noise.
+    weight_decay: The value of the l2 weight decay.
+    is_training: If `True`, batch norm uses batch statistics. If `False`, batch
+      norm uses the exponential moving average collected from population
+      statistics.
+
+  Returns:
+    A generated image in the range [-1, 1].
+  """
+  unstructured_noise, cat_noise, cont_noise = inputs
+  cat_noise_onehot = tf.one_hot(cat_noise, categorical_dim)
+  all_noise = tf.concat(
+      [unstructured_noise, cat_noise_onehot, cont_noise], axis=1)
+  return generator_helper(all_noise, False, None, weight_decay, is_training)
+
+
 leaky_relu = lambda x: tf.nn.leaky_relu(x, alpha=0.01)
 
 
@@ -212,3 +242,39 @@ def conditional_discriminator(img, conditioning, weight_decay=2.5e-5):
   net = discriminator_helper(img, True, one_hot_labels, weight_decay)
   return tf.compat.v1.layers.dense(
       net, 1, kernel_regularizer=tf.keras.regularizers.l2(l=weight_decay))
+
+
+def infogan_discriminator(img, unused_conditioning, weight_decay=2.5e-5,
+                          categorical_dim=10, continuous_dim=2):
+  """InfoGAN discriminator network on MNIST digits.
+
+  Based on a paper https://arxiv.org/abs/1606.03657, their code
+  https://github.com/openai/InfoGAN, and code by pooleb@.
+
+  Args:
+    img: Real or generated MNIST digits. Should be in the range [-1, 1].
+    unused_conditioning: The TFGAN API can help with conditional GANs, which
+      would require extra `condition` information to both the generator and the
+      discriminator. Since this example is not conditional, we do not use this
+      argument.
+    weight_decay: The L2 weight decay.
+    categorical_dim: Dimensions of the incompressible categorical noise.
+    continuous_dim: Dimensions of the incompressible continuous noise.
+
+  Returns:
+    Logits for the probability that the image is real, and a list of posterior
+    distributions for each of the noise vectors.
+  """
+  net = discriminator_helper(img, False, None, weight_decay)
+  logits_real = tf.compat.v1.layers.dense(net, 1)
+
+  # Compute logits for each category of categorical latent.
+  logits_cat = tf.compat.v1.layers.dense(net, categorical_dim)
+  q_cat = ds.Categorical(logits_cat)
+
+  # Compute mean for Gaussian posterior of continuous latents.
+  mu_cont = tf.compat.v1.layers.dense(net, continuous_dim)
+  sigma_cont = tf.ones_like(mu_cont)
+  q_cont = ds.Normal(loc=mu_cont, scale=sigma_cont)
+
+  return logits_real, [q_cat, q_cont]

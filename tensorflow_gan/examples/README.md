@@ -50,9 +50,12 @@ run. At a minimum, you will need `tensorflow` and `tensorflow_datasets`.
 ## MNIST
 <a id='mnist'></a>
 
-Author: Joel Shor
+Authors: Joel Shor, Yoel Drori
 
-An unconditional and conditional GAN trained on [MNIST digits](http://yann.lecun.com/exdb/mnist/). We use a classifier trained on MNIST digit classification for evaluation.
+An unconditional, conditional GAN and
+[InfoGAN](https://arxiv.org/abs/1606.03657) trained on
+[MNIST digits](http://yann.lecun.com/exdb/mnist/). We use a classifier trained
+on MNIST digit classification for evaluation.
 
 ## MNIST Estimator
 <a id='mnist_estimator'></a>

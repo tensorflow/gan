@@ -5,12 +5,14 @@ Author: Joel Shor
 ### How to run
 
 
-1. Run the setup instructions in `tensorflow_gan/examples/README.md`
-1. Run:
+1.  Run the setup instructions in `tensorflow_gan/examples/README.md`
+1.  Run:
 
-```python
-python mnist/train.py
-```
+    ```shell
+    python mnist/train.py --gan_type=[TYPE] --train_log_dir_mnist_mnist=/tmp/mnist
+    ```
+
+    here `[TYPE]` can be is one of `unconditional`, `conditional` or `infogan`.
 
 ### Description
 

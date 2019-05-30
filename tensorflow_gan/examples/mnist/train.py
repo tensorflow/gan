@@ -19,6 +19,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import functools
+
 from absl import flags
 from absl import logging
 
@@ -27,6 +29,7 @@ import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.mnist import data_provider
 from tensorflow_gan.examples.mnist import networks
+from tensorflow_gan.examples.mnist import util
 
 flags.DEFINE_integer('batch_size_mnist', 32, 'The number of images in each batch.')
 
@@ -37,7 +40,7 @@ flags.DEFINE_integer('max_number_of_steps_mnist', 20000,
                      'The maximum number of gradient steps.')
 
 flags.DEFINE_string('gan_type', 'unconditional',
-                    'Either `unconditional` or `conditional`.')
+                    'Either `unconditional`, `conditional`, or `infogan`.')
 
 flags.DEFINE_integer('grid_size', 5, 'Grid size for image visualization.')
 
@@ -52,6 +55,7 @@ def _learning_rate(gan_type):
   return {
       'unconditional': (1e-3, 1e-4),
       'conditional': (1e-5, 1e-4),
+      'infogan': (1e-4, 1e-4),
   }[gan_type]
 
 
@@ -65,7 +69,8 @@ def main(_):
     images, one_hot_labels = data_provider.provide_data(
         'train', FLAGS.batch_size_mnist, num_parallel_calls=4)
 
-  # Define the GANModel tuple.
+  # Define the GANModel tuple. Optionally, condition the GAN on the label or
+  # use an InfoGAN to learn a latent representation.
   if FLAGS.gan_type == 'unconditional':
     gan_model = tfgan.gan_model(
         generator_fn=networks.unconditional_generator,
@@ -79,12 +84,36 @@ def main(_):
         discriminator_fn=networks.conditional_discriminator,
         real_data=images,
         generator_inputs=(noise, one_hot_labels))
+  elif FLAGS.gan_type == 'infogan':
+    cat_dim, cont_dim = 10, 2
+    generator_fn = functools.partial(
+        networks.infogan_generator, categorical_dim=cat_dim)
+    discriminator_fn = functools.partial(
+        networks.infogan_discriminator,
+        categorical_dim=cat_dim,
+        continuous_dim=cont_dim)
+    unstructured_inputs, structured_inputs = util.get_infogan_noise(
+        FLAGS.batch_size_mnist, cat_dim, cont_dim, FLAGS.noise_dims_mnist)
+    gan_model = tfgan.infogan_model(
+        generator_fn=generator_fn,
+        discriminator_fn=discriminator_fn,
+        real_data=images,
+        unstructured_generator_inputs=unstructured_inputs,
+        structured_generator_inputs=structured_inputs)
   tfgan.eval.add_gan_model_image_summaries(gan_model, FLAGS.grid_size)
 
   # Get the GANLoss tuple. You can pass a custom function, use one of the
   # already-implemented losses from the losses library, or use the defaults.
   with tf.compat.v1.name_scope('loss'):
-    gan_loss = tfgan.gan_loss(gan_model, add_summaries=True)
+    if FLAGS.gan_type == 'infogan':
+      gan_loss = tfgan.gan_loss(
+          gan_model,
+          generator_loss_fn=tfgan.losses.modified_generator_loss,
+          discriminator_loss_fn=tfgan.losses.modified_discriminator_loss,
+          mutual_information_penalty_weight=1.0,
+          add_summaries=True)
+    else:
+      gan_loss = tfgan.gan_loss(gan_model, add_summaries=True)
     tfgan.eval.add_regularization_loss_summaries(gan_model)
 
   # Get the GANTrain ops using custom optimizers.
@@ -114,7 +143,8 @@ def main(_):
           tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
       ],
       logdir=FLAGS.train_log_dir_mnist,
-      get_hooks_fn=tfgan.get_joint_train_hooks())
+      get_hooks_fn=tfgan.get_joint_train_hooks(),
+      save_checkpoint_secs=60)
 
 
 if __name__ == '__main__':
