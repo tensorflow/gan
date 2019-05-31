@@ -21,13 +21,8 @@ from __future__ import print_function
 
 from absl import app
 from absl import flags
-import tensorflow as tf
-import tensorflow_gan as tfgan
-from tensorflow_gan.examples import evaluation_helper as evaluation
 
-from tensorflow_gan.examples.cifar import data_provider
-from tensorflow_gan.examples.cifar import networks
-from tensorflow_gan.examples.cifar import util
+from tensorflow_gan.examples.cifar import eval_lib
 
 FLAGS = flags.FLAGS
 
@@ -60,62 +55,14 @@ flags.DEFINE_integer('max_number_of_evaluations', None,
 flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
 
-def main(_, run_eval_loop=True):
-  # Fetch and generate images to run through Inception.
-  with tf.compat.v1.name_scope('inputs'):
-    real_data, _ = data_provider.provide_data(
-        'test', FLAGS.num_images_generated, shuffle=False)
-    generated_data = _get_generated_data(FLAGS.num_images_generated)
-
-  # Compute Frechet Inception Distance.
-  if FLAGS.eval_frechet_inception_distance:
-    fid = util.get_frechet_inception_distance(
-        real_data, generated_data, FLAGS.num_images_generated,
-        FLAGS.num_inception_images)
-    tf.compat.v1.summary.scalar('frechet_inception_distance', fid)
-
-  # Compute normal Inception scores.
-  if FLAGS.eval_real_images:
-    inc_score = util.get_inception_scores(
-        real_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
-  else:
-    inc_score = util.get_inception_scores(
-        generated_data, FLAGS.num_images_generated, FLAGS.num_inception_images)
-  tf.compat.v1.summary.scalar('inception_score', inc_score)
-
-  # Create ops that write images to disk.
-  image_write_ops = None
-  if FLAGS.num_images_generated >= 100 and FLAGS.write_to_disk:
-    reshaped_imgs = tfgan.eval.image_reshaper(generated_data[:100], num_cols=10)
-    uint8_images = data_provider.float_image_to_uint8(reshaped_imgs)
-    image_write_ops = tf.io.write_file(
-        '%s/%s' % (FLAGS.eval_dir, 'unconditional_cifar10.png'),
-        tf.image.encode_png(uint8_images[0]))
-
-  # For unit testing, use `run_eval_loop=False`.
-  if not run_eval_loop: return
-  evaluation.evaluate_repeatedly(
-      FLAGS.checkpoint_dir,
-      master=FLAGS.master,
-      hooks=[
-          evaluation.SummaryAtEndHook(FLAGS.eval_dir),
-          evaluation.StopAfterNEvalsHook(1)
-      ],
-      eval_ops=image_write_ops,
-      max_number_of_evaluations=FLAGS.max_number_of_evaluations)
-
-
-def _get_generated_data(num_images_generated):
-  """Get generated images."""
-  noise = tf.random.normal([num_images_generated, 64])
-  generator_inputs = noise
-  generator_fn = networks.generator
-  # In order for variables to load, use the same variable scope as in the
-  # train job.
-  with tf.compat.v1.variable_scope('Generator'):
-    data = generator_fn(generator_inputs, is_training=False)
-
-  return data
+def main(_):
+  hparams = eval_lib.HParams(FLAGS.master, FLAGS.checkpoint_dir, FLAGS.eval_dir,
+                             FLAGS.num_images_generated,
+                             FLAGS.num_inception_images, FLAGS.eval_real_images,
+                             FLAGS.eval_frechet_inception_distance,
+                             FLAGS.max_number_of_evaluations,
+                             FLAGS.write_to_disk)
+  eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
 if __name__ == '__main__':

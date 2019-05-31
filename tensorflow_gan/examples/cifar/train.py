@@ -18,13 +18,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl import app
 from absl import flags
 from absl import logging
-import tensorflow as tf
-import tensorflow_gan as tfgan
 
-from tensorflow_gan.examples.cifar import data_provider
-from tensorflow_gan.examples.cifar import networks
+from tensorflow_gan.examples.cifar import train_lib
 
 # ML Hparams.
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
@@ -35,7 +33,7 @@ flags.DEFINE_float('discriminator_lr', 0.0002,
                    'The discriminator learning rate.')
 
 # ML Infrastructure.
-flags.DEFINE_string('master_cifar', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
 flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/cifar/',
                     'Directory where to write event logs.')
 flags.DEFINE_integer(
@@ -51,72 +49,13 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  if not tf.io.gfile.exists(FLAGS.train_log_dir):
-    tf.io.gfile.makedirs(FLAGS.train_log_dir)
-
-  with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
-    # Force all input processing onto CPU in order to reserve the GPU for
-    # the forward inference and back-propagation.
-    with tf.compat.v1.name_scope('inputs'):
-      with tf.device('/cpu:0'):
-        images, _ = data_provider.provide_data(
-            'train', FLAGS.batch_size, num_parallel_calls=4)
-
-    # Define the GANModel tuple.
-    generator_fn = networks.generator
-    discriminator_fn = networks.discriminator
-    generator_inputs = tf.random.normal([FLAGS.batch_size, 64])
-    gan_model = tfgan.gan_model(
-        generator_fn,
-        discriminator_fn,
-        real_data=images,
-        generator_inputs=generator_inputs)
-    tfgan.eval.add_gan_model_image_summaries(gan_model)
-
-    # Get the GANLoss tuple. Use the selected GAN loss functions.
-    with tf.compat.v1.name_scope('loss'):
-      gan_loss = tfgan.gan_loss(
-          gan_model, gradient_penalty_weight=1.0, add_summaries=True)
-
-    # Get the GANTrain ops using the custom optimizers and optional
-    # discriminator weight clipping.
-    with tf.compat.v1.name_scope('train'):
-      gen_opt, dis_opt = _get_optimizers()
-      train_ops = tfgan.gan_train_ops(
-          gan_model,
-          gan_loss,
-          generator_optimizer=gen_opt,
-          discriminator_optimizer=dis_opt,
-          summarize_gradients=True)
-
-    # Run the alternating training loop. Skip it if no steps should be taken
-    # (used for graph construction tests).
-    status_message = tf.strings.join([
-        'Starting train step: ',
-        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
-    ],
-                                     name='status_message')
-    if FLAGS.max_number_of_steps == 0:
-      return
-    tfgan.gan_train(
-        train_ops,
-        hooks=([
-            tf.estimator.StopAtStepHook(num_steps=FLAGS.max_number_of_steps),
-            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
-        ]),
-        logdir=FLAGS.train_log_dir,
-        master=FLAGS.master_cifar,
-        is_chief=FLAGS.task == 0)
-
-
-def _get_optimizers():
-  """Get optimizers that are optionally synchronous."""
-  gen_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.generator_lr, 0.5)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(FLAGS.discriminator_lr, 0.5)
-
-  return gen_opt, dis_opt
+  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
+                              FLAGS.generator_lr, FLAGS.discriminator_lr,
+                              FLAGS.master, FLAGS.train_log_dir,
+                              FLAGS.ps_replicas, FLAGS.task)
+  train_lib.train(hparams)
 
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
-  tf.compat.v1.app.run()
+  app.run()

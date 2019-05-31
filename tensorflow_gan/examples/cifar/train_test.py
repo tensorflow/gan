@@ -19,31 +19,36 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
 import numpy as np
 import tensorflow as tf
-from tensorflow_gan.examples.cifar import train
+from tensorflow_gan.examples.cifar import train_lib
 
-FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase):
 
-  @mock.patch.object(train, 'data_provider', autospec=True)
+  @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_build_graph(self, mock_data_provider):
-    FLAGS.max_number_of_steps = 0
-    FLAGS.batch_size = 16
+    hparams = train_lib.HParams(
+        batch_size=16,
+        max_number_of_steps=0,
+        generator_lr=0.0002,
+        discriminator_lr=0.0002,
+        master='',
+        train_log_dir='/tmp/tfgan_logdir/cifar/',
+        ps_replicas=0,
+        task=0)
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 32, 32, 3], dtype=np.float32)
+    mock_imgs = np.zeros([hparams.batch_size, 32, 32, 3], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.float32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.float32)),
+        (np.ones([hparams.batch_size, 1], dtype=np.float32),
+         np.zeros([hparams.batch_size, 9], dtype=np.float32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
-    train.main(None)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
