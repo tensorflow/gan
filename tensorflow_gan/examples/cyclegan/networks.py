@@ -21,8 +21,8 @@ from __future__ import print_function
 
 import tensorflow as tf
 
+from tensorflow_gan.examples.cyclegan import discriminator as d_module
 from tensorflow_models.slim.nets import cyclegan
-from tensorflow_models.slim.nets import pix2pix
 
 
 def generator(input_images):
@@ -44,17 +44,15 @@ def generator(input_images):
   if channels is None:
     raise ValueError(
         'Last dimension shape must be known but is None: %s' % input_size)
-  with tf.contrib.framework.arg_scope(cyclegan.cyclegan_arg_scope()):
-    output_images, _ = cyclegan.cyclegan_generator_resnet(input_images)
+  output_images, _ = cyclegan.cyclegan_generator_resnet(input_images)
   return output_images
 
 
 def discriminator(image_batch, unused_conditioning=None):
   """A thin wrapper around the Pix2Pix discriminator to conform to TF-GAN."""
-  with tf.contrib.framework.arg_scope(pix2pix.pix2pix_arg_scope()):
-    logits_4d, _ = pix2pix.pix2pix_discriminator(
-        image_batch, num_filters=[64, 128, 256, 512])
-    logits_4d.shape.assert_has_rank(4)
+  logits_4d, _ = d_module.pix2pix_discriminator(
+      image_batch, num_filters=[64, 128, 256, 512])
+  logits_4d.shape.assert_has_rank(4)
   # Output of logits is 4D. Reshape to 2D, for TF-GAN.
   logits_2d = tf.compat.v1.layers.flatten(logits_4d)
 
