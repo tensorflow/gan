@@ -64,7 +64,7 @@ class DiscriminatorTest(tf.test.TestCase):
     self.assertListEqual([batch_size, output_size, output_size, 1],
                          end_points['predictions'].shape.as_list())
 
-  def test_four_layers_wrog_paddig(self):
+  def test_four_layers_wrong_paddig(self):
     batch_size = 2
     input_size = 256
 
