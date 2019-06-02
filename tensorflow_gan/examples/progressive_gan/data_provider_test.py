@@ -28,7 +28,6 @@ import tensorflow as tf
 from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.progressive_gan import data_provider
 
-tf.compat.v1.disable_v2_behavior()
 mock = tf.compat.v1.test.mock
 
 
@@ -48,10 +47,6 @@ class DataProviderUtilsTest(tf.test.TestCase):
     self.assertAllClose(normalized_image_np, [-1, 1, 0.6470588235], 1.0e-6)
 
   def test_sample_patch_large_patch_returns_upscaled_image(self):
-    if int(tf.__version__.split('.')[0]) >= 2:
-      # Not sure why this test fails in TF 2 even with tf.disable_v2_behavior.
-      # TODO(joelshor): Investigate.
-      return
     image_np = np.reshape(np.arange(2 * 2), [2, 2, 1])
     image = tf.constant(image_np, dtype=tf.float32)
     image_patch = data_provider.sample_patch(
@@ -64,10 +59,6 @@ class DataProviderUtilsTest(tf.test.TestCase):
     self.assertAllClose(image_patch_np, expected_np, 1.0e-6)
 
   def test_sample_patch_small_patch_returns_downscaled_image(self):
-    if int(tf.__version__.split('.')[0]) >= 2:
-      # Not sure why this test fails in TF 2 even with tf.disable_v2_behavior.
-      # TODO(joelshor): Investigate.
-      return
     image_np = np.reshape(np.arange(3 * 3), [3, 3, 1])
     image = tf.constant(image_np, dtype=tf.float32)
     image_patch = data_provider.sample_patch(

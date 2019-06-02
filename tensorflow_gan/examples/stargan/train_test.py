@@ -26,7 +26,6 @@ import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.stargan import train
 
-tf.compat.v1.disable_v2_behavior()
 FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 

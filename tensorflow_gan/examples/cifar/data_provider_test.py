@@ -26,7 +26,6 @@ import tensorflow as tf
 from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.cifar import data_provider
 
-tf.compat.v1.disable_v2_behavior()
 mock = tf.compat.v1.test.mock
 
 
