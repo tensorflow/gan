@@ -20,19 +20,10 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
-# pylint:disable=g-import-not-at-top
-try:
-  from tensorflow_gan.examples.cyclegan import networks
-  run_tests = True
-except ImportError:
-  # Some test environments don't have `tensorflow_models`. We skip the tests
-  # in that case.
-  run_tests = False
-# pylint:enable=g-import-not-at-top
+from tensorflow_gan.examples.cyclegan import networks
 
 
-class NetworksTest(tf.test.TestCase if run_tests else object):
+class NetworksTest(tf.test.TestCase):
 
   def test_generator_run(self):
     img_batch = tf.zeros([3, 128, 128, 3])

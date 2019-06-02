@@ -28,24 +28,8 @@ import PIL
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-# pylint:disable=g-import-not-at-top
-try:
-  from tensorflow_gan.examples.cyclegan import inference_demo
-  from tensorflow_gan.examples.cyclegan import train
-  run_tests = True
-except ImportError:
-  # Some test environments don't have `tensorflow_models`. We skip the tests
-  # in that case.
-  run_tests = False
-  # We need a dummy `train` module for mock to not fail.
-  class Dummy(object):  # pylint:disable=g-wrong-blank-lines
-    pass
-  train = Dummy()
-  train.data_provider = None
-  train.main = None
-  inference_demo = Dummy()
-  inference_demo.main = None
-# pylint:enable=g-import-not-at-top
+from tensorflow_gan.examples.cyclegan import inference_demo
+from tensorflow_gan.examples.cyclegan import train_lib
 
 FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
@@ -57,7 +41,7 @@ def _basenames_from_glob(file_glob):
   ]
 
 
-class InferenceDemoTest(tf.test.TestCase if run_tests else Dummy):
+class InferenceDemoTest(tf.test.TestCase):
 
   def setUp(self):
     self._export_dir = os.path.join(FLAGS.test_tmpdir, 'export')
@@ -71,7 +55,7 @@ class InferenceDemoTest(tf.test.TestCase if run_tests else Dummy):
 
   @mock.patch.object(tfgan, 'gan_train', autospec=True)
   @mock.patch.object(
-      train.data_provider, 'provide_custom_data', autospec=True)
+      train_lib.data_provider, 'provide_custom_data', autospec=True)
   def testTrainingAndInferenceGraphsAreCompatible(
       self, mock_provide_custom_data, unused_mock_gan_train):
     # Training and inference graphs can get out of sync if changes are made
@@ -79,20 +63,22 @@ class InferenceDemoTest(tf.test.TestCase if run_tests else Dummy):
 
     # Save the training graph
     train_sess = tf.compat.v1.Session()
-    FLAGS.image_set_x_file_pattern = '/tmp/x/*.jpg'
-    FLAGS.image_set_y_file_pattern = '/tmp/y/*.jpg'
-    FLAGS.batch_size = 3
-    FLAGS.patch_size = 128
-    FLAGS.generator_lr = 0.02
-    FLAGS.discriminator_lr = 0.3
-    FLAGS.train_log_dir = self._export_dir
-    FLAGS.master = 'master'
-    FLAGS.task = 0
-    FLAGS.cycle_consistency_loss_weight = 2.0
-    FLAGS.max_number_of_steps = 1
+    hparams = train_lib.HParams(
+        image_set_x_file_pattern='/tmp/x/*.jpg',
+        image_set_y_file_pattern='/tmp/y/*.jpg',
+        batch_size=3,
+        patch_size=128,
+        master='master',
+        train_log_dir=self._export_dir,
+        generator_lr=0.02,
+        discriminator_lr=0.3,
+        max_number_of_steps=1,
+        ps_replicas=0,
+        task=0,
+        cycle_consistency_loss_weight=2.0)
     mock_provide_custom_data.return_value = (
         tf.zeros([3, 4, 4, 3,]), tf.zeros([3, 4, 4, 3]))
-    train.main(None)
+    train_lib.train(hparams)
     init_op = tf.compat.v1.global_variables_initializer()
     train_sess.run(init_op)
     train_saver = tf.compat.v1.train.Saver()
@@ -100,7 +86,7 @@ class InferenceDemoTest(tf.test.TestCase if run_tests else Dummy):
 
     # Create inference graph
     tf.compat.v1.reset_default_graph()
-    FLAGS.patch_dim = FLAGS.patch_size
+    FLAGS.patch_dim = hparams.patch_size
     logging.info('dir_path: %s', os.listdir(self._export_dir))
     FLAGS.checkpoint_path = self._ckpt_path
     FLAGS.image_set_x_glob = self._image_glob

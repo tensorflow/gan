@@ -22,7 +22,7 @@ from __future__ import print_function
 import tensorflow as tf
 
 from tensorflow_gan.examples.cyclegan import discriminator as d_module
-from tensorflow_models.slim.nets import cyclegan
+from tensorflow_gan.examples.cyclegan import generator as gmodule
 
 
 def generator(input_images):
@@ -44,7 +44,7 @@ def generator(input_images):
   if channels is None:
     raise ValueError(
         'Last dimension shape must be known but is None: %s' % input_size)
-  output_images, _ = cyclegan.cyclegan_generator_resnet(input_images)
+  output_images, _ = gmodule.cyclegan_generator_resnet(input_images)
   return output_images
 
 

@@ -23,21 +23,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-# pylint:disable=g-import-not-at-top
-try:
-  from tensorflow_gan.examples.cyclegan import train_lib
-  run_tests = True
-except ImportError:
-  # Some test environments don't have `tensorflow_models`. We skip the tests
-  # in that case.
-  run_tests = False
-  # We need a dummy `train` module for mock to not fail. Must have a `networks`
-  # submodule.
-  class Dummy(object):  # pylint:disable=g-wrong-blank-lines
-    pass
-  train_lib = Dummy()
-  train_lib.networks = None
-# pylint:enable=g-import-not-at-top
+from tensorflow_gan.examples.cyclegan import train_lib
 
 mock = tf.compat.v1.test.mock
 
@@ -53,7 +39,7 @@ def _test_discriminator(image_batch, unused_conditioning=None):
       image_batch * tf.compat.v1.get_variable('dummy_d', initializer=2.0))
 
 
-class TrainTest(tf.test.TestCase if run_tests else object):
+class TrainTest(tf.test.TestCase):
 
   def setUp(self):
     super(TrainTest, self).setUp()
