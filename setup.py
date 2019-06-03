@@ -13,14 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Install TF-GAN."""
+"""TF-GAN: A Generative Adversarial Networks library for TensorFlow.
+
+TF-GAN is a lightweight library for training and evaluating Generative
+Adversarial Networks (GANs).
+
+See the README on GitHub for further documentation.
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import codecs
 import io
-import os
 import sys
 import unittest
 
@@ -85,18 +89,17 @@ class BinaryDistribution(Distribution):
   def has_ext_modules(self):
     return False
 
-here = os.path.abspath(os.path.dirname(__file__))
-with codecs.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-  long_description = f.read()
+# TODO(joelshor): Maybe someday, when TF-GAN grows up, we can have our
+# description be a `README.md` like `tensorflow_probability`.
+DOCLINES = __doc__.split('\n')
 
 setup(
     name=project_name,
     version=version,
-    description=('TF-GAN: A Generative Adversarial Networks Library for '
-                 'TensorFlow'),
-    long_description=long_description,
-    author='Joel Shor',
-    author_email='joelshor@google.com',
+    description=DOCLINES[0],
+    long_description='\n'.join(DOCLINES[2:]),
+    author='Google Inc.',
+    author_email='packages@tensorflow.org',
     url='http://github.com/tensorflow/gan',
     license='Apache 2.0',
     packages=find_packages(),
