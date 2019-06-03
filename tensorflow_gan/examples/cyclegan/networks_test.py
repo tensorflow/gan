@@ -88,8 +88,14 @@ class NetworksTest(tf.test.TestCase):
       self.assertEqual(batch_size, disc_output.shape.as_list()[0])
 
   def test_discriminator_invalid_input(self):
-    with self.assertRaisesRegexp(ValueError, 'Shape must be rank 4'):
+    try:
       networks.discriminator(tf.zeros([28, 28, 3]))
+    except (ValueError, tf.errors.InvalidArgumentError):
+      # TF raises ValueError, while TF2 raises tf.errors.InvalidArgumentError.
+      return
+    except Exception as e:  # pylint: disable=broad-except
+      self.assertTrue(False, msg='Unexpected exception: {}'.format(e))
+    self.assertTrue(False, msg='Expected ValueError or InvalidArgumentError.')
 
 
 if __name__ == '__main__':
