@@ -43,6 +43,8 @@ class TrainTest(tf.test.TestCase):
 
   def setUp(self):
     super(TrainTest, self).setUp()
+    self._original_generator = train_lib.networks.generator
+    self._original_discriminator = train_lib.networks.discriminator
     train_lib.networks.generator = _test_generator
     train_lib.networks.discriminator = _test_discriminator
     self.hparams = train_lib.HParams(
@@ -58,6 +60,11 @@ class TrainTest(tf.test.TestCase):
         ps_replicas=0,
         task=0,
         cycle_consistency_loss_weight=10.0)
+
+  def tearDown(self):
+    super(TrainTest, self).tearDown()
+    train_lib.networks.generator = self._original_generator
+    train_lib.networks.discriminator = self._original_discriminator
 
   @mock.patch.object(tfgan, 'eval', autospec=True)
   def test_define_model(self, mock_eval):
