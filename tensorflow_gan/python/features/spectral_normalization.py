@@ -82,7 +82,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     # Use power iteration method to approximate spectral norm.
     for _ in range(power_iteration_rounds):
       # `v` approximates the first right singular vector of matrix `w`.
-      v = tf.nn.l2_normalize(tf.matmul(tf.transpose(a=w), u))
+      v = tf.nn.l2_normalize(tf.matmul(a=w, b=u, transpose_a=True))
       u = tf.nn.l2_normalize(tf.matmul(w, v))
 
     # Update persisted approximation.
@@ -94,7 +94,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     v = tf.stop_gradient(v)
 
     # Largest singular value of `w`.
-    spectral_norm = tf.matmul(tf.matmul(tf.transpose(a=u), w), v)
+    spectral_norm = tf.matmul(tf.matmul(a=u, b=w, transpose_a=True), v)
     spectral_norm.shape.assert_is_fully_defined()
     spectral_norm.shape.assert_is_compatible_with([1, 1])
 
