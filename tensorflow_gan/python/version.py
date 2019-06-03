@@ -16,7 +16,7 @@
 """Define TensorFlow GAN version information."""
 
 # We follow Semantic Versioning (https://semver.org/)
-_MAJOR_VERSION = '0'
+_MAJOR_VERSION = '1'
 _MINOR_VERSION = '0'
 _PATCH_VERSION = '0'
 
