@@ -30,9 +30,6 @@ from tensorflow_gan.python.losses.tuple_losses import __all__ as tuple_all
 from tensorflow_gan.python.losses.tuple_losses import args_to_gan_model
 
 
-tf.compat.v1.disable_eager_execution()
-
-
 class ArgsToGanModelTest(tf.test.TestCase):
 
   def testargs_to_gan_model(self):

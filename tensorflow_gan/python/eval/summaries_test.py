@@ -26,9 +26,6 @@ import tensorflow_gan as tfgan
 from tensorflow.python import tf2  # pylint:disable=g-direct-tensorflow-import
 
 
-tf.compat.v1.disable_eager_execution()
-
-
 def generator_model(inputs):
   return tf.compat.v1.get_variable('dummy_g', initializer=2.0) * inputs
 
