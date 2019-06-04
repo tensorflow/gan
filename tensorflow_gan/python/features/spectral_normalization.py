@@ -60,7 +60,14 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
 
   Returns:
     The largest singular value (the spectral norm) of w.
+
+  Raises:
+    ValueError: If TF is executing eagerly.
   """
+  if tf.executing_eagerly():
+    # Under eager mode, get_variable() creates a new variable on every call.
+    raise ValueError(
+        '`compute_spectral_norm` doesn\'t work when executing eagerly.')
   with tf.compat.v1.variable_scope(name, 'spectral_norm'):
     # The paper says to flatten convnet kernel weights from
     # (C_out, C_in, KH, KW) to (C_out, C_in * KH * KW). But TensorFlow's Conv2D

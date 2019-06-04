@@ -360,9 +360,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   @parameterized.parameters(
-      {'repeat_type': 'double', 'training': True, 'expect_same': True},
       {'repeat_type': 'with_dep', 'training': True, 'expect_same': False},
-      {'repeat_type': 'map_fn', 'training': True, 'expect_same': False},
       {'repeat_type': 'double', 'training': False, 'expect_same': True},
       {'repeat_type': 'with_dep', 'training': False, 'expect_same': True},
       {'repeat_type': 'map_fn', 'training': False, 'expect_same': True},
