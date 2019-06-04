@@ -1,6 +1,6 @@
 ## CIFAR10 on Cloud TPU
 
-Author: Joel Shor
+Author: Tom Brown, Joel Shor, David Westbrook
 
 ### How to run
 

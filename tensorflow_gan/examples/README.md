@@ -81,7 +81,7 @@ images.
 ## CIFAR10 on Cloud TPU
 <a id='cifar10_tpu'></a>
 
-Author: Joel Shor, David Westbrook
+Authors: Tom Brown, Joel Shor, David Westbrook
 
 A [colaboratory notebook](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb)
 will introduce you to using
