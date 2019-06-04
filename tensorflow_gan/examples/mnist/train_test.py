@@ -19,55 +19,63 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
 from absl.testing import parameterized
 import numpy as np
 
 import tensorflow as tf
 
-from tensorflow_gan.examples.mnist import train
+from tensorflow_gan.examples.mnist import train_lib
 
-FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase, parameterized.TestCase):
 
-  @mock.patch.object(train, 'data_provider', autospec=True)
+  def setUp(self):
+    super(TrainTest, self).setUp()
+    self.hparams = train_lib.HParams(
+        batch_size=32,
+        train_log_dir='/tmp/tfgan_logdir/mnist',
+        max_number_of_steps=20000,
+        gan_type='unconditional',
+        grid_size=5,
+        noise_dims=64)
+
+  @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_run_one_train_step(self, mock_data_provider):
-    FLAGS.max_number_of_steps = 1
-    FLAGS.gan_type = 'unconditional'
-    FLAGS.batch_size = 5
-    FLAGS.grid_size = 1
+    hparams = self.hparams._replace(
+        max_number_of_steps=1,
+        gan_type='unconditional',
+        batch_size=5,
+        grid_size=1)
     tf.compat.v1.set_random_seed(1234)
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
+    mock_imgs = np.zeros([hparams.batch_size, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        (np.ones([hparams.batch_size, 1], dtype=np.int32),
+         np.zeros([hparams.batch_size, 9], dtype=np.int32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
-    train.main(None)
+    train_lib.train(hparams)
 
   @parameterized.named_parameters(('Unconditional', 'unconditional'),
                                   ('Conditional', 'conditional'),
                                   ('InfoGAN', 'infogan'))
-  @mock.patch.object(train, 'data_provider', autospec=True)
+  @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_build_graph(self, gan_type, mock_data_provider):
-    FLAGS.max_number_of_steps = 0
-    FLAGS.gan_type = gan_type
+    hparams = self.hparams._replace(max_number_of_steps=0, gan_type=gan_type)
 
     # Mock input pipeline.
-    mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
+    mock_imgs = np.zeros([hparams.batch_size, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        (np.ones([hparams.batch_size, 1], dtype=np.int32),
+         np.zeros([hparams.batch_size, 9], dtype=np.int32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
-    train.main(None)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':

@@ -21,13 +21,21 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-from tensorflow_gan.examples.mnist import conditional_eval
+from tensorflow_gan.examples.mnist import conditional_eval_lib
 
 
 class ConditionalEvalTest(tf.test.TestCase):
 
   def test_build_graph(self):
-    conditional_eval.main(None, run_eval_loop=False)
+    hparams = conditional_eval_lib.HParams(
+        checkpoint_dir='/tmp/mnist/',
+        eval_dir='/tmp/mnist/',
+        num_images_per_class=10,
+        noise_dims=64,
+        classifier_filename=None,
+        max_number_of_evaluations=None,
+        write_to_disk=True)
+    conditional_eval_lib.evaluate(hparams, run_eval_loop=False)
 
 
 if __name__ == '__main__':

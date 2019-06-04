@@ -19,34 +19,33 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
 import numpy as np
 
 import tensorflow as tf
-from tensorflow_gan.examples.mnist_estimator import train
+from tensorflow_gan.examples.mnist_estimator import train_lib
 
-FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase):
 
-  @mock.patch.object(train, 'data_provider', autospec=True)
+  @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_full_flow(self, mock_data_provider):
-    FLAGS.output_dir = self.get_temp_dir()
-    FLAGS.batch_size = 16
-    FLAGS.max_number_of_steps = 2
-    FLAGS.noise_dims = 3
+    hparams = train_lib.HParams(
+        batch_size=16,
+        max_number_of_steps=2,
+        noise_dims=3,
+        output_dir=self.get_temp_dir())
 
     # Construct mock inputs.
-    mock_imgs = np.zeros([FLAGS.batch_size, 28, 28, 1], dtype=np.float32)
+    mock_imgs = np.zeros([hparams.batch_size, 28, 28, 1], dtype=np.float32)
     mock_lbls = np.concatenate(
-        (np.ones([FLAGS.batch_size, 1], dtype=np.int32),
-         np.zeros([FLAGS.batch_size, 9], dtype=np.int32)),
+        (np.ones([hparams.batch_size, 1], dtype=np.int32),
+         np.zeros([hparams.batch_size, 9], dtype=np.int32)),
         axis=1)
     mock_data_provider.provide_data.return_value = (mock_imgs, mock_lbls)
 
-    train.main(None)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':

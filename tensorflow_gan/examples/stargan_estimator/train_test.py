@@ -19,13 +19,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_gan.examples.stargan_estimator import train
+from tensorflow_gan.examples.stargan_estimator import train_lib
 
-FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
@@ -44,27 +42,39 @@ def _test_discriminator(inputs, num_domains):
 
 class TrainTest(tf.test.TestCase):
 
-  @mock.patch.object(train.data_provider, 'provide_data', autospec=True)
-  @mock.patch.object(train.data_provider, 'provide_celeba_test_set',
-                     autospec=True)
+  @mock.patch.object(train_lib.data_provider, 'provide_data', autospec=True)
+  @mock.patch.object(
+      train_lib.data_provider, 'provide_celeba_test_set', autospec=True)
   def test_main(self, mock_provide_celeba_test_set, mock_provide_data):
-    FLAGS.max_number_of_steps = 0
-    FLAGS.steps_per_eval = 1
-    FLAGS.batch_size = 1
-    FLAGS.patch_size = 8
+    hparams = train_lib.HParams(
+        batch_size=1,
+        patch_size=8,
+        output_dir='/tmp/tfgan_logdir/stargan/',
+        generator_lr=1e-4,
+        discriminator_lr=1e-4,
+        max_number_of_steps=0,
+        steps_per_eval=1,
+        adam_beta1=0.5,
+        adam_beta2=0.999,
+        gen_disc_step_ratio=0.2,
+        master='',
+        ps_tasks=0,
+        task=0)
     num_domains = 3
 
     # Construct mock inputs.
-    images_shape = [FLAGS.batch_size, FLAGS.patch_size, FLAGS.patch_size, 3]
+    images_shape = [
+        hparams.batch_size, hparams.patch_size, hparams.patch_size, 3
+    ]
     img_list = [np.zeros(images_shape, dtype=np.float32)] * num_domains
     # Create a list of num_domains arrays of shape [batch_size, num_domains].
-    # Note: assumes FLAGS.batch_size <= num_domains.
-    lbl_list = [np.eye(num_domains)[:FLAGS.batch_size, :]] * num_domains
+    # Note: assumes hparams.batch_size <= num_domains.
+    lbl_list = [np.eye(num_domains)[:hparams.batch_size, :]] * num_domains
     mock_provide_data.return_value = (img_list, lbl_list)
     mock_provide_celeba_test_set.return_value = np.zeros(
-        [3, FLAGS.patch_size, FLAGS.patch_size, 3])
+        [3, hparams.patch_size, hparams.patch_size, 3])
 
-    train.main(None, _test_generator, _test_discriminator)
+    train_lib.train(hparams, _test_generator, _test_discriminator)
 
 
 if __name__ == '__main__':

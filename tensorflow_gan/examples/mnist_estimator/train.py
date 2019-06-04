@@ -19,17 +19,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
+from absl import app
 from absl import flags
-import numpy as np
-import PIL
-from six.moves import xrange  # pylint: disable=redefined-builtin
 
-import tensorflow as tf
-import tensorflow_gan as tfgan
-
-from tensorflow_gan.examples.mnist import data_provider
-from tensorflow_gan.examples.mnist import networks
+from tensorflow_gan.examples.mnist_estimator import train_lib
 
 flags.DEFINE_integer('batch_size', 32,
                      'The number of images in each train batch.')
@@ -46,61 +39,11 @@ flags.DEFINE_string('output_dir', '/tmp/tfgan_logdir/mnist-estimator/',
 FLAGS = flags.FLAGS
 
 
-def _get_train_input_fn(batch_size, noise_dims, num_parallel_calls=4):
-  def train_input_fn():
-    images, _ = data_provider.provide_data(
-        'train', batch_size, num_parallel_calls=num_parallel_calls)
-    noise = tf.random.normal([batch_size, noise_dims])
-    return noise, images
-  return train_input_fn
-
-
-def _get_predict_input_fn(batch_size, noise_dims):
-  def predict_input_fn():
-    noise = tf.random.normal([batch_size, noise_dims])
-    return noise
-  return predict_input_fn
-
-
-def _unconditional_generator(noise, mode):
-  """MNIST generator with extra argument for tf.Estimator's `mode`."""
-  is_training = (mode == tf.estimator.ModeKeys.TRAIN)
-  return networks.unconditional_generator(noise, is_training=is_training)
-
-
 def main(_):
-  # Initialize GANEstimator with options and hyperparameters.
-  gan_estimator = tfgan.estimator.GANEstimator(
-      generator_fn=_unconditional_generator,
-      discriminator_fn=networks.unconditional_discriminator,
-      generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
-      discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-      generator_optimizer=tf.compat.v1.train.AdamOptimizer(0.001, 0.5),
-      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(0.0001, 0.5),
-      add_summaries=tfgan.estimator.SummaryType.IMAGES)
-
-  # Train estimator.
-  train_input_fn = _get_train_input_fn(FLAGS.batch_size, FLAGS.noise_dims)
-  gan_estimator.train(train_input_fn, max_steps=FLAGS.max_number_of_steps)
-
-  # Run inference.
-  predict_input_fn = _get_predict_input_fn(36, FLAGS.noise_dims)
-  prediction_iterable = gan_estimator.predict(predict_input_fn)
-  predictions = np.array([next(prediction_iterable) for _ in xrange(36)])
-
-  # Nicely tile.
-  tiled_image = tfgan.eval.python_image_grid(predictions, grid_shape=(6, 6))
-
-  # Write to disk.
-  if not tf.io.gfile.exists(FLAGS.output_dir):
-    tf.io.gfile.makedirs(FLAGS.output_dir)
-  with tf.io.gfile.GFile(
-      os.path.join(FLAGS.output_dir, 'unconditional_gan.png'), 'w') as f:
-    # Convert tiled_image from float32 in [-1, 1] to unit8 [0, 255].
-    pil_image = PIL.Image.fromarray(
-        np.squeeze((255 / 2.0) * (tiled_image + 1.0), axis=2).astype(np.uint8))
-    pil_image.convert('RGB').save(f, 'PNG')
+  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
+                              FLAGS.noise_dims, FLAGS.output_dir)
+  train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  tf.compat.v1.app.run()
+  app.run(main)

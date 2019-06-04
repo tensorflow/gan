@@ -20,37 +20,40 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from absl import flags
+
 import tensorflow as tf
 
-from tensorflow_gan.examples.mnist_estimator import train_experiment
+from tensorflow_gan.examples.mnist_estimator import train_experiment_lib
 
-
-FLAGS = flags.FLAGS
 mock = tf.compat.v1.test.mock
 
 
 class TrainEstimatorTest(tf.test.TestCase):
 
-  @mock.patch.object(train_experiment.util, 'mnist_score', autospec=True)
+  @mock.patch.object(train_experiment_lib.util, 'mnist_score', autospec=True)
   @mock.patch.object(
-      train_experiment.util, 'mnist_frechet_distance', autospec=True)
+      train_experiment_lib.util, 'mnist_frechet_distance', autospec=True)
   def test_full_flow(self, mock_mnist_frechet_distance, mock_mnist_score):
-    FLAGS.noise_dims = 4
-    FLAGS.batch_size = 16
-    FLAGS.num_train_steps = 1
-    FLAGS.num_eval_steps = 1
-    FLAGS.use_dummy_data = True
-    FLAGS.model_dir = self.get_temp_dir()
+    hparams = train_experiment_lib.HParams(
+        generator_lr=0.000076421,
+        discriminator_lr=0.0031938,
+        joint_train=False,
+        batch_size=16,
+        noise_dims=4,
+        model_dir=self.get_temp_dir(),
+        num_train_steps=1,
+        num_eval_steps=1,
+        num_reader_parallel_calls=4,
+        use_dummy_data=True)
 
     # Mock computationally expensive eval computations.
     mock_mnist_score.return_value = 0.0
     mock_mnist_frechet_distance.return_value = 1.0
 
-    train_experiment.main(None)
+    train_experiment_lib.train(hparams)
 
     # Check that there's a .png file in the output directory.
-    out_dir = os.path.join(FLAGS.model_dir, 'outputs')
+    out_dir = os.path.join(hparams.model_dir, 'outputs')
     self.assertTrue(tf.io.gfile.exists(out_dir))
     has_png = False
     for f in tf.io.gfile.listdir(out_dir):

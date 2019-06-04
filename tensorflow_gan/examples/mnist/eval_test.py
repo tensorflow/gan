@@ -19,20 +19,28 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from absl import flags
 from absl.testing import absltest
 from absl.testing import parameterized
 import tensorflow as tf
 
-from tensorflow_gan.examples.mnist import eval  # pylint:disable=redefined-builtin
+from tensorflow_gan.examples.mnist import eval_lib
 
 
 class EvalTest(tf.test.TestCase, parameterized.TestCase):
 
   @parameterized.named_parameters(('RealData', True), ('GeneratedData', False))
   def test_build_graph(self, eval_real_images):
-    flags.FLAGS.eval_real_images = eval_real_images
-    eval.main(None, run_eval_loop=False)
+    hparams = eval_lib.HParams(
+        checkpoint_dir='/tmp/mnist/',
+        eval_dir='/tmp/mnist/',
+        dataset_dir=None,
+        num_images_generated=1000,
+        eval_real_images=eval_real_images,
+        noise_dims=64,
+        classifier_filename=None,
+        max_number_of_evaluations=None,
+        write_to_disk=True)
+    eval_lib.evaluate(hparams, run_eval_loop=False)
 
 
 if __name__ == '__main__':
