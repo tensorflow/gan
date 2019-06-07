@@ -1,6 +1,4 @@
-## CIFAR10 on Cloud TPU
-
-Author: Tom Brown, Joel Shor, David Westbrook
+## TensorFlow Estimator and Cloud TPU Tutorials
 
 ### How to run
 
@@ -14,11 +12,15 @@ You can run the cloud TPU Colab notebook
 
 #### TF-GAN Tutorial
 
+Author: Joel Shor, David Westbrook
+
 This Colab notebook introduces TF-GAN's `GANEstimator`.
 The estimator framework abstracts the training details so
 you can focus on the details that matter.
 
-#### TF-GAN on TPUs Tutorial
+#### TF-GAN on Cloud TPUs Tutorial
+
+Author: Tom Brown, Joel Shor, David Westbrook
 
 This Colab notebook shows you how to use
 TF-GAN's `TPUGANEstimator` to train GANs on Google's cloud TPU. This
