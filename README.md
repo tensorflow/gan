@@ -9,7 +9,6 @@ with `import tensorflow_gan as tfgan`
 * [Well-tested examples](https://github.com/tensorflow/gan/examples/)
 * [Interactive introduction to TF-GAN](https://github.com/tensorflow/gan) in colaboratory
 * TPU support, an [interactive introduction to TF-GAN on cloud TPU](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb), and a complete [DCGAN on TPU example](https://github.com/tensorflow/gan/)
-* [Google internal interactive introduction to TF-GAN on TPU](https://github.com/tensorflow/gan), and [TPU examples on borg](https://github.com/tensorflow/gan/google/examples/mnist_estimator_tpu/)
 
 ## Structure of the TF-GAN Library
 
