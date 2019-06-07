@@ -6,31 +6,31 @@ Adversarial Networks (GANs)](https://arxiv.org/abs/1406.2661).
 
 * Can be installed with `pip` using `pip install tensorflow-gan`, and used
 with `import tensorflow_gan as tfgan`
-* [Well-tested examples](https://github.com/tensorflow/gan/examples/)
-* [Interactive introduction to TF-GAN](https://github.com/tensorflow/gan) in colaboratory
+* [Well-tested examples](https://github.com/tensorflow/gan/tensorflow_gan/examples/)
+* [Interactive introduction to TF-GAN](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/colab_notebooks/tfgan_tutorial.ipynb) in colaboratory
 
 ## Structure of the TF-GAN Library
 
 TF-GAN is composed of several parts, which are designed to exist independently:
 
-*   [core](https://github.com/tensorflow/gan/python/train.py):
+*   [core](https://github.com/tensorflow/gan/tensorflow_gan/python/train.py):
     the main infrastructure needed to train a GAN. Set up training with
     any combination of TF-GAN library calls, custom-code, native TF code, and other frameworks
-*   [features](https://github.com/tensorflow/gan/python/features/):
+*   [features](https://github.com/tensorflow/gan/tensorflow_gan/python/features/):
     common GAN operations and
     normalization techniques, such as instance normalization and conditioning.
-*   [losses](https://github.com/tensorflow/gan/python/losses/):
+*   [losses](https://github.com/tensorflow/gan/tensorflow_gan/python/losses/):
     losses and
     penalties, such as the Wasserstein loss, gradient penalty, mutual
     information penalty, etc.
-*   [evaluation](https://github.com/tensorflow/gan/python/eval/):
+*   [evaluation](https://github.com/tensorflow/gan/tensorflow_gan/python/eval/):
     standard GAN evaluation metrics.
     Use `Inception Score`, `Frechet Distance`, or `Kernel Distance` with a
     pretrained Inception network to evaluate your unconditional generative
     model. You can also use your own pretrained classifier for more specific
     performance numbers, or use other methods for evaluating conditional
     generative models.
-*   [examples](https://github.com/tensorflow/gan/)
+*   [examples](https://github.com/tensorflow/gan/tensorflow_gan/)
     simple examples on how to use TF-GAN, and more complicated state-of-the-art examples
 
 ## Who uses TF-GAN?
@@ -61,7 +61,7 @@ perform the step manually for fine-grained control.
 There are various types of GAN setup. For instance, you can train a generator
 to sample unconditionally from a learned distribution, or you can condition on
 extra information such as a class label. TF-GAN is compatible with many setups,
-and we demonstrate in the well-tested [examples directory](https://github.com/tensorflow/gan/examples/)
+and we demonstrate in the well-tested [examples directory](https://github.com/tensorflow/gan/tensorflow_gan/examples/)
 
 
 ## Maintainers

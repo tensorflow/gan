@@ -1,6 +1,6 @@
 # TF-GAN Examples
 
-[TF-GAN](https://github.com/tensorflow/gan)
+[TF-GAN](https://github.com/tensorflow/gan/tensorflow_gan)
 is a lightweight library for training and evaluating Generative Adversarial
 Networks (GANs). GANs have been in a wide range of tasks including
 [image translation](https://arxiv.org/abs/1703.10593),
@@ -83,7 +83,7 @@ images.
 
 Authors: Tom Brown, Joel Shor, David Westbrook
 
-This [colaboratory notebook](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb)
+This [colaboratory notebook](https://github.com/tensorflow/gan/tensorflow_gan/examples/colab_notebooks/tfgan_on_tpus.ipynb)
 introduces you to using
 TF-GAN's `TPUGANEstimator` to train GANs on Google's cloud TPU. This
 infrastructure gives you unprecedented compute power and batch size. In less
