@@ -4,9 +4,9 @@
 
 
 You can run the introductory tutorial Colab notebook
-[here](https://github.com/tensorflow/gan/tensorflow_gan/examples/colab_notebooks/tfgan_tutorial.ipynb).
+[here](https://github.com/tensorflow/gan/tree/master/tensorflow_gan/examples/colab_notebooks/tfgan_tutorial.ipynb).
 You can run the cloud TPU Colab notebook
-[here](https://github.com/tensorflow/gan/tensorflow_gan/examples/colab_notebooks/tfgan_on_tpus.ipynb).
+[here](https://github.com/tensorflow/gan/tree/master/tensorflow_gan/examples/colab_notebooks/tfgan_on_tpus.ipynb).
 
 ### Description
 
