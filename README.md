@@ -13,24 +13,24 @@ with `import tensorflow_gan as tfgan`
 
 TF-GAN is composed of several parts, which are designed to exist independently:
 
-*   [core](https://github.com/tensorflow/gan/tensorflow_gan/python/train.py):
+*   [Core](https://github.com/tensorflow/gan/tensorflow_gan/python/train.py):
     the main infrastructure needed to train a GAN. Set up training with
     any combination of TF-GAN library calls, custom-code, native TF code, and other frameworks
-*   [features](https://github.com/tensorflow/gan/tensorflow_gan/python/features/):
+*   [Features](https://github.com/tensorflow/gan/tensorflow_gan/python/features/):
     common GAN operations and
     normalization techniques, such as instance normalization and conditioning.
-*   [losses](https://github.com/tensorflow/gan/tensorflow_gan/python/losses/):
+*   [Losses](https://github.com/tensorflow/gan/tensorflow_gan/python/losses/):
     losses and
     penalties, such as the Wasserstein loss, gradient penalty, mutual
     information penalty, etc.
-*   [evaluation](https://github.com/tensorflow/gan/tensorflow_gan/python/eval/):
+*   [Evaluation](https://github.com/tensorflow/gan/tensorflow_gan/python/eval/):
     standard GAN evaluation metrics.
     Use `Inception Score`, `Frechet Distance`, or `Kernel Distance` with a
     pretrained Inception network to evaluate your unconditional generative
     model. You can also use your own pretrained classifier for more specific
     performance numbers, or use other methods for evaluating conditional
     generative models.
-*   [examples](https://github.com/tensorflow/gan/tensorflow_gan/)
+*   [Examples](https://github.com/tensorflow/gan/tensorflow_gan/):
     simple examples on how to use TF-GAN, and more complicated state-of-the-art examples
 
 ## Who uses TF-GAN?
