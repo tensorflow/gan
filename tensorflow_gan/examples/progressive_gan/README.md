@@ -6,7 +6,7 @@ Author: Shuo Chen
 
 
 1. Run the setup instructions in `tensorflow_gan/examples/README.md`
-1. Install matplotlib ex `pip install matplotlib`
+1. Install matplotlib by executing `pip install matplotlib`
 1. Run:
 
 ```python
@@ -15,7 +15,7 @@ python progressive_gan/train_main.py --alsologtostderr
 
 ### Description
 
-An implementation of
+An implementation of the technique described in
 [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/abs/1710.10196).
 We run the network on the CIFAR10 dataset.
 

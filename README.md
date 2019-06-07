@@ -7,7 +7,6 @@ Adversarial Networks (GANs)](https://arxiv.org/abs/1406.2661).
 * Can be installed with `pip` using `pip install tensorflow-gan`, and used
 with `import tensorflow_gan as tfgan`
 * [Well-tested examples](https://github.com/tensorflow/gan/examples/)
-* [GAN course](https://developers.google.com/machine-learning/gan/?utm_source=grow&utm_medium=link&utm_campaign=self-studies&utm_term=&utm_content=gans) based on TF-GAN
 * [Interactive introduction to TF-GAN](https://github.com/tensorflow/gan) in colaboratory
 * TPU support, an [interactive introduction to TF-GAN on cloud TPU](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb), and a complete [DCGAN on TPU example](https://github.com/tensorflow/gan/)
 * [Google internal interactive introduction to TF-GAN on TPU](https://github.com/tensorflow/gan), and [TPU examples on borg](https://github.com/tensorflow/gan/google/examples/mnist_estimator_tpu/)

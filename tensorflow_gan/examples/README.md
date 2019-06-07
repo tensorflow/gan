@@ -52,8 +52,8 @@ run. At a minimum, you will need `tensorflow` and `tensorflow_datasets`.
 
 Authors: Joel Shor, Yoel Drori
 
-An unconditional, conditional GAN and
-[InfoGAN](https://arxiv.org/abs/1606.03657) trained on
+An unconditional GAN, a conditional GAN, and an
+[InfoGAN](https://arxiv.org/abs/1606.03657), all trained on
 [MNIST digits](http://yann.lecun.com/exdb/mnist/). We use a classifier trained
 on MNIST digit classification for evaluation.
 
@@ -62,7 +62,7 @@ on MNIST digit classification for evaluation.
 
 Author: Joel Shor
 
-Two examples. Both are unconditional GAN on MNIST trained using the
+Two examples. Both are unconditional GANs trained on MNIST using the
 `tfgan.estimator.GANEstimator`,
 which reduces code complexity and abstracts away the training details.
 The first uses the `tf.Estimator` "blessed" method using `train_and_evaluate`.
@@ -83,8 +83,8 @@ images.
 
 Authors: Tom Brown, Joel Shor, David Westbrook
 
-A [colaboratory notebook](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb)
-will introduce you to using
+This [colaboratory notebook](https://github.com/tensorflow/gan/examples/colab_notebooks/tfgan_on_tpus.ipynb)
+introduces you to using
 TF-GAN's `TPUGANEstimator` to train GANs on Google's cloud TPU. This
 infrastructure gives you unprecedented compute power and batch size. In less
 than **five minutes**, you can train an unconditional GAN on CIFAR10.
@@ -118,5 +118,7 @@ Author: Wesley Qian
 
 Author: Shuo Chen
 
-<!--- TODO(joelshor): Add description. --->
+An implementation of the technique described in
+[Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/abs/1710.10196).
+We run the network on the CIFAR10 dataset.
 

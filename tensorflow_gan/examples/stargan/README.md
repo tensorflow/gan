@@ -14,7 +14,7 @@ python stargan/train.py
 
 ### Description
 
-We have a [StarGAN](https://arxiv.org/abs/1711.09020) implementation for
+A [StarGAN](https://arxiv.org/abs/1711.09020) implementation for
 multi-domain image translations. We run StarGAN on the
 [CelebA dataset](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html).
 
