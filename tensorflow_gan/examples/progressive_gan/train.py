@@ -394,7 +394,7 @@ def make_var_scope_custom_getter_for_ema(ema):
   def _custom_getter(getter, name, *args, **kwargs):
     var = getter(name, *args, **kwargs)
     ema_var = ema.average(var)
-    return ema_var if ema_var else var
+    return ema_var if ema_var is not None else var
 
   return _custom_getter
 
