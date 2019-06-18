@@ -170,3 +170,66 @@ def image_reshaper(images, num_cols=None):
   img = tf.concat(rows, 0)
 
   return tf.expand_dims(img, 0)
+
+
+def _get_streaming_variable(name, shape):
+  return tf.compat.v1.get_variable(
+      name=name,
+      shape=shape,
+      dtype=tf.float64,
+      initializer=tf.initializers.zeros(),
+      trainable=False,
+      collections=[
+          tf.compat.v1.GraphKeys.LOCAL_VARIABLES,
+          tf.compat.v1.GraphKeys.METRIC_VARIABLES
+      ])
+
+
+def streaming_mean_tensor_float64(values, updates_collections=None, name=None):
+  """A version of tf.metrics.mean_tensor that handles float64 values.
+
+  Unlike tf.metrics.mean_tensor, current implementation does not support
+  distributed processing and weights.
+
+  Args:
+    values: A `Tensor` of arbitrary dimensions.
+    updates_collections: An optional list of collections that `update_op` should
+      be added to.
+    name: An optional variable_scope name.
+
+  Returns:
+    mean: A float64 `Tensor` representing the current mean, the value of `total`
+      divided by `count`.
+    update_op: An operation that increments the `total` and `count` variables
+      appropriately and whose value matches `mean_value`.
+
+  Raises:
+    ValueError: If `updates_collections` is not a list or tuple.
+    RuntimeError: If eager execution is enabled.
+  """
+  # Code below copied from the implementation of tf.metrics.mean_tensor.
+  if tf.executing_eagerly():
+    raise RuntimeError("streaming_mean_tensor_float64 is not supported when "
+                       "eager execution is enabled.")
+  if values.dtype != tf.float64:
+    values = tf.cast(values, tf.float64)
+
+  with tf.compat.v1.variable_scope(name, "streaming_mean_tensor_float64",
+                                   (values,)):
+    total = _get_streaming_variable(
+        name="total_tensor", shape=values.get_shape())
+    count = _get_streaming_variable(
+        name="count_tensor", shape=values.get_shape())
+
+    num_values = tf.ones_like(values)
+    update_total_op = tf.compat.v1.assign_add(total, values)
+    with tf.control_dependencies([values]):
+      update_count_op = tf.compat.v1.assign_add(count, num_values)
+
+    mean_t = tf.div_no_nan(total, count)
+    update_op = tf.div_no_nan(
+        update_total_op, tf.maximum(update_count_op, 0), name="update_op")
+    if updates_collections:
+      tf.compat.v1.add_to_collections(updates_collections, update_op)
+
+    return mean_t, update_op
