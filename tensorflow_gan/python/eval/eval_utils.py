@@ -177,7 +177,7 @@ def _get_streaming_variable(name, shape):
       name=name,
       shape=shape,
       dtype=tf.float64,
-      initializer=tf.initializers.zeros(),
+      initializer=tf.compat.v1.initializers.zeros(),
       trainable=False,
       collections=[
           tf.compat.v1.GraphKeys.LOCAL_VARIABLES,
@@ -226,8 +226,8 @@ def streaming_mean_tensor_float64(values, updates_collections=None, name=None):
     with tf.control_dependencies([values]):
       update_count_op = tf.compat.v1.assign_add(count, num_values)
 
-    mean_t = tf.div_no_nan(total, count)
-    update_op = tf.div_no_nan(
+    mean_t = tf.compat.v1.div_no_nan(total, count)
+    update_op = tf.compat.v1.div_no_nan(
         update_total_op, tf.maximum(update_count_op, 0), name="update_op")
     if updates_collections:
       tf.compat.v1.add_to_collections(updates_collections, update_op)

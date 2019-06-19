@@ -65,7 +65,7 @@ class StreamingUtilsTest(tf.test.TestCase):
 
     expected_result = np.mean(data, axis=0)
     with self.cached_session() as sess:
-      sess.run(tf.initializers.local_variables())
+      sess.run(tf.compat.v1.initializers.local_variables())
       for i in range(num_batches):
         sess.run(update_op, feed_dict={placeholder: data[i]})
       result = sess.run(value)
@@ -82,7 +82,7 @@ class StreamingUtilsTest(tf.test.TestCase):
     value, update_op = eval_utils.streaming_mean_tensor_float64(placeholder)
 
     with self.cached_session() as sess:
-      sess.run(tf.initializers.local_variables())
+      sess.run(tf.compat.v1.initializers.local_variables())
       for i in range(num_batches):
         update_op_value = sess.run(update_op, feed_dict={placeholder: data[i]})
         result = sess.run(value)
@@ -93,7 +93,7 @@ class StreamingUtilsTest(tf.test.TestCase):
     data = tf.constant([1., 2., 3.], tf.float32)
     value, update_op = eval_utils.streaming_mean_tensor_float64(data)
     with self.cached_session() as sess:
-      sess.run(tf.initializers.local_variables())
+      sess.run(tf.compat.v1.initializers.local_variables())
       self.assertAllClose([1., 2., 3.], update_op)
       self.assertAllClose([1., 2., 3.], value)
 
