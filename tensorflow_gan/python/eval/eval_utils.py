@@ -233,3 +233,78 @@ def streaming_mean_tensor_float64(values, updates_collections=None, name=None):
       tf.compat.v1.add_to_collections(updates_collections, update_op)
 
     return mean_t, update_op
+
+
+def streaming_covariance(x, y=None, updates_collections=None, name=None):
+  """A streaming an unbiased version of tfp.stats.covariance.
+
+  Implementation based on
+  https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online.
+
+  Args:
+    x: A 2D numeric `Tensor` holding samples.
+    y: Optional Tensor with same dtype and shape as `x`. Default value: `None`
+      (y is effectively set to x).
+    updates_collections: An optional list of collections that `update_op` should
+      be added to.
+    name: An optional variable_scope name.
+
+
+  Returns:
+    covariance: A float64 `Tensor` holding the sample covariance matrix.
+    update_op: An operation that updates the internal variables appropriately
+      and whose value matches `covariance`.
+
+  Raises:
+    ValueError: If `updates_collections` is not a list or tuple.
+    RuntimeError: If eager execution is enabled.
+  """
+  if tf.executing_eagerly():
+    raise RuntimeError("streaming_covariance is not supported when "
+                       "eager execution is enabled.")
+  if x.dtype != tf.float64:
+    x = tf.cast(x, tf.float64)
+  if y is not None and y.dtype != tf.float64:
+    y = tf.cast(y, tf.float64)
+
+  if y is None:
+    y = x
+  x.shape.assert_has_rank(2)
+  y.shape.assert_has_rank(2)
+
+  x_event_shape = x.get_shape()[1:]
+  y_event_shape = y.get_shape()[1:]
+
+  with tf.compat.v1.variable_scope(name, "streaming_covariance", (x, y)):
+    n = _get_streaming_variable(name="n", shape=[])
+    meanx = _get_streaming_variable(name="meanx", shape=x_event_shape)
+    meany = _get_streaming_variable(name="meany", shape=y_event_shape)
+    cov_matrix = _get_streaming_variable(
+        name="cov_matrix",
+        shape=x_event_shape.as_list() + y_event_shape.as_list())
+
+  num_values = tf.cast(tf.shape(x)[0], dtype=tf.float64)
+  dx = tf.reduce_mean(x, axis=0) - meanx
+  dy = tf.reduce_mean(y, axis=0) - meany
+  # (x_1 + ... + x_n + x_{n+1} + ... + x_{n+m}) / (n + m)
+  # = (x_1 + ... + x_n) / n
+  #   + m * ((x_{n+1} + ... + x_{n+m}) / m - (x_1 + ... + x_n) / n) / (n + m).
+  meany_update_op = tf.compat.v1.assign_add(meany, (num_values /
+                                                    (n + num_values)) * dy)
+  with tf.control_dependencies([meany_update_op]):
+    cov_matrix_update_op = tf.compat.v1.assign_add(
+        cov_matrix,
+        tf.matmul(a=x - meanx, b=y - meany_update_op, transpose_a=True))
+  with tf.control_dependencies([cov_matrix_update_op]):
+    meanx_update_op = tf.compat.v1.assign_add(meanx, (num_values /
+                                                      (n + num_values)) * dx)
+  with tf.control_dependencies([meanx_update_op, meany_update_op]):
+    update_n_op = tf.compat.v1.assign_add(n, num_values)
+
+  result = tf.compat.v1.div_no_nan(cov_matrix, n - 1.)
+  update_op = tf.compat.v1.div_no_nan(
+      cov_matrix_update_op, update_n_op - 1., name="covariance_update_op")
+  if updates_collections:
+    tf.compat.v1.add_to_collections(updates_collections, update_op)
+
+  return result, update_op
