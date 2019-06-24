@@ -63,6 +63,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
 
   Raises:
     ValueError: If TF is executing eagerly.
+    ValueError: If called within a distribution strategy that is not supported.
   """
   if tf.executing_eagerly():
     # Under eager mode, get_variable() creates a new variable on every call.
@@ -78,12 +79,28 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     w = tf.reshape(w_tensor, (-1, w_tensor.get_shape()[-1]))
 
     # Persisted approximation of first left singular vector of matrix `w`.
+    # Requires an appropriate aggregation method since we explicitly control
+    # updates.
+    replica_context = tf.distribute.get_replica_context()
+    if replica_context is None:  # cross repica strategy.
+      # TODO(joelshor): Determine appropriate aggregation method.
+      raise ValueError("spectral norm isn't supported in cross-replica "
+                       "distribution strategy.")
+    elif not tf.distribute.has_strategy():  # default strategy.
+      aggregation = None
+    elif isinstance(replica_context, tf.distribute.MirroredStrategy()):
+      aggregation = tf.VariableAggregation.ONLY_FIRST_REPLICA
+    else:
+      raise ValueError("spectral norm doesn't support replication strategy %s"
+                       % replica_context)
+
     u_var = tf.compat.v1.get_variable(
         _PERSISTED_U_VARIABLE_SUFFIX,
         shape=(w.shape[0], 1),
         dtype=w.dtype,
         initializer=tf.compat.v1.initializers.random_normal(),
-        trainable=False)
+        trainable=False,
+        aggregation=aggregation)
     u = u_var
 
     # Use power iteration method to approximate spectral norm.

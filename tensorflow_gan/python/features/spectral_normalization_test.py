@@ -14,6 +14,8 @@
 # limitations under the License.
 
 """Tests for tfgan.features.spectral_normalization."""
+# TODO(tfgan): Add test that spectral normalization works with distribution
+# strategies.
 
 from __future__ import absolute_import
 from __future__ import division
@@ -410,7 +412,6 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllEqual(o1, o2)
     else:
       self.assertFalse(np.array_equal(o1, o2))
-
 
 if __name__ == '__main__':
   tf.test.main()
