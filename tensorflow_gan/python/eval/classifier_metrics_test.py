@@ -41,7 +41,6 @@ from tensorflow_gan.python.eval.classifier_metrics import kl_divergence
 from tensorflow_gan.python.eval.classifier_metrics import trace_sqrt_product
 
 from google.protobuf import text_format
-from tensorflow.python import tf2  # pylint:disable=g-direct-tensorflow-import
 
 mock = tf.compat.v1.test.mock
 classifier_module = sys.modules[get_graph_def_from_url_tarball.__module__]
@@ -467,8 +466,12 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
     If the sampler is ever changed to not modify the graph and this test fails,
     this test should modified or simply removed.
     """
-    if tf2.enabled():
+    if tf.executing_eagerly():
       # `run_image_classifier` doesn't work in eager execution.
+      return
+    if tf.compat.v1.resource_variables_enabled():
+      # Under the resource variables semantics the behavior of this test is
+      # undefined.
       return
 
     def sample_fn(x):
