@@ -216,9 +216,10 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
                          ([-1.0, 2.0], [6.0, 7.0]),]:
         m_in = np.array(m_in)
         v_in = np.array(v_in)
-        m, v, m_ema, v_ema, _ = sess.run(
-            [mean, variance, ema_mean, ema_var] + update_ops,
+        m, v, _ = sess.run(
+            [mean, variance] + update_ops,
             feed_dict={mean_in: m_in, variance_in: v_in})
+        m_ema, v_ema = sess.run([ema_mean, ema_var])
         self.assertAllClose(m, m_in)
         self.assertAllClose(v, v_in)
         m_exp = m_exp * decay + (1 - decay) * m_in
