@@ -47,6 +47,8 @@ class CheckpointIteratorTest(tf.test.TestCase):
     self.assertEqual(num_found, 0)
 
   def testReturnsSingleCheckpointIfOneCheckpointFound(self):
+    if tf.executing_eagerly():
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'one_checkpoint_found')
     if not tf.io.gfile.exists(checkpoint_dir):
       tf.io.gfile.makedirs(checkpoint_dir)
@@ -65,6 +67,8 @@ class CheckpointIteratorTest(tf.test.TestCase):
     self.assertEqual(num_found, 1)
 
   def testReturnsSingleCheckpointIfOneShardedCheckpoint(self):
+    if tf.executing_eagerly():
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'one_checkpoint_found_sharded')
     if not tf.io.gfile.exists(checkpoint_dir):
@@ -157,6 +161,9 @@ class EvaluateOnceTest(tf.test.TestCase):
         assert loss < .015
 
   def testEvaluatePerfectModel(self):
+    if tf.executing_eagerly():
+      # tf.metrics.accuracy is not supported when eager execution is enabled.
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluate_perfect_model_once')
 
@@ -184,6 +191,8 @@ class EvaluateOnceTest(tf.test.TestCase):
     self.assertTrue(final_ops_values['accuracy'] > .99)
 
   def testEvalOpAndFinalOp(self):
+    if tf.executing_eagerly():
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'eval_ops_and_final_ops')
 
     # Train a model for a single step to get a checkpoint.
@@ -214,6 +223,8 @@ class EvaluateOnceTest(tf.test.TestCase):
     self.assertEqual(final_ops_values['value'], num_evals + final_increment)
 
   def testOnlyFinalOp(self):
+    if tf.executing_eagerly():
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'only_final_ops')
 
     # Train a model for a single step to get a checkpoint.
@@ -281,6 +292,8 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
           loss = sess.run(train_op)
 
   def testEvaluatePerfectModel(self):
+    if tf.executing_eagerly():
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluate_perfect_model_repeated')
 
@@ -339,6 +352,9 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     self.assertLess(end - start, 7)
 
   def testEvaluationLoopTimeoutWithTimeoutFn(self):
+    if tf.executing_eagerly():
+      # tf.metrics.accuracy is not supported when eager execution is enabled.
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluation_loop_timeout_with_timeout_fn')
 
@@ -376,6 +392,9 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     self.assertEqual(4, timeout_fn_calls[0])
 
   def testEvaluateWithEvalFeedDict(self):
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     # Create a checkpoint.
     checkpoint_dir = os.path.join(self.get_temp_dir(),
                                   'evaluate_with_eval_feed_dict')
@@ -438,6 +457,9 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
     self.assertIsNotNone(graph_def)
 
   def testSummariesAreFlushedToDisk(self):
+    if tf.executing_eagerly():
+      # Merging tf.summary.* ops is not compatible with eager execution.
+      return
     checkpoint_dir = os.path.join(self.get_temp_dir(), 'summaries_are_flushed')
     logdir = os.path.join(self.get_temp_dir(), 'summaries_are_flushed_eval')
     if tf.io.gfile.exists(logdir):

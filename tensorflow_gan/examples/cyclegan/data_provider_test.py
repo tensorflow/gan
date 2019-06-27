@@ -60,6 +60,10 @@ class DataProviderTest(tf.test.TestCase):
       self.assertTupleEqual((10, 10, 3), sess.run(patch3).shape)
 
   def test_custom_dataset_provider(self):
+    if tf.executing_eagerly():
+      # dataset.make_initializable_iterator is not supported when eager
+      # execution is enabled.
+      return
     file_pattern = os.path.join(self.testdata_dir, '*.jpg')
     images_ds = data_provider._provide_custom_dataset(file_pattern)
     self.assertEqual(tf.uint8, images_ds.output_types)
@@ -72,6 +76,10 @@ class DataProviderTest(tf.test.TestCase):
     self.assertEqual(3, images_out.shape[-1])
 
   def test_custom_datasets_provider(self):
+    if tf.executing_eagerly():
+      # dataset.make_initializable_iterator is not supported when eager
+      # execution is enabled.
+      return
     file_pattern = os.path.join(self.testdata_dir, '*.jpg')
     batch_size = 3
     patch_size = 8
@@ -99,6 +107,10 @@ class DataProviderTest(tf.test.TestCase):
         self.assertTrue(np.all(np.abs(images_out) <= 1.0))
 
   def test_custom_data_provider(self):
+    if tf.executing_eagerly():
+      # dataset.make_initializable_iterator is not supported when eager
+      # execution is enabled.
+      return
     file_pattern = os.path.join(self.testdata_dir, '*.jpg')
     batch_size = 3
     patch_size = 8

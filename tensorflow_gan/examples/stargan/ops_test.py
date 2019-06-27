@@ -55,7 +55,7 @@ class OpsTest(tf.test.TestCase):
     test_input_tensor = tf.random.uniform((n, h, w, c))
     test_output_tensor = ops.pad(test_input_tensor, padding_size=pad)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       output = sess.run(test_output_tensor)
       self.assertTupleEqual((n, h + pad * 2, w + pad * 2, c), output.shape)
 
@@ -69,7 +69,7 @@ class OpsTest(tf.test.TestCase):
     test_input_tensor = tf.random.uniform((h, w, c))
     test_output_tensor = ops.pad(test_input_tensor, padding_size=pad)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       output = sess.run(test_output_tensor)
       self.assertTupleEqual((h + pad * 2, w + pad * 2, c), output.shape)
 
@@ -100,7 +100,7 @@ class OpsTest(tf.test.TestCase):
     output_tensor = ops.condition_input_with_pixel_padding(
         input_tensor, label_tensor)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       labels, outputs = sess.run([label_tensor, output_tensor])
       self.assertTupleEqual((n, h, w, c + num_label), outputs.shape)
       for label, output in zip(labels, outputs):

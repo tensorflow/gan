@@ -260,6 +260,9 @@ class StarGANLossWrapperTest(tf.test.TestCase):
       be the same as the input.
 
     """
+    if tf.executing_eagerly():
+      # Can't use `tf.gradient` when executing eagerly
+      return
     loss_fn = tfgan.losses.wargs.wasserstein_gradient_penalty
     tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)
     wrapped_loss_fn = tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)

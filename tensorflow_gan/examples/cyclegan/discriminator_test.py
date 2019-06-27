@@ -78,7 +78,11 @@ class DiscriminatorTest(tf.test.TestCase):
     input_size = 256
 
     images = tf.ones((batch_size, input_size, input_size, 3))
-    with self.assertRaises(ValueError):
+    if tf.executing_eagerly():
+      exception_type = tf.errors.InvalidArgumentError
+    else:
+      exception_type = ValueError
+    with self.assertRaises(exception_type):
       discriminator.pix2pix_discriminator(
           images, num_filters=[64, 128, 256, 512], padding=-1)
 

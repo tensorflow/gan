@@ -66,6 +66,9 @@ class TrainTest(tf.test.TestCase):
         task=0)
 
   def test_define_model(self):
+    if tf.executing_eagerly():
+      # `tfgan.stargan_model` doesn't work when executing eagerly.
+      return
     hparams = self.hparams._replace(batch_size=2)
     images_shape = [hparams.batch_size, 4, 4, 3]
     images_np = np.zeros(shape=images_shape)
@@ -86,9 +89,11 @@ class TrainTest(tf.test.TestCase):
   @mock.patch.object(
       tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step):
+    if tf.executing_eagerly():
+      return
     max_number_of_steps = 10
     base_lr = 0.01
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       mock_get_or_create_global_step.return_value = tf.constant(2)
       lr_step2 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
       mock_get_or_create_global_step.return_value = tf.constant(9)
@@ -98,6 +103,9 @@ class TrainTest(tf.test.TestCase):
     self.assertAlmostEqual(base_lr * 0.2, lr_step9)
 
   def test_define_train_ops(self):
+    if tf.executing_eagerly():
+      # `tfgan.stargan_model` doesn't work when executing eagerly.
+      return
     hparams = self.hparams._replace(
         batch_size=2, generator_lr=0.1, discriminator_lr=0.01)
 
@@ -128,6 +136,9 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train_lib.data_provider, 'provide_data', autospec=True)
   def test_main(self, mock_provide_data):
+    if tf.executing_eagerly():
+      # `tfgan.stargan_model` doesn't work when executing eagerly.
+      return
     hparams = self.hparams._replace(batch_size=2, max_number_of_steps=10)
     num_domains = 3
 

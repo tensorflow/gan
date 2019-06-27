@@ -94,6 +94,10 @@ class DataProviderTest(tf.test.TestCase):
 
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data_can_be_reinitialized(self, mock_tfds):
+    if tf.executing_eagerly():
+      # Trying to access properties or call methods on the result of
+      # self.session().
+      return
     batch_size = 5
     mock_tfds.load.return_value = self.mock_ds
 

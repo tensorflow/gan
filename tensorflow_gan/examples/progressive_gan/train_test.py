@@ -68,6 +68,9 @@ class TrainTest(tf.test.TestCase):
     }
 
   def test_train_success(self):
+    if tf.executing_eagerly():
+      # `tfgan.gan_model` doesn't work when executing eagerly.
+      return
     train_log_dir = self._config['train_log_dir']
     if not tf.io.gfile.exists(train_log_dir):
       tf.io.gfile.makedirs(train_log_dir)

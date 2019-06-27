@@ -58,6 +58,9 @@ class InferenceDemoTest(tf.test.TestCase):
       train_lib.data_provider, 'provide_custom_data', autospec=True)
   def testTrainingAndInferenceGraphsAreCompatible(
       self, mock_provide_custom_data, unused_mock_gan_train):
+    if tf.executing_eagerly():
+      # `tfgan.cyclegan_model` doesn't work when executing eagerly.
+      return
     # Training and inference graphs can get out of sync if changes are made
     # to one but not the other. This test will keep them in sync.
 

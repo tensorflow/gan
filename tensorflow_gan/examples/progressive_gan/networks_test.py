@@ -151,6 +151,9 @@ class NetworksTest(tf.test.TestCase):
     self.assertEqual(networks.num_filters(5, 4096, 1, 256), 128)
 
   def test_generator_grad_norm_progress(self):
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 
@@ -207,6 +210,9 @@ class NetworksTest(tf.test.TestCase):
             grad_norms_output[:, 2]))
 
   def test_discriminator_grad_norm_progress(self):
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 

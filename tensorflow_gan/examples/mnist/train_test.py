@@ -48,6 +48,9 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
         gan_type='unconditional',
         batch_size=5,
         grid_size=1)
+    if tf.executing_eagerly():
+      # `tfgan.gan_model` doesn't work when executing eagerly.
+      return
     tf.compat.v1.set_random_seed(1234)
 
     # Mock input pipeline.
@@ -65,6 +68,9 @@ class TrainTest(tf.test.TestCase, parameterized.TestCase):
                                   ('InfoGAN', 'infogan'))
   @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_build_graph(self, gan_type, mock_data_provider):
+    if tf.executing_eagerly():
+      # `tfgan.gan_model` doesn't work when executing eagerly.
+      return
     hparams = self.hparams._replace(max_number_of_steps=0, gan_type=gan_type)
 
     # Mock input pipeline.

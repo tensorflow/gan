@@ -64,6 +64,9 @@ class MnistScoreTest(tf.test.TestCase):
         sess.run(mscore, feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
   def test_deterministic(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     m_score = util.mnist_score(real_digit())
     with self.cached_session() as sess:
       m_score1 = sess.run(m_score)
@@ -75,6 +78,9 @@ class MnistScoreTest(tf.test.TestCase):
     self.assertEqual(m_score1, m_score3)
 
   def test_single_example_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     real_score = util.mnist_score(real_digit())
     fake_score = util.mnist_score(fake_digit())
     with self.cached_session() as sess:
@@ -82,12 +88,18 @@ class MnistScoreTest(tf.test.TestCase):
       self.assertNear(1.0, sess.run(fake_score), 1e-6)
 
   def test_minibatch_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     mscore = util.mnist_score(
         tf.concat([real_digit(), real_digit(), fake_digit()], 0))
     with self.cached_session() as sess:
       self.assertNear(1.612828, sess.run(mscore), 1e-6)
 
   def test_batch_splitting_doesnt_change_value(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     for num_batches in [1, 2, 4, 8]:
       mscore = util.mnist_score(
           tf.concat([real_digit()] * 4 + [fake_digit()] * 4, 0),
@@ -110,6 +122,9 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
                  feed_dict={inputs: np.zeros([batch_size, 28, 28, 1])})
 
   def test_deterministic(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit()] * 2, 0),
         tf.concat([fake_digit()] * 2, 0))
@@ -123,6 +138,9 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
     self.assertNear(fdistance1, fdistance3, 2e-1)
 
   def test_single_example_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit()] * 2, 0),
         tf.concat([real_digit()] * 2, 0))
@@ -130,6 +148,9 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
       self.assertNear(0.0, sess.run(fdistance), 2e-1)
 
   def test_minibatch_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     fdistance = util.mnist_frechet_distance(
         tf.concat([real_digit(), real_digit(), fake_digit()], 0),
         tf.concat([real_digit(), fake_digit(), fake_digit()], 0))
@@ -137,6 +158,9 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
       self.assertNear(43.5, sess.run(fdistance), 2e-1)
 
   def test_batch_splitting_doesnt_change_value(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     for num_batches in [1, 2, 4, 8]:
       fdistance = util.mnist_frechet_distance(
           tf.concat([real_digit()] * 6 + [fake_digit()] * 2, 0),
@@ -165,6 +189,9 @@ class MnistCrossEntropyTest(tf.test.TestCase):
             one_hot_label: np.concatenate([one_label] * batch_size)})
 
   def test_deterministic(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     xent = util.mnist_cross_entropy(real_digit(), one_hot_real())
     with self.cached_session() as sess:
       ent1 = sess.run(xent)
@@ -176,6 +203,9 @@ class MnistCrossEntropyTest(tf.test.TestCase):
     self.assertEqual(ent1, ent3)
 
   def test_single_example_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     # The correct label should have low cross entropy.
     correct_xent = util.mnist_cross_entropy(real_digit(), one_hot_real())
     # The incorrect label should have high cross entropy.
@@ -190,6 +220,9 @@ class MnistCrossEntropyTest(tf.test.TestCase):
       self.assertNear(2.2, sess.run(fake_xent6), 1e-1)
 
   def test_minibatch_correct(self):
+    if tf.executing_eagerly():
+      # `run_image_classifier` doesn't work in eager.
+      return
     # Reorded minibatches should have the same value.
     xent1 = util.mnist_cross_entropy(
         tf.concat([real_digit(), real_digit(), fake_digit()], 0),

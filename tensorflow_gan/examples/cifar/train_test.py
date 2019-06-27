@@ -30,6 +30,9 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train_lib, 'data_provider', autospec=True)
   def test_build_graph(self, mock_data_provider):
+    if tf.executing_eagerly():
+      # `tfgan.gan_model` doesn't work when executing eagerly.
+      return
     hparams = train_lib.HParams(
         batch_size=16,
         max_number_of_steps=0,

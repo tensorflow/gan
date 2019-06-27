@@ -48,6 +48,9 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_generator_unknown_batch_dim(self):
     """Check that generator can take unknown batch dimension inputs."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     img = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, None, 3])
     output_imgs, _ = generator.cyclegan_generator_resnet(img)
 

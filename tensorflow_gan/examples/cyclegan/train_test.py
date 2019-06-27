@@ -68,6 +68,9 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(tfgan, 'eval', autospec=True)
   def test_define_model(self, mock_eval):
+    if tf.executing_eagerly():
+      # `tfgan.cyclegan_model` doesn't work when executing eagerly.
+      return
     self.hparams = self.hparams._replace(batch_size=2)
     images_shape = [self.hparams.batch_size, 4, 4, 3]
     images_x_np = np.zeros(shape=images_shape)
@@ -86,9 +89,11 @@ class TrainTest(tf.test.TestCase):
       tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step,
                   unused_mock_discriminator, unused_mock_generator):
+    if tf.executing_eagerly():
+      return
     base_lr = 0.01
     max_number_of_steps = 10
-    with self.test_session(use_gpu=True) as sess:
+    with self.cached_session(use_gpu=True) as sess:
       mock_get_or_create_global_step.return_value = tf.constant(2)
       lr_step2 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
       mock_get_or_create_global_step.return_value = tf.constant(9)
@@ -107,6 +112,9 @@ class TrainTest(tf.test.TestCase):
     ])
 
   def test_define_train_ops(self):
+    if tf.executing_eagerly():
+      # `tfgan.cyclegan_model` doesn't work when executing eagerly.
+      return
     self.hparams = self.hparams._replace(
         batch_size=2, generator_lr=0.1, discriminator_lr=0.01)
 

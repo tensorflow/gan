@@ -27,6 +27,8 @@ from tensorflow_gan.examples.mnist import infogan_eval_lib
 class MnistInfoGANEvalTest(tf.test.TestCase):
 
   def test_build_graph(self):
+    if tf.executing_eagerly():
+      return
     hparams = infogan_eval_lib.HParams(
         checkpoint_dir='/tmp/mnist/',
         eval_dir='/tmp/mnist/',

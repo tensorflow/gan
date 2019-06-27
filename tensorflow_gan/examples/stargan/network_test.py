@@ -32,7 +32,7 @@ class NetworkTest(tf.test.TestCase):
     target_tensor = tf.random.uniform((n, class_num))
     output_tensor = network.generator(input_tensor, target_tensor)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h, w, c), output.shape)
@@ -49,7 +49,7 @@ class NetworkTest(tf.test.TestCase):
     output_src_tensor, output_cls_tensor = network.discriminator(
         input_tensor, class_num)
 
-    with self.test_session() as sess:
+    with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       output_src, output_cls = sess.run([output_src_tensor, output_cls_tensor])
       self.assertEqual(1, len(output_src.shape))

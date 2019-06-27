@@ -111,6 +111,8 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
   @mock.patch.object(data_provider, 'tfds', autospec=True)
   def test_provide_data_can_be_reinitialized(self, mock_tfds):
     """Test that the iterator created in `provide_data` can be reused."""
+    if tf.executing_eagerly():
+      return
     batch_size = 5
     mock_tfds.load.return_value = self.mock_ds
 

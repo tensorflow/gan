@@ -41,7 +41,11 @@ class ConditioningUtilsTest(tf.test.TestCase):
           tf.zeros(conditioning_shape, tf.float32))
 
   def test_condition_tensor_asserts(self):
-    with self.assertRaisesRegexp(ValueError, 'Cannot reshape'):
+    if tf.executing_eagerly():
+      exception_type = tf.errors.InvalidArgumentError
+    else:
+      exception_type = ValueError
+    with self.assertRaises(exception_type):
       tfgan.features.condition_tensor(
           tf.zeros((4, 1), tf.float32),
           tf.zeros((5, 1), tf.float32))
@@ -70,7 +74,11 @@ class ConditioningUtilsTest(tf.test.TestCase):
           tf.zeros((5, 1), tf.float32),
           tf.zeros((5), tf.float32))
 
-    with self.assertRaisesRegexp(ValueError, 'Cannot reshape a tensor'):
+    if tf.executing_eagerly():
+      exception_type = tf.errors.InvalidArgumentError
+    else:
+      exception_type = ValueError
+    with self.assertRaises(exception_type):
       tfgan.features.condition_tensor_from_onehot(
           tf.zeros((5, 1), tf.float32),
           tf.zeros((4, 6), tf.float32))

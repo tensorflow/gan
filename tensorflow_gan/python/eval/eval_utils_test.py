@@ -56,6 +56,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_mean_correctness(self):
     """Checks value of streaming_mean_tensor_float64."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     np.random.seed(0)
 
     num_batches = 8
@@ -74,6 +77,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_mean_update_op_value(self):
     """Checks that the value of the update op is the same as the value."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     np.random.seed(0)
 
     num_batches = 8
@@ -91,6 +97,10 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_mean_float32(self):
     """Checks handling of float32 tensors in streaming_mean_tensor_float64."""
+    if tf.executing_eagerly():
+      # streaming_mean_tensor_float64 is not supported when eager execution is
+      # enabled.
+      return
     data = tf.constant([1., 2., 3.], tf.float32)
     value, update_op = eval_utils.streaming_mean_tensor_float64(data)
     with self.cached_session() as sess:
@@ -100,6 +110,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_simple(self):
     """Sanity check for streaming_covariance."""
+    if tf.executing_eagerly():
+      # streaming_covariance is not supported when eager execution is enabled.
+      return
     x = [[1., 2.], [2., 1.]]
     result, update_op = eval_utils.streaming_covariance(
         tf.constant(x, dtype=tf.float64))
@@ -111,6 +124,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_with_y(self):
     """Checks output of streaming_covariance given value for y."""
+    if tf.executing_eagerly():
+      # streaming_covariance is not supported when eager execution is enabled.
+      return
     x = [[1., 2.], [2., 1.]]
     y = [[3., 3.], [1., 0.]]
     result, update_op = eval_utils.streaming_covariance(
@@ -126,6 +142,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_float32(self):
     """Checks handling of float32 values in streaming_covariance."""
+    if tf.executing_eagerly():
+      # streaming_covariance is not supported when eager execution is enabled.
+      return
     x = [[1., 2.], [2., 1.]]
     result, update_op = eval_utils.streaming_covariance(
         x=tf.constant(x, dtype=tf.float32))
@@ -137,6 +156,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_float32_with_y(self):
     """Checks handling of float32 values in streaming_covariance."""
+    if tf.executing_eagerly():
+      # streaming_covariance is not supported when eager execution is enabled.
+      return
     x = [[1., 2.], [2., 1.]]
     y = [[1., 2.], [2., 1.]]
     result, update_op = eval_utils.streaming_covariance(
@@ -152,6 +174,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_batches(self):
     """Checks value consistency of streaming_covariance."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     np.random.seed(0)
 
     num_batches = 8
@@ -172,6 +197,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_accuracy(self):
     """Checks accuracy of streaming_covariance."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     np.random.seed(0)
 
     num_batches = 128
@@ -194,6 +222,9 @@ class StreamingUtilsTest(tf.test.TestCase):
 
   def test_covariance_accuracy_with_y(self):
     """Checks accuracy of streaming_covariance with two input tensors."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     np.random.seed(0)
 
     num_batches = 128
