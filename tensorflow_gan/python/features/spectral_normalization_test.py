@@ -27,12 +27,13 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-tf.compat.v1.disable_v2_behavior()
-
 
 class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
   def testComputeSpectralNorm(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
     weights = tf.compat.v1.get_variable(
         'w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
@@ -63,6 +64,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
       self.assertGreater(abs(np_true_sn - np_est_1), abs(np_true_sn - np_est_5))
 
   def testSpectralNormalize(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
     weights = tf.compat.v1.get_variable(
         'w', dtype=tf.float32, shape=[2, 3, 50, 100])
     weights = tf.multiply(weights, 10.0)
@@ -162,6 +166,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
                                               exactly_normalized)))
 
   def testConv2D_Layers(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       layer = tf.compat.v1.layers.Conv2D(
@@ -179,6 +186,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
   def testConv2D_Keras(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       layer = tf.keras.layers.Conv2D(
@@ -198,6 +208,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
   def testConv2D_ContribLayers(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     try:
       tf.contrib.layers.conv2d
@@ -232,6 +245,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
   def testConv2D_Slim(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     try:
       tf.contrib.slim.conv2d
@@ -262,6 +278,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
 
   def testFC_Layers(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       x = tf.compat.v1.layers.flatten(x)
@@ -278,6 +297,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   def testFC_Keras(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     def build_layer_fn(x, w_initializer, b_initializer):
       flatten = tf.keras.layers.Flatten()
@@ -297,6 +319,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   def testFC_ContribLayers(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
     try:
       tf.contrib.layers.fully_connected
     except AttributeError:  # if contrib doesn't exist, skip this test.
@@ -330,6 +355,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
     self._testLayerHelper(build_layer_fn, (300, 3), (3,))
 
   def testFC_Slim(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
 
     try:
       tf.contrib.slim.fully_connected
@@ -369,6 +397,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
   )
   def test_multiple_calls(self, repeat_type, training, expect_same):
     """Tests that multiple calls don't change variables."""
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
     sn_gettr = tfgan.features.spectral_normalization_custom_getter
     output_size = 100
     def generator(x):

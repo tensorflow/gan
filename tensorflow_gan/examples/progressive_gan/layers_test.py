@@ -23,7 +23,6 @@ import tensorflow as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
 
-tf.compat.v1.disable_v2_behavior()
 mock = tf.compat.v1.test.mock
 
 
