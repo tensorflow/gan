@@ -155,6 +155,9 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
         var0_out[2])
 
   def testDenseLocal(self):
+    if tf.executing_eagerly():
+      # Test not designed to run in eager mode.
+      return
     for dtype in [tf.float32, tf.float64, tf.half]:
       with self.cached_session() as sess:
         var0, var1, update_op = self._setupDense(False, dtype, sess)
@@ -168,6 +171,9 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
         self._assertDenseCorrect(var0, var1, update_op, sess)
 
   def testSparseLocal(self):
+    if tf.executing_eagerly():
+      # Test not designed to run in eager mode.
+      return
     for dtype in [tf.float64, tf.float32, tf.half]:
       with self.cached_session() as sess:
         var0, var1, update_op = self._setupSparse(False, dtype, sess)
