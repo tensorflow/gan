@@ -88,11 +88,8 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
                        "distribution strategy.")
     elif not tf.distribute.has_strategy():  # default strategy.
       aggregation = None
-    elif isinstance(replica_context, tf.distribute.MirroredStrategy()):
-      aggregation = tf.VariableAggregation.ONLY_FIRST_REPLICA
     else:
-      raise ValueError("spectral norm doesn't support replication strategy %s"
-                       % replica_context)
+      aggregation = tf.VariableAggregation.ONLY_FIRST_REPLICA
 
     u_var = tf.compat.v1.get_variable(
         _PERSISTED_U_VARIABLE_SUFFIX,
