@@ -37,6 +37,8 @@ import six
 from six.moves import urllib
 
 import tensorflow as tf
+from tensorflow_gan.python.eval import eval_utils
+import tensorflow_probability as tfp
 
 __all__ = [
     'get_graph_def_from_disk',
@@ -49,11 +51,17 @@ __all__ = [
     'run_inception',
     'sample_and_run_inception',
     'inception_score',
+    'inception_score_streaming',
     'classifier_score',
+    'classifier_score_streaming',
     'classifier_score_from_logits',
+    'classifier_score_from_logits_streaming',
     'frechet_inception_distance',
+    'frechet_inception_distance_streaming',
     'frechet_classifier_distance',
+    'frechet_classifier_distance_streaming',
     'frechet_classifier_distance_from_activations',
+    'frechet_classifier_distance_from_activations_streaming',
     'mean_only_frechet_classifier_distance_from_activations',
     'diagonal_only_frechet_classifier_distance_from_activations',
     'kernel_inception_distance',
@@ -525,6 +533,26 @@ def sample_and_run_classifier_fn(sample_fn,
   return classifier_outputs
 
 
+def _classifier_score_helper(images,
+                             classifier_fn,
+                             num_batches=1,
+                             streaming=False):
+  """A helper function for evaluating the classifier score."""
+  generated_images_list = tf.split(images, num_or_size_splits=num_batches)
+
+  # Compute the classifier splits using the memory-efficient `map_fn`.
+  logits = tf.map_fn(
+      fn=classifier_fn,
+      elems=tf.stack(generated_images_list),
+      parallel_iterations=1,
+      back_prop=False,
+      swap_memory=True,
+      name='RunClassifier')
+  logits = tf.concat(tf.unstack(logits), 0)
+
+  return _classifier_score_from_logits_helper(logits, streaming=streaming)
+
+
 def classifier_score(images, classifier_fn, num_batches=1):
   """Classifier score for evaluating a conditional generative model.
 
@@ -554,19 +582,81 @@ def classifier_score(images, classifier_fn, num_batches=1):
     The classifier score. A floating-point scalar of the same type as the output
     of `classifier_fn`.
   """
-  generated_images_list = tf.split(images, num_or_size_splits=num_batches)
+  return _classifier_score_helper(
+      images, classifier_fn, num_batches, streaming=False)
 
-  # Compute the classifier splits using the memory-efficient `map_fn`.
-  logits = tf.map_fn(
-      fn=classifier_fn,
-      elems=tf.stack(generated_images_list),
-      parallel_iterations=1,
-      back_prop=False,
-      swap_memory=True,
-      name='RunClassifier')
-  logits = tf.concat(tf.unstack(logits), 0)
 
-  return classifier_score_from_logits(logits)
+def classifier_score_streaming(images, classifier_fn, num_batches=1):
+  """A streaming version of classifier_score.
+
+  Keeps an internal state that continuously tracks the score. This internal
+  state should be initialized with tf.initializers.local_variables().
+
+  Args:
+    images: Images to calculate the classifier score for.
+    classifier_fn: A function that takes images and produces logits based on a
+      classifier.
+    num_batches: Number of batches to split `generated_images` in to in order to
+      efficiently run them through the classifier network.
+
+  Returns:
+    A tuple containing the classifier score and a tf.Operation. The tf.Operation
+    has the same value as the score, and has an additional side effect of
+    updating the internal state with the given tensors.
+  """
+  return _classifier_score_helper(
+      images, classifier_fn, num_batches, streaming=True)
+
+
+def _classifier_score_from_logits_helper(logits, streaming=False):
+  """A helper function for evaluating the classifier score from logits."""
+  logits = tf.convert_to_tensor(value=logits)
+  logits.shape.assert_has_rank(2)
+
+  # Use maximum precision for best results.
+  logits_dtype = logits.dtype
+  if logits_dtype != tf.float64:
+    logits = tf.cast(logits, tf.float64)
+
+  p = tf.nn.softmax(logits)
+  if streaming:
+    # Note: The following streaming mean operation assumes all instances of
+    # logits have the same batch size.
+    q_ops = eval_utils.streaming_mean_tensor_float64(
+        tf.reduce_mean(input_tensor=p, axis=0))
+    # kl = kl_divergence(p, logits, q)
+    # = tf.reduce_sum(p * (tf.nn.log_softmax(logits) - tf.math.log(q)), axis=1)
+    # = tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1)
+    #   - tf.reduce_sum(p * tf.math.log(q), axis=1)
+    # log_score = tf.reduce_mean(kl)
+    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+    #   - tf.reduce_mean(tf.reduce_sum(p * tf.math.log(q), axis=1))
+    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+    #   - tf.reduce_sum(tf.reduce_mean(p, axis=0) * tf.math.log(q))
+    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+    #   - tf.reduce_sum(q * tf.math.log(q))
+    plogp_mean_ops = eval_utils.streaming_mean_tensor_float64(
+        tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1)))
+    log_score_ops = tuple(
+        plogp_mean_val - tf.reduce_sum(q_val * tf.math.log(q_val))
+        for plogp_mean_val, q_val in zip(plogp_mean_ops, q_ops))
+  else:
+    q = tf.reduce_mean(input_tensor=p, axis=0)
+    kl = kl_divergence(p, logits, q)
+    kl.shape.assert_has_rank(1)
+    log_score_ops = (tf.reduce_mean(input_tensor=kl),)
+  # log_score_ops contains the score value and possibly the update_op. We
+  # apply the same operation on all its elements to make sure their value is
+  # consistent.
+  final_score_tuple = tuple(tf.exp(value) for value in log_score_ops)
+  if logits_dtype != tf.float64:
+    final_score_tuple = tuple(
+        tf.cast(value, logits_dtype) for value in final_score_tuple)
+
+  if streaming:
+    return final_score_tuple
+  else:
+    return final_score_tuple[0]
 
 
 def classifier_score_from_logits(logits):
@@ -593,29 +683,35 @@ def classifier_score_from_logits(logits):
     The classifier score. A floating-point scalar of the same type as the output
     of `logits`.
   """
-  logits = tf.convert_to_tensor(value=logits)
-  logits.shape.assert_has_rank(2)
+  return _classifier_score_from_logits_helper(logits, streaming=False)
 
-  # Use maximum precision for best results.
-  logits_dtype = logits.dtype
-  if logits_dtype != tf.float64:
-    logits = tf.cast(logits, tf.float64)
 
-  p = tf.nn.softmax(logits)
-  q = tf.reduce_mean(input_tensor=p, axis=0)
-  kl = kl_divergence(p, logits, q)
-  kl.shape.assert_has_rank(1)
-  log_score = tf.reduce_mean(input_tensor=kl)
-  final_score = tf.exp(log_score)
+def classifier_score_from_logits_streaming(logits):
+  """A streaming version of classifier_score_from_logits.
 
-  if logits_dtype != tf.float64:
-    final_score = tf.cast(final_score, logits_dtype)
+  Keeps an internal state that continuously tracks the score. This internal
+  state should be initialized with tf.initializers.local_variables().
 
-  return final_score
+  Args:
+    logits: Precomputed 2D tensor of logits that will be used to compute the
+      classifier score.
+
+  Returns:
+    A tuple containing the classifier score and a tf.Operation. The tf.Operation
+    has the same value as the score, and has an additional side effect of
+    updating the internal state with the given tensors.
+  """
+  return _classifier_score_from_logits_helper(logits, streaming=True)
 
 
 inception_score = functools.partial(
     classifier_score,
+    classifier_fn=functools.partial(
+        run_inception, output_tensor=INCEPTION_OUTPUT))
+
+
+inception_score_streaming = functools.partial(
+    classifier_score_streaming,
     classifier_fn=functools.partial(
         run_inception, output_tensor=INCEPTION_OUTPUT))
 
@@ -659,6 +755,40 @@ def trace_sqrt_product(sigma, sigma_v):
   sqrt_a_sigmav_a = tf.matmul(sqrt_sigma, tf.matmul(sigma_v, sqrt_sigma))
 
   return tf.linalg.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
+
+
+def _frechet_classifier_distance_helper(real_images,
+                                        generated_images,
+                                        classifier_fn,
+                                        num_batches=1,
+                                        streaming=False):
+  """A helper function for evaluating the frechet classifier distance."""
+  real_images_list = tf.split(real_images, num_or_size_splits=num_batches)
+  generated_images_list = tf.split(
+      generated_images, num_or_size_splits=num_batches)
+
+  real_imgs = tf.stack(real_images_list)
+  generated_imgs = tf.stack(generated_images_list)
+
+  # Compute the activations using the memory-efficient `map_fn`.
+  def compute_activations(elems):
+    return tf.map_fn(
+        fn=classifier_fn,
+        elems=elems,
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        name='RunClassifier')
+
+  real_a = compute_activations(real_imgs)
+  gen_a = compute_activations(generated_imgs)
+
+  # Ensure the activations have the right shapes.
+  real_a = tf.concat(tf.unstack(real_a), 0)
+  gen_a = tf.concat(tf.unstack(gen_a), 0)
+
+  return _frechet_classifier_distance_from_activations_helper(
+      real_a, gen_a, streaming=streaming)
 
 
 def frechet_classifier_distance(real_images,
@@ -706,31 +836,43 @@ def frechet_classifier_distance(real_images,
     The Frechet Inception distance. A floating-point scalar of the same type
     as the output of `classifier_fn`.
   """
-  real_images_list = tf.split(real_images, num_or_size_splits=num_batches)
-  generated_images_list = tf.split(
-      generated_images, num_or_size_splits=num_batches)
+  return _frechet_classifier_distance_helper(
+      real_images,
+      generated_images,
+      classifier_fn,
+      num_batches,
+      streaming=False)
 
-  real_imgs = tf.stack(real_images_list)
-  generated_imgs = tf.stack(generated_images_list)
 
-  # Compute the activations using the memory-efficient `map_fn`.
-  def compute_activations(elems):
-    return tf.map_fn(
-        fn=classifier_fn,
-        elems=elems,
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name='RunClassifier')
+def frechet_classifier_distance_streaming(real_images,
+                                          generated_images,
+                                          classifier_fn,
+                                          num_batches=1):
+  """A streaming version of frechet_classifier_distance.
 
-  real_a = compute_activations(real_imgs)
-  gen_a = compute_activations(generated_imgs)
+  Keeps an internal state that continuously tracks the score. This internal
+  state should be initialized with tf.initializers.local_variables().
 
-  # Ensure the activations have the right shapes.
-  real_a = tf.concat(tf.unstack(real_a), 0)
-  gen_a = tf.concat(tf.unstack(gen_a), 0)
+  Args:
+    real_images: Real images to use to compute Frechet Inception distance.
+    generated_images: Generated images to use to compute Frechet Inception
+      distance.
+    classifier_fn: A function that takes images and produces activations based
+      on a classifier.
+    num_batches: Number of batches to split images in to in order to efficiently
+      run them through the classifier network.
 
-  return frechet_classifier_distance_from_activations(real_a, gen_a)
+  Returns:
+    A tuple containing the classifier score and a tf.Operation. The tf.Operation
+    has the same value as the score, and has an additional side effect of
+    updating the internal state with the given tensors.
+  """
+  return _frechet_classifier_distance_helper(
+      real_images,
+      generated_images,
+      classifier_fn,
+      num_batches,
+      streaming=True)
 
 
 def mean_only_frechet_classifier_distance_from_activations(
@@ -865,6 +1007,72 @@ def diagonal_only_frechet_classifier_distance_from_activations(
   return dofid
 
 
+def _frechet_classifier_distance_from_activations_helper(
+    real_activations, generated_activations, streaming=False):
+  """A helper function evaluating the frechet classifier distance."""
+  real_activations = tf.convert_to_tensor(value=real_activations)
+  real_activations.shape.assert_has_rank(2)
+  generated_activations = tf.convert_to_tensor(value=generated_activations)
+  generated_activations.shape.assert_has_rank(2)
+
+  activations_dtype = real_activations.dtype
+  if activations_dtype != tf.float64:
+    real_activations = tf.cast(real_activations, tf.float64)
+    generated_activations = tf.cast(generated_activations, tf.float64)
+
+  # Compute mean and covariance matrices of activations.
+  if streaming:
+    m = eval_utils.streaming_mean_tensor_float64(
+        tf.reduce_mean(input_tensor=real_activations, axis=0))
+    m_w = eval_utils.streaming_mean_tensor_float64(
+        tf.reduce_mean(input_tensor=generated_activations, axis=0))
+    sigma = eval_utils.streaming_covariance(real_activations)
+    sigma_w = eval_utils.streaming_covariance(generated_activations)
+  else:
+    m = (tf.reduce_mean(input_tensor=real_activations, axis=0),)
+    m_w = (tf.reduce_mean(input_tensor=generated_activations, axis=0),)
+    # Calculate the unbiased covariance matrix of real_activations.
+    num_examples_real = tf.cast(tf.shape(input=real_activations)[0], tf.float64)
+    sigma = (num_examples_real / (num_examples_real - 1) *
+             tfp.stats.covariance(real_activations),)
+    # Calculate the unbiased covariance matrix of generated_activations.
+    num_examples_generated = tf.cast(
+        tf.shape(input=generated_activations)[0], tf.float64)
+    sigma_w = (num_examples_generated / (num_examples_generated - 1) *
+               tfp.stats.covariance(generated_activations),)
+  # m, m_w, sigma, sigma_w are tuples containing one or two elements: the first
+  # element will be used to calculate the score value and the second will be
+  # used to create the update_op. We apply the same operation on the two
+  # elements to make sure their value is consistent.
+
+  def _calculate_fid(m, m_w, sigma, sigma_w):
+    """Returns the Frechet distance given the sample mean and covariance."""
+    # Find the Tr(sqrt(sigma sigma_w)) component of FID
+    sqrt_trace_component = trace_sqrt_product(sigma, sigma_w)
+
+    # Compute the two components of FID.
+
+    # First the covariance component.
+    # Here, note that trace(A + B) = trace(A) + trace(B)
+    trace = tf.linalg.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
+
+    # Next the distance between means.
+    mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
+        m, m_w))  # Equivalent to L2 but more stable.
+    fid = trace + mean
+    if activations_dtype != tf.float64:
+      fid = tf.cast(fid, activations_dtype)
+    return fid
+
+  result = tuple(
+      _calculate_fid(m_val, m_w_val, sigma_val, sigma_w_val)
+      for m_val, m_w_val, sigma_val, sigma_w_val in zip(m, m_w, sigma, sigma_w))
+  if streaming:
+    return result
+  else:
+    return result[0]
+
+
 def frechet_classifier_distance_from_activations(real_activations,
                                                  generated_activations):
   """Classifier distance for evaluating a generative model.
@@ -902,57 +1110,41 @@ def frechet_classifier_distance_from_activations(real_activations,
   Returns:
    The Frechet Inception distance. A floating-point scalar of the same type
    as the output of the activations.
-
   """
-  real_activations = tf.convert_to_tensor(value=real_activations)
-  real_activations.shape.assert_has_rank(2)
-  generated_activations = tf.convert_to_tensor(value=generated_activations)
-  generated_activations.shape.assert_has_rank(2)
+  return _frechet_classifier_distance_from_activations_helper(
+      real_activations, generated_activations, streaming=False)
 
-  activations_dtype = real_activations.dtype
-  if activations_dtype != tf.float64:
-    real_activations = tf.cast(real_activations, tf.float64)
-    generated_activations = tf.cast(generated_activations, tf.float64)
 
-  # Compute mean and covariance matrices of activations.
-  m = tf.reduce_mean(input_tensor=real_activations, axis=0)
-  m_w = tf.reduce_mean(input_tensor=generated_activations, axis=0)
-  num_examples_real = tf.cast(tf.shape(input=real_activations)[0], tf.float64)
-  num_examples_generated = tf.cast(
-      tf.shape(input=generated_activations)[0], tf.float64)
+def frechet_classifier_distance_from_activations_streaming(
+    real_activations, generated_activations):
+  """A streaming version of frechet_classifier_distance_from_activations.
 
-  # sigma = (1 / (n - 1)) * (X - mu) (X - mu)^T
-  real_centered = real_activations - m
-  sigma = tf.matmul(
-      real_centered, real_centered, transpose_a=True) / (
-          num_examples_real - 1)
+  Keeps an internal state that continuously tracks the score. This internal
+  state should be initialized with tf.initializers.local_variables().
 
-  gen_centered = generated_activations - m_w
-  sigma_w = tf.matmul(
-      gen_centered, gen_centered, transpose_a=True) / (
-          num_examples_generated - 1)
+  Args:
+    real_activations: 2D Tensor containing activations of real data. Shape is
+      [batch_size, activation_size].
+    generated_activations: 2D Tensor containing activations of generated data.
+      Shape is [batch_size, activation_size].
 
-  # Find the Tr(sqrt(sigma sigma_w)) component of FID
-  sqrt_trace_component = trace_sqrt_product(sigma, sigma_w)
-
-  # Compute the two components of FID.
-
-  # First the covariance component.
-  # Here, note that trace(A + B) = trace(A) + trace(B)
-  trace = tf.linalg.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
-
-  # Next the distance between means.
-  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
-      m, m_w))  # Equivalent to L2 but more stable.
-  fid = trace + mean
-  if activations_dtype != tf.float64:
-    fid = tf.cast(fid, activations_dtype)
-
-  return fid
+  Returns:
+   A tuple containing the classifier score and a tf.Operation. The tf.Operation
+   has the same value as the score, and has an additional side effect of
+   updating the internal state with the given tensors.
+  """
+  return _frechet_classifier_distance_from_activations_helper(
+      real_activations, generated_activations, streaming=True)
 
 
 frechet_inception_distance = functools.partial(
     frechet_classifier_distance,
+    classifier_fn=functools.partial(
+        run_inception, output_tensor=INCEPTION_FINAL_POOL))
+
+
+frechet_inception_distance_streaming = functools.partial(
+    frechet_classifier_distance_streaming,
     classifier_fn=functools.partial(
         run_inception, output_tensor=INCEPTION_FINAL_POOL))
 

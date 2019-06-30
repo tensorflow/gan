@@ -594,6 +594,46 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
 
     self.assertAllClose(expected_fid, actual_fid, 0.0001)
 
+  def test_streaming_frechet_classifier_distance_consistency(self):
+    """Test the value of frechet_classifier_distance_streaming."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
+    np.random.seed(0)
+
+    num_streaming_calls = 5
+    # Make num_examples > num_features to ensure scipy's sqrtm function
+    # doesn't return a complex matrix.
+    test_pool_real_a = np.float32(
+        np.random.randn(num_streaming_calls * 512, 256))
+    test_pool_gen_a = np.float32(
+        np.random.randn(num_streaming_calls * 512, 256))
+
+    real_placeholder = tf.compat.v1.placeholder(
+        dtype=tf.float32, shape=(512, 256))
+    gen_placeholder = tf.compat.v1.placeholder(
+        dtype=tf.float32, shape=(512, 256))
+    fid_value, fid_update_op = _run_with_mock(
+        tfgan.eval.frechet_classifier_distance_streaming,
+        real_placeholder,
+        gen_placeholder,
+        classifier_fn=lambda x: x)
+
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.initializers.local_variables())
+      for i in range(num_streaming_calls):
+        fid_op_value = sess.run(
+            fid_update_op, {
+                real_placeholder: test_pool_real_a[(512 * i):(512 * (i + 1))],
+                gen_placeholder: test_pool_gen_a[(512 * i):(512 * (i + 1))]
+            })
+        actual_fid = sess.run(fid_value)
+        self.assertAllClose(fid_op_value, actual_fid)
+
+    expected_fid = _expected_fid(test_pool_real_a, test_pool_gen_a)
+
+    self.assertAllClose(expected_fid, actual_fid, 0.0001)
+
   def test_frechet_classifier_distance_covariance(self):
     """Test that `frechet_classifier_distance` takes covariance into account."""
     np.random.seed(0)
@@ -683,6 +723,34 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
 
     for actual, expected in actual_expected_l:
       self.assertAllClose(expected, actual, 0.001)
+
+
+class ClassifierScoreTest(tf.test.TestCase):
+
+  def test_streaming_classifier_score_from_logits_consistency(self):
+    """Tests consistency of classifier_score_from_logits[_streaming]."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
+    np.random.seed(0)
+    num_batches = 100
+    test_data = np.random.randn(num_batches, 512, 256).astype(np.float32)
+
+    test_data_large_batch = tf.reshape(test_data, (num_batches * 512, 256))
+    large_batch_score = tfgan.eval.classifier_score_from_logits(
+        test_data_large_batch)
+
+    placeholder = tf.compat.v1.placeholder(tf.float32, shape=(512, 256))
+    streaming_score_value, streaming_score_update_op = (
+        tfgan.eval.classifier_score_from_logits_streaming(placeholder))
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.initializers.local_variables())
+      for i in range(num_batches):
+        update_op_value = sess.run(streaming_score_update_op,
+                                   {placeholder: test_data[i]})
+        score_value = sess.run(streaming_score_value)
+        self.assertAllClose(update_op_value, score_value)
+      self.assertAllClose(large_batch_score, score_value, 1e-15)
 
 
 class UtilsTest(tf.test.TestCase, parameterized.TestCase):
