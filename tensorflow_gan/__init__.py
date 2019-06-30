@@ -67,7 +67,46 @@ def _ensure_tf_install():  # pylint: disable=g-statement-before-imports
             present=tf.__version__))
 
 
+# Ensure TensorFlow Probability is importable and its version is sufficiently
+# recent. This needs to happen before anything else, since the imports below
+# will try to import tensorflow_probability, too.
+def _ensure_tfp_install():  # pylint: disable=g-statement-before-imports
+  """Attempt to import tensorflow, and ensure its version is sufficient.
+
+  Raises:
+    ImportError: if either tensorflow_probability is not importable or its
+    version is inadequate.
+  """
+  try:
+    import tensorflow_probability as tfp
+  except ImportError:
+    # Print more informative error message, then reraise.
+    print("\n\nFailed to import TensorFlow Probability. "
+          "To use TF GAN, please install the most recent version of "
+          "TensorFlow Probability, by following instructions at "
+          "https://www.tensorflow.org/probability/install.\n\n")
+    raise
+
+  import distutils.version
+
+  #
+  # Update this whenever we need to depend on a newer TensorFlow Probability
+  # release.
+  #
+  required_tensorflow_probability_version = "0.7"
+
+  if (distutils.version.LooseVersion(tfp.__version__) <
+      distutils.version.LooseVersion(required_tensorflow_probability_version)):
+    raise ImportError(
+        "This version of TF GAN requires TensorFlow Probability "
+        "version >= {required}; Detected an installation of version {present}. "
+        "Please upgrade TensorFlow to proceed.".format(
+            required=required_tensorflow_probability_version,
+            present=tfp.__version__))
+
+
 _ensure_tf_install()
+_ensure_tfp_install()
 
 from tensorflow_gan.python import *  # pylint: disable=wildcard-import
 
@@ -75,4 +114,5 @@ from tensorflow_gan.python import *  # pylint: disable=wildcard-import
 import sys as _sys  # pylint:disable=g-bad-import-order
 delattr(_sys.modules[__name__], "python")
 delattr(_sys.modules[__name__], "_ensure_tf_install")
+delattr(_sys.modules[__name__], "_ensure_tfp_install")
 delattr(_sys.modules[__name__], "_sys")
