@@ -34,9 +34,14 @@ from setuptools.command.install import install as InstallCommandBase
 from setuptools.command.test import test as TestCommandBase
 from setuptools.dist import Distribution
 
-from tensorflow_gan import __version__  # pylint: disable=g-import-not-at-top
 
 project_name = 'tensorflow-gan'
+
+# Get version from version module.
+with open('tensorflow_gan/python/version.py') as fp:
+  globals_dict = {}
+  exec(fp.read(), globals_dict)  # pylint: disable=exec-used
+__version__ = globals_dict['__version__']
 version = __version__
 
 
