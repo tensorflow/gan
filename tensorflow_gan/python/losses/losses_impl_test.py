@@ -736,6 +736,27 @@ class CombineAdversarialLossTest(tf.test.TestCase):
     else:
       self._test_no_weight_skips_adversarial_loss_helper(False)
 
+  def _test_incompatible_shapes_helper(self, main_shape, adversarial_shape):
+    main_loss = tf.ones(shape=main_shape)
+    adversarial_loss = tf.ones(shape=adversarial_shape)
+
+    combined_loss = tfgan.losses.wargs.combine_adversarial_loss(
+        main_loss,
+        adversarial_loss,
+        weight_factor=1.0,
+        gradient_summaries=False)
+
+    self.assertEqual([main_shape[0]], combined_loss.shape.as_list())
+
+  def test_valid_incompatible_shapes(self):
+    self._test_incompatible_shapes_helper(
+        main_shape=[5, 4, 3, 2], adversarial_shape=[5, 3, 2])
+
+  def test_invalid_incompatible_shapes(self):
+    with self.assertRaises(ValueError):
+      self._test_incompatible_shapes_helper(
+          main_shape=[5, 4, 3, 2], adversarial_shape=[4, 3, 2])
+
   def test_stable_global_norm_avoids_overflow(self):
     tensors = [tf.ones([4]), tf.ones([4, 4]) * 1e19, None]
     gnorm_is_inf = tf.math.is_inf(tf.linalg.global_norm(tensors))

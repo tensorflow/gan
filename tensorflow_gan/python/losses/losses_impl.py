@@ -37,7 +37,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import tensorflow as tf
 from tensorflow_gan.python import contrib_utils as contrib
 
@@ -964,9 +963,7 @@ def _used_weight(weights_list):
       return contrib.get_static_value(tf.convert_to_tensor(value=weight))
 
 
-def _validate_args(losses_list, weight_factor, gradient_ratio):
-  for loss in losses_list:
-    loss.shape.assert_is_compatible_with([])
+def _validate_args(weight_factor, gradient_ratio):
   if weight_factor is None and gradient_ratio is None:
     raise ValueError(
         '`weight_factor` and `gradient_ratio` cannot both be `None.`')
@@ -997,8 +994,16 @@ def combine_adversarial_loss(main_loss,
   losses.
 
   Args:
-    main_loss: A floating scalar Tensor indicating the main loss.
-    adversarial_loss: A floating scalar Tensor indication the adversarial loss.
+    main_loss: A float Tensor of any shape, indicating the main loss. The size
+      of the first dimension must be the same as the first dimension of
+      adversarial_loss. If main_loss and adversarial_loss are not compatible
+      shapes, both will be mean-reduced to just their first dimension (assumed
+      to be the batch dimension).
+    adversarial_loss: A float Tensor of any shape, indicating the adversarial
+      loss. The size of the first dimension must be the same as the first
+      dimension of main_loss. If  main_loss and adversarial_loss are not
+      compatible shapes, both will be mean-reduced to just their first dimension
+      (assumed to be the batch dimension).
     weight_factor: If not `None`, the coefficient by which to multiply the
       adversarial loss. Exactly one of this and `gradient_ratio` must be
       non-None.
@@ -1010,24 +1015,45 @@ def combine_adversarial_loss(main_loss,
       coefficient denominator, to avoid division-by-zero.
     variables: List of variables to calculate gradients with respect to. If not
       present, defaults to all trainable variables.
-    scalar_summaries: Create scalar summaries of losses.
+    scalar_summaries: Create scalar summaries of losses. If main_loss and
+      adversarial_loss are not scalars, they will be mean-reduced to scalars for
+      summary computation.
     gradient_summaries: Create gradient summaries of losses.
     scope: Optional name scope.
 
   Returns:
-    A floating scalar Tensor indicating the desired combined loss.
+    A float Tensor indicating the desired combined loss. If main_loss and
+    adversarial_loss are both scalars then this will also be a scalar, otherwise
+    it will be of shape [main_loss.shape[0]].
 
   Raises:
     ValueError: Malformed input.
     RuntimeError: If `tf.gradients` require computing, and TensorFlow is
       executing eagerly.
   """
-  _validate_args([main_loss, adversarial_loss], weight_factor, gradient_ratio)
+  _validate_args(weight_factor, gradient_ratio)
   if variables is None:
     variables = contrib.get_trainable_variables()
 
   with tf.compat.v1.name_scope(
       scope, 'adversarial_loss', values=[main_loss, adversarial_loss]):
+    # If losses are not the same shape, reduce them to both be shape [batch,].
+    if not main_loss.shape.is_compatible_with(adversarial_loss.shape):
+      if main_loss.shape[0] != adversarial_loss.shape[0]:
+        raise ValueError(
+            'main_loss and adversarial_loss must have the same sized first '
+            'dimension. Found %d and %d.' %
+            (main_loss.shape[0], adversarial_loss.shape[0]))
+      tf.compat.v1.logging.warning(
+          'Applying mean reduction per-batch-element to main and adversarial '
+          'losses to make shapes compatible. If this is undesirable, ensure '
+          'that the shapes are compatible before passing them into '
+          'combine_adversarial_loss.')
+      main_loss = tf.math.reduce_mean(main_loss,
+                                      list(range(1, main_loss.shape.rank)))
+      adversarial_loss = tf.math.reduce_mean(
+          adversarial_loss, list(range(1, adversarial_loss.shape.rank)))
+
     # Compute gradients if we will need them.
     if gradient_summaries or gradient_ratio is not None:
       # `tf.gradients` doesn't work in eager.
@@ -1040,8 +1066,9 @@ def combine_adversarial_loss(main_loss,
 
     # Add summaries, if applicable.
     if scalar_summaries:
-      tf.compat.v1.summary.scalar('main_loss', main_loss)
-      tf.compat.v1.summary.scalar('adversarial_loss', adversarial_loss)
+      tf.compat.v1.summary.scalar('main_loss', tf.math.reduce_mean(main_loss))
+      tf.compat.v1.summary.scalar('adversarial_loss',
+                                  tf.math.reduce_mean(adversarial_loss))
     if gradient_summaries:
       tf.compat.v1.summary.scalar('main_loss_gradients', main_loss_grad_mag)
       tf.compat.v1.summary.scalar('adversarial_loss_gradients',
