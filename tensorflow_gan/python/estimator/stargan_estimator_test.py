@@ -37,8 +37,7 @@ from tensorflow_gan.python.estimator.stargan_estimator import get_gan_model
 def dummy_generator_fn(input_data, input_data_domain_label, mode):
   del input_data_domain_label, mode
 
-  return tf.compat.v1.get_variable(
-      'dummy_g', initializer=0.5, use_resource=False) * input_data
+  return tf.compat.v1.get_variable('dummy_g', initializer=0.5) * input_data
 
 
 def dummy_discriminator_fn(input_data, num_domains, mode):
@@ -110,11 +109,9 @@ def get_dummy_gan_model():
   """Similar to get_gan_model()."""
   # TODO(joelshor): Find a better way of creating a variable scope.
   with tf.compat.v1.variable_scope('generator') as gen_scope:
-    gen_var = tf.compat.v1.get_variable(
-        'dummy_var', initializer=0.0, use_resource=False)
+    gen_var = tf.compat.v1.get_variable('dummy_var', initializer=0.0)
   with tf.compat.v1.variable_scope('discriminator') as dis_scope:
-    dis_var = tf.compat.v1.get_variable(
-        'dummy_var', initializer=0.0, use_resource=False)
+    dis_var = tf.compat.v1.get_variable('dummy_var', initializer=0.0)
   return tfgan.StarGANModel(
       input_data=tf.ones([1, 2, 2, 3]),
       input_data_domain_label=tf.ones([1, 2]),

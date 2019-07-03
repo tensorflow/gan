@@ -81,7 +81,7 @@ def _one_hot_to_embedding(one_hot, embedding_size):
   num_tokens = one_hot.shape[1]
   label_id = tf.argmax(input=one_hot, axis=1)
   embedding = tf.compat.v1.get_variable(
-      'embedding', [num_tokens, embedding_size], use_resource=False)
+      'embedding', [num_tokens, embedding_size])
   return tf.nn.embedding_lookup(
       params=embedding, ids=label_id, name='token_to_embedding')
 

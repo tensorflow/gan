@@ -106,11 +106,9 @@ class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):
 def get_dummy_gan_model():
   # TODO(joelshor): Find a better way of creating a variable scope.
   with tf.compat.v1.variable_scope('generator') as gen_scope:
-    gen_var = tf.compat.v1.get_variable(
-        'dummy_var', initializer=0.0, use_resource=False)
+    gen_var = tf.compat.v1.get_variable('dummy_var', initializer=0.0)
   with tf.compat.v1.variable_scope('discriminator') as dis_scope:
-    dis_var = tf.compat.v1.get_variable(
-        'dummy_var', initializer=0.0, use_resource=False)
+    dis_var = tf.compat.v1.get_variable('dummy_var', initializer=0.0)
   return tfgan.GANModel(
       generator_inputs=None,
       generated_data=tf.ones([3, 4]),
@@ -381,8 +379,7 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
       tf.compat.v1.get_variable(
           name=self.new_variable_name,
           initializer=self.new_variable_value,
-          trainable=True,
-          use_resource=False)
+          trainable=True)
       return generator_fn(noise_dict, mode)
 
     def train_input_fn():

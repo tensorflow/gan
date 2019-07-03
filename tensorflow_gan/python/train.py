@@ -1046,8 +1046,7 @@ def gan_train_ops(
         dtype=global_step.dtype.base_dtype,
         initializer=tf.compat.v1.initializers.zeros(),
         trainable=False,
-        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES],
-        use_resource=False)
+        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES])
     gen_update_ops += [generator_global_step.assign(global_step)]
     sync_hooks.append(generator_optimizer.make_session_run_hook(is_chief))
   with tf.compat.v1.name_scope('generator_train'):
@@ -1069,8 +1068,7 @@ def gan_train_ops(
         dtype=global_step.dtype.base_dtype,
         initializer=tf.compat.v1.initializers.zeros(),
         trainable=False,
-        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES],
-        use_resource=False)
+        collections=[tf.compat.v1.GraphKeys.GLOBAL_VARIABLES])
     dis_update_ops += [discriminator_global_step.assign(global_step)]
     sync_hooks.append(discriminator_optimizer.make_session_run_hook(is_chief))
   with tf.compat.v1.name_scope('discriminator_train'):

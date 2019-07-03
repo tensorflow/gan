@@ -497,8 +497,7 @@ class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
 
   def _discriminator_fn(self, inputs, _):
     tf.compat.v1.add_to_collection('fake_update_ops', tf.constant(1.0))
-    return tf.compat.v1.get_variable(
-        'dummy_d', initializer=2.0, use_resource=False) * inputs
+    return tf.compat.v1.get_variable('dummy_d', initializer=2.0) * inputs
 
   def test_all_correct(self):
     if tf.executing_eagerly():

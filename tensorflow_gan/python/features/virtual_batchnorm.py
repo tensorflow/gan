@@ -229,16 +229,14 @@ class VBN(object):
             shape=(params_shape,),
             initializer=beta_initializer,
             regularizer=beta_regularizer,
-            trainable=trainable,
-            use_resource=False)
+            trainable=trainable)
       if scale:
         self._gamma = tf.compat.v1.get_variable(
             name='gamma',
             shape=(params_shape,),
             initializer=gamma_initializer,
             regularizer=gamma_regularizer,
-            trainable=trainable,
-            use_resource=False)
+            trainable=trainable)
 
   def _virtual_statistics(self, inputs, reduction_axes):
     """Compute the statistics needed for virtual batch normalization."""

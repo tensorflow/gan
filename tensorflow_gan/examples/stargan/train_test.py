@@ -30,8 +30,7 @@ mock = tf.compat.v1.test.mock
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable(
-      'dummy_g', initializer=2.0, use_resource=False)
+  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(inputs, num_domains):

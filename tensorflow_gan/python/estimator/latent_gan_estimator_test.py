@@ -59,8 +59,7 @@ class TrainInputEstimatorTest(tf.test.TestCase):
       self.assertSequenceEqual(net.shape, input_z_shape)
       gen_dummy_var = tf.compat.v1.get_variable(
           name='generator_dummy_variable',
-          initializer=tf.ones(input_z_shape),
-          use_resource=False)
+          initializer=tf.ones(input_z_shape))
       return net * gen_dummy_var
 
     def _discriminator(net, condition, mode):

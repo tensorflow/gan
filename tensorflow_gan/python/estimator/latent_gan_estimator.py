@@ -97,8 +97,7 @@ def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
     z = tf.compat.v1.get_variable(
         name=INPUT_NAME,
         initializer=tf.random.truncated_normal(z_shape),
-        constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip),
-        use_resource=False)
+        constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip))
 
     generator = functools.partial(generator_fn, mode=mode)
     discriminator = functools.partial(discriminator_fn, mode=mode)
