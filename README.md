@@ -66,7 +66,6 @@ and we demonstrate in the well-tested [examples directory](https://github.com/te
 
 ## Maintainers
 
-* Paolo Galeone, nessuno@nerdz.eu, [github](https://github.com/galeone)
 * (Documentation) David Westbrook, westbrook@google.com
 * Joel Shor, joelshor@google.com, [github](https://github.com/joel-shor)
 * Aaron Sarna, sarna@google.com, [github](https://githun.com/aaronsarna)
