@@ -1,0 +1,7 @@
+{
+    "name": "Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks",
+    "authors": "Alec Radford, Luke Metz, Soumith Chintala",
+    "reference": "https://arxiv.org/abs/1511.06434",
+    "year": 2015,
+    "type": "Image generation"
+}
