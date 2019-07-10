@@ -76,7 +76,7 @@ class LayersTest(tf.test.TestCase):
 
   def test_upscale_invalid_scale_throws_exception(self):
     with self.assertRaises(ValueError):
-      self.assertRaises(layers.upscale(tf.constant([]), -1))
+      layers.upscale(tf.constant([]), -1)
 
   def test_upscale_4d_images_returns_upscaled_images(self):
     x_np = np.array([[[[1, 2, 3]]], [[[4, 5, 6]]]], dtype=np.float32)
@@ -123,8 +123,8 @@ class LayersTest(tf.test.TestCase):
     self.assertAlmostEqual(
         layers.he_initializer_scale([3, 4, 5, 6], 0.0), 0.1825742, 5)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=True)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=True)
+  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
   def test_custom_layer_impl_with_weight_scaling(
       self, mock_zeros_initializer, mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
@@ -145,8 +145,8 @@ class LayersTest(tf.test.TestCase):
 
     self.assertAlmostEqual(output_np, 182.6, 3)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=True)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=True)
+  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
   def test_custom_layer_impl_no_weight_scaling(self, mock_zeros_initializer,
                                                mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
@@ -197,8 +197,8 @@ class LayersTest(tf.test.TestCase):
         he_initializer_slope=1.0,
         use_weight_scaling=True)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=True)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=True)
+  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
   def test_custom_conv2d_scalar_kernel_size(self, mock_zeros_initializer,
                                             mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
@@ -258,8 +258,8 @@ class LayersTest(tf.test.TestCase):
         he_initializer_slope=1.0,
         use_weight_scaling=True)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=True)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=True)
+  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
   def test_custom_dense_output_is_correct(self, mock_zeros_initializer,
                                           mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
