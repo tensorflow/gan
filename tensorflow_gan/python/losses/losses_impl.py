@@ -211,7 +211,7 @@ def wasserstein_hinge_discriminator_loss(
     A loss Tensor. The shape depends on `reduction`.
   """
   with tf.compat.v1.name_scope(
-      scope, 'discriminator_wasserstein_loss',
+      scope, 'discriminator_wasserstein_hinge_loss',
       (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
        generated_weights)) as scope:
     discriminator_real_outputs = _to_float(discriminator_real_outputs)
