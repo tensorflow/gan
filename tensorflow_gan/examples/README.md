@@ -12,15 +12,16 @@ outputs. **Be sure to follow the instructions for how to run the examples.**
 
 ## Steps to run an example
 
-1. Add the examples directory to your PYTHONPATH environment variable with ex
-`export PYTHONPATH=${TFGAN_REPO}/tensorflow_gan/examples:${PYTHONPATH}`. Be sure
-to use the location where you cloned this repository.
-1. Add this repository to your PYTHONPATH environment variable so that it can
-be used for `tensorflow_gan` instead of any older libraries you might have
-installed. Ex: `export PYTHONPATH=${TFGAN_REPO}:${PYTHONPATH}`.
-1. Install the necessary dependencies, which depend on which example you want to
-run. At a minimum, you will need `tensorflow` and `tensorflow_datasets`.
-1. Follow the instructions in the particular example directory's `README.md`.
+1.  Add the examples directory to your PYTHONPATH environment variable with ex
+    `export PYTHONPATH=${TFGAN_REPO}/tensorflow_gan/examples:${PYTHONPATH}`. Be
+    sure to use the location where you cloned this repository.
+1.  Add this repository to your PYTHONPATH environment variable so that it can
+    be used for `tensorflow_gan` instead of any older libraries you might have
+    installed. Ex: `export PYTHONPATH=${TFGAN_REPO}:${PYTHONPATH}`.
+1.  Install the necessary dependencies, which depend on which example you want
+    to run. At a minimum, you will need `tensorflow`, `tensorflow_probability`,
+    and `tensorflow_datasets`.
+1.  Follow the instructions in the particular example directory's `README.md`.
 
 ## Debugging
 
@@ -29,12 +30,12 @@ run. At a minimum, you will need `tensorflow` and `tensorflow_datasets`.
 
 ## Steps to add an example
 
-1. Email nessuno@nerdz.eu and joelshor@google.com to propose the idea.
-1. Add a `README.md` to your new subdirectory. Be sure to include a
-"How to run" section.
-1. Add a subdirectory with output ex "images" or "audio".
-1. Add a line and high-level summary to this file.
-1. Submit it and profit.
+1.  Email joelshor@google.com to propose the idea.
+1.  Add a `README.md` to your new subdirectory. Be sure to include a "How to
+    run" section.
+1.  Add a subdirectory with output ex "images" or "audio".
+1.  Add a line and high-level summary to this file.
+1.  Submit it and profit.
 
 ## Table of contents
 
@@ -104,14 +105,18 @@ one set of images into another set in an unpaired way.
 
 Author: Wesley Qian
 
-We have a [StarGAN](https://arxiv.org/abs/1711.09020) implementation for
-multi-domain image translation, as well as a `tfgan.estimator.StarGANEstimator` implementation. We run StarGAN on the [CelebA dataset](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html).
+A [StarGAN](https://arxiv.org/abs/1711.09020) implementation for multi-domain
+image translation. We run StarGAN on the
+[CelebA dataset](http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html).
 
 ## StarGAN Estimator
 
 <a id='stargan_estimator'></a>
 
 Author: Wesley Qian
+
+An Estimator implementation of the example above using
+`tfgan.estimator.StarGANEstimator`.
 
 ## Progressive GAN
 <a id='progressive_gan'></a>
@@ -122,3 +127,12 @@ An implementation of the technique described in
 [Progressive Growing of GANs for Improved Quality, Stability, and Variation](https://arxiv.org/abs/1710.10196).
 We run the network on the CIFAR10 dataset.
 
+## Self-Attention GAN
+
+<a id='self_attention_gan'></a>
+
+Author: Yoel Drori, Augustus Odena, Joel Shor
+
+An implementation of
+[Self-Attention Generative Adversarial Networks](https://arxiv.org/abs/1805.08318).
+The generator produces downsampled ImageNet images.
