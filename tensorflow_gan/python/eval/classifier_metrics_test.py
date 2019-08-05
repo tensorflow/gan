@@ -35,6 +35,7 @@ import tensorflow_gan as tfgan
 from tensorflow_gan.python.eval.classifier_metrics import get_graph_def_from_url_tarball
 
 # Internal functions and constants to test.
+from tensorflow_gan.python.eval.classifier_metrics import _classifier_score_from_logits_helper  # pylint: disable=g-bad-import-order
 from tensorflow_gan.python.eval.classifier_metrics import INCEPTION_FINAL_POOL
 from tensorflow_gan.python.eval.classifier_metrics import INCEPTION_OUTPUT
 from tensorflow_gan.python.eval.classifier_metrics import kl_divergence
@@ -382,20 +383,20 @@ class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
     # Check that none of the model variables are trainable.
     self.assertListEqual([], tf.compat.v1.trainable_variables())
 
-  def test_inception_score_value(self):
-    """Test that `inception_score` gives the correct value."""
+  def test_classifier_score_from_logits_value(self):
+    """Test value of `_classifier_score_from_logits_helper`."""
     if tf.executing_eagerly():
       # `run_image_classifier` doesn't work in eager execution.
       return
 
     logits = np.array(
-        [np.array([1, 2] * 500 + [4]),
-         np.array([4, 5] * 500 + [6])])
+        [np.array([1., 2.] * 500 + [4.]),
+         np.array([4., 5.] * 500 + [6.])])
     unused_image = tf.zeros([2, 299, 299, 3])
-    incscore = _run_with_mock(tfgan.eval.inception_score, unused_image)
+    incscore = _classifier_score_from_logits_helper(logits)
 
     with self.cached_session(use_gpu=True) as sess:
-      incscore_np = sess.run(incscore, {'concat:0': logits})
+      incscore_np = sess.run(incscore)
 
     self.assertAllClose(_expected_inception_score(logits), incscore_np)
 
