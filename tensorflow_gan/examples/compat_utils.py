@@ -50,6 +50,17 @@ def resize_with_crop_or_pad(image, target_height, target_width):
         image, target_height, target_width)
 
 
+def crop_and_resize(*args, **kwargs):
+  """`tf.image.crop_and_resize` that works for TF 1.x and 2.x."""
+  try:
+    return tf.image.crop_and_resize(*args, **kwargs)
+  except (TypeError, AttributeError):
+    if 'box_ind' in kwargs:
+      kwargs['box_indices'] = kwargs['box_ind']
+      del kwargs['box_ind']
+    return tf.image.crop_and_resize(*args, **kwargs)
+
+
 def nn_avg_pool2d(*args, **kwargs):
   """`tf.nn.avg_pool2d` that works for TF 1.x and 2.x."""
   try:

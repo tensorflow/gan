@@ -40,7 +40,8 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
     conv: The normalized tensor.
 
   """
-  with tf.variable_scope(name, custom_getter=sn_gettr(training=training)):
+  with tf.compat.v1.variable_scope(
+      name, custom_getter=sn_gettr(training=training)):
     return tf.layers.conv2d(
         input_,
         filters=output_dim,
@@ -66,7 +67,8 @@ def snlinear(x, output_size, bias_start=0.0, training=True, name='snlinear'):
   Returns:
     The normalized output tensor of the linear layer.
   """
-  with tf.variable_scope(name, custom_getter=sn_gettr(training=training)):
+  with tf.compat.v1.variable_scope(
+      name, custom_getter=sn_gettr(training=training)):
     return tf.layers.dense(
         x,
         output_size,
@@ -89,7 +91,7 @@ def sn_embedding(x, number_classes, embedding_size, training=True,
   Returns:
     The output tensor (batch size, embedding_size).
   """
-  with tf.variable_scope(name):
+  with tf.compat.v1.variable_scope(name):
     embedding_map = tf.compat.v1.get_variable(
         name='embedding_map',
         shape=[number_classes, embedding_size],
@@ -122,7 +124,7 @@ class ConditionalBatchNorm(object):
     Returns:
       Initialized object.
     """
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
       self.name = name
       self.num_categories = num_categories
 
@@ -141,7 +143,7 @@ class ConditionalBatchNorm(object):
     axis = [0, 1, 2]
     shape = tf.TensorShape([self.num_categories]).concatenate(params_shape)
 
-    with tf.variable_scope(self.name):
+    with tf.compat.v1.variable_scope(self.name):
       self.gamma = tf.compat.v1.get_variable(
           'gamma', shape, initializer=tf.compat.v1.initializers.ones())
       self.beta = tf.compat.v1.get_variable(
@@ -174,7 +176,7 @@ class BatchNorm(object):
     Returns:
       Initialized object.
     """
-    with tf.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
       self.name = name
 
   def __call__(self, inputs):
@@ -190,7 +192,7 @@ class BatchNorm(object):
     params_shape = inputs_shape[-1]
     axis = [0, 1, 2]
     shape = tf.TensorShape([params_shape])
-    with tf.variable_scope(self.name):
+    with tf.compat.v1.variable_scope(self.name):
       self.gamma = tf.compat.v1.get_variable(
           'gamma', shape, initializer=tf.compat.v1.initializers.ones())
       self.beta = tf.compat.v1.get_variable(
@@ -219,7 +221,8 @@ def sn_conv1x1(x, output_dim, training=True, name='sn_conv1x1'):
   Returns:
     A new volume with the same batch, height, and width as the input.
   """
-  with tf.variable_scope(name, custom_getter=sn_gettr(training=training)):
+  with tf.compat.v1.variable_scope(
+      name, custom_getter=sn_gettr(training=training)):
     w = tf.compat.v1.get_variable(
         'weights', [1, 1, x.get_shape()[-1], output_dim],
         initializer=tf.contrib.layers.xavier_initializer())
@@ -240,7 +243,7 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
   Returns:
     A new volume with self-attention having been applied.
   """
-  with tf.variable_scope(name):
+  with tf.compat.v1.variable_scope(name):
     _, h, w, num_channels = x.shape.as_list()
     location_num = h * w
     downsampled_num = location_num // 4

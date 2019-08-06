@@ -30,7 +30,7 @@ def make_z_normal(num_batches, batch_size, z_dim):
     zs:  noise tensors.
   """
   shape = [num_batches, batch_size, z_dim]
-  z = tf.random_normal(shape, name='z0', dtype=tf.float32)
+  z = tf.random.normal(shape, name='z0', dtype=tf.float32)
   return z
 
 

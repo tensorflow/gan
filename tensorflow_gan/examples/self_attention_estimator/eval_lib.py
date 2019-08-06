@@ -71,7 +71,7 @@ def get_activations_from_dataset(image_ds, num_batches, get_logits=False):
     1 or 2 Tensors of Inception activations.
   """
   # TODO(joelshor): Add dataset format checks.
-  iterator = tf.data.make_one_shot_iterator(image_ds)
+  iterator = tf.compat.v1.data.make_one_shot_iterator(image_ds)
 
   get_images_fn = iterator.get_next
   return get_activations(get_images_fn, num_batches, get_logits)

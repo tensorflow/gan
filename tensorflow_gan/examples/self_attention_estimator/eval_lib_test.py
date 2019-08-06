@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import numpy as np
 import tensorflow as tf
 
 from tensorflow_gan.examples.self_attention_estimator import eval_lib
@@ -30,7 +31,10 @@ class EvalLibTest(tf.test.TestCase):
 
   @mock.patch.object(eval_lib.tfgan.eval, 'sample_and_run_inception',
                      autospec=True)
-  def test_get_real_activations_syntax(self, mock_asri):
+  @mock.patch.object(eval_lib.data_provider, 'provide_dataset', autospec=True)
+  def test_get_real_activations_syntax(self, mock_dataset, mock_asri):
+    mock_dataset.return_value = tf.data.Dataset.from_tensors(
+        np.zeros([128, 128, 3])).map(lambda x: (x, 1))
     mock_asri.return_value = tf.zeros([12, 2048])
     real_pools = eval_lib.get_real_activations(
         batch_size=4, num_batches=3)

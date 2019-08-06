@@ -35,7 +35,7 @@ class OpsTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     snconv_image = ops.snconv2d(image, 3, k_h=3, k_w=3, d_h=1, d_w=1)
     self.assertEqual([10, 32, 32, 3], snconv_image.shape.as_list())
 
@@ -48,7 +48,7 @@ class OpsTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    vector = tf.random_normal([10, 32])
+    vector = tf.random.normal([10, 32])
     snconv_vector = ops.snlinear(vector, 32)
     self.assertEqual([10, 32], snconv_vector.shape.as_list())
 
@@ -72,7 +72,7 @@ class OpsTest(tf.test.TestCase):
     """
     c_bn = ops.ConditionalBatchNorm(num_categories=1000)
     label = tf.ones([10,], dtype=tf.int32)
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     bn_image = c_bn(image, label)
     self.assertEqual([10, 32, 32, 3], bn_image.shape.as_list())
 
@@ -82,7 +82,7 @@ class OpsTest(tf.test.TestCase):
     This is a minimal test to make sure that shapes are OK.
     """
     bn = ops.BatchNorm()
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     bn_image = bn(image)
     self.assertEqual([10, 32, 32, 3], bn_image.shape.as_list())
 
@@ -91,7 +91,7 @@ class OpsTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     big_image = ops.sn_conv1x1(image, 7, name='test_conv')
     self.assertEqual([10, 32, 32, 7], big_image.shape.as_list())
 
@@ -100,7 +100,7 @@ class OpsTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 8, 8, 64])
+    image = tf.random.normal([10, 8, 8, 64])
     big_image = ops.sn_non_local_block_sim(image, name='test_sa')
     self.assertEqual([10, 8, 8, 64], big_image.shape.as_list())
 

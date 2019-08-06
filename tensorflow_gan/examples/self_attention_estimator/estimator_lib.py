@@ -27,21 +27,19 @@ from tensorflow_gan.examples.self_attention_estimator import eval_lib
 import tensorflow_gan as tfgan  # tf
 
 
-def get_tpu_run_config_from_flags(save_checkpoints_steps, flags):
+def get_tpu_run_config_from_hparams(hparams):
   return tf.compat.v1.estimator.tpu.RunConfig(
-      model_dir=flags.model_dir,
-      master=flags.session_master,
-      save_checkpoints_steps=save_checkpoints_steps,
+      model_dir=hparams.model_dir,
+      save_checkpoints_steps=hparams.train_steps_per_eval,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
-          iterations_per_loop=flags.tpu_iterations_per_loop))
+          iterations_per_loop=hparams.tpu_iterations_per_loop))
 
 
-def get_run_config_from_flags(save_checkpoints_steps, flags):
-  """Return a RunConfig from based on flag values."""
+def get_run_config_from_hparams(hparams):
   mirrored_strategy = tf.distribute.MirroredStrategy()
   return tf.estimator.RunConfig(
-      model_dir=flags.model_dir,
-      save_checkpoints_steps=save_checkpoints_steps,
+      model_dir=hparams.model_dir,
+      save_checkpoints_steps=hparams.train_steps_per_eval,
       train_distribute=mirrored_strategy)
 
 

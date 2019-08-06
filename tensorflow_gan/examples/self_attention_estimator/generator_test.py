@@ -36,7 +36,7 @@ class GeneratorTest(tf.test.TestCase):
       return
     batch_size = 10
     num_classes = 1000
-    zs = tf.random_normal((batch_size, 128))
+    zs = tf.random.normal((batch_size, 128))
     gen_class_logits = tf.zeros((batch_size, num_classes))
     gen_class_ints = tf.multinomial(gen_class_logits, 1)
     gen_sparse_class = tf.squeeze(gen_class_ints)
@@ -50,24 +50,29 @@ class GeneratorTest(tf.test.TestCase):
 
   def test_usample_shapes(self):
     """Tests that upsampling has the desired effect on shape."""
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     big_image = generator.usample(image)
     self.assertEqual([10, 64, 64, 3], big_image.shape.as_list())
 
   def test_upsample_value(self):
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     big_image = generator.usample(image)
-    expected_image = tf.image.resize_nearest_neighbor(image, [32 * 2, 32 * 2])
+    expected_image = tf.compat.v1.image.resize_nearest_neighbor(
+        image, [32 * 2, 32 * 2])
     with self.cached_session() as sess:
       big_image_np, expected_image_np = sess.run([big_image, expected_image])
     self.assertAllEqual(big_image_np, expected_image_np)
 
   def test_usample_shapes_value_placeholder(self):
     """Tests usample with partially shaped inputs."""
+    if tf.executing_eagerly():
+      # tf.placeholder() is not compatible with eager execution.
+      return
     image = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
     big_image = generator.usample(image)
     self.assertEqual([None, 64, 64, 3], big_image.shape.as_list())
-    expected_image = tf.image.resize_nearest_neighbor(image, [32 * 2, 32 * 2])
+    expected_image = tf.compat.v1.image.resize_nearest_neighbor(
+        image, [32 * 2, 32 * 2])
     with self.cached_session() as sess:
       big_image_np, expected_image_np = sess.run(
           [big_image, expected_image],
@@ -79,7 +84,7 @@ class GeneratorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     label = tf.ones([10,], dtype=tf.int32)
     image_after_block = generator.block(image, label, 13, 1000, 'test_block')
     self.assertEqual([10, 64, 64, 13], image_after_block.shape.as_list())

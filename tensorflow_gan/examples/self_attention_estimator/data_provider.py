@@ -22,6 +22,8 @@ from __future__ import print_function
 import tensorflow as tf  # tf
 import tensorflow_datasets as tfds
 
+from tensorflow_gan.examples import compat_utils
+
 IMG_SIZE = 128
 
 
@@ -71,7 +73,7 @@ def provide_data(batch_size,
   """
   dataset = provide_dataset(batch_size * num_batches, shuffle_buffer_size,
                             split)
-  iterator = tf.data.make_one_shot_iterator(dataset)
+  iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
   images, labels = iterator.get_next()
   images = tf.reshape(
       images, shape=[num_batches, batch_size, IMG_SIZE, IMG_SIZE, 3])
@@ -110,13 +112,13 @@ def _preprocess_dataset_record_fn(image_size):
     normalized_x_min = box_x_min / (image_shape[1] - 1)
     normalized_y_max = box_y_max / (image_shape[0] - 1)
     normalized_x_max = box_x_max / (image_shape[1] - 1)
-    image = tf.image.crop_and_resize([image],
-                                     boxes=[[
-                                         normalized_y_min, normalized_x_min,
-                                         normalized_y_max, normalized_x_max
-                                     ]],
-                                     box_ind=[0],
-                                     crop_size=[image_size, image_size])
+    image = compat_utils.crop_and_resize([image],
+                                         boxes=[[
+                                             normalized_y_min, normalized_x_min,
+                                             normalized_y_max, normalized_x_max
+                                         ]],
+                                         box_ind=[0],
+                                         crop_size=[image_size, image_size])
     # crop_and_resize returns a tensor of type tf.float32.
     image = tf.squeeze(image, axis=0)
     image = image * (2. / 255) - 1.

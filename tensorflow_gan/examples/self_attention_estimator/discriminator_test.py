@@ -38,7 +38,7 @@ class DiscriminatorTest(tf.test.TestCase):
     gen_class_logits = tf.zeros((batch_size, num_classes))
     gen_class_ints = tf.multinomial(gen_class_logits, 1)
     gen_sparse_class = tf.squeeze(gen_class_ints)
-    images = tf.random_normal([10, 32, 32, 3])
+    images = tf.random.normal([10, 32, 32, 3])
     d_out, var_list = discriminator.discriminator(images, gen_sparse_class, 16,
                                                   1000)
     sess = tf.train.MonitoredTrainingSession()
@@ -49,7 +49,7 @@ class DiscriminatorTest(tf.test.TestCase):
 
   def test_dsample_shapes(self):
     """Tests that downsampling has the desired effect on shape."""
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     big_image = discriminator.dsample(image)
     self.assertEqual([10, 16, 16, 3], big_image.shape.as_list())
 
@@ -58,7 +58,7 @@ class DiscriminatorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     image_after_block = discriminator.block(image, 13, 'test_block')
     self.assertEqual([10, 16, 16, 13], image_after_block.shape.as_list())
 
@@ -67,7 +67,7 @@ class DiscriminatorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       #  `compute_spectral_norm` doesn't work when executing eagerly.
       return
-    image = tf.random_normal([10, 32, 32, 3])
+    image = tf.random.normal([10, 32, 32, 3])
     image_after_block = discriminator.optimized_block(image, 13, 'test_block')
     self.assertEqual([10, 16, 16, 13], image_after_block.shape.as_list())
 

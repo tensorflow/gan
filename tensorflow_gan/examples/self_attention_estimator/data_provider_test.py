@@ -25,6 +25,8 @@ import PIL
 import tensorflow as tf
 from tensorflow_gan.examples.self_attention_estimator import data_provider
 
+mock = tf.compat.v1.test.mock
+
 
 # Following two functions were copied from the image transformation routines in
 # https://github.com/openai/improved-gan/blob/master/imagenet/convert_imagenet_to_records.py
@@ -53,26 +55,16 @@ def _transform(image, npx=64, is_crop=True, resize_w=64):
   return np.array(cropped_image) / 127.5 - 1.
 
 
-class DatasetProviderTest(tf.test.TestCase):
-
-  def test_validation_deterministic(self):
-    # Note: This test accesses placer, which can be slow.
-    ds = data_provider.provide_dataset(
-        batch_size=2, shuffle_buffer_size=2, split='validation')
-    img = ds.make_one_shot_iterator().get_next()[0]
-    # Don't use cached session.
-    with tf.train.MonitoredSession() as sess:
-      img1_np = sess.run(img)
-    with tf.train.MonitoredSession() as sess:
-      img2_np = sess.run(img)
-    self.assertAllClose(img1_np, img2_np)
 
 
 class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_provide_data_shape(self):
+  @mock.patch.object(data_provider, '_load_imagenet_dataset', autospec=True)
+  def test_provide_data_shape(self, mock_ds):
     batch_size = 16
     num_batches = 3
+    mock_ds.return_value = tf.data.Dataset.from_tensors(
+        np.zeros([128, 128, 3])).map(lambda x: {'image': x, 'label': 1})
     batches = data_provider.provide_data(
         batch_size=batch_size,
         num_batches=num_batches,
