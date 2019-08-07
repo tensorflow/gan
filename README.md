@@ -42,7 +42,6 @@ Numerous projects inside Google. The following are some published papers that us
 * [Self-Attention Generative Adversarial Networks](https://arxiv.org/abs/1805.08318)
 * [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://arxiv.org/abs/1809.11096)
 * [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
-* [The GAN Landscape: Losses, Architectures, Regularization, and Normalization](https://arxiv.org/abs/1807.04720)
 * [GANSynth: Adversarial Neural Audio Synthesis](https://arxiv.org/abs/1902.08710)
 * [NetGAN: Generating Graphs via Random Walks](https://arxiv.org/abs/1803.00816)
 
