@@ -9,7 +9,7 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
 1.  Run:
 
 ```shell
-python self_attention_estimator/train_experiment.py
+python self_attention_estimator/train_experiment_main.py
 ```
 
 ### Description
