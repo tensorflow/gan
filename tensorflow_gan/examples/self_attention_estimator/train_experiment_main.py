@@ -78,8 +78,6 @@ flags.DEFINE_integer(
     'continuous_eval_timeout_secs', None,
     'None, or number of seconds to wait for a checkpoint '
     'before stopping.')
-flags.DEFINE_bool('fake_data', False, 'Use false data, for testing')
-flags.DEFINE_bool('fake_nets', False, 'Use false networks, for testing')
 
 # TPU params.
 flags.DEFINE_integer(
@@ -115,7 +113,8 @@ def main(_):
       max_number_of_steps=FLAGS.max_number_of_steps,
       train_steps_per_eval=FLAGS.train_steps_per_eval,
       num_eval_steps=FLAGS.num_eval_steps,
-      fake_nets=FLAGS.fake_nets,
+      fake_nets=False,
+      fake_data=False,
       tpu_iterations_per_loop=FLAGS.tpu_iterations_per_loop,
   )
   if FLAGS.mode == 'train':
