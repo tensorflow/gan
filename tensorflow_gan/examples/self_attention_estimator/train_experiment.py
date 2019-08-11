@@ -36,8 +36,6 @@ HParams = collections.namedtuple(
         'train_batch_size',
         'eval_batch_size',
         'predict_batch_size',
-        'use_tpu',
-        'eval_on_tpu',
         'generator_lr',
         'discriminator_lr',
         'beta1',
@@ -47,13 +45,25 @@ HParams = collections.namedtuple(
         'shuffle_buffer_size',
         'z_dim',
         'model_dir',
-        'continuous_eval_timeout_secs',
-        'use_tpu_estimator',
         'max_number_of_steps',
         'train_steps_per_eval',
         'num_eval_steps',
+        'debug_params',
+        'tpu_params',
+    ])
+DebugParams = collections.namedtuple(
+    'DebugParams',
+    [
+        'use_tpu',
+        'eval_on_tpu',
         'fake_nets',
         'fake_data',
+        'continuous_eval_timeout_secs',
+    ])
+TPUParams = collections.namedtuple(
+    'TPUParams',
+    [
+        'use_tpu_estimator',
         'tpu_iterations_per_loop',
     ])
 
@@ -73,7 +83,7 @@ def train_eval_input_fn(mode, params):
   is_train = mode == tf.estimator.ModeKeys.TRAIN
   split = 'train' if is_train else 'validation'
 
-  if params['use_tpu_estimator']:
+  if params['tpu_params'].use_tpu_estimator:
     bs = params['batch_size']
   else:
     bs = {
@@ -81,7 +91,7 @@ def train_eval_input_fn(mode, params):
         tf.estimator.ModeKeys.EVAL: params['eval_batch_size'],
     }[mode]
 
-  if params['fake_data']:
+  if params['debug_params'].fake_data:
     fake_noise = tf.zeros([bs, params['z_dim']])
     fake_imgs = tf.zeros([bs, 128, 128, 3])
     fake_lbls = tf.zeros([bs], dtype=tf.int32)
@@ -113,7 +123,7 @@ def make_estimator(hparams):
   generator = _get_generator(hparams)
   discriminator = _get_discriminator(hparams)
 
-  if hparams.use_tpu_estimator:
+  if hparams.tpu_params.use_tpu_estimator:
     config = est_lib.get_tpu_run_config_from_hparams(hparams)
     return est_lib.get_tpu_estimator(generator, discriminator, hparams, config)
   else:
@@ -142,8 +152,9 @@ def run_continuous_eval(hparams):
   """What to run in continuous eval mode."""
   tf.compat.v1.logging.info('Continuous evaluation.')
   estimator = make_estimator(hparams)
+  timeout = hparams.debug_params.continuous_eval_timeout_secs
   for ckpt_str in evaluation.checkpoints_iterator(
-      hparams.model_dir, timeout=hparams.continuous_eval_timeout_secs):
+      hparams.model_dir, timeout=timeout):
     tf.compat.v1.logging.info('Evaluating checkpoint: %s' % ckpt_str)
     estimator.evaluate(
         train_eval_input_fn,
@@ -186,7 +197,7 @@ def _get_generator(hparams):
     gen_sparse_class = tf.squeeze(gen_class_ints, -1)
     gen_sparse_class.shape.assert_is_compatible_with([None])
 
-    if hparams.fake_nets:
+    if hparams.debug_params.fake_nets:
       gen_imgs = tf.zeros([batch_size, 128, 128, 3
                           ]) * tf.compat.v1.get_variable(
                               'dummy_g', initializer=2.0)
@@ -200,9 +211,10 @@ def _get_generator(hparams):
           training=is_train)
     # Print debug statistics and log the generated variables.
     gen_imgs, gen_sparse_class = eval_lib.print_debug_statistics(
-        gen_imgs, gen_sparse_class, 'generator', hparams.use_tpu_estimator)
+        gen_imgs, gen_sparse_class, 'generator',
+        hparams.tpu_params.use_tpu_estimator)
     eval_lib.log_and_summarize_variables(generator_vars, 'gvars',
-                                         hparams.use_tpu_estimator)
+                                         hparams.tpu_params.use_tpu_estimator)
     gen_imgs.shape.assert_is_compatible_with([None, 128, 128, 3])
 
     if mode == tf.estimator.ModeKeys.PREDICT:
@@ -218,7 +230,7 @@ def _get_discriminator(hparams):
     """TF-GAN compatible discriminator."""
     del unused_conditioning, mode
     images, labels = images_and_lbls['images'], images_and_lbls['labels']
-    if hparams.fake_nets:
+    if hparams.debug_params.fake_nets:
       # Need discriminator variables and to depend on the generator.
       logits = tf.zeros(
           [tf.shape(input=images)[0], 20]) * tf.compat.v1.get_variable(
@@ -232,8 +244,8 @@ def _get_discriminator(hparams):
         # Log the generated variables only in the first time the function is
         # called and new variables are generated (it is called twice: once for
         # the generated data and once for the real data).
-        eval_lib.log_and_summarize_variables(discriminator_vars, 'dvars',
-                                             hparams.use_tpu_estimator)
+        eval_lib.log_and_summarize_variables(
+            discriminator_vars, 'dvars', hparams.tpu_params.use_tpu_estimator)
     logits.shape.assert_is_compatible_with([None, None])
     return logits
 

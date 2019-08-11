@@ -45,17 +45,11 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
   def setUp(self):
     super(TrainExperimentTest, self).setUp()
     self.hparams = train_experiment.HParams(
-        # Make the test on CPU.
-        use_tpu=False,
-        eval_on_tpu=False,
-
         # Make small batch sizes.
         z_dim=4,
         train_batch_size=4,
         eval_batch_size=16,
         predict_batch_size=1,
-        fake_data=True,
-        fake_nets=True,
 
         # Make small networks.
         gf_dim=2,
@@ -64,16 +58,25 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
         # Take few steps.
         max_number_of_steps=1,
         num_eval_steps=1,
-        continuous_eval_timeout_secs=1,
-        tpu_iterations_per_loop=1,
         model_dir=self.create_tempdir().full_path,
-        use_tpu_estimator=False,
         train_steps_per_eval=1,
         generator_lr=1.0,
         discriminator_lr=1.0,
         beta1=1.0,
         shuffle_buffer_size=1,
         num_classes=10,
+        debug_params=train_experiment.DebugParams(
+            # Make the test on CPU.
+            use_tpu=False,
+            eval_on_tpu=False,
+            fake_data=True,
+            fake_nets=True,
+            continuous_eval_timeout_secs=1,
+        ),
+        tpu_params=train_experiment.TPUParams(
+            use_tpu_estimator=False,
+            tpu_iterations_per_loop=1,
+        ),
     )
 
   @parameterized.parameters(
@@ -83,7 +86,8 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
   def test_run_train_cpu_local(self, mock_metrics, tpu_est):
     """Tests `run_train`."""
-    self.hparams = self.hparams._replace(use_tpu_estimator=tpu_est)
+    self.hparams = self.hparams._replace(
+        tpu_params=self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est))
 
     # Mock computationally expensive metrics computations.
     mock_metrics.return_value = {}
@@ -97,18 +101,17 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
   def test_run_continuous_eval_cpu_local(self, mock_metrics, tpu_est):
     """Tests `run_continuous_eval`."""
-    self.hparams = self.hparams._replace(use_tpu_estimator=tpu_est)
+    hparams = self.hparams._replace(
+        tpu_params=self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est))
 
     # Mock computationally expensive metrics computations.
     mock_metrics.return_value = {}
 
-    train_experiment.run_continuous_eval(self.hparams)
+    train_experiment.run_continuous_eval(hparams)
 
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
   def test_train_and_eval_cpu_local(self, mock_metrics):
     """Tests `run_train_and_eval`."""
-    self.hparams = self.hparams._replace(use_tpu_estimator=False)
-
     # Mock computationally expensive metrics computations.
     mock_metrics.return_value = {}
 
@@ -125,11 +128,12 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
   def test_input_fn(self, mock_dataset, mode, tpu_est):
     """Tests input_fn."""
     params = {
-        'use_tpu_estimator': tpu_est,
+        'tpu_params': self.hparams.tpu_params._replace(
+            use_tpu_estimator=tpu_est),
         'batch_size': 8,
         'train_batch_size': 8,
         'eval_batch_size': 8,
-        'fake_data': False,
+        'debug_params': self.hparams.debug_params._replace(fake_data=False),
         'z_dim': 12,
         'shuffle_buffer_size': 100,
     }
@@ -153,10 +157,10 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
 
     # Note that make_estimator reads the batch sizes from flags, so we must use
     # the same values.
-    self.hparams = self.hparams._replace(use_tpu=tpu_est)
-    self.hparams = self.hparams._replace(eval_on_tpu=False)
+    hparams = self.hparams._replace(
+        debug_params=self.hparams.debug_params._replace(use_tpu=tpu_est))
 
-    estimator = train_experiment.make_estimator(self.hparams)
+    estimator = train_experiment.make_estimator(hparams)
     estimator.train(train_experiment.train_eval_input_fn, steps=1)
 
 

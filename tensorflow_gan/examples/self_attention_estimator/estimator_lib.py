@@ -28,11 +28,12 @@ import tensorflow_gan as tfgan  # tf
 
 
 def get_tpu_run_config_from_hparams(hparams):
+  """Create a TPU-suitable RunConfig from HParams."""
   return tf.compat.v1.estimator.tpu.RunConfig(
       model_dir=hparams.model_dir,
       save_checkpoints_steps=hparams.train_steps_per_eval,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
-          iterations_per_loop=hparams.tpu_iterations_per_loop))
+          iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop))
 
 
 def get_run_config_from_hparams(hparams):
@@ -54,11 +55,11 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
       discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
           hparams.discriminator_lr, hparams.beta1),
       get_eval_metric_ops_fn=functools.partial(get_metrics, hparams=hparams),
-      eval_on_tpu=hparams.eval_on_tpu,
+      eval_on_tpu=hparams.debug_params.eval_on_tpu,
       train_batch_size=hparams.train_batch_size,
       eval_batch_size=hparams.eval_batch_size,
       predict_batch_size=hparams.predict_batch_size,
-      use_tpu=hparams.use_tpu,
+      use_tpu=hparams.debug_params.use_tpu,
       config=config,
       params=hparams._asdict())
 
@@ -109,7 +110,7 @@ def get_metrics(generator_inputs, generated_data, real_data,
   fake_logits, fake_pools = eval_lib.get_activations(
       lambda: gen_images, num_batches=1, get_logits=True)
 
-  if hparams.eval_on_tpu:
+  if hparams.debug_params.eval_on_tpu:
     # TODO(dyoel): Rewrite once b/135664219 is resolved.
     real_iscore = tfgan.eval.classifier_score_from_logits(real_logits)
     generated_iscore = tfgan.eval.classifier_score_from_logits(fake_logits)

@@ -80,14 +80,14 @@ flags.DEFINE_integer(
     'before stopping.')
 
 # TPU params.
-flags.DEFINE_integer(
-    'tpu_iterations_per_loop', 1000,
-    'Steps per interior TPU loop. Should be less than '
-    '--train_steps_per_eval.')
 flags.DEFINE_bool(
     'use_tpu_estimator', False,
     'Whether to use TPUGANEstimator or GANEstimator. This is useful if, for '
     'instance, we want to run the eval job on GPU.')
+flags.DEFINE_integer(
+    'tpu_iterations_per_loop', 1000,
+    'Steps per interior TPU loop. Should be less than '
+    '--train_steps_per_eval.')
 
 FLAGS = flags.FLAGS
 
@@ -97,8 +97,6 @@ def main(_):
       train_batch_size=FLAGS.train_batch_size,
       eval_batch_size=FLAGS.eval_batch_size,
       predict_batch_size=FLAGS.predict_batch_size,
-      use_tpu=FLAGS.use_tpu,
-      eval_on_tpu=FLAGS.eval_on_tpu,
       generator_lr=FLAGS.generator_lr,
       discriminator_lr=FLAGS.discriminator_lr,
       beta1=FLAGS.beta1,
@@ -108,14 +106,20 @@ def main(_):
       shuffle_buffer_size=10000,
       z_dim=FLAGS.z_dim,
       model_dir=FLAGS.model_dir,
-      continuous_eval_timeout_secs=FLAGS.continuous_eval_timeout_secs,
-      use_tpu_estimator=FLAGS.use_tpu_estimator,
       max_number_of_steps=FLAGS.max_number_of_steps,
       train_steps_per_eval=FLAGS.train_steps_per_eval,
       num_eval_steps=FLAGS.num_eval_steps,
-      fake_nets=False,
-      fake_data=False,
-      tpu_iterations_per_loop=FLAGS.tpu_iterations_per_loop,
+      debug_params=train_experiment.DebugParams(
+          use_tpu=FLAGS.use_tpu,
+          eval_on_tpu=FLAGS.eval_on_tpu,
+          fake_nets=False,
+          fake_data=False,
+          continuous_eval_timeout_secs=FLAGS.continuous_eval_timeout_secs,
+      ),
+      tpu_params=train_experiment.TPUParams(
+          use_tpu_estimator=FLAGS.use_tpu_estimator,
+          tpu_iterations_per_loop=FLAGS.tpu_iterations_per_loop,
+      ),
   )
   if FLAGS.mode == 'train':
     train_experiment.run_train(hparams)

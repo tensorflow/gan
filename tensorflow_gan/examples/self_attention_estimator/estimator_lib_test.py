@@ -51,8 +51,6 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
         train_batch_size=1,
         eval_batch_size=bs,
         predict_batch_size=1,
-        use_tpu=use_tpu,
-        eval_on_tpu=use_tpu,
         generator_lr=1.0,
         discriminator_lr=1.0,
         beta1=1.0,
@@ -62,14 +60,17 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
         shuffle_buffer_size=1,
         z_dim=8,
         model_dir=None,
-        continuous_eval_timeout_secs=1,
-        use_tpu_estimator=False,
         max_number_of_steps=None,
         train_steps_per_eval=1,
         num_eval_steps=1,
-        fake_nets=True,
-        fake_data=True,
-        tpu_iterations_per_loop=1,
+        debug_params=train_experiment.DebugParams(
+            use_tpu=use_tpu,
+            eval_on_tpu=use_tpu,
+            fake_nets=True,
+            fake_data=True,
+            continuous_eval_timeout_secs=1,
+        ),
+        tpu_params=None,
     )
 
     # Fake arguments to pass to `get_metrics`.
