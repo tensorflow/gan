@@ -84,7 +84,7 @@ flags.DEFINE_bool(
     'use_tpu_estimator', False,
     'Whether to use TPUGANEstimator or GANEstimator. This is useful if, for '
     'instance, we want to run the eval job on GPU.')
-flags.DEFINE_string('tpu_location', None,
+flags.DEFINE_string('tpu', None,
                     'A string corresponding to the TPU to use.')
 flags.DEFINE_string('gcp_project', None,
                     'Name of the GCP project containing Cloud TPUs.')
@@ -98,7 +98,7 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  tpu_location = FLAGS.tpu_location
+  tpu_location = FLAGS.tpu
   hparams = train_experiment.HParams(
       train_batch_size=FLAGS.train_batch_size,
       eval_batch_size=FLAGS.eval_batch_size,

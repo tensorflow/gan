@@ -82,13 +82,13 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
         ),
     )
 
-  def test_run_train_cpu_local_notpu(self):
+  def test_run_train_cpu_local_gpuestimator(self):
     """Tests `run_train`."""
     train_experiment.run_train(self.hparams)
 
 
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
-  def test_run_continuous_eval_cpu_local_notpu(self, _):
+  def test_run_continuous_eval_cpu_local_gpuestimator(self, _):
     """Tests `run_continuous_eval`."""
     train_experiment.run_continuous_eval(self.hparams)
 
@@ -98,7 +98,6 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
     """Tests `run_train_and_eval`."""
     # Mock computationally expensive metrics computations.
     mock_metrics.return_value = {}
-
     train_experiment.run_train_and_eval(self.hparams)
 
   @parameterized.parameters(
