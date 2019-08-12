@@ -64,6 +64,9 @@ TPUParams = collections.namedtuple(
     'TPUParams',
     [
         'use_tpu_estimator',
+        'tpu_location',
+        'gcp_project',
+        'tpu_zone',
         'tpu_iterations_per_loop',
     ])
 

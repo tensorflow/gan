@@ -75,39 +75,23 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
         ),
         tpu_params=train_experiment.TPUParams(
             use_tpu_estimator=False,
+            tpu_location='local',
+            gcp_project=None,
+            tpu_zone=None,
             tpu_iterations_per_loop=1,
         ),
     )
 
-  @parameterized.parameters(
-      {'tpu_est': True},
-      {'tpu_est': False},
-  )
-  @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
-  def test_run_train_cpu_local(self, mock_metrics, tpu_est):
+  def test_run_train_cpu_local_notpu(self):
     """Tests `run_train`."""
-    self.hparams = self.hparams._replace(
-        tpu_params=self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est))
-
-    # Mock computationally expensive metrics computations.
-    mock_metrics.return_value = {}
-
     train_experiment.run_train(self.hparams)
 
-  @parameterized.parameters(
-      {'tpu_est': True},
-      {'tpu_est': False},
-  )
+
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
-  def test_run_continuous_eval_cpu_local(self, mock_metrics, tpu_est):
+  def test_run_continuous_eval_cpu_local_notpu(self, _):
     """Tests `run_continuous_eval`."""
-    hparams = self.hparams._replace(
-        tpu_params=self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est))
+    train_experiment.run_continuous_eval(self.hparams)
 
-    # Mock computationally expensive metrics computations.
-    mock_metrics.return_value = {}
-
-    train_experiment.run_continuous_eval(hparams)
 
   @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
   def test_train_and_eval_cpu_local(self, mock_metrics):
@@ -144,24 +128,14 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
   def test_make_estimator(self):
     train_experiment.make_estimator(self.hparams)
 
-  @parameterized.parameters(
-      {'tpu_est': True},
-      {'tpu_est': False},
-  )
   @mock.patch.object(
       train_experiment.est_lib.eval_lib,
       'get_real_activations',
       new=_get_real_activations_mock)
-  def test_estimator_train(self, tpu_est):
-    # TODO(dyoel): Enable eval_on_tpu once b/135294174 is resolved.
-
-    # Note that make_estimator reads the batch sizes from flags, so we must use
-    # the same values.
-    hparams = self.hparams._replace(
-        debug_params=self.hparams.debug_params._replace(use_tpu=tpu_est))
-
-    estimator = train_experiment.make_estimator(hparams)
+  def test_estimator_train_notpu(self):
+    estimator = train_experiment.make_estimator(self.hparams)
     estimator.train(train_experiment.train_eval_input_fn, steps=1)
+
 
 
 if __name__ == '__main__':

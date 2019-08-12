@@ -29,8 +29,13 @@ import tensorflow_gan as tfgan  # tf
 
 def get_tpu_run_config_from_hparams(hparams):
   """Create a TPU-suitable RunConfig from HParams."""
+  cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
+      tpu=hparams.tpu_params.tpu_location,
+      project=hparams.tpu_params.gcp_project,
+      zone=hparams.tpu_params.tpu_zone)
   return tf.compat.v1.estimator.tpu.RunConfig(
       model_dir=hparams.model_dir,
+      cluster=cluster_resolver,
       save_checkpoints_steps=hparams.train_steps_per_eval,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
           iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop))
