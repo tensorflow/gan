@@ -19,14 +19,19 @@ outputs. **Be sure to follow the instructions for how to run the examples.**
     be used for `tensorflow_gan` instead of any older libraries you might have
     installed. Ex: `export PYTHONPATH=${TFGAN_REPO}:${PYTHONPATH}`.
 1.  Install the necessary dependencies, which depend on which example you want
-    to run. At a minimum, you will need `tensorflow`, `tensorflow_probability`,
-    and `tensorflow_datasets`.
+    to run. At a minimum, you will need :
+    1. `tensorflow`
+    1. `tensorflow_probability`
+    1. `tensorflow_datasets`
 1.  Follow the instructions in the particular example directory's `README.md`.
 
 ## Debugging
 
 1.  If you get an error like `ImportError: No module named xxx`, you might not
     have set the `PYTHONPATH` properly. See step #1 above.
+1.  If you get an error for something basic like
+    `ImportError: No module named absl`, you might not have installed all the
+    imports you need.
 
 ## Steps to add an example
 
@@ -47,6 +52,7 @@ outputs. **Be sure to follow the instructions for how to run the examples.**
 1.  [StarGAN](#stargan)
 1.  [StarGAN Estimator](#stargan_estimator)
 1.  [Progressive GAN](#progressive_gan)
+1.  [Self-Attention GAN](#self_attention_gan)
 
 ## MNIST
 <a id='mnist'></a>
@@ -128,11 +134,11 @@ An implementation of the technique described in
 We run the network on the CIFAR10 dataset.
 
 ## Self-Attention GAN
-
 <a id='self_attention_gan'></a>
 
 Author: Yoel Drori, Augustus Odena, Joel Shor
 
 An implementation of
 [Self-Attention Generative Adversarial Networks](https://arxiv.org/abs/1805.08318).
-The generator produces downsampled ImageNet images.
+The generator produces downsampled ImageNet images. It can be trained on GPU
+or cloud TPU.
