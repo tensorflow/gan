@@ -5,7 +5,7 @@ Author: Shuo Chen and Cassandra Xia
 ### How to run
 
 
-1.  Run the setup instructions in `tensorflow_gan/examples/README.md`
+1.  Run the setup instructions in [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
 1.  Install `pillow` with ex `pip install Pillow`.
 1.  Download the
     [`tensorflow_models` github repo](https://github.com/tensorflow/models) for

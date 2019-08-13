@@ -7,7 +7,7 @@ Author: Joel Shor
 
 'Blessed' version using 'train_and_evaluate':
 
-1. Run the setup instructions in `tensorflow_gan/examples/README.md`
+1. Run the setup instructions in [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
 1. Install: `scipy`.
 1. Run:
 
@@ -17,7 +17,7 @@ python mnist_estimator/train_experiment.py --max_number_of_steps=20000 --output_
 
 Using custom estimator calls:
 
-1. Run the setup instructions in `tensorflow_gan/examples/README.md`
+1. Run the setup instructions in [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
 1. Install: `scipy`.
 1. Run:
 

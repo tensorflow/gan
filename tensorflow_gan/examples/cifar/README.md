@@ -5,7 +5,7 @@ Author: Joel Shor
 ### How to run
 
 
-1. Run the setup instructions in `tensorflow_gan/examples/README.md`
+1. Run the setup instructions in [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
 1. Run:
 
 ```
