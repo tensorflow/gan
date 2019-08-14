@@ -190,9 +190,11 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 class StarGANEstimatorIntegrationTest(tf.test.TestCase):
 
   def setUp(self):
+    super(StarGANEstimatorIntegrationTest, self).setUp()
     self._model_dir = tempfile.mkdtemp()
 
   def tearDown(self):
+    super(StarGANEstimatorIntegrationTest, self).tearDown()
     if self._model_dir:
       tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
@@ -300,9 +302,11 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
 class StarGANEstimatorParamsTest(tf.test.TestCase):
 
   def setUp(self):
+    super(StarGANEstimatorParamsTest, self).setUp()
     self._model_dir = self.get_temp_dir()
 
   def tearDown(self):
+    super(StarGANEstimatorParamsTest, self).tearDown()
     tf.compat.v1.summary.FileWriterCache.clear()
 
   def test_params_used(self):
