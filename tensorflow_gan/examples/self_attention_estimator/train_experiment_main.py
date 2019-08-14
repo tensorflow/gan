@@ -14,7 +14,7 @@
 # limitations under the License.
 
 # pylint: disable=line-too-long
-"""Trains a Self-Attention GAN using Estimators.
+r"""Trains a Self-Attention GAN using Estimators.
 
 This code is based on the original code from https://arxiv.org/abs/1805.08318.
 
