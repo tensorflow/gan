@@ -212,9 +212,11 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 class GANEstimatorIntegrationTest(tf.test.TestCase):
 
   def setUp(self):
+    super(GANEstimatorIntegrationTest, self).setUp()
     self._model_dir = tempfile.mkdtemp()
 
   def tearDown(self):
+    super(GANEstimatorIntegrationTest, self).tearDown()
     if self._model_dir:
       tf.compat.v1.summary.FileWriterCache.clear()
       shutil.rmtree(self._model_dir)
@@ -365,11 +367,13 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
 class GANEstimatorWarmStartTest(tf.test.TestCase):
 
   def setUp(self):
+    super(GANEstimatorWarmStartTest, self).setUp()
     self._model_dir = self.get_temp_dir()
     self.new_variable_name = 'new_var'
     self.new_variable_value = [1, 2, 3]
 
   def tearDown(self):
+    super(GANEstimatorWarmStartTest, self).tearDown()
     tf.compat.v1.summary.FileWriterCache.clear()
 
   def _test_warm_start(self, warm_start_from=None):

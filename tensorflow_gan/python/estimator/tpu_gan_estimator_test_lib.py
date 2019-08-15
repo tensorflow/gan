@@ -452,12 +452,14 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
   """Tests that TPUGANEstimator can be warm-started."""
 
   def setUp(self):
+    super(TPUGANEstimatorWarmStartTest, self).setUp()
     self._model_dir = self.get_temp_dir()
     self._config = TpuRunConfig(model_dir=self._model_dir)
     self.new_variable_name = 'new_var'
     self.new_variable_value = [1.0, 2.0, 3.0]
 
   def tearDown(self):
+    super(TPUGANEstimatorWarmStartTest, self).tearDown()
     tf.compat.v1.summary.FileWriterCache.clear()
 
   def _test_warm_start(self, warm_start_from=None):
