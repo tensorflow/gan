@@ -19,12 +19,16 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from absl import flags
 import tensorflow as tf  # tf
 import tensorflow_datasets as tfds
 
 from tensorflow_gan.examples import compat_utils
 
 IMG_SIZE = 128
+
+flags.DEFINE_string('imagenet_data_dir', None,
+                    'A directory for TFDS ImageNet. If `None`, use default.')
 
 
 def provide_dataset(batch_size, shuffle_buffer_size, split='train'):
@@ -39,7 +43,7 @@ def provide_dataset(batch_size, shuffle_buffer_size, split='train'):
   Returns:
     A dataset of num_batches batches of size batch_size of images and labels.
   """
-  dataset = _load_imagenet_dataset(split)
+  dataset = _load_imagenet_dataset(split, flags.FLAGS.imagenet_data_dir)
   shuffle = (split in ['train', tfds.Split.TRAIN])
   if shuffle:
     dataset = dataset.apply(
@@ -85,8 +89,8 @@ def provide_data(batch_size,
   return batches
 
 
-def _load_imagenet_dataset(split):
-  return tfds.load('imagenet2012', split=split)
+def _load_imagenet_dataset(split, data_dir=None):
+  return tfds.load('imagenet2012', split=split, data_dir=data_dir)
 
 
 def _preprocess_dataset_record_fn(image_size):
