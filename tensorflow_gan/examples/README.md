@@ -12,17 +12,33 @@ outputs. **Be sure to follow the instructions for how to run the examples.**
 
 ## Steps to run an example
 
-1.  Add the examples directory to your PYTHONPATH environment variable with ex
-    `export PYTHONPATH=${TFGAN_REPO}/tensorflow_gan/examples:${PYTHONPATH}`. Be
-    sure to use the location where you cloned this repository.
+1.  Add the examples directory to your PYTHONPATH environment variable with
+
+    ```shell
+    export PYTHONPATH=${TFGAN_REPO}/tensorflow_gan/examples:${PYTHONPATH}
+    ```
+
+    Be sure to use the location where you cloned this repository.
 1.  Add this repository to your PYTHONPATH environment variable so that it can
     be used for `tensorflow_gan` instead of any older libraries you might have
-    installed. Ex: `export PYTHONPATH=${TFGAN_REPO}:${PYTHONPATH}`.
+    installed.
+
+    ```shell
+    export PYTHONPATH=${TFGAN_REPO}:${PYTHONPATH}
+    ```
+
 1.  Install the necessary dependencies, which depend on which example you want
     to run. At a minimum, you will need :
     1. `tensorflow`
     1. `tensorflow_probability`
     1. `tensorflow_datasets`
+
+    You can usually install these with:
+
+    ```shell
+    pip install --upgrade $PACKAGE --user
+    ```
+
 1.  Follow the instructions in the particular example directory's `README.md`.
 
 ## Debugging
