@@ -21,6 +21,8 @@ from __future__ import division
 from __future__ import print_function
 
 import collections
+import time
+
 import tensorflow as tf  # tf
 from tensorflow_gan.examples import evaluation_helper as evaluation
 from tensorflow_gan.examples.self_attention_estimator import data_provider
@@ -166,24 +168,45 @@ def run_continuous_eval(hparams):
     tf.compat.v1.logging.info('Finished evaluating checkpoint: %s' % ckpt_str)
 
 
+# TODO(joelshor): Try to get this to work with
+# `tf.estimator.train_and_evaluate`.
 def run_train_and_eval(hparams):
   """Configure and run the train and estimator jobs."""
   estimator = make_estimator(hparams)
 
-  train_spec = tf.estimator.TrainSpec(
-      input_fn=train_eval_input_fn, max_steps=hparams.max_number_of_steps)
-  tf.compat.v1.logging.info('Training until %i steps...' %
-                            hparams.max_number_of_steps)
+  cur_step = 0
+  max_step = hparams.max_number_of_steps
+  steps_per_eval = hparams.train_steps_per_eval
 
-  eval_spec = tf.estimator.EvalSpec(
-      name='eval',
-      input_fn=train_eval_input_fn,
-      steps=hparams.num_eval_steps,
-      start_delay_secs=60,  # Start evaluating after this many seconds.
-      throttle_secs=120,  # Wait this long between evals (seconds).
-  )
-  tf.compat.v1.logging.info('Num eval steps: %i' % hparams.num_eval_steps)
-  tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+  start_time = time.time()
+  while cur_step < max_step:
+    # Train for a fixed number of steps.
+    start_step = cur_step
+    step_to_stop_at = min(cur_step + steps_per_eval, max_step)
+    start = time.time()
+    estimator.train(train_eval_input_fn, max_steps=step_to_stop_at)
+    end = time.time()
+    tf.compat.v1.logging.info('Evaluating at step: %i' % cur_step)
+    cur_step = step_to_stop_at
+
+    # Print some performance statistics.
+    steps_taken = step_to_stop_at - start_step
+    time_taken = end - start
+    _log_performance_statistics(cur_step, steps_taken, time_taken, start_time)
+
+    # Run evaluation.
+    tf.compat.v1.logging.info('Evaluating at step: %i' % cur_step)
+    estimator.evaluate(
+        train_eval_input_fn, steps=hparams.num_eval_steps, name='eval')
+    tf.compat.v1.logging.info('Finished evaluating step: %i' % cur_step)
+
+
+def _log_performance_statistics(cur_step, steps_taken, time_taken, start_time):
+  steps_per_sec = steps_taken / time_taken
+  min_since_start = (time.time() - start_time) / 60.0
+  tf.compat.v1.logging.info(
+      'Current step: %i, %.4f steps / sec, time since start: %.1f min' % (
+          cur_step, steps_per_sec, min_since_start))
 
 
 def _get_generator(hparams):
