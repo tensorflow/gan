@@ -183,10 +183,10 @@ def run_train_and_eval(hparams):
     # Train for a fixed number of steps.
     start_step = cur_step
     step_to_stop_at = min(cur_step + steps_per_eval, max_step)
+    tf.compat.v1.logging.info('About to train to step: %i' % step_to_stop_at)
     start = time.time()
     estimator.train(train_eval_input_fn, max_steps=step_to_stop_at)
     end = time.time()
-    tf.compat.v1.logging.info('Evaluating at step: %i' % cur_step)
     cur_step = step_to_stop_at
 
     # Print some performance statistics.
