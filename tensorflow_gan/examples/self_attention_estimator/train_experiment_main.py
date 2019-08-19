@@ -63,7 +63,7 @@ flags.DEFINE_enum(
 flags.DEFINE_integer('max_number_of_steps', 50000,
                      'The maximum number of train steps.')
 flags.DEFINE_integer(
-    'train_steps_per_eval', 5000,
+    'train_steps_per_eval', 1000,
     'Number of train steps before writing some sample images.')
 flags.DEFINE_integer('num_eval_steps', 32, 'The number of evaluation steps.')
 flags.DEFINE_integer('eval_batch_size', 32,
