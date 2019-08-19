@@ -23,6 +23,7 @@ from __future__ import division
 from __future__ import print_function
 
 from absl.testing import parameterized
+import numpy as np
 import tensorflow as tf  # tf
 
 from tensorflow_gan.examples.self_attention_estimator import estimator_lib
@@ -31,25 +32,43 @@ from tensorflow_gan.examples.self_attention_estimator import train_experiment
 mock = tf.compat.v1.test.mock
 
 
+def generator(inputs):
+  gvar = tf.compat.v1.get_variable('dummy_g', initializer=2.0)
+  return gvar * inputs
+
+
+def discriminator(inputs, _):
+  if isinstance(inputs, dict):
+    inputs = inputs['images']
+  net = tf.math.reduce_sum(inputs, axis=1)
+  return tf.compat.v1.get_variable('dummy_d', initializer=2.0) * net
+
+
+def input_fn(params):
+  bs = params['batch_size']
+  dummy_imgs = np.zeros([32, 128, 128, 3], dtype=np.float32)
+  ds = tf.data.Dataset.from_tensor_slices(dummy_imgs)
+  def _set_shape(x):
+    x.set_shape([bs, None, None, None])
+    return x
+  ds = ds.batch(bs).map(_set_shape).map(lambda x: (x, x)).repeat()
+  return ds
+
+
+def _new_tensor(*args, **kwargs):
+  del args, kwargs
+  # Tensors need to be created in the same graph, so generate them at the call
+  # site.
+  return (tf.constant(1.), tf.constant(1.))
+
+
 class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
 
-  @parameterized.parameters(
-      {'use_tpu': False},
-      {'use_tpu': True},
-  )
-  @mock.patch.object(
-      estimator_lib.tfgan.eval, 'classifier_score_from_logits', autospec=True)
-  @mock.patch.object(
-      estimator_lib.tfgan.eval,
-      'frechet_classifier_distance_from_activations', autospec=True)
-  def test_get_metrics_syntax(self, mock_fid, mock_iscore, use_tpu):
-    if tf.executing_eagerly():
-      # tf.metrics.mean is not supported when eager execution is enabled.
-      return
-    bs = 40
-    hparams = train_experiment.HParams(
+  def setUp(self):
+    super(EstimatorLibTest, self).setUp()
+    self.hparams = train_experiment.HParams(
         train_batch_size=1,
-        eval_batch_size=bs,
+        eval_batch_size=40,
         predict_batch_size=1,
         generator_lr=1.0,
         discriminator_lr=1.0,
@@ -64,32 +83,64 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
         train_steps_per_eval=1,
         num_eval_steps=1,
         debug_params=train_experiment.DebugParams(
-            use_tpu=use_tpu,
-            eval_on_tpu=use_tpu,
-            fake_nets=True,
-            fake_data=True,
+            use_tpu=False,
+            eval_on_tpu=False,
+            fake_nets=None,
+            fake_data=None,
             continuous_eval_timeout_secs=1,
         ),
-        tpu_params=None,
+        tpu_params=train_experiment.TPUParams(
+            use_tpu_estimator=False,
+            tpu_location='local',
+            gcp_project=None,
+            tpu_zone=None,
+            tpu_iterations_per_loop=1,
+        ),
     )
 
-    # Fake arguments to pass to `get_metrics`.
-    fake_noise = tf.zeros([bs, 128])
-    fake_imgs = tf.zeros([bs, 128, 128, 3])
-    fake_lbls = tf.zeros([bs])
-    fake_logits = tf.ones([bs, 1008])
+  @parameterized.parameters(
+      {'use_tpu': False, 'eval_on_tpu': False},
+      {'use_tpu': True, 'eval_on_tpu': False},
+      {'use_tpu': False, 'eval_on_tpu': True},
+  )
+  @mock.patch.object(
+      estimator_lib.tfgan.eval,
+      'classifier_score_from_logits_streaming', new=_new_tensor)
+  @mock.patch.object(
+      estimator_lib.tfgan.eval,
+      'frechet_classifier_distance_from_activations_streaming', new=_new_tensor)
+  def test_get_tpu_estimator(self, use_tpu, eval_on_tpu):
+    if tf.executing_eagerly():
+      # tf.metrics.mean is not supported when eager execution is enabled.
+      return
+    hparams = self.hparams._replace(
+        debug_params=self.hparams.debug_params._replace(
+            eval_on_tpu=eval_on_tpu))
+    hparams = hparams._replace(
+        debug_params=hparams.debug_params._replace(use_tpu=use_tpu))
+    assert hparams.debug_params.use_tpu == use_tpu
+    assert hparams.debug_params.eval_on_tpu == eval_on_tpu
 
-    # Mock Inception-inference computations.
-    mock_iscore.return_value = 1.0
-    mock_fid.return_value = 0.0
+    config = estimator_lib.get_tpu_run_config_from_hparams(hparams)
+    est = estimator_lib.get_tpu_estimator(
+        generator, discriminator, hparams, config)
+    if eval_on_tpu:
+      with self.assertRaises(ValueError):
+        est.evaluate(input_fn, steps=1)
+    else:
+      est.evaluate(input_fn, steps=1)
 
-    estimator_lib.get_metrics(
-        generator_inputs=fake_noise,
-        generated_data={'images': fake_imgs, 'labels': fake_lbls},
-        real_data={'images': fake_imgs, 'labels': fake_lbls},
-        discriminator_real_outputs=(fake_logits, ()),
-        discriminator_gen_outputs=(fake_logits, ()),
-        hparams=hparams)
+  @mock.patch.object(
+      estimator_lib.tfgan.eval,
+      'classifier_score_from_logits_streaming', new=_new_tensor)
+  @mock.patch.object(
+      estimator_lib.tfgan.eval,
+      'frechet_classifier_distance_from_activations_streaming', new=_new_tensor)
+  def test_get_gpu_estimator_syntax(self):
+    config = estimator_lib.get_run_config_from_hparams(self.hparams)
+    est = estimator_lib.get_gpu_estimator(
+        generator, discriminator, self.hparams, config)
+    est.evaluate(lambda: input_fn({'batch_size': 16}), steps=1)
 
 
 if __name__ == '__main__':

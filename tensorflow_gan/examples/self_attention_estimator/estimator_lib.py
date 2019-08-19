@@ -109,8 +109,10 @@ def get_metrics(generator_inputs, generated_data, real_data,
   """
   del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
 
-  real_images = real_data['images']
-  gen_images = generated_data['images']
+  real_images = (real_data['images'] if isinstance(real_data, dict) else
+                 real_data)
+  gen_images = (generated_data['images'] if isinstance(generated_data, dict)
+                else generated_data)
 
   # Get logits and pools for real and generated images.
   real_logits, real_pools = eval_lib.get_activations(
@@ -119,21 +121,8 @@ def get_metrics(generator_inputs, generated_data, real_data,
       lambda: gen_images, num_batches=1, get_logits=True)
 
   if hparams.debug_params.eval_on_tpu:
-    # TODO(dyoel): Rewrite once b/135664219 is resolved.
-    real_iscore = tfgan.eval.classifier_score_from_logits(real_logits)
-    generated_iscore = tfgan.eval.classifier_score_from_logits(fake_logits)
-    fid = tfgan.eval.frechet_classifier_distance_from_activations(
-        real_pools, fake_pools)
-    # Tile metrics because TPU requires metric outputs to be [batch_size, ...].
-    batch_size = tf.shape(input=gen_images)[0]
-    real_iscore_tiled = tf.tile([real_iscore], [batch_size])
-    generated_iscore_tiled = tf.tile([generated_iscore], [batch_size])
-    frechet_distance_tiled = tf.tile([fid], [batch_size])
-    return {
-        'eval/real_incscore': real_iscore_tiled,
-        'eval/incscore': generated_iscore_tiled,
-        'eval/fid': frechet_distance_tiled,
-    }
+    # TODO(open source community): Implement this.
+    raise ValueError('Running eval on TPU is not currently supported.')
   else:
     metric_dict = {
         'eval/real_incscore':
