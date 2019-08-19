@@ -139,7 +139,8 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
       # """
       # results with [[0, 0], [127, 127]] (instead of [[0, 0], [255, 255]]).
       self.assertLess(
-          tf.norm(improved_image - processed_record[0], np.inf).eval(), 4./256.)
+          tf.norm(tensor=improved_image - processed_record[0],
+                  ord=np.inf).eval(), 4. / 256.)
 
 
 if __name__ == '__main__':

@@ -456,7 +456,8 @@ def wasserstein_gradient_penalty(
     alpha = tf.random.uniform(shape=alpha_shape)
     interpolates = real_data + (alpha * differences)
 
-    with tf.name_scope(''):  # Clear scope so update ops are added properly.
+    with tf.compat.v1.name_scope(
+        ''):  # Clear scope so update ops are added properly.
       # Reuse variables if variables already exists.
       with tf.compat.v1.variable_scope(
           discriminator_scope, 'gpenalty_dscope',
@@ -1049,10 +1050,11 @@ def combine_adversarial_loss(main_loss,
           'losses to make shapes compatible. If this is undesirable, ensure '
           'that the shapes are compatible before passing them into '
           'combine_adversarial_loss.')
-      main_loss = tf.math.reduce_mean(main_loss,
-                                      list(range(1, main_loss.shape.rank)))
+      main_loss = tf.math.reduce_mean(
+          input_tensor=main_loss, axis=list(range(1, main_loss.shape.rank)))
       adversarial_loss = tf.math.reduce_mean(
-          adversarial_loss, list(range(1, adversarial_loss.shape.rank)))
+          input_tensor=adversarial_loss,
+          axis=list(range(1, adversarial_loss.shape.rank)))
 
     # Compute gradients if we will need them.
     if gradient_summaries or gradient_ratio is not None:
@@ -1066,9 +1068,11 @@ def combine_adversarial_loss(main_loss,
 
     # Add summaries, if applicable.
     if scalar_summaries:
-      tf.compat.v1.summary.scalar('main_loss', tf.math.reduce_mean(main_loss))
-      tf.compat.v1.summary.scalar('adversarial_loss',
-                                  tf.math.reduce_mean(adversarial_loss))
+      tf.compat.v1.summary.scalar('main_loss',
+                                  tf.math.reduce_mean(input_tensor=main_loss))
+      tf.compat.v1.summary.scalar(
+          'adversarial_loss',
+          tf.math.reduce_mean(input_tensor=adversarial_loss))
     if gradient_summaries:
       tf.compat.v1.summary.scalar('main_loss_gradients', main_loss_grad_mag)
       tf.compat.v1.summary.scalar('adversarial_loss_gradients',

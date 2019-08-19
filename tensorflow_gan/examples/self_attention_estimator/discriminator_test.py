@@ -36,12 +36,13 @@ class DiscriminatorTest(tf.test.TestCase):
     batch_size = 10
     num_classes = 1000
     gen_class_logits = tf.zeros((batch_size, num_classes))
-    gen_class_ints = tf.multinomial(gen_class_logits, 1)
+    gen_class_ints = tf.random.categorical(
+        logits=gen_class_logits, num_samples=1)
     gen_sparse_class = tf.squeeze(gen_class_ints)
     images = tf.random.normal([10, 32, 32, 3])
     d_out, var_list = discriminator.discriminator(images, gen_sparse_class, 16,
                                                   1000)
-    sess = tf.train.MonitoredTrainingSession()
+    sess = tf.compat.v1.train.MonitoredTrainingSession()
     images_np = sess.run(d_out)
     self.assertEqual((batch_size, 1), images_np.shape)
     self.assertAllInRange(images_np, -1.0, 1.0)

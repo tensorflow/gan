@@ -43,19 +43,9 @@ from tensorflow_gan.python.estimator.tpu_gan_estimator import Optimizers
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
 
-# Where these symbols live depends on TF version.
-try:
-  TpuRunConfig = tf.compat.v1.estimator.tpu.RunConfig
-except AttributeError:
-  TpuRunConfig = tf.contrib.tpu.RunConfig
-try:
-  CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
-except AttributeError:
-  CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer
-try:
-  TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
-except AttributeError:
-  TPUEstimatorSpec = tf.contrib.tpu.TPUEstimatorSpec
+TpuRunConfig = tf.compat.v1.estimator.tpu.RunConfig
+CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
+TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
 
 
 class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):

@@ -101,7 +101,7 @@ def _preprocess_dataset_record_fn(image_size):
     # Based on
     # https://github.com/openai/improved-gan/blob/master/imagenet/convert_imagenet_to_records.py
     image = record['image']
-    image_shape = tf.cast(tf.shape(image), tf.float32)
+    image_shape = tf.cast(tf.shape(input=image), tf.float32)
     box_size = tf.math.minimum(image_shape[0], image_shape[1])
     # Since we assume the box is centered we have:
     # 2 * box_x_min + box_size == box_width,

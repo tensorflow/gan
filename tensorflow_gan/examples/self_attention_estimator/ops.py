@@ -42,7 +42,7 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
   """
   with tf.compat.v1.variable_scope(
       name, custom_getter=sn_gettr(training=training)):
-    return tf.layers.conv2d(
+    return tf.compat.v1.layers.conv2d(
         input_,
         filters=output_dim,
         kernel_size=(k_h, k_w),
@@ -50,7 +50,8 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
         padding='same',
         activation=None,
         use_bias=True,
-        kernel_initializer=tf.contrib.layers.xavier_initializer(),
+        kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+            scale=1.0, mode='fan_avg', distribution='uniform'),
         bias_initializer=tf.compat.v1.initializers.zeros(),
         name=name)
 
@@ -69,12 +70,13 @@ def snlinear(x, output_size, bias_start=0.0, training=True, name='snlinear'):
   """
   with tf.compat.v1.variable_scope(
       name, custom_getter=sn_gettr(training=training)):
-    return tf.layers.dense(
+    return tf.compat.v1.layers.dense(
         x,
         output_size,
         activation=None,
         use_bias=True,
-        kernel_initializer=tf.contrib.layers.xavier_initializer(),
+        kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+            scale=1.0, mode='fan_avg', distribution='uniform'),
         bias_initializer=tf.compat.v1.initializers.constant(bias_start))
 
 
@@ -95,7 +97,8 @@ def sn_embedding(x, number_classes, embedding_size, training=True,
     embedding_map = tf.compat.v1.get_variable(
         name='embedding_map',
         shape=[number_classes, embedding_size],
-        initializer=tf.contrib.layers.xavier_initializer())
+        initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+            scale=1.0, mode='fan_avg', distribution='uniform'))
     embedding_map_bar_transpose = tfgan.features.spectral_normalize(
         tf.transpose(a=embedding_map), training=training)
     embedding_map_bar = tf.transpose(a=embedding_map_bar_transpose)
@@ -225,7 +228,8 @@ def sn_conv1x1(x, output_dim, training=True, name='sn_conv1x1'):
       name, custom_getter=sn_gettr(training=training)):
     w = tf.compat.v1.get_variable(
         'weights', [1, 1, x.get_shape()[-1], output_dim],
-        initializer=tf.contrib.layers.xavier_initializer())
+        initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+            scale=1.0, mode='fan_avg', distribution='uniform'))
     conv = tf.nn.conv2d(
         input=x, filters=w, strides=[1, 1, 1, 1], padding='SAME')
     return conv
@@ -255,7 +259,8 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
 
     # phi path
     phi = sn_conv1x1(x, num_channels // 8, training, 'sn_conv_phi')
-    phi = tf.layers.max_pooling2d(inputs=phi, pool_size=[2, 2], strides=2)
+    phi = tf.compat.v1.layers.max_pooling2d(
+        inputs=phi, pool_size=[2, 2], strides=2)
     phi = tf.reshape(
         phi, [-1, downsampled_num, num_channels // 8])
 
@@ -264,7 +269,7 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
 
     # g path
     g = sn_conv1x1(x, num_channels // 2, training, 'sn_conv_g')
-    g = tf.layers.max_pooling2d(inputs=g, pool_size=[2, 2], strides=2)
+    g = tf.compat.v1.layers.max_pooling2d(inputs=g, pool_size=[2, 2], strides=2)
     g = tf.reshape(
         g, [-1, downsampled_num, num_channels // 2])
 

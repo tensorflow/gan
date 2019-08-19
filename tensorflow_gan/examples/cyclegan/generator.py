@@ -32,8 +32,11 @@ def _instance_norm(x):
       epsilon=0.001)
 
 
-def cyclegan_upsample(net, num_outputs, strides, method='conv2d_transpose',
-                      pad_mode='REFLECT', align_corners=False):
+def cyclegan_upsample(net,
+                      num_outputs,
+                      strides,
+                      method='conv2d_transpose',
+                      pad_mode='REFLECT'):
   """Upsamples the given inputs.
 
   Args:
@@ -46,9 +49,6 @@ def cyclegan_upsample(net, num_outputs, strides, method='conv2d_transpose',
     method: The upsampling method: 'nn_upsample_conv', 'bilinear_upsample_conv',
       or 'conv2d_transpose'.
     pad_mode: mode for tf.pad, one of "CONSTANT", "REFLECT", or "SYMMETRIC".
-    align_corners: option for method, 'bilinear_upsample_conv'. If true, the
-      centers of the 4 corner pixels of the input and output tensors are
-      aligned, preserving the values at the corner pixels.
 
   Returns:
     A Tensor which was upsampled using the specified method.
@@ -77,7 +77,6 @@ def cyclegan_upsample(net, num_outputs, strides, method='conv2d_transpose',
     elif method == 'bilinear_upsample_conv':
       net = tf.image.resize(
           net, [strides[0] * height, strides[1] * width],
-          align_corners=align_corners,
           method=tf.image.ResizeMethod.BILINEAR)
       net = tf.pad(tensor=net, paddings=spatial_pad_1, mode=pad_mode)
       net = _conv2d(net, num_outputs, 3)
@@ -238,4 +237,3 @@ def cyclegan_generator_resnet(images,
       end_points['predictions'] = tf.tanh(logits) + logits * tanh_linear_slope
 
   return end_points['predictions'], end_points
-

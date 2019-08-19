@@ -283,9 +283,9 @@ def streaming_covariance(x, y=None, updates_collections=None, name=None):
         name="cov_matrix",
         shape=x_event_shape.as_list() + y_event_shape.as_list())
 
-  num_values = tf.cast(tf.shape(x)[0], dtype=tf.float64)
-  dx = tf.reduce_mean(x, axis=0) - meanx
-  dy = tf.reduce_mean(y, axis=0) - meany
+  num_values = tf.cast(tf.shape(input=x)[0], dtype=tf.float64)
+  dx = tf.reduce_mean(input_tensor=x, axis=0) - meanx
+  dy = tf.reduce_mean(input_tensor=y, axis=0) - meany
   # (x_1 + ... + x_n + x_{n+1} + ... + x_{n+m}) / (n + m)
   # = (x_1 + ... + x_n) / n
   #   + m * ((x_{n+1} + ... + x_{n+m}) / m - (x_1 + ... + x_n) / n) / (n + m).

@@ -38,11 +38,12 @@ class GeneratorTest(tf.test.TestCase):
     num_classes = 1000
     zs = tf.random.normal((batch_size, 128))
     gen_class_logits = tf.zeros((batch_size, num_classes))
-    gen_class_ints = tf.multinomial(gen_class_logits, 1)
+    gen_class_ints = tf.random.categorical(
+        logits=gen_class_logits, num_samples=1)
     gen_sparse_class = tf.squeeze(gen_class_ints)
     images, var_list = generator.generator(
         zs, gen_sparse_class, gf_dim=32, num_classes=num_classes)
-    sess = tf.train.MonitoredTrainingSession()
+    sess = tf.compat.v1.train.MonitoredTrainingSession()
     images_np = sess.run(images)
     self.assertEqual((batch_size, 128, 128, 3), images_np.shape)
     self.assertAllInRange(images_np, -1.0, 1.0)
@@ -94,7 +95,7 @@ class GeneratorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       return
     zs = generator.make_z_normal(2, 16, 128)
-    sess = tf.train.MonitoredTrainingSession()
+    sess = tf.compat.v1.train.MonitoredTrainingSession()
     z_batch = sess.run(zs)
     self.assertEqual((2, 16, 128), z_batch.shape)
 

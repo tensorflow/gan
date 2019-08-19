@@ -29,9 +29,9 @@ import tensorflow_gan as tfgan  # tf
 
 def get_tpu_run_config_from_hparams(hparams):
   """Create a TPU-suitable RunConfig from HParams."""
-  tf.logging.info('tpu_location: %s', hparams.tpu_params.tpu_location)
-  tf.logging.info('gcp_project: %s', hparams.tpu_params.gcp_project)
-  tf.logging.info('tpu_zone: %s', hparams.tpu_params.tpu_zone)
+  tf.compat.v1.logging.info('tpu_location: %s', hparams.tpu_params.tpu_location)
+  tf.compat.v1.logging.info('gcp_project: %s', hparams.tpu_params.gcp_project)
+  tf.compat.v1.logging.info('tpu_zone: %s', hparams.tpu_params.tpu_zone)
   cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
       tpu=hparams.tpu_params.tpu_location,
       project=hparams.tpu_params.gcp_project,

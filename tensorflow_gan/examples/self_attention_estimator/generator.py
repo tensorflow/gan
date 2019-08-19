@@ -79,7 +79,7 @@ def block(x, labels, out_channels, num_classes, name, training=True):
   Returns:
     A `Tensor` representing the output of the operation.
   """
-  with tf.variable_scope(name):
+  with tf.compat.v1.variable_scope(name):
     bn0 = ops.ConditionalBatchNorm(num_classes, name='cbn_0')
     bn1 = ops.ConditionalBatchNorm(num_classes, name='cbn_1')
     x_0 = x
@@ -110,7 +110,8 @@ def generator(zs, target_class, gf_dim, num_classes, training=True):
     - The output layer of the generator.
     - A list containing all trainable varaibles defined by the model.
   """
-  with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as gen_scope:
+  with tf.compat.v1.variable_scope(
+      'generator', reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
     act0 = ops.snlinear(
         zs, gf_dim * 16 * 4 * 4, training=training, name='g_snh0')
     act0 = tf.reshape(act0, [-1, 4, 4, gf_dim * 16])

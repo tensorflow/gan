@@ -113,7 +113,7 @@ def _symmetric_matrix_square_root(mat, eps=1e-10):
   # Unlike numpy, tensorflow's return order is (s, u, v)
   s, u, v = tf.linalg.svd(mat)
   # sqrt is unstable around 0, just use 0 in such case
-  si = tf.where(tf.less(s, eps), s, tf.sqrt(s))
+  si = tf.compat.v1.where(tf.less(s, eps), s, tf.sqrt(s))
   # Note that the v returned by Tensorflow is v = V
   # (when referencing the equation A = U S V^T)
   # This is unlike Numpy which returns v = V^T
@@ -636,9 +636,11 @@ def _classifier_score_from_logits_helper(logits, streaming=False):
     # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
     #   - tf.reduce_sum(q * tf.math.log(q))
     plogp_mean_ops = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1)))
+        tf.reduce_mean(
+            input_tensor=tf.reduce_sum(
+                input_tensor=p * tf.nn.log_softmax(logits), axis=1)))
     log_score_ops = tuple(
-        plogp_mean_val - tf.reduce_sum(q_val * tf.math.log(q_val))
+        plogp_mean_val - tf.reduce_sum(input_tensor=q_val * tf.math.log(q_val))
         for plogp_mean_val, q_val in zip(plogp_mean_ops, q_ops))
   else:
     q = tf.reduce_mean(input_tensor=p, axis=0)

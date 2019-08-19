@@ -259,7 +259,7 @@ def _make_gan_model(generator_fn, discriminator_fn, input_data,
   if add_summaries:
     if not isinstance(add_summaries, (tuple, list)):
       add_summaries = [add_summaries]
-    with tf.name_scope(''):  # Clear name scope.
+    with tf.compat.v1.name_scope(''):  # Clear name scope.
       for summary_type in add_summaries:
         _summary_type_map[summary_type](gan_model)
 
