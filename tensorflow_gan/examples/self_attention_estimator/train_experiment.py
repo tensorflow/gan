@@ -102,6 +102,7 @@ def train_eval_input_fn(mode, params):
     fake_lbls = tf.zeros([bs], dtype=tf.int32)
     ds = tf.data.Dataset.from_tensors(
         (fake_noise, {'images': fake_imgs, 'labels': fake_lbls}))
+    ds = ds.repeat()
     _verify_dataset_shape(ds, params['z_dim'])
     return ds
 
