@@ -484,6 +484,9 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       loss_collection=None,
       reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
+  # The variable tensors_for_metric_fn should be a dict from strings to tensors.
+  assert all(isinstance(t, tf.Tensor) for t in tensors_for_metric_fn.values())
+
   return contrib.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=_predictions_from_generator_output(gan_model.generated_data),

@@ -163,7 +163,7 @@ def get_dummy_gan_model(generated_data=None):
       'discriminator', reuse=tf.compat.v1.AUTO_REUSE) as dis_scope:
     dis_var = tf.compat.v1.get_variable('dummy_var', initializer=0.0)
   return tfgan.GANModel(
-      generator_inputs=None,
+      generator_inputs=tf.zeros(shape=()),
       generated_data=generated_data,
       generator_variables=[gen_var],
       generator_scope=gen_scope,
