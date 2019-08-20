@@ -64,7 +64,7 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
       --eval_on_tpu=true \
       --use_tpu_estimator=true \
       --mode=train_and_eval \
-      --max_number_of_steps=None \
+      --max_number_of_steps=999999 \
       --train_batch_size=1024 \
       --eval_batch_size=1024 \
       --num_eval_steps=49 \
@@ -91,6 +91,8 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
     *   **Note**: If your job fails with "IOError: \[Errno 2\] No usable
         temporary directory found in ...", you might have run out of disk. Try
         clearing the temp directories listed and try again.
+    * . **Note**: If your job fails with `Bad hardware status: ...`, try
+        restarting your TPU.
 
 1.  (Recommended) You can set up TensorBoard to track your training progress
     using
