@@ -185,28 +185,6 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
     self.assertEqual(gan_model.generated_data, spec.predictions)
 
-  def test_get_sync_estimator_spec(self):
-    """Make sure spec is loaded with sync hooks for sync opts."""
-    with tf.Graph().as_default():
-      gan_model = get_dummy_gan_model()
-      gan_loss = tfgan.gan_loss(gan_model, dummy_loss_fn, dummy_loss_fn)
-      g_opt = get_sync_optimizer()
-      d_opt = get_sync_optimizer()
-
-      spec = get_train_estimator_spec(
-          gan_model,
-          gan_loss,
-          Optimizers(g_opt, d_opt),
-          get_hooks_fn=None)  # use default.
-
-      self.assertLen(spec.training_hooks, 4)
-      sync_opts = [
-          hook._sync_optimizer
-          for hook in spec.training_hooks
-          if isinstance(hook, get_sync_optimizer_hook_type())
-      ]
-      self.assertLen(sync_opts, 2)
-      self.assertSetEqual(frozenset(sync_opts), frozenset((g_opt, d_opt)))
 
 
 class GANEstimatorIntegrationTest(tf.test.TestCase):
