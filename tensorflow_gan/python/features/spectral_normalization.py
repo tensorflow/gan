@@ -122,7 +122,10 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     return spectral_norm[0][0]
 
 
-def spectral_normalize(w, power_iteration_rounds=1, training=True,
+def spectral_normalize(w,
+                       power_iteration_rounds=1,
+                       equality_constrained=True,
+                       training=True,
                        name=None):
   """Normalizes a weight matrix by its spectral norm.
 
@@ -134,18 +137,24 @@ def spectral_normalize(w, power_iteration_rounds=1, training=True,
     w: The weight matrix to be normalized.
     power_iteration_rounds: The number of iterations of the power method to
       perform. A higher number yields a better approximation.
+    equality_constrained: If set to `True` will normalize the matrix such that
+      its spectral norm is equal to 1, otherwise, will normalize the matrix such
+      that its norm is at most 1.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
       the graph during evaluation.
     name: An optional scope name.
 
   Returns:
-    A normalized weight matrix tensor.
+    The input weight matrix, normalized so that its spectral norm is at most
+    one.
   """
   with tf.compat.v1.variable_scope(name, 'spectral_normalize'):
-    w_normalized = w / compute_spectral_norm(
-        w, power_iteration_rounds=power_iteration_rounds,
-        training=training)
+    normalization_factor = compute_spectral_norm(
+        w, power_iteration_rounds=power_iteration_rounds, training=training)
+    if not equality_constrained:
+      normalization_factor = tf.maximum(1., normalization_factor)
+    w_normalized = w / normalization_factor
     return tf.reshape(w_normalized, w.get_shape())
 
 
@@ -217,6 +226,7 @@ def _default_name_filter(name):
 
 def spectral_normalization_custom_getter(name_filter=_default_name_filter,
                                          power_iteration_rounds=1,
+                                         equality_constrained=True,
                                          training=True):
   """Custom getter that performs Spectral Normalization on a weight tensor.
 
@@ -271,6 +281,9 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     power_iteration_rounds: The number of iterations of the power method to
       perform per step. A higher number yields a better approximation of the
       true spectral norm.
+    equality_constrained: If set to `True` will normalize the matrix such that
+      its spectral norm is equal to 1, otherwise, will normalize the matrix such
+      that its norm is at most 1.
     training: Whether to update the spectral normalization on variable
       access. This is useful to turn off during eval, for example, to not affect
       the graph during evaluation.
@@ -324,6 +337,7 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     return spectral_normalize(
         w_tensor,
         power_iteration_rounds=power_iteration_rounds,
+        equality_constrained=equality_constrained,
         training=training,
         name=(name + '/spectral_normalize'))
 

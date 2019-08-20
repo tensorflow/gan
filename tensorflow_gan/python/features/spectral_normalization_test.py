@@ -99,6 +99,34 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
       self.assertGreater(abs(s1 - 1.), abs(s5 - 1.))
       self.assertGreater(abs(s0 - 1.), abs(s1 - 1.))
 
+  def testSpectralNormalizeZeroMatrix(self):
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
+    w = tf.zeros(shape=[2, 3, 50, 100])
+    normalized_w = tfgan.features.spectral_normalize(
+        w, power_iteration_rounds=5, equality_constrained=False)
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      np_normalized_w = sess.run(normalized_w)
+
+    normalized_w_norm = np.linalg.svd(np_normalized_w.reshape([-1, 3]))[1][0]
+    self.assertAllClose(normalized_w_norm, 0.)
+
+  def testSpectralNormalizeTinyMatrix(self):
+    """Test spectral_normalize when normalization_threshold is None."""
+    if tf.executing_eagerly():
+      # `compute_spectral_norm` doesn't work when executing eagerly.
+      return
+    w = tf.ones(shape=[2, 3, 50, 100]) * 1e-5
+    normalized_w = tfgan.features.spectral_normalize(
+        w, power_iteration_rounds=5, equality_constrained=True)
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      np_normalized_w = sess.run(normalized_w)
+    normalized_w_norm = np.linalg.svd(np_normalized_w.reshape([-1, 3]))[1][0]
+    self.assertAllClose(normalized_w_norm, 1., rtol=1e-4, atol=1e-4)
+
   def _testLayerHelper(self, build_layer_fn, w_shape, b_shape):
     x = tf.zeros([2, 10, 10, 3], dtype=tf.float32)
 
