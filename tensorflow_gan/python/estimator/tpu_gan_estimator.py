@@ -484,14 +484,26 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       loss_collection=None,
       reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS)
 
-  # The variable tensors_for_metric_fn should be a dict from strings to tensors.
-  assert all(isinstance(t, tf.Tensor) for t in tensors_for_metric_fn.values())
+  # TPUEstimatorSpec.eval_metrics expects a function and a list of tensors,
+  # however, some sturctures in tensors_for_metric_fn might be dictionaries
+  # (e.g., generator_inputs and real_data). We therefore need to flatten
+  # tensors_for_metric_fn before passing them to the function and then restoring
+  # the original structure inside the function.
+  def _metric_fn_wrapper(*args):
+    """Unflattens the arguments and pass them to the provided function."""
+    return metric_fn(
+        **contrib.nest_pack_sequence_as(tensors_for_metric_fn, args))
 
+  flat_tensors = contrib.nest_flatten(tensors_for_metric_fn)
+  if not all(isinstance(t, tf.Tensor) for t in flat_tensors):
+    raise ValueError('All objects nested within the TF-GAN model must be '
+                     'tensors. Instead, types are: %s.' %
+                     str([type(v) for v in flat_tensors]))
   return contrib.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=_predictions_from_generator_output(gan_model.generated_data),
       loss=scalar_loss,
-      eval_metrics=(metric_fn, tensors_for_metric_fn))
+      eval_metrics=(_metric_fn_wrapper, flat_tensors))
 
 
 def get_predict_estimator_spec(gan_model_fns):
