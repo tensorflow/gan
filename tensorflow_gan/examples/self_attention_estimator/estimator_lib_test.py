@@ -98,37 +98,6 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
         ),
     )
 
-  @parameterized.parameters(
-      {'use_tpu': False, 'eval_on_tpu': False},
-      {'use_tpu': True, 'eval_on_tpu': False},
-      {'use_tpu': False, 'eval_on_tpu': True},
-  )
-  @mock.patch.object(
-      estimator_lib.tfgan.eval,
-      'classifier_score_from_logits_streaming', new=_new_tensor)
-  @mock.patch.object(
-      estimator_lib.tfgan.eval,
-      'frechet_classifier_distance_from_activations_streaming', new=_new_tensor)
-  def test_get_tpu_estimator(self, use_tpu, eval_on_tpu):
-    if tf.executing_eagerly():
-      # tf.metrics.mean is not supported when eager execution is enabled.
-      return
-    hparams = self.hparams._replace(
-        debug_params=self.hparams.debug_params._replace(
-            eval_on_tpu=eval_on_tpu))
-    hparams = hparams._replace(
-        debug_params=hparams.debug_params._replace(use_tpu=use_tpu))
-    assert hparams.debug_params.use_tpu == use_tpu
-    assert hparams.debug_params.eval_on_tpu == eval_on_tpu
-
-    config = estimator_lib.get_tpu_run_config_from_hparams(hparams)
-    est = estimator_lib.get_tpu_estimator(
-        generator, discriminator, hparams, config)
-    if eval_on_tpu:
-      with self.assertRaises(ValueError):
-        est.evaluate(input_fn, steps=1)
-    else:
-      est.evaluate(input_fn, steps=1)
 
   @mock.patch.object(
       estimator_lib.tfgan.eval,
