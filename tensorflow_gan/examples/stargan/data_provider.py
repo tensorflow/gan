@@ -48,7 +48,7 @@ def provide_dataset(split, batch_size, patch_size, num_parallel_calls=None,
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = tfds.load('celeb_a', split=split)
+  ds = tfds.load('celeb_a', split=split, shuffle_files=shuffle)
 
   def _filter_pred(attribute):
     def _filter(element):

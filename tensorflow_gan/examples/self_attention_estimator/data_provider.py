@@ -43,8 +43,9 @@ def provide_dataset(batch_size, shuffle_buffer_size, split='train'):
   Returns:
     A dataset of num_batches batches of size batch_size of images and labels.
   """
-  dataset = _load_imagenet_dataset(split, flags.FLAGS.imagenet_data_dir)
   shuffle = (split in ['train', tfds.Split.TRAIN])
+  dataset = _load_imagenet_dataset(split, flags.FLAGS.imagenet_data_dir,
+                                   shuffle_files=shuffle)
   if shuffle:
     dataset = dataset.apply(
         tf.data.experimental.shuffle_and_repeat(shuffle_buffer_size))
@@ -89,8 +90,9 @@ def provide_data(batch_size,
   return batches
 
 
-def _load_imagenet_dataset(split, data_dir=None):
-  return tfds.load('imagenet2012', split=split, data_dir=data_dir)
+def _load_imagenet_dataset(split, data_dir=None, shuffle_files=False):
+  return tfds.load('imagenet2012', split=split, data_dir=data_dir,
+                   shuffle_files=shuffle_files)
 
 
 def _preprocess_dataset_record_fn(image_size):

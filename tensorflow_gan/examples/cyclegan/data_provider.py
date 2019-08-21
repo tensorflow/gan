@@ -151,7 +151,7 @@ def provide_custom_datasets(batch_size,
           _provide_custom_dataset(image_file_pattern=pattern,
                                   num_threads=num_threads))
   else:
-    ds_dict = tfds.load('cycle_gan')
+    ds_dict = tfds.load('cycle_gan', shuffle_files=shuffle)
     def _img(x):
       return x['image']
     images_ds = [ds_dict['trainA'].map(_img, num_parallel_calls=num_threads),

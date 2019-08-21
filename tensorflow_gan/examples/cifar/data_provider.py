@@ -48,7 +48,7 @@ def provide_dataset(split,
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = tfds.load('cifar10', split=split)
+  ds = tfds.load('cifar10', split=split, shuffle_files=shuffle)
 
   def _preprocess(element):
     """Map elements to the example dicts expected by the model."""
