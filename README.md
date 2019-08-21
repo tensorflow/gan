@@ -44,6 +44,7 @@ Numerous projects inside Google. The following are some published papers that us
 * [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
 * [GANSynth: Adversarial Neural Audio Synthesis](https://arxiv.org/abs/1902.08710)
 * [NetGAN: Generating Graphs via Random Walks](https://arxiv.org/abs/1803.00816)
+* [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
 
 ## Training a GAN model
 
