@@ -176,6 +176,24 @@ def get_dummy_gan_model(generated_data=None):
       discriminator_fn=None)
 
 
+def prepare_arguments_for_metric_fn(generator_inputs, generated_data, real_data,
+                                    discriminator_real_outputs,
+                                    discriminator_gen_outputs):
+  del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
+  return {
+      'my_real_data': real_data,
+      'my_generated_data': generated_data,
+  }
+
+
+def get_metrics_custom_args(my_real_data, my_generated_data):
+  return {
+      'mse_custom_metric':
+          tf.compat.v1.metrics.mean_squared_error(my_real_data,
+                                                  my_generated_data)
+  }
+
+
 def get_metrics(generator_inputs, generated_data, real_data,
                 discriminator_real_outputs, discriminator_gen_outputs):
   del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
@@ -236,7 +254,27 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           gan_model_fns,
           self._loss_fns,
           gan_loss_kwargs={},
+          prepare_arguments_for_eval_metric_fn=None,
           get_eval_metric_ops_fn=get_metrics,
+          add_summaries=not flags.FLAGS.use_tpu)
+
+    self.assertIsInstance(spec, TPUEstimatorSpec)
+    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+
+    self.assertEqual(generated_data, spec.predictions)
+    self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
+    self.assertIsNotNone(spec.eval_metrics)
+
+  def test_get_eval_estimator_spec_custom_metric_args(self):
+    with tf.Graph().as_default():
+      generated_data = tf.ones([3, 4])
+      gan_model_fns = [functools.partial(get_dummy_gan_model, generated_data)]
+      spec = get_eval_estimator_spec(
+          gan_model_fns,
+          self._loss_fns,
+          gan_loss_kwargs={},
+          prepare_arguments_for_eval_metric_fn=prepare_arguments_for_metric_fn,
+          get_eval_metric_ops_fn=get_metrics_custom_args,
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)

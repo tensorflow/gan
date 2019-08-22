@@ -85,30 +85,32 @@ class TPUGANEstimator(contrib.TPUEstimator):
   ```
   """
 
-  def __init__(self,
-               # Arguments to construct the `model_fn`.
-               generator_fn=None,
-               discriminator_fn=None,
-               generator_loss_fn=None,
-               discriminator_loss_fn=None,
-               generator_optimizer=None,
-               discriminator_optimizer=None,
-               get_eval_metric_ops_fn=None,
-               add_summaries=None,
-               joint_train=False,
-               gan_train_steps=tfgan_tuples.GANTrainSteps(1, 1),
-               # TPUEstimator options.
-               model_dir=None,
-               config=None,
-               params=None,
-               use_tpu=True,
-               train_batch_size=None,
-               eval_batch_size=None,
-               predict_batch_size=None,
-               batch_axis=None,
-               eval_on_tpu=True,
-               export_to_tpu=True,
-               warm_start_from=None):
+  def __init__(
+      self,
+      # Arguments to construct the `model_fn`.
+      generator_fn=None,
+      discriminator_fn=None,
+      generator_loss_fn=None,
+      discriminator_loss_fn=None,
+      generator_optimizer=None,
+      discriminator_optimizer=None,
+      prepare_arguments_for_eval_metric_fn=None,
+      get_eval_metric_ops_fn=None,
+      add_summaries=None,
+      joint_train=False,
+      gan_train_steps=tfgan_tuples.GANTrainSteps(1, 1),
+      # TPUEstimator options.
+      model_dir=None,
+      config=None,
+      params=None,
+      use_tpu=True,
+      train_batch_size=None,
+      eval_batch_size=None,
+      predict_batch_size=None,
+      batch_axis=None,
+      eval_on_tpu=True,
+      export_to_tpu=True,
+      warm_start_from=None):
     """Initializes a TPUGANEstimator instance.
 
     Args:
@@ -133,15 +135,27 @@ class TPUGANEstimator(contrib.TPUEstimator):
         work.
       discriminator_optimizer: Same as `generator_optimizer`, but for the
         discriminator updates.
-      get_eval_metric_ops_fn: A function that takes a list of arguments and
-        returns a dict of metric results keyed by name. The output of this
-        function is passed into `tf.estimator.EstimatorSpec` during evaluation.
+      prepare_arguments_for_eval_metric_fn: A function that takes a list of
+        arguments and returns a nested structure of tensors keyed by name. The
+        returned tensors must be compatible with TPUEstimatorSpec.eval_metrics
+        (i.e., in batch-major format, where the batch size is the first
+        dimension) and will be passed to the provided get_eval_metric_ops_fn.
         The arguments must be:
             * generator_inputs
             * generated_data
             * real_data
             * discriminator_real_outputs
             * discriminator_gen_outputs
+        The default impelementation simply returns the arguments as-is. This
+        function is executed on the TPU, allowing for compute-heavy eval-only
+        operations to be performed.
+      get_eval_metric_ops_fn: A function that takes a list of arguments and
+        returns a dict of metric results keyed by name, exectuted on CPU. The
+        arguments of the function should be the keys of the dict returned
+        by prepare_arguments_for_eval_metric_fn (see the
+        prepare_arguments_for_eval_metric_fn for the defaults), and should
+        return a dict from metric string name to the result of calling a metric
+        function, namely a (metric_tensor, update_op) tuple.
       add_summaries: `None`, a single `SummaryType`, or a list of `SummaryType`.
         This is ignored for jobs that run on TPU, such as the train job if
         `use_tpu` is `True` or the eval job if `eval_on_tpu` is `True`.
@@ -263,6 +277,7 @@ class TPUGANEstimator(contrib.TPUEstimator):
             gan_model_fns,
             loss_fns,
             gan_loss_kwargs,
+            prepare_arguments_for_eval_metric_fn,
             get_eval_metric_ops_fn,
             add_summaries=summary_types)
       else:  # predict
@@ -450,6 +465,7 @@ def _predictions_from_generator_output(generated_data):
 
 
 def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
+                            prepare_arguments_for_eval_metric_fn,
                             get_eval_metric_ops_fn, add_summaries):
   """Estimator spec for eval case."""
   assert len(gan_model_fns) == 1, (
@@ -470,14 +486,20 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       reduction=tf.compat.v1.losses.Reduction.NONE,
       **kwargs)
 
-  # Make the metric function and tensor names.
+  if prepare_arguments_for_eval_metric_fn is None:
+    # Set the default prepare_arguments_for_eval_metric_fn value: a function
+    # that returns its arguments in a dict.
+    prepare_arguments_for_eval_metric_fn = lambda **kwargs: kwargs
+
+  default_metric_fn = _make_default_metric_fn()
+  # Prepare tensors needed for calculating the metrics: the first element in
+  # `tensors_for_metric_fn` holds a dict containing the arguments for
+  # `default_metric_fn`, and the second element holds a dict for arguments for
+  # `get_eval_metric_ops_fn` (if it is not None).
+  tensors_for_metric_fn = [_make_default_metric_tensors(gan_loss_no_reduction)]
   if get_eval_metric_ops_fn is not None:
-    metric_fn = _make_custom_metric_fn(get_eval_metric_ops_fn)
-    tensors_for_metric_fn = _make_custom_metric_tensors(
-        gan_model, gan_loss_no_reduction)
-  else:
-    metric_fn = _make_default_metric_fn()
-    tensors_for_metric_fn = _make_default_metric_tensors(gan_loss_no_reduction)
+    tensors_for_metric_fn.append(prepare_arguments_for_eval_metric_fn(
+        **_make_custom_metric_tensors(gan_model)))
 
   scalar_loss = tf.compat.v1.losses.compute_weighted_loss(
       gan_loss_no_reduction.discriminator_loss,
@@ -490,9 +512,20 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
   # tensors_for_metric_fn before passing them to the function and then restoring
   # the original structure inside the function.
   def _metric_fn_wrapper(*args):
-    """Unflattens the arguments and pass them to the provided function."""
-    return metric_fn(
-        **contrib.nest_pack_sequence_as(tensors_for_metric_fn, args))
+    """Unflattens the arguments and pass them to the metric functions."""
+    unpacked_arguments = contrib.nest_pack_sequence_as(tensors_for_metric_fn,
+                                                       args)
+    # Calculate default metrics.
+    metrics = default_metric_fn(**unpacked_arguments[0])
+    if get_eval_metric_ops_fn is not None:
+      # Append custom metrics.
+      custom_eval_metric_ops = get_eval_metric_ops_fn(**unpacked_arguments[1])
+      if not isinstance(custom_eval_metric_ops, dict):
+        raise TypeError('`get_eval_metric_ops_fn` must return a dict, '
+                        'received: {}'.format(custom_eval_metric_ops))
+      metrics.update(custom_eval_metric_ops)
+
+    return metrics
 
   flat_tensors = contrib.nest_flatten(tensors_for_metric_fn)
   if not all(isinstance(t, tf.Tensor) for t in flat_tensors):
@@ -647,34 +680,8 @@ def _maybe_make_cross_shard_optimizers(optimizers):
                     _maybe_make_cross_shard_optimizer(optimizers.dopt))
 
 
-def _make_custom_metric_fn(get_eval_metric_ops_fn):
-  """Returns a custom metric function that uses `get_eval_metric_ops_fn`."""
-  assert get_eval_metric_ops_fn is not None
-
-  def metric_fn(
-      generator_inputs, generated_data, real_data, discriminator_real_outputs,
-      discriminator_gen_outputs, generator_loss, discriminator_loss):
-    """`metric_fn` used in TPUEstimator to calculate metrics."""
-    # Start with the default metrics, then add custom ones.
-    eval_metric_ops = _make_default_metric_fn()(
-        generator_loss, discriminator_loss)
-
-    custom_eval_metric_ops = get_eval_metric_ops_fn(
-        generator_inputs, generated_data, real_data,
-        discriminator_real_outputs, discriminator_gen_outputs)
-    if not isinstance(custom_eval_metric_ops, dict):
-      raise TypeError('`get_eval_metric_ops_fn` must return a dict, '
-                      'received: {}'.format(custom_eval_metric_ops))
-    eval_metric_ops.update(custom_eval_metric_ops)
-    return eval_metric_ops
-
-  return metric_fn
-
-
-def _make_custom_metric_tensors(gan_model, gan_loss_no_reduction):
+def _make_custom_metric_tensors(gan_model):
   return {
-      'generator_loss': gan_loss_no_reduction.generator_loss,
-      'discriminator_loss': gan_loss_no_reduction.discriminator_loss,
       'generator_inputs': gan_model.generator_inputs,
       'generated_data': gan_model.generated_data,
       'real_data': gan_model.real_data,
