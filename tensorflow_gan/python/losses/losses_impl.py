@@ -961,7 +961,7 @@ def numerically_stable_global_norm(tensor_list):
 def _used_weight(weights_list):
   for weight in weights_list:
     if weight is not None:
-      return contrib.get_static_value(tf.convert_to_tensor(value=weight))
+      return tf.get_static_value(tf.convert_to_tensor(value=weight))
 
 
 def _validate_args(weight_factor, gradient_ratio):

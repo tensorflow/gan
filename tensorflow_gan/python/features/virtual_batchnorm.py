@@ -25,7 +25,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_gan.python import contrib_utils as contrib
 
 __all__ = [
     'VBN',
@@ -35,7 +34,7 @@ __all__ = [
 def _static_or_dynamic_batch_size(tensor, batch_axis):
   """Returns the static or dynamic batch size."""
   batch_size = tf.shape(input=tensor)[batch_axis]
-  static_batch_size = contrib.get_static_value(batch_size)
+  static_batch_size = tf.get_static_value(batch_size)
   return static_batch_size or batch_size
 
 

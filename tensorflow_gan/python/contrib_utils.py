@@ -225,13 +225,6 @@ def add_gradients_summaries(grads_and_vars):
   return summaries
 
 
-def get_static_value(x):
-  try:
-    return tf.get_static_value(x)
-  except AttributeError:
-    return tf.contrib.util.constant_value(x)
-
-
 # TODO(joelshor): Remove this when the last TF 1.x is released.
 def nn_conv2d(*args, **kwargs):
   try:

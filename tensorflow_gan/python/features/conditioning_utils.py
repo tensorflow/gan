@@ -25,7 +25,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_gan.python import contrib_utils as contrib
 
 
 __all__ = [
@@ -36,7 +35,7 @@ __all__ = [
 
 def _get_shape(tensor):
   tensor_shape = tf.shape(input=tensor)
-  static_tensor_shape = contrib.get_static_value(tensor_shape)
+  static_tensor_shape = tf.get_static_value(tensor_shape)
   if static_tensor_shape is None:
     return tensor_shape
   else:
