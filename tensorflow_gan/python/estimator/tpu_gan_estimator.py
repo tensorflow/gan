@@ -282,7 +282,8 @@ class TPUGANEstimator(tf.compat.v1.estimator.tpu.TPUEstimator):
             add_summaries=summary_types)
       else:  # predict
         estimator_spec = get_predict_estimator_spec(gan_model_fns)
-      assert isinstance(estimator_spec, contrib.TPUEstimatorSpec)
+      assert isinstance(estimator_spec,
+                        tf.compat.v1.estimator.tpu.TPUEstimatorSpec)
 
       return estimator_spec
 
@@ -434,7 +435,7 @@ def get_train_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
       gan_model_fns, loss_fns, gan_loss_kwargs, optimizers, joint_train,
       gan_train_steps, add_summaries)
 
-  return contrib.TPUEstimatorSpec(
+  return tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.TRAIN, loss=scalar_loss, train_op=tpu_train_op)
 
 
@@ -531,7 +532,7 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
     raise ValueError('All objects nested within the TF-GAN model must be '
                      'tensors. Instead, types are: %s.' %
                      str([type(v) for v in flat_tensors]))
-  return contrib.TPUEstimatorSpec(
+  return tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.EVAL,
       predictions=_predictions_from_generator_output(gan_model.generated_data),
       loss=scalar_loss,
@@ -546,7 +547,7 @@ def get_predict_estimator_spec(gan_model_fns):
   gan_model = gan_model_fns[0]()
 
   preds = _predictions_from_generator_output(gan_model.generated_data)
-  return contrib.TPUEstimatorSpec(
+  return tf.compat.v1.estimator.tpu.TPUEstimatorSpec(
       mode=tf.estimator.ModeKeys.PREDICT, predictions={'generated_data': preds})
 
 

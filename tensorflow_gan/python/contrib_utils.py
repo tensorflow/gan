@@ -287,11 +287,6 @@ def batch_to_space(*args, **kwargs):
     return tf.batch_to_space(*args, **kwargs)
 
 try:
-  TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
-except AttributeError:
-  TPUEstimatorSpec = tf.contrib.tpu.TPUEstimatorSpec
-
-try:
   CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
 except AttributeError:
   CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer
