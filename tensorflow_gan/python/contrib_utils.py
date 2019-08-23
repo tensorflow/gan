@@ -232,13 +232,6 @@ def get_static_value(x):
     return tf.contrib.util.constant_value(x)
 
 
-def nest_pack_sequence_as(*args, **kwargs):
-  try:
-    return tf.nest.pack_sequence_as(*args, **kwargs)
-  except AttributeError:
-    return tf.contrib.framework.nest.pack_sequence_as(*args, **kwargs)
-
-
 # TODO(joelshor): Remove this when the last TF 1.x is released.
 def nn_conv2d(*args, **kwargs):
   try:

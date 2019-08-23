@@ -513,8 +513,7 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
   # the original structure inside the function.
   def _metric_fn_wrapper(*args):
     """Unflattens the arguments and pass them to the metric functions."""
-    unpacked_arguments = contrib.nest_pack_sequence_as(tensors_for_metric_fn,
-                                                       args)
+    unpacked_arguments = tf.nest.pack_sequence_as(tensors_for_metric_fn, args)
     # Calculate default metrics.
     metrics = default_metric_fn(**unpacked_arguments[0])
     if get_eval_metric_ops_fn is not None:

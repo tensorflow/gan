@@ -32,7 +32,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from tensorflow_gan.python import contrib_utils as contrib
 
 
 __all__ = [
@@ -132,4 +131,4 @@ def tensor_pool(input_values,
     for input_value, output_value in zip(input_values, output_values):
       output_value.set_shape(input_value.shape)
 
-  return contrib.nest_pack_sequence_as(original_input_values, output_values)
+  return tf.nest.pack_sequence_as(original_input_values, output_values)
