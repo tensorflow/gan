@@ -226,17 +226,6 @@ def add_gradients_summaries(grads_and_vars):
 
 
 # TODO(joelshor): Remove this when the last TF 1.x is released.
-def nn_conv2d(*args, **kwargs):
-  try:
-    return tf.nn.conv2d(*args, **kwargs)
-  except TypeError:
-    if 'filters' in kwargs:
-      kwargs['filter'] = kwargs['filters']
-      del kwargs['filters']
-    return tf.nn.conv2d(*args, **kwargs)
-
-
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def nn_moments(*args, **kwargs):
   try:
     return tf.nn.moments(*args, **kwargs)

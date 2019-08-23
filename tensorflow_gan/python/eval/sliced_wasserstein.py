@@ -62,7 +62,7 @@ def laplacian_pyramid(batch, num_levels):
         tensor=batch, paddings=[[0, 0], [2, 2], [2, 2], [0, 0]], mode='REFLECT')
     xt = tf.transpose(a=padded, perm=[0, 3, 1, 2])
     xt = tf.reshape(xt, [s[0] * s[3], s[1] + 4, s[2] + 4, 1])
-    conv_out = contrib.nn_conv2d(
+    conv_out = tf.nn.conv2d(
         input=xt,
         filters=gaussian_filter * gain,
         strides=[1] * 4,
