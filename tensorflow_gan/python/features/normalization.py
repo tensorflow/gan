@@ -142,8 +142,7 @@ def instance_norm(inputs,
         gamma = tf.reshape(gamma, params_shape_broadcast)
 
     # Calculate the moments (instance activations).
-    mean, variance = contrib.nn_moments(
-        x=inputs, axes=moments_axes, keepdims=True)
+    mean, variance = tf.nn.moments(x=inputs, axes=moments_axes, keepdims=True)
 
     # Compute instance normalization.
     outputs = tf.nn.batch_normalization(
@@ -349,7 +348,7 @@ def group_norm(inputs,
       mean, variance = tf.nn.normalize_moments(
           counts, means_ss, variance_ss, shift=None)
     else:
-      mean, variance = contrib.nn_moments(
+      mean, variance = tf.nn.moments(
           x=inputs, axes=moments_axes, keepdims=True)
 
     # Compute normalization.

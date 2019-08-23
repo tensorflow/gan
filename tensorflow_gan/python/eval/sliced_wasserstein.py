@@ -135,7 +135,7 @@ def _normalize_patches(patches):
       Tensor (batch, size, size, channels) of the normalized patches.
   """
   patches = tf.concat(patches, 0)
-  mean, variance = contrib.nn_moments(x=patches, axes=[1, 2, 3], keepdims=True)
+  mean, variance = tf.nn.moments(x=patches, axes=[1, 2, 3], keepdims=True)
   patches = (patches - mean) / tf.sqrt(variance)
   return tf.reshape(patches, [tf.shape(input=patches)[0], -1])
 

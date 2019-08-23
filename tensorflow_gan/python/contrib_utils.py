@@ -226,17 +226,6 @@ def add_gradients_summaries(grads_and_vars):
 
 
 # TODO(joelshor): Remove this when the last TF 1.x is released.
-def nn_moments(*args, **kwargs):
-  try:
-    return tf.nn.moments(*args, **kwargs)
-  except TypeError:
-    if 'keepdims' in kwargs:
-      kwargs['keep_dims'] = kwargs['keepdims']
-      del kwargs['keepdims']
-    return tf.nn.moments(*args, **kwargs)
-
-
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def sufficient_statistics(*args, **kwargs):
   try:
     return tf.nn.sufficient_statistics(*args, **kwargs)
