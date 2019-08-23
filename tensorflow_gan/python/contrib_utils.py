@@ -232,13 +232,6 @@ def get_static_value(x):
     return tf.contrib.util.constant_value(x)
 
 
-def nest_flatten(x):
-  try:
-    return tf.nest.flatten(x)
-  except AttributeError:
-    return tf.contrib.framework.nest.flatten(x)
-
-
 def nest_pack_sequence_as(*args, **kwargs):
   try:
     return tf.nest.pack_sequence_as(*args, **kwargs)

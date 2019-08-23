@@ -527,7 +527,7 @@ def get_eval_estimator_spec(gan_model_fns, loss_fns, gan_loss_kwargs,
 
     return metrics
 
-  flat_tensors = contrib.nest_flatten(tensors_for_metric_fn)
+  flat_tensors = tf.nest.flatten(tensors_for_metric_fn)
   if not all(isinstance(t, tf.Tensor) for t in flat_tensors):
     raise ValueError('All objects nested within the TF-GAN model must be '
                      'tensors. Instead, types are: %s.' %

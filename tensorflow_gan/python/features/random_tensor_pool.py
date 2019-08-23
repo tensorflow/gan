@@ -83,7 +83,7 @@ def tensor_pool(input_values,
     return input_values
 
   original_input_values = input_values
-  input_values = contrib.nest_flatten(input_values)
+  input_values = tf.nest.flatten(input_values)
 
   with tf.compat.v1.name_scope(
       '{}_pool_queue'.format(name),
