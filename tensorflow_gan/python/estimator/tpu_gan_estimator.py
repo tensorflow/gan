@@ -671,8 +671,8 @@ def _maybe_construct_optimizers(optimizers):
 def _maybe_make_cross_shard_optimizers(optimizers):
   def _maybe_make_cross_shard_optimizer(opt):
     assert not callable(optimizers.gopt)
-    if not isinstance(opt, contrib.CrossShardOptimizer):
-      return contrib.CrossShardOptimizer(opt)
+    if not isinstance(opt, tf.compat.v1.tpu.CrossShardOptimizer):
+      return tf.compat.v1.tpu.CrossShardOptimizer(opt)
     else:
       return opt
 

@@ -279,11 +279,6 @@ def batch_to_space(*args, **kwargs):
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
 
-try:
-  CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
-except AttributeError:
-  CrossShardOptimizer = tf.contrib.tpu.CrossShardOptimizer
-
 # pylint:disable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
 try:
   from tensorflow.python.tpu import tpu_function
