@@ -39,7 +39,7 @@ LossFns = collections.namedtuple('_loss_fns', ['g_loss_fn', 'd_loss_fn'])
 Optimizers = collections.namedtuple('Optimizers', ['gopt', 'dopt'])
 
 
-class TPUGANEstimator(contrib.TPUEstimator):
+class TPUGANEstimator(tf.compat.v1.estimator.tpu.TPUEstimator):
   """An estimator for Generative Adversarial Networks (GANs) on TPU.
 
   This Estimator is backed by TFGAN. It is similar to `tfgan.GANEstimator`,

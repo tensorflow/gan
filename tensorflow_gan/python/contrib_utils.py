@@ -300,12 +300,6 @@ def batch_to_space(*args, **kwargs):
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
 
-
-try:
-  TPUEstimator = tf.compat.v1.estimator.tpu.TPUEstimator
-except AttributeError:
-  TPUEstimator = tf.contrib.tpu.TPUEstimator
-
 try:
   TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
 except AttributeError:
