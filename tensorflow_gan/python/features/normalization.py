@@ -343,7 +343,7 @@ def group_norm(inputs,
     # Calculate the moments.
     if mean_close_to_zero:
       # One pass algorithm returns better result when mean is close to zero.
-      counts, means_ss, variance_ss, _ = contrib.sufficient_statistics(
+      counts, means_ss, variance_ss, _ = tf.nn.sufficient_statistics(
           inputs, moments_axes, keepdims=True)
       mean, variance = tf.nn.normalize_moments(
           counts, means_ss, variance_ss, shift=None)

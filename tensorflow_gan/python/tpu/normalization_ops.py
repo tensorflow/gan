@@ -212,7 +212,7 @@ def standardize_batch(inputs,
   if use_cross_replica_mean:
     mean, variance = cross_replica_moments(inputs, reduction_axes)
   else:
-    counts, mean_ss, variance_ss, _ = contrib.sufficient_statistics(
+    counts, mean_ss, variance_ss, _ = tf.nn.sufficient_statistics(
         inputs, reduction_axes, keepdims=False)
     mean, variance = tf.nn.normalize_moments(
         counts, mean_ss, variance_ss, shift=None)
