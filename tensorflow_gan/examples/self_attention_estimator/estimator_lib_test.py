@@ -105,6 +105,7 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
   @mock.patch.object(
       estimator_lib.tfgan.eval,
       'frechet_classifier_distance_from_activations_streaming', new=_new_tensor)
+  @mock.patch.object(estimator_lib.eval_lib, 'get_activations', new=_new_tensor)
   def test_get_gpu_estimator_syntax(self):
     config = estimator_lib.get_run_config_from_hparams(self.hparams)
     est = estimator_lib.get_gpu_estimator(

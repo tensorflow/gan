@@ -19,9 +19,21 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import tensorflow as tf
 from tensorflow_gan.examples.self_attention_estimator import data_provider
 import tensorflow_gan as tfgan  # tf
+
+
+# TODO(joelshor, marvinritter): Make a combined  TPU/CPU/GPU graph the TF-GAN
+# default, so this isn't necessary.
+def default_graph_def_fn():
+  url = 'http://download.tensorflow.org/models/frozen_inception_v1_2015_12_05_v4.tar.gz'
+  graph_def = 'inceptionv1_for_inception_score_tpu.pb'
+  return tfgan.eval.get_graph_def_from_url_tarball(
+      url, graph_def, os.path.basename(url))
+
+
 
 
 def get_activations(get_images_fn, num_batches, get_logits=False):
@@ -54,7 +66,8 @@ def get_activations(get_images_fn, num_batches, get_logits=False):
   output = tfgan.eval.sample_and_run_inception(
       sample_fn,
       sample_inputs=[1.0] * num_batches,  # dummy inputs
-      output_tensor=output_tensor)
+      output_tensor=output_tensor,
+      default_graph_def_fn=default_graph_def_fn)
 
   return output
 
