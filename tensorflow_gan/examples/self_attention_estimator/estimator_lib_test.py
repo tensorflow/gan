@@ -59,7 +59,7 @@ def _new_tensor(*args, **kwargs):
   del args, kwargs
   # Tensors need to be created in the same graph, so generate them at the call
   # site.
-  return (tf.constant(1.), tf.constant(1.))
+  return (tf.ones([32, 128, 3]), tf.ones([32, 128, 3]))
 
 
 class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
@@ -68,7 +68,7 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
     super(EstimatorLibTest, self).setUp()
     self.hparams = train_experiment.HParams(
         train_batch_size=1,
-        eval_batch_size=40,
+        eval_batch_size=32,
         predict_batch_size=1,
         generator_lr=1.0,
         discriminator_lr=1.0,

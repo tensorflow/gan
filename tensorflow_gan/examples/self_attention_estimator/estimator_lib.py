@@ -36,12 +36,18 @@ def get_tpu_run_config_from_hparams(hparams):
       tpu=hparams.tpu_params.tpu_location,
       project=hparams.tpu_params.gcp_project,
       zone=hparams.tpu_params.tpu_zone)
+  if hparams.debug_params.eval_on_tpu:
+    eval_training_input_configuration = tf.compat.v1.estimator.tpu.InputPipelineConfig.SLICED
+  else:
+    # InputPipelineConfig.SLICED is not supported when running on CPU.
+    eval_training_input_configuration = tf.compat.v1.estimator.tpu.InputPipelineConfig.PER_HOST_V1
   return tf.compat.v1.estimator.tpu.RunConfig(
       model_dir=hparams.model_dir,
       cluster=cluster_resolver,
       save_checkpoints_steps=hparams.train_steps_per_eval,
       tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
-          iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop))
+          iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop,
+          eval_training_input_configuration=eval_training_input_configuration))
 
 
 def get_run_config_from_hparams(hparams):
@@ -62,6 +68,7 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
           hparams.generator_lr, hparams.beta1),
       discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
           hparams.discriminator_lr, hparams.beta1),
+      prepare_arguments_for_eval_metric_fn=prepare_metric_arguments,
       get_eval_metric_ops_fn=functools.partial(get_metrics, hparams=hparams),
       eval_on_tpu=hparams.debug_params.eval_on_tpu,
       train_batch_size=hparams.train_batch_size,
@@ -74,10 +81,12 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
 
 def get_gpu_estimator(generator, discriminator, hparams, config):
   def gpu_get_metric(gan_model):
-    return get_metrics(
+    metrics_arguments = prepare_metric_arguments(
         gan_model.generator_inputs, gan_model.generated_data,
         gan_model.real_data, gan_model.discriminator_real_outputs,
-        gan_model.discriminator_gen_outputs, hparams=hparams)
+        gan_model.discriminator_gen_outputs)
+    return get_metrics(hparams=hparams, **metrics_arguments)
+
   return tfgan.estimator.GANEstimator(
       generator_fn=generator,
       discriminator_fn=discriminator,
@@ -92,9 +101,12 @@ def get_gpu_estimator(generator, discriminator, hparams, config):
       params=hparams._asdict())
 
 
-def get_metrics(generator_inputs, generated_data, real_data,
-                discriminator_real_outputs, discriminator_gen_outputs, hparams):
-  """Return metrics for SAGAN experiment on TPU, CPU, or GPU.
+def prepare_metric_arguments(generator_inputs, generated_data, real_data,
+                             discriminator_real_outputs,
+                             discriminator_gen_outputs):
+  """Prepares the arguments needed for get_metrics.
+
+  When training on TPUs, this function should be executed on TPU.
 
   Args:
     generator_inputs: Inputs to the generator fn.
@@ -102,7 +114,6 @@ def get_metrics(generator_inputs, generated_data, real_data,
     real_data: A sample of real data.
     discriminator_real_outputs: Discriminator output on real data.
     discriminator_gen_outputs: Discriminator output on generated data.
-    hparams: An hparams object.
 
   Returns:
     A metric dictionary.
@@ -113,32 +124,61 @@ def get_metrics(generator_inputs, generated_data, real_data,
                  real_data)
   gen_images = (generated_data['images'] if isinstance(generated_data, dict)
                 else generated_data)
-
   # Get logits and pools for real and generated images.
   real_logits, real_pools = eval_lib.get_activations(
       lambda: real_images, num_batches=1, get_logits=True)
   fake_logits, fake_pools = eval_lib.get_activations(
       lambda: gen_images, num_batches=1, get_logits=True)
 
-  if hparams.debug_params.eval_on_tpu:
-    # TODO(open source community): Implement this.
-    raise ValueError('Running eval on TPU is not currently supported.')
-  else:
-    metric_dict = {
-        'eval/real_incscore':
-            tfgan.eval.classifier_score_from_logits_streaming(real_logits),
-        'eval/incscore':
-            tfgan.eval.classifier_score_from_logits_streaming(fake_logits),
-        'eval/fid':
-            tfgan.eval.frechet_classifier_distance_from_activations_streaming(
-                real_pools, fake_pools),
-    }
-    metric_dict.update(_generator_summary_ops(gen_images, real_images))
-    return metric_dict
+  return {
+      'real_images': real_images,
+      'gen_images': gen_images,
+      'real_logits': real_logits,
+      'real_pools': real_pools,
+      'fake_logits': fake_logits,
+      'fake_pools': fake_pools
+  }
 
 
-def _generator_summary_ops(generated_images, real_images):
+def get_metrics(real_images, gen_images, real_logits, real_pools, fake_logits,
+                fake_pools, hparams):
+  """Return metrics for SAGAN experiment on TPU, CPU, or GPU.
+
+  When training on TPUs, this function should be executed on the CPU.
+
+  Args:
+    real_images: The real_images object retured by prepare_metric_arguments.
+    gen_images: The gen_images object retured by prepare_metric_arguments.
+    real_logits: The real_logits object retured by prepare_metric_arguments.
+    real_pools: The real_pools object retured by prepare_metric_arguments.
+    fake_logits: The fake_logits object retured by prepare_metric_arguments.
+    fake_pools: The fake_pools object retured by prepare_metric_arguments.
+    hparams: An hparams object.
+
+  Returns:
+    A metric dictionary.
+  """
+  metric_dict = {
+      'eval/real_incscore':
+          tfgan.eval.classifier_score_from_logits_streaming(real_logits),
+      'eval/incscore':
+          tfgan.eval.classifier_score_from_logits_streaming(fake_logits),
+      'eval/fid':
+          tfgan.eval.frechet_classifier_distance_from_activations_streaming(
+              real_pools, fake_pools),
+  }
+  metric_dict.update(
+      _generator_summary_ops(gen_images, real_images,
+                             hparams.debug_params.eval_on_tpu))
+  return metric_dict
+
+
+def _generator_summary_ops(generated_images, real_images, eval_on_tpu):
   """Creates a dictionary of image summaries."""
+  if eval_on_tpu:
+    # TODO(dyoel): Use `tf.contrib.summary`.
+    # https://www.tensorflow.org/api_docs/python/tf/contrib/summary
+    return {}
   real_img_summ = tf.compat.v1.summary.image('real_images', real_images)
   gen_img_summ = tf.compat.v1.summary.image('gen_images', generated_images)
   real_img_grid = tf.compat.v1.summary.image(
