@@ -226,17 +226,6 @@ def add_gradients_summaries(grads_and_vars):
 
 
 # TODO(joelshor): Remove this when the last TF 1.x is released.
-def nn_avg_pool2d(*args, **kwargs):
-  try:
-    return tf.nn.avg_pool2d(*args, **kwargs)
-  except TypeError:
-    if 'input' in kwargs:
-      kwargs['value'] = kwargs['input']
-      del kwargs['input']
-    return tf.nn.avg_pool2d(*args, **kwargs)
-
-
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def batch_to_space(*args, **kwargs):
   try:
     return tf.batch_to_space(*args, **kwargs)
