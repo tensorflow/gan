@@ -41,7 +41,8 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
 
   """
   with tf.compat.v1.variable_scope(
-      name, custom_getter=sn_gettr(training=training)):
+      name,
+      custom_getter=sn_gettr(training=training, equality_constrained=False)):
     return tf.compat.v1.layers.conv2d(
         input_,
         filters=output_dim,
@@ -69,7 +70,8 @@ def snlinear(x, output_size, bias_start=0.0, training=True, name='snlinear'):
     The normalized output tensor of the linear layer.
   """
   with tf.compat.v1.variable_scope(
-      name, custom_getter=sn_gettr(training=training)):
+      name,
+      custom_getter=sn_gettr(training=training, equality_constrained=False)):
     return tf.compat.v1.layers.dense(
         x,
         output_size,
@@ -100,7 +102,9 @@ def sn_embedding(x, number_classes, embedding_size, training=True,
         initializer=tf.compat.v1.keras.initializers.VarianceScaling(
             scale=1.0, mode='fan_avg', distribution='uniform'))
     embedding_map_bar_transpose = tfgan.features.spectral_normalize(
-        tf.transpose(a=embedding_map), training=training)
+        tf.transpose(a=embedding_map),
+        training=training,
+        equality_constrained=False)
     embedding_map_bar = tf.transpose(a=embedding_map_bar_transpose)
     return tf.nn.embedding_lookup(params=embedding_map_bar, ids=x)
 
