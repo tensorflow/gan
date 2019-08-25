@@ -25,7 +25,6 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.progressive_gan import data_provider
 
 mock = tf.compat.v1.test.mock
@@ -102,17 +101,17 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
         batch_size=batch_size)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = compat_utils.ds_output_classes(ds)
+    output = tf.compat.v1.data.get_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images']))
     self.assertEqual(output['images'], tf.Tensor)
 
-    shapes = compat_utils.ds_output_shapes(ds)
+    shapes = tf.compat.v1.data.get_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images']))
     self.assertListEqual(shapes['images'].as_list(), expected_shape)
 
-    types = compat_utils.ds_output_types(ds)
+    types = tf.compat.v1.data.get_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images']))
     self.assertEqual(types['images'], tf.float32)

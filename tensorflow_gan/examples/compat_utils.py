@@ -21,27 +21,6 @@ from __future__ import print_function
 import tensorflow as tf
 
 
-def ds_output_classes(ds):
-  try:
-    return tf.compat.v1.data.get_output_classes(ds)
-  except AttributeError:  # some TF 1.x doesn't have `get_output_classes`.
-    return ds.output_classes
-
-
-def ds_output_shapes(ds):
-  try:
-    return tf.compat.v1.data.get_output_shapes(ds)
-  except AttributeError:  # some TF 1.x doesn't have `get_output_shapes`.
-    return ds.output_shapes
-
-
-def ds_output_types(ds):
-  try:
-    return tf.compat.v1.data.get_output_types(ds)
-  except AttributeError:  # some TF 1.x doesn't have `get_output_types`.
-    return ds.output_types
-
-
 def resize_with_crop_or_pad(image, target_height, target_width):
   try:
     return tf.image.resize_with_crop_or_pad(image, target_height, target_width)

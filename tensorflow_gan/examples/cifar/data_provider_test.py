@@ -23,7 +23,6 @@ from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf
 
-from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.cifar import data_provider
 
 mock = tf.compat.v1.test.mock
@@ -52,13 +51,13 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
     ds = data_provider.provide_dataset('test', batch_size, one_hot=one_hot)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = compat_utils.ds_output_classes(ds)
+    output = tf.compat.v1.data.get_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images', 'labels']))
     self.assertEqual(output['images'], tf.Tensor)
     self.assertEqual(output['labels'], tf.Tensor)
 
-    shapes = compat_utils.ds_output_shapes(ds)
+    shapes = tf.compat.v1.data.get_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images', 'labels']))
     self.assertIsInstance(shapes['images'], tf.TensorShape)
@@ -69,7 +68,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
       expected_lbls_shape = [batch_size]
     self.assertListEqual(shapes['labels'].as_list(), expected_lbls_shape)
 
-    types = compat_utils.ds_output_types(ds)
+    types = tf.compat.v1.data.get_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images', 'labels']))
     self.assertEqual(types['images'], tf.float32)
