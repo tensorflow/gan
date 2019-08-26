@@ -116,6 +116,7 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
         'batch_size': 8,
         'train_batch_size': 8,
         'eval_batch_size': 8,
+        'predict_batch_size': 16,
         'debug_params': self.hparams.debug_params._replace(fake_data=False),
         'z_dim': 12,
         'shuffle_buffer_size': 100,

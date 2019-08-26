@@ -80,12 +80,25 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
 
 
 def get_gpu_estimator(generator, discriminator, hparams, config):
+  """Returns an Estimator object to be used for training with GPUs."""
+
   def gpu_get_metric(gan_model):
+    """A function compatible with GANEstimator's get_eval_metric_ops_fn arg."""
     metrics_arguments = prepare_metric_arguments(
         gan_model.generator_inputs, gan_model.generated_data,
         gan_model.real_data, gan_model.discriminator_real_outputs,
         gan_model.discriminator_gen_outputs)
-    return get_metrics(hparams=hparams, **metrics_arguments)
+    metrics = get_metrics(hparams=hparams, **metrics_arguments)
+    # Generate image summaries.
+    real_data = gan_model.real_data
+    generated_data = gan_model.generated_data
+    real_images = (
+        real_data['images'] if isinstance(real_data, dict) else real_data)
+    gen_images = (
+        generated_data['images']
+        if isinstance(generated_data, dict) else generated_data)
+    metrics.update(_generator_summary_ops(gen_images, real_images))
+    return metrics
 
   return tfgan.estimator.GANEstimator(
       generator_fn=generator,
@@ -131,8 +144,6 @@ def prepare_metric_arguments(generator_inputs, generated_data, real_data,
       lambda: gen_images, num_batches=1, get_logits=True)
 
   return {
-      'real_images': real_images,
-      'gen_images': gen_images,
       'real_logits': real_logits,
       'real_pools': real_pools,
       'fake_logits': fake_logits,
@@ -140,15 +151,12 @@ def prepare_metric_arguments(generator_inputs, generated_data, real_data,
   }
 
 
-def get_metrics(real_images, gen_images, real_logits, real_pools, fake_logits,
-                fake_pools, hparams):
+def get_metrics(real_logits, real_pools, fake_logits, fake_pools, hparams):
   """Return metrics for SAGAN experiment on TPU, CPU, or GPU.
 
   When training on TPUs, this function should be executed on the CPU.
 
   Args:
-    real_images: The real_images object retured by prepare_metric_arguments.
-    gen_images: The gen_images object retured by prepare_metric_arguments.
     real_logits: The real_logits object retured by prepare_metric_arguments.
     real_pools: The real_pools object retured by prepare_metric_arguments.
     fake_logits: The fake_logits object retured by prepare_metric_arguments.
@@ -158,6 +166,7 @@ def get_metrics(real_images, gen_images, real_logits, real_pools, fake_logits,
   Returns:
     A metric dictionary.
   """
+  del hparams
   metric_dict = {
       'eval/real_incscore':
           tfgan.eval.classifier_score_from_logits_streaming(real_logits),
@@ -167,18 +176,11 @@ def get_metrics(real_images, gen_images, real_logits, real_pools, fake_logits,
           tfgan.eval.frechet_classifier_distance_from_activations_streaming(
               real_pools, fake_pools),
   }
-  metric_dict.update(
-      _generator_summary_ops(gen_images, real_images,
-                             hparams.debug_params.eval_on_tpu))
   return metric_dict
 
 
-def _generator_summary_ops(generated_images, real_images, eval_on_tpu):
+def _generator_summary_ops(generated_images, real_images):
   """Creates a dictionary of image summaries."""
-  if eval_on_tpu:
-    # TODO(dyoel): Use `tf.contrib.summary`.
-    # https://www.tensorflow.org/api_docs/python/tf/contrib/summary
-    return {}
   real_img_summ = tf.compat.v1.summary.image('real_images', real_images)
   gen_img_summ = tf.compat.v1.summary.image('gen_images', generated_images)
   real_img_grid = tf.compat.v1.summary.image(

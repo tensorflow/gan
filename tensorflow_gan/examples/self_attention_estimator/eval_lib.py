@@ -20,6 +20,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import numpy as np
+import PIL
+
 import tensorflow as tf
 from tensorflow_gan.examples.self_attention_estimator import data_provider
 import tensorflow_gan as tfgan  # tf
@@ -154,3 +157,43 @@ def log_and_summarize_variables(var_list, dbg_messge, on_tpu):
     with tf.compat.v1.name_scope(name=None):
       for var in sigma_ratio_vars:
         tf.compat.v1.summary.scalar('sigma_ratio_vars/' + var.name, var)
+
+
+def predict_and_write_images(estimator, input_fn, model_dir, filename_suffix):
+  """Generates images and write them to the model dir.
+
+  Args:
+    estimator: An object of type tfgan.estimator.GANEstimator or
+      tfgan.estimator.TPUGANEstimator for performing the predictions.
+    input_fn: An input_fn function to be used by `estimator.predict`.
+    model_dir: The model directory (the images will be saved inside an 'images'
+      subdirectory).
+    filename_suffix: A suffix to append to the image file names.
+  """
+  # Generate images.
+  image_iterator = estimator.predict(input_fn)
+  if isinstance(estimator, tfgan.estimator.TPUGANEstimator):
+    predictions = np.array(
+        [next(image_iterator)['generated_data'] for _ in range(16)])
+  else:
+    predictions = np.array([next(image_iterator) for _ in range(16)])
+  # Write images to disk.
+  output_dir = os.path.join(model_dir, 'images')
+  if not tf.io.gfile.exists(output_dir):
+    tf.io.gfile.makedirs(output_dir)
+  for i, prediction in enumerate(predictions[:3]):
+    fname = os.path.join(output_dir, 'image_%s_%i.png' % (filename_suffix, i))
+    _write_image_to_disk(prediction, fname)
+  # Generate a grid of images and write it to disk.
+  image_grid = tfgan.eval.python_image_grid(predictions, grid_shape=(4, 4))
+  grid_fname = os.path.join(output_dir, 'grid_%s.png' % filename_suffix)
+  _write_image_to_disk(image_grid, grid_fname)
+
+
+def _write_image_to_disk(image, filename):
+  with tf.io.gfile.GFile(filename, 'w') as f:
+    # Convert tiled_image from float32 in [-1, 1] to unit8 [0, 255].
+    img_np = (255 / 2.0) * (image + 1.0)
+    pil_image = PIL.Image.fromarray(img_np.astype(np.uint8))
+    pil_image.convert('RGB').save(f, 'PNG')
+  tf.compat.v1.logging.info('Wrote output to: %s', filename)

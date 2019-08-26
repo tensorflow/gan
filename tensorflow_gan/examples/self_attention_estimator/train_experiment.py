@@ -94,10 +94,13 @@ def train_eval_input_fn(mode, params):
     bs = {
         tf.estimator.ModeKeys.TRAIN: params['train_batch_size'],
         tf.estimator.ModeKeys.EVAL: params['eval_batch_size'],
+        tf.estimator.ModeKeys.PREDICT: params['predict_batch_size'],
     }[mode]
 
   if params['debug_params'].fake_data:
     fake_noise = tf.zeros([bs, params['z_dim']])
+    if mode == tf.estimator.ModeKeys.PREDICT:
+      return tf.data.Dataset.from_tensors(fake_noise).repeat()
     fake_imgs = tf.zeros([bs, 128, 128, 3])
     fake_lbls = tf.zeros([bs], dtype=tf.int32)
     ds = tf.data.Dataset.from_tensors(
@@ -106,18 +109,22 @@ def train_eval_input_fn(mode, params):
     _verify_dataset_shape(ds, params['z_dim'])
     return ds
 
+  num_towers = 1
+
+  def _make_noise(_):
+    noise = gen_module.make_z_normal(num_towers, bs, params['z_dim'])
+    return noise[0]  # one tower
+
+  noise_ds = tf.data.Dataset.from_tensors(0).repeat().map(_make_noise)
+  if mode == tf.estimator.ModeKeys.PREDICT:
+    return noise_ds
+
   images_ds = data_provider.provide_dataset(
       bs,
       shuffle_buffer_size=params['shuffle_buffer_size'],
       split=split)
   images_ds = images_ds.map(
       lambda img, lbl: {'images': img, 'labels': lbl})  # map to dict.
-
-  num_towers = 1
-  def _make_noise(_):
-    noise = gen_module.make_z_normal(num_towers, bs, params['z_dim'])
-    return noise[0]  # one tower
-  noise_ds = tf.data.Dataset.from_tensors(0).repeat().map(_make_noise)
 
   ds = tf.data.Dataset.zip((noise_ds, images_ds))
   _verify_dataset_shape(ds, params['z_dim'])
@@ -181,6 +188,12 @@ def run_train_and_eval(hparams):
 
   start_time = time.time()
   while cur_step < max_step:
+    if hparams.tpu_params.use_tpu_estimator:
+      tf.compat.v1.logging.info('About to write sample images at step: %i' %
+                                cur_step)
+      eval_lib.predict_and_write_images(estimator, train_eval_input_fn,
+                                        hparams.model_dir, 'step_%i' % cur_step)
+
     # Train for a fixed number of steps.
     start_step = cur_step
     step_to_stop_at = min(cur_step + steps_per_eval, max_step)
