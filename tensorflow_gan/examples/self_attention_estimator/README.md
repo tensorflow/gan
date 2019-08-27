@@ -49,10 +49,13 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
     [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
     to properly set up the `PYTHONPATH`.
 
-1.  Save the location of your cloud storage bucket.
+1.  Save the location of your cloud resources.
 
     ```shell
     export STORAGE_BUCKET=gs://YOUR-BUCKET-NAME
+    export TPU_NAME=TPU-NAME
+    export PROJECT_ID=PROJECT-ID
+    export TPU_ZONE=ZONE
     ```
 
 1.  Run the example:
