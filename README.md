@@ -70,7 +70,7 @@ and we demonstrate in the well-tested [examples directory](https://github.com/te
 
 * (Documentation) David Westbrook, westbrook@google.com
 * Joel Shor, joelshor@google.com, [github](https://github.com/joel-shor)
-* Aaron Sarna, sarna@google.com, [github](https://githun.com/aaronsarna)
+* Aaron Sarna, sarna@google.com, [github](https://github.com/aaronsarna)
 * Yoel Drori, dyoel@google.com, [github](https://github.com/yoeldr)
 
 ## Authors
