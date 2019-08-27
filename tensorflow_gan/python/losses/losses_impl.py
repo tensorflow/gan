@@ -450,7 +450,7 @@ def wasserstein_gradient_penalty(
       raise ValueError('`generated_data` can\'t have unknown rank.')
 
     differences = generated_data - real_data
-    batch_size = (contrib.dimension_value(differences.shape.dims[0]) or
+    batch_size = (tf.compat.dimension_value(differences.shape.dims[0]) or
                   tf.shape(input=differences)[0])
     alpha_shape = [batch_size] + [1] * (differences.shape.ndims - 1)
     alpha = tf.random.uniform(shape=alpha_shape)

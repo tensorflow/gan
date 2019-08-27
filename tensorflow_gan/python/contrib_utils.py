@@ -241,12 +241,3 @@ try:
 except ImportError:
   from tensorflow.contrib.tpu.python.tpu import tpu_function
 # pylint:enable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
-
-
-# `tf.compat.dimension_value` didn't make the most recent stable release. Use
-# this hack until it makes it into the stable TF 1.x release.
-def dimension_value(x):
-  try:
-    return tf.compat.dimension_value(x)
-  except AttributeError:
-    return x.value

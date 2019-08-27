@@ -31,8 +31,6 @@ import six
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-from tensorflow_gan.python.contrib_utils import dimension_value
-
 # Private functions to test.
 from tensorflow_gan.python.estimator.tpu_gan_estimator import get_eval_estimator_spec
 from tensorflow_gan.python.estimator.tpu_gan_estimator import get_predict_estimator_spec
@@ -143,7 +141,8 @@ class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
 
 def generator_fn(noise, mode):
   del mode
-  return tf.compat.v1.layers.dense(noise, dimension_value(noise.shape[1]))
+  return tf.compat.v1.layers.dense(
+      noise, tf.compat.dimension_value(noise.shape[1]))
 
 
 def discriminator_fn(data, unused_conditioning, mode):

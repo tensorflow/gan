@@ -80,11 +80,11 @@ def batch_norm(inputs,
       name, values=[inputs], reuse=tf.compat.v1.AUTO_REUSE):
     # Determine the variable shape.
     var_shape = [1] * inputs.shape.rank
-    var_shape[axis] = contrib.dimension_value(inputs.shape[axis])
+    var_shape[axis] = tf.compat.dimension_value(inputs.shape[axis])
 
     # Allocate parameters for the trainable variables.
     if conditional_class_labels is not None:
-      num_categories = contrib.dimension_value(
+      num_categories = tf.compat.dimension_value(
           conditional_class_labels.shape[-1])
       var_shape[batch_axis] = num_categories
       labels = tf.math.argmax(
@@ -187,7 +187,7 @@ def standardize_batch(inputs,
   inputs_dtype = inputs.dtype
   inputs_shape = inputs.get_shape()
 
-  num_channels = contrib.dimension_value(inputs.shape[-1])
+  num_channels = tf.compat.dimension_value(inputs.shape[-1])
   if num_channels is None:
     raise ValueError('`C` dimension must be known but is None')
 
