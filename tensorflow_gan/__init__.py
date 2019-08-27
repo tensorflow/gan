@@ -45,7 +45,7 @@ def _ensure_tf_install():  # pylint: disable=g-statement-before-imports
     print("\n\nFailed to import TensorFlow. Please note that TensorFlow is not "
           "installed by default when you install TF-GAN. This is so that users "
           "can decide whether to install the GPU-enabled TensorFlow package. "
-          "To use TF GAN, please install the most recent version of "
+          "To use TF-GAN, please install the most recent version of "
           "TensorFlow, by following instructions at "
           "https://tensorflow.org/install.\n\n")
     raise
@@ -55,12 +55,12 @@ def _ensure_tf_install():  # pylint: disable=g-statement-before-imports
   #
   # Update this whenever we need to depend on a newer TensorFlow release.
   #
-  required_tensorflow_version = "1.11.0"
+  required_tensorflow_version = "1.14.0"
 
   if (distutils.version.LooseVersion(tf.__version__) <
       distutils.version.LooseVersion(required_tensorflow_version)):
     raise ImportError(
-        "This version of TF GAN requires TensorFlow "
+        "This version of TF-GAN requires TensorFlow "
         "version >= {required}; Detected an installation of version {present}. "
         "Please upgrade TensorFlow to proceed.".format(
             required=required_tensorflow_version,
@@ -82,7 +82,7 @@ def _ensure_tfp_install():  # pylint: disable=g-statement-before-imports
   except ImportError:
     # Print more informative error message, then reraise.
     print("\n\nFailed to import TensorFlow Probability. "
-          "To use TF GAN, please install the most recent version of "
+          "To use TF-GAN, please install the most recent version of "
           "TensorFlow Probability, by following instructions at "
           "https://www.tensorflow.org/probability/install.\n\n")
     raise
@@ -98,7 +98,7 @@ def _ensure_tfp_install():  # pylint: disable=g-statement-before-imports
   if (distutils.version.LooseVersion(tfp.__version__) <
       distutils.version.LooseVersion(required_tensorflow_probability_version)):
     raise ImportError(
-        "This version of TF GAN requires TensorFlow Probability "
+        "This version of TF-GAN requires TensorFlow Probability "
         "version >= {required}; Detected an installation of version {present}. "
         "Please upgrade TensorFlow to proceed.".format(
             required=required_tensorflow_probability_version,
