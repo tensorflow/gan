@@ -181,9 +181,6 @@ def predict_and_write_images(estimator, input_fn, model_dir, filename_suffix):
   output_dir = os.path.join(model_dir, 'images')
   if not tf.io.gfile.exists(output_dir):
     tf.io.gfile.makedirs(output_dir)
-  for i, prediction in enumerate(predictions[:3]):
-    fname = os.path.join(output_dir, 'image_%s_%i.png' % (filename_suffix, i))
-    _write_image_to_disk(prediction, fname)
   # Generate a grid of images and write it to disk.
   image_grid = tfgan.eval.python_image_grid(predictions, grid_shape=(4, 4))
   grid_fname = os.path.join(output_dir, 'grid_%s.png' % filename_suffix)
