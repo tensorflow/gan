@@ -52,10 +52,3 @@ def batch_to_space(*args, **kwargs):
       kwargs['block_size'] = kwargs['block_shape']
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
-
-
-def mod(x, y):
-  try:
-    return tf.math.mod(x, y)
-  except AttributeError:
-    return tf.mod(x, y)

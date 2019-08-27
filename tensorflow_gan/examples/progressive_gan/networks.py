@@ -30,7 +30,6 @@ import math
 
 import tensorflow as tf
 
-from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.progressive_gan import layers
 from tensorflow_gan.python.contrib_utils import dimension_value
 
@@ -144,7 +143,7 @@ def compute_progress(current_image_id, stable_stage_num_images,
   progress_fraction = tf.maximum(
       0.0,
       tf.cast(
-          compat_utils.mod(capped_current_image_id, stage_num_images) -
+          tf.math.mod(capped_current_image_id, stage_num_images) -
           stable_stage_num_images,
           dtype=tf.float32) /
       tf.cast(transition_stage_num_images, dtype=tf.float32))
