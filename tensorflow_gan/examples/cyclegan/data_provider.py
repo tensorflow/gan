@@ -23,8 +23,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from tensorflow_gan.examples import compat_utils
-
 
 def normalize_image(image):
   """Rescale from range [0, 255] to [-1, 1]."""
@@ -52,7 +50,7 @@ def _sample_patch(image, patch_size):
   image_shape = tf.shape(input=image)
   height, width = image_shape[0], image_shape[1]
   target_size = tf.minimum(height, width)
-  image = compat_utils.resize_with_crop_or_pad(image, target_size, target_size)
+  image = tf.image.resize_with_crop_or_pad(image, target_size, target_size)
   # tf.image.resize_area only accepts 4D tensor, so expand dims first.
   image = tf.expand_dims(image, axis=0)
   image = tf.compat.v1.image.resize(image, [patch_size, patch_size])

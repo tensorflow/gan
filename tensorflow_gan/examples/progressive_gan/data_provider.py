@@ -25,8 +25,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from tensorflow_gan.examples import compat_utils
-
 
 def _to_int32(tensor):
   return tf.cast(tensor, tf.int32)
@@ -66,8 +64,7 @@ def sample_patch(image, patch_height, patch_width, colors):
       false_fn=lambda: tf.convert_to_tensor(  # pylint:disable=g-long-lambda
           value=[w_major_target_h, w_major_target_w]))
   # Cut a patch of shape (target_h, target_w).
-  image = compat_utils.resize_with_crop_or_pad(
-      image, target_hw[0], target_hw[1])
+  image = tf.image.resize_with_crop_or_pad(image, target_hw[0], target_hw[1])
   # Resize the cropped image to (patch_h, patch_w).
   image = tf.compat.v1.image.resize([image], [patch_height, patch_width])[0]
   # Force number of channels: repeat the channel dimension enough

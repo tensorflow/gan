@@ -21,14 +21,6 @@ from __future__ import print_function
 import tensorflow as tf
 
 
-def resize_with_crop_or_pad(image, target_height, target_width):
-  try:
-    return tf.image.resize_with_crop_or_pad(image, target_height, target_width)
-  except AttributeError:
-    return tf.image.resize_image_with_crop_or_pad(
-        image, target_height, target_width)
-
-
 def crop_and_resize(*args, **kwargs):
   """`tf.image.crop_and_resize` that works for TF 1.x and 2.x."""
   try:
