@@ -70,6 +70,7 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
       --max_number_of_steps=999999 \
       --train_batch_size=1024 \
       --eval_batch_size=1024 \
+      --predict_batch_size=128 \
       --num_eval_steps=49 \
       --train_steps_per_eval=1000 \
       --tpu=$TPU_NAME \
@@ -94,8 +95,12 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
     *   **Note**: If your job fails with "IOError: \[Errno 2\] No usable
         temporary directory found in ...", you might have run out of disk. Try
         clearing the temp directories listed and try again.
-    * . **Note**: If your job fails with `Bad hardware status: ...`, try
+    *   **Note**: If your job fails with `Bad hardware status: ...`, try
         restarting your TPU.
+    *   **Note**: The batch sizes `train_batch_size`, `eval_batch_size` and
+        `predict_batch_size` must be a multiple of the number of TPU shards in
+        your machine (note that each TPU core contains two computation shards).
+        In addition, `predict_batch_size` must be at least 16.
 
 1.  (Recommended) You can set up TensorBoard to track your training progress
     using
