@@ -234,10 +234,3 @@ def batch_to_space(*args, **kwargs):
       kwargs['block_size'] = kwargs['block_shape']
       del kwargs['block_shape']
     return tf.batch_to_space(*args, **kwargs)
-
-# pylint:disable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
-try:
-  from tensorflow.python.tpu import tpu_function
-except ImportError:
-  from tensorflow.contrib.tpu.python.tpu import tpu_function
-# pylint:enable=unused-import,g-direct-tensorflow-import,g-import-not-at-top
