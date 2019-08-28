@@ -225,7 +225,6 @@ def add_gradients_summaries(grads_and_vars):
   return summaries
 
 
-# TODO(joelshor): Remove this when the last TF 1.x is released.
 def batch_to_space(*args, **kwargs):
   try:
     return tf.batch_to_space(*args, **kwargs)
