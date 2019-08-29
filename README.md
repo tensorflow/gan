@@ -37,15 +37,22 @@ TF-GAN is composed of several parts, which are designed to exist independently:
 
 Numerous projects inside Google. The following are some published papers that use TF-GAN:
 
-* [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/abs/1711.10337)
-* [The GAN Landscape: Losses, Architectures, Regularization, and Normalization](https://arxiv.org/abs/1807.04720)
-* [Self-Attention Generative Adversarial Networks](https://arxiv.org/abs/1805.08318)
-* [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://arxiv.org/abs/1809.11096)
-* [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
-* [GANSynth: Adversarial Neural Audio Synthesis](https://arxiv.org/abs/1902.08710)
-* [NetGAN: Generating Graphs via Random Walks](https://arxiv.org/abs/1803.00816)
-* [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
-* [Boundless: Generative Adversarial Networks for Image Extension](http://arxiv.org/abs/1908.07007)
+*   [Self-Attention Generative Adversarial Networks](https://arxiv.org/abs/1805.08318)
+*   [Large Scale GAN Training for High Fidelity Natural Image Synthesis](https://arxiv.org/abs/1809.11096)
+*   [GANSynth: Adversarial Neural Audio Synthesis](https://arxiv.org/abs/1902.08710)
+*   [Boundless: Generative Adversarial Networks for Image Extension](http://arxiv.org/abs/1908.07007)
+*   [NetGAN: Generating Graphs via Random Walks](https://arxiv.org/abs/1803.00816)
+*   [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
+
+The framework [Compare GAN](https://github.com/google/compare_gan) uses TF-GAN,
+especially the evaluation metrics. [Their papers](https://github.com/google/compare_gan#compare-gan)
+use TF-GAN to ensure consistent and comparable evaluation metrics.
+Some of those papers are:
+
+*   [Are GANs Created Equal? A Large-Scale Study](https://arxiv.org/abs/1711.10337)
+*   [The GAN Landscape: Losses, Architectures, Regularization, and Normalization](https://arxiv.org/abs/1807.04720)
+*   [Assessing Generative Models via Precision and Recall](https://arxiv.org/abs/1806.00035)
+*   [High-Fidelity Image Generation With Fewer Labels](https://arxiv.org/abs/1903.02271)
 
 ## Training a GAN model
 
