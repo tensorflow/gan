@@ -182,7 +182,12 @@ def run_train_and_eval(hparams):
   """Configure and run the train and estimator jobs."""
   estimator = make_estimator(hparams)
 
-  cur_step = 0
+  # Recover from a previous step, if we've trained at all.
+  try:
+    cur_step = estimator.get_variable_value('global_step')
+  except ValueError:
+    cur_step = 0
+
   max_step = hparams.max_number_of_steps
   steps_per_eval = hparams.train_steps_per_eval
 
