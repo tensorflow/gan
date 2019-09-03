@@ -75,7 +75,7 @@ class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
       self._create_non_slot_variable(
           initial_value=0.0, name='last_loss', colocate_with=var_list[0])
 
-    graph = None if tf.executing_eagerly() else tf.compat.v1.get_default_graph()
+    graph = None if tf.executing_eagerly() else var_list[0].graph
     last_loss = self._get_non_slot_variable('last_loss', graph=graph)
 
     if self._first_call:
@@ -105,24 +105,25 @@ class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
   # optimizer instance would give errors about using a variable in a different
   # Graph than where it was created.
   def apply_gradients(self, grads_and_vars, global_step=None, name=None):
+    colocate_with = grads_and_vars[0][1]
     # Shared with other wrappers of self._opt.
     self._opt._create_non_slot_variable(  # pylint:disable=protected-access
         initial_value=0,
         name='substep_counter',
-        colocate_with=grads_and_vars[0][1])
+        colocate_with=colocate_with)
     # Not shared
     self._create_non_slot_variable(
         initial_value=0,
         name='substep_mask',
-        colocate_with=grads_and_vars[0][1])
+        colocate_with=colocate_with)
 
     update_op = self._opt.apply_gradients(
         grads_and_vars, global_step=global_step)
+    graph = None if tf.executing_eagerly() else colocate_with.graph
     with tf.control_dependencies([update_op]):
-      return self._track_calls()
+      return self._track_calls(graph)
 
-  def _track_calls(self):
-    graph = None if tf.executing_eagerly() else tf.compat.v1.get_default_graph()
+  def _track_calls(self, graph):
     substep_counter = self._opt._get_non_slot_variable(  # pylint:disable=protected-access
         'substep_counter', graph=graph)
 
