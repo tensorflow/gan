@@ -81,7 +81,6 @@ def batch_norm(inputs,
     # Determine the variable shape.
     var_shape = [1] * inputs.shape.rank
     var_shape[axis] = tf.compat.dimension_value(inputs.shape[axis])
-
     # Allocate parameters for the trainable variables.
     if conditional_class_labels is not None:
       num_categories = tf.compat.dimension_value(
@@ -204,6 +203,10 @@ def standardize_batch(inputs,
     if data_format == 'NCHW':
       new_shape = [-1, num_channels, 1, 1]
     inputs = tf.reshape(inputs, new_shape)
+    if offset is not None:
+      offset = tf.reshape(offset, new_shape)
+    if scale is not None:
+      scale = tf.reshape(scale, new_shape)
 
   # Execute a distributed batch normalization
   axis = 1 if data_format == 'NCHW' else 3
@@ -232,7 +235,6 @@ def standardize_batch(inputs,
       scale=scale,
       variance_epsilon=epsilon)
   outputs = tf.cast(outputs, inputs_dtype)
-
   # Bring 2-D inputs back into 2-D format.
   if inputs_rank == 2:
     outputs = tf.reshape(outputs, [-1] + inputs_shape[1:].as_list())
