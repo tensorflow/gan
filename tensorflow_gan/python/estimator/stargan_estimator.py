@@ -25,6 +25,7 @@ import enum
 
 import tensorflow as tf
 
+from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python import namedtuples as tfgan_tuples
 from tensorflow_gan.python import train as tfgan_train
 from tensorflow_gan.python.eval import summaries as tfgan_summaries
@@ -49,12 +50,12 @@ _summary_type_map = {
 }
 
 
-class StarGANEstimator(tf.compat.v1.estimator.Estimator):
+class StarGANEstimator(tf.estimator.Estimator):
   """An estimator for Generative Adversarial Networks (GANs).
 
   This Estimator is backed by TFGAN. The network functions follow the TFGAN API
   except for one exception: if either `generator_fn` or `discriminator_fn` have
-  an argument called `mode`, then the tf.estimator mode is passed in for that
+  an argument called `mode`, then the tf.Estimator mode is passed in for that
   argument. This helps with operations like batch normalization, which have
   different train and evaluation behavior.
 
@@ -164,13 +165,12 @@ class StarGANEstimator(tf.compat.v1.estimator.Estimator):
       """StarGANEstimator model function."""
       del params  # unused
       if mode not in [
-          tf.compat.v1.estimator.ModeKeys.TRAIN,
-          tf.compat.v1.estimator.ModeKeys.EVAL,
-          tf.compat.v1.estimator.ModeKeys.PREDICT
+          tf.estimator.ModeKeys.TRAIN, tf.estimator.ModeKeys.EVAL,
+          tf.estimator.ModeKeys.PREDICT
       ]:
         raise ValueError('Mode not recognized: %s' % mode)
 
-      if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
+      if mode == tf.estimator.ModeKeys.PREDICT:
         input_data = features[0]
         input_data_domain_label = features[1]
       else:
@@ -200,7 +200,7 @@ def get_gan_model(mode,
                   add_summaries,
                   generator_scope='Generator'):
   """Makes the StarGANModel tuple."""
-  if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
+  if mode == tf.estimator.ModeKeys.PREDICT:
     gan_model = _make_prediction_gan_model(input_data, input_data_domain_label,
                                            generator_fn, generator_scope)
   else:  # tf.estimator.ModeKeys.TRAIN or tf.estimator.ModeKeys.EVAL
@@ -219,15 +219,15 @@ def get_estimator_spec(mode,
                        discriminator_optimizer,
                        get_hooks_fn=None):
   """Get the EstimatorSpec for the current mode."""
-  if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
-    estimator_spec = tf.compat.v1.estimator.EstimatorSpec(
+  if mode == tf.estimator.ModeKeys.PREDICT:
+    estimator_spec = tf.estimator.EstimatorSpec(
         mode=mode, predictions=gan_model.generated_data)
   else:
     gan_loss = loss_fn(gan_model)
-    if mode == tf.compat.v1.estimator.ModeKeys.EVAL:
+    if mode == tf.estimator.ModeKeys.EVAL:
       estimator_spec = _get_eval_estimator_spec(gan_model, gan_loss,
                                                 get_eval_metric_ops_fn)
-    else:  # tf.compat.v1.estimator.ModeKeys.TRAIN:
+    else:  # tf.estimator.ModeKeys.TRAIN:
 
       def _maybe_callable(x):
         return x() if callable(x) else x
@@ -272,7 +272,7 @@ def _make_prediction_gan_model(input_data, input_data_domain_label,
   # If `generator_fn` has an argument `mode`, pass mode to it.
   if 'mode' in inspect.getargspec(generator_fn).args:
     generator_fn = functools.partial(
-        generator_fn, mode=tf.compat.v1.estimator.ModeKeys.PREDICT)
+        generator_fn, mode=tf.estimator.ModeKeys.PREDICT)
   with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
     # pylint:disable=protected-access
     input_data = tfgan_train._convert_tensor_or_l_or_d(input_data)
@@ -280,8 +280,7 @@ def _make_prediction_gan_model(input_data, input_data_domain_label,
         input_data_domain_label)
     # pylint:enable=protected-access
     generated_data = generator_fn(input_data, input_data_domain_label)
-  generator_variables = tf.compat.v1.get_collection(
-      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, gen_scope.name)
+  generator_variables = contrib.get_trainable_variables(gen_scope)
 
   return tfgan_tuples.StarGANModel(
       input_data=input_data,
@@ -324,8 +323,8 @@ def _get_eval_estimator_spec(gan_model,
         raise TypeError('get_eval_metric_ops_fn must return a dict, '
                         'received: {}'.format(custom_eval_metric_ops))
       eval_metric_ops.update(custom_eval_metric_ops)
-  return tf.compat.v1.estimator.EstimatorSpec(
-      mode=tf.compat.v1.estimator.ModeKeys.EVAL,
+  return tf.estimator.EstimatorSpec(
+      mode=tf.estimator.ModeKeys.EVAL,
       predictions=gan_model.generated_data,
       loss=scalar_loss,
       eval_metric_ops=eval_metric_ops)
@@ -342,9 +341,9 @@ def _get_train_estimator_spec(gan_model,
   train_ops = train_op_fn(gan_model, gan_loss, generator_optimizer,
                           discriminator_optimizer)
   training_hooks = get_hooks_fn(train_ops)
-  return tf.compat.v1.estimator.EstimatorSpec(
+  return tf.estimator.EstimatorSpec(
       loss=scalar_loss,
-      mode=tf.compat.v1.estimator.ModeKeys.TRAIN,
+      mode=tf.estimator.ModeKeys.TRAIN,
       train_op=train_ops.global_step_inc_op,
       training_hooks=training_hooks)
 

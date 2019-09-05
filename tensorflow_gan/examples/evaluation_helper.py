@@ -78,7 +78,7 @@ def get_latest_eval_step_value(update_ops):
     return tf.identity(get_or_create_eval_step().read_value())
 
 
-class MultiStepStopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
+class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, steps_per_run=1):
@@ -109,7 +109,7 @@ class MultiStepStopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
     self._steps_per_run_variable.load(steps, session=session)
 
   def before_run(self, run_context):
-    return tf.compat.v1.estimator.SessionRunArgs(
+    return tf.estimator.SessionRunArgs(
         {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
@@ -131,7 +131,7 @@ class MultiStepStopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
       run_context.request_stop()
 
 
-class StopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
+class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, log_progress=True):
@@ -154,7 +154,7 @@ class StopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
     self._evals_completed = updated_eval_step
 
   def before_run(self, run_context):
-    return tf.compat.v1.estimator.SessionRunArgs(
+    return tf.estimator.SessionRunArgs(
         {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
@@ -171,7 +171,7 @@ class StopAfterNEvalsHook(tf.compat.v1.estimator.SessionRunHook):
       run_context.request_stop()
 
 
-class SummaryAtEndHook(tf.compat.v1.estimator.SessionRunHook):
+class SummaryAtEndHook(tf.estimator.SessionRunHook):
   """A run hook that saves a summary with the results of evaluation."""
 
   def __init__(self,
@@ -412,8 +412,7 @@ def evaluate_once(checkpoint_path,
       master=master,
       config=config)
 
-  final_ops_hook = tf.compat.v1.estimator.FinalOpsHook(final_ops,
-                                                       final_ops_feed_dict)
+  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
 
   with tf.compat.v1.train.MonitoredSession(
@@ -478,8 +477,8 @@ def evaluate_repeatedly(checkpoint_dir,
       to `Tensors`.
     final_ops_feed_dict: A feed dictionary to use when evaluating `final_ops`.
     eval_interval_secs: The minimum number of seconds between evaluations.
-    hooks: List of `tf.compat.v1.estimator.SessionRunHook` callbacks which are
-      run inside the evaluation loop.
+    hooks: List of `tf.estimator.SessionRunHook` callbacks which are run inside
+      the evaluation loop.
     config: An instance of `tf.ConfigProto` that will be used to
       configure the `Session`. If left as `None`, the default will be used.
     max_number_of_evaluations: The maximum times to run the evaluation. If left
@@ -512,8 +511,7 @@ def evaluate_repeatedly(checkpoint_dir,
     else:
       eval_ops = [eval_ops, update_eval_step]
 
-  final_ops_hook = tf.compat.v1.estimator.FinalOpsHook(final_ops,
-                                                       final_ops_feed_dict)
+  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
   num_evaluations = 0
   for checkpoint_path in checkpoints_iterator(

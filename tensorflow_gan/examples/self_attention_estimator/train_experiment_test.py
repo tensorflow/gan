@@ -101,22 +101,10 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
     train_experiment.run_train_and_eval(self.hparams)
 
   @parameterized.parameters(
-      {
-          'mode': tf.compat.v1.estimator.ModeKeys.TRAIN,
-          'tpu_est': True
-      },
-      {
-          'mode': tf.compat.v1.estimator.ModeKeys.EVAL,
-          'tpu_est': True
-      },
-      {
-          'mode': tf.compat.v1.estimator.ModeKeys.TRAIN,
-          'tpu_est': False
-      },
-      {
-          'mode': tf.compat.v1.estimator.ModeKeys.EVAL,
-          'tpu_est': False
-      },
+      {'mode': tf.estimator.ModeKeys.TRAIN, 'tpu_est': True},
+      {'mode': tf.estimator.ModeKeys.EVAL, 'tpu_est': True},
+      {'mode': tf.estimator.ModeKeys.TRAIN, 'tpu_est': False},
+      {'mode': tf.estimator.ModeKeys.EVAL, 'tpu_est': False},
   )
   @mock.patch.object(
       train_experiment.data_provider, 'provide_dataset', autospec=True)

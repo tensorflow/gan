@@ -83,7 +83,7 @@ class TrainInputEstimatorTest(tf.test.TestCase):
     # We are not loading checkpoints, so set the corresponding directory to a
     # dummy directories.
     tmp_dir = tempfile.mkdtemp()
-    config = tf.compat.v1.estimator.RunConfig(
+    config = tf.estimator.RunConfig(
         model_dir=tmp_dir,
         save_summary_steps=None,
         save_checkpoints_steps=1,

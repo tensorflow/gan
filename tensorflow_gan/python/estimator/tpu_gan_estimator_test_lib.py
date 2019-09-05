@@ -240,7 +240,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.compat.v1.estimator.ModeKeys.TRAIN, spec.mode)
+    self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
 
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
     self.assertIsNotNone(spec.train_op)
@@ -259,7 +259,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.compat.v1.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
 
     self.assertEqual(generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
@@ -278,7 +278,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.compat.v1.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
 
     self.assertEqual(generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
@@ -291,7 +291,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       spec = get_predict_estimator_spec(gan_model_fns)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.compat.v1.estimator.ModeKeys.PREDICT, spec.mode)
+    self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
     self.assertEqual({'generated_data': generated_data}, spec.predictions)
 
 
@@ -545,7 +545,7 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
     """Test if GANEstimator allows explicit warm start variable assignment."""
     # Regex matches all variable names in ckpt except for new_var.
     var_regex = '^(?!.*%s.*)' % self.new_variable_name
-    warmstart = tf.compat.v1.estimator.WarmStartSettings(
+    warmstart = tf.estimator.WarmStartSettings(
         ckpt_to_initialize_from=self._model_dir, vars_to_warm_start=var_regex)
     est_warm = self._test_warm_start(warm_start_from=warmstart)
     full_variable_name = 'Generator/%s' % self.new_variable_name
