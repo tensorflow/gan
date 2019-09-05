@@ -582,9 +582,9 @@ def train(model, **kwargs):
       logdir=make_train_sub_dir(model.stage_id, **kwargs),
       get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(1, 1)),
       hooks=[
-          tf.estimator.StopAtStepHook(last_step=model.num_images),
-          tf.estimator.LoggingTensorHook([make_status_message(model)],
-                                         every_n_iter=10)
+          tf.compat.v1.estimator.StopAtStepHook(last_step=model.num_images),
+          tf.compat.v1.estimator.LoggingTensorHook([make_status_message(model)],
+                                                   every_n_iter=10)
       ],
       master=kwargs['master'],
       is_chief=(kwargs['task'] == 0),

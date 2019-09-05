@@ -52,7 +52,7 @@ Usage:
     ...
 
   params = {<required params>}
-  config = tf.estimator.RunConfig()
+  config = tf.compat.v1.estimator.RunConfig()
   tmp_dir = path/to/output/storage
 
   estimator = latent_gan_estimator.get_latent_gan_estimator(
@@ -125,10 +125,12 @@ def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
                                   tf.linalg.global_norm(z_grads))
       tf.compat.v1.summary.scalar('z_loss/loss', loss)
 
-    return tf.estimator.EstimatorSpec(mode=mode,
-                                      predictions=gan_model.generated_data,
-                                      loss=loss,
-                                      train_op=train_op)
+    return tf.compat.v1.estimator.EstimatorSpec(
+        mode=mode,
+        predictions=gan_model.generated_data,
+        loss=loss,
+        train_op=train_op)
+
   return model_fn
 
 
@@ -184,19 +186,19 @@ def get_latent_gan_estimator(generator_fn, discriminator_fn, loss_fn,
   model_fn = _get_latent_gan_model_fn(generator_fn, discriminator_fn,
                                       loss_fn, optimizer)
 
-  if isinstance(warmstart_options, tf.estimator.WarmStartSettings):
+  if isinstance(warmstart_options, tf.compat.v1.estimator.WarmStartSettings):
     ws = warmstart_options
   elif warmstart_options:
     # Default WarmStart loads all variable names except INPUT_NAME and
     # OPTIMIZER_NAME.
     var_regex = '^(?!.*(%s|%s).*)' % (INPUT_NAME, OPTIMIZER_NAME)
-    ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=ckpt_dir,
-                                        vars_to_warm_start=var_regex)
+    ws = tf.compat.v1.estimator.WarmStartSettings(
+        ckpt_to_initialize_from=ckpt_dir, vars_to_warm_start=var_regex)
   else:
     ws = None
 
   if 'opt_kwargs' not in params:
     params['opt_kwargs'] = {}
 
-  return tf.estimator.Estimator(model_fn=model_fn, config=config, params=params,
-                                warm_start_from=ws)
+  return tf.compat.v1.estimator.Estimator(
+      model_fn=model_fn, config=config, params=params, warm_start_from=ws)

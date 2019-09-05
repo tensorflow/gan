@@ -65,13 +65,13 @@ def discriminator_fn(data, unused_conditioning, mode):
 class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):
   """Tests that `GetGANModel` produces the correct model."""
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
+  @parameterized.parameters({'mode': tf.compat.v1.estimator.ModeKeys.TRAIN},
+                            {'mode': tf.compat.v1.estimator.ModeKeys.EVAL},
+                            {'mode': tf.compat.v1.estimator.ModeKeys.PREDICT})
   def test_get_gan_model(self, mode):
     with tf.Graph().as_default():
       generator_inputs = {'x': tf.ones([3, 4])}
-      is_predict = mode == tf.estimator.ModeKeys.PREDICT
+      is_predict = mode == tf.compat.v1.estimator.ModeKeys.PREDICT
       real_data = tf.zeros([3, 4]) if not is_predict else None
       gan_model = get_gan_model(
           mode,
@@ -85,7 +85,7 @@ class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):
     self.assertIsNotNone(gan_model.generated_data)
     self.assertLen(gan_model.generator_variables, 2)  # 1 FC layer
     self.assertIsNotNone(gan_model.generator_fn)
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
       self.assertIsNone(gan_model.real_data)
       self.assertIsNone(gan_model.discriminator_real_outputs)
       self.assertIsNone(gan_model.discriminator_gen_outputs)
@@ -156,7 +156,7 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           get_hooks_fn=None,  # use default.
           is_chief=True)
 
-    self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
+    self.assertEqual(tf.compat.v1.estimator.ModeKeys.TRAIN, spec.mode)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
     self.assertIsNotNone(spec.train_op)
     self.assertIsNotNone(spec.training_hooks)
@@ -170,7 +170,7 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           gan_loss,
           get_eval_metric_ops_fn=get_metrics)
 
-    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(tf.compat.v1.estimator.ModeKeys.EVAL, spec.mode)
     self.assertEqual(gan_model.generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
     self.assertIsNotNone(spec.eval_metric_ops)
@@ -180,7 +180,7 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       gan_model = get_dummy_gan_model()
       spec = get_predict_estimator_spec(gan_model)
 
-    self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
+    self.assertEqual(tf.compat.v1.estimator.ModeKeys.PREDICT, spec.mode)
     self.assertEqual(gan_model.generated_data, spec.predictions)
 
 
@@ -402,7 +402,7 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
     """Test if GANEstimator allows explicit warm start variable assignment."""
     # Regex matches all variable names in ckpt except for new_var.
     var_regex = '^(?!.*%s.*)' % self.new_variable_name
-    warmstart = tf.estimator.WarmStartSettings(
+    warmstart = tf.compat.v1.estimator.WarmStartSettings(
         ckpt_to_initialize_from=self._model_dir, vars_to_warm_start=var_regex)
     est_warm = self._test_warm_start(warm_start_from=warmstart)
     full_variable_name = 'Generator/%s' % self.new_variable_name

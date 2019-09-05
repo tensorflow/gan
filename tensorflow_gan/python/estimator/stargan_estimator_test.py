@@ -53,9 +53,9 @@ def dummy_discriminator_fn(input_data, num_domains, mode):
 class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
   """Tests that `StarGetGANModel` produces the correct model."""
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
+  @parameterized.parameters({'mode': tf.compat.v1.estimator.ModeKeys.TRAIN},
+                            {'mode': tf.compat.v1.estimator.ModeKeys.EVAL},
+                            {'mode': tf.compat.v1.estimator.ModeKeys.PREDICT})
   def test_get_gan_model(self, mode):
     with tf.Graph().as_default():
       input_data = tf.ones([6, 4, 4, 3])
@@ -74,7 +74,7 @@ class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
     self.assertLen(gan_model.generator_variables, 1)
     self.assertIsNotNone(gan_model.generator_scope)
     self.assertIsNotNone(gan_model.generator_fn)
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
       self.assertIsNone(gan_model.input_data_domain_label)
       self.assertEqual(input_data_domain_label,
                        gan_model.generated_data_domain_target)
@@ -159,9 +159,10 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     cls._discriminator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(
         1.0)
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
+  @parameterized.named_parameters(
+      ('train', tf.compat.v1.estimator.ModeKeys.TRAIN),
+      ('eval', tf.compat.v1.estimator.ModeKeys.EVAL),
+      ('predict', tf.compat.v1.estimator.ModeKeys.PREDICT))
   def test_get_estimator_spec(self, mode):
     with tf.Graph().as_default():
       self._gan_model = get_dummy_gan_model()
@@ -174,13 +175,13 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           discriminator_optimizer=self._discriminator_optimizer)
 
     self.assertEqual(mode, spec.mode)
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf.compat.v1.estimator.ModeKeys.PREDICT:
       self.assertEqual(self._gan_model.generated_data, spec.predictions)
-    elif mode == tf.estimator.ModeKeys.TRAIN:
+    elif mode == tf.compat.v1.estimator.ModeKeys.TRAIN:
       self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
       self.assertIsNotNone(spec.train_op)
       self.assertIsNotNone(spec.training_hooks)
-    elif mode == tf.estimator.ModeKeys.EVAL:
+    elif mode == tf.compat.v1.estimator.ModeKeys.EVAL:
       self.assertEqual(self._gan_model.generated_data, spec.predictions)
       self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
       self.assertIsNotNone(spec.eval_metric_ops)

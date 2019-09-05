@@ -1086,7 +1086,7 @@ def gan_train_ops(
 
 # TODO(joelshor): Implement a dynamic GAN train loop, as in `Real-Time Adaptive
 # Image Compression` (https://arxiv.org/abs/1705.05823)
-class RunTrainOpsHook(tf.estimator.SessionRunHook):
+class RunTrainOpsHook(tf.compat.v1.estimator.SessionRunHook):
   """A hook to run train ops a fixed number of times."""
 
   def __init__(self, train_ops, train_steps):

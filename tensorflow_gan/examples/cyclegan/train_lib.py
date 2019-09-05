@@ -202,9 +202,10 @@ def train(hparams):
         hparams.train_log_dir,
         get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
-            tf.estimator.LoggingTensorHook({'status_message': status_message},
-                                           every_n_iter=10)
+            tf.compat.v1.estimator.StopAtStepHook(
+                num_steps=hparams.max_number_of_steps),
+            tf.compat.v1.estimator.LoggingTensorHook(
+                {'status_message': status_message}, every_n_iter=10)
         ],
         master=hparams.master,
         is_chief=hparams.task == 0)

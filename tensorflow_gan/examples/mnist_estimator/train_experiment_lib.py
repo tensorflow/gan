@@ -48,9 +48,9 @@ def input_fn(mode, params):
     raise ValueError('noise_dims must be in params')
   bs = params['batch_size']
   nd = params['noise_dims']
-  split = 'train' if mode == tf.estimator.ModeKeys.TRAIN else 'test'
-  shuffle = (mode == tf.estimator.ModeKeys.TRAIN)
-  just_noise = (mode == tf.estimator.ModeKeys.PREDICT)
+  split = 'train' if mode == tf.compat.v1.estimator.ModeKeys.TRAIN else 'test'
+  shuffle = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
+  just_noise = (mode == tf.compat.v1.estimator.ModeKeys.PREDICT)
 
   noise_ds = (tf.data.Dataset.from_tensors(0).repeat()
               .map(lambda _: tf.random.normal([bs, nd])))
@@ -70,8 +70,8 @@ def input_fn(mode, params):
 
 
 def unconditional_generator(noise, mode):
-  """MNIST generator with extra argument for tf.Estimator's `mode`."""
-  is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+  """MNIST generator with extra argument for tf.compat.v1.estimator's `mode`."""
+  is_training = (mode == tf.compat.v1.estimator.ModeKeys.TRAIN)
   return networks.unconditional_generator(noise, is_training=is_training)
 
 
@@ -127,13 +127,13 @@ def train(hparams):
     hparams: An HParams instance containing the hyperparameters for training.
   """
   estimator = make_estimator(hparams)
-  train_spec = tf.estimator.TrainSpec(
+  train_spec = tf.compat.v1.estimator.TrainSpec(
       input_fn=input_fn, max_steps=hparams.num_train_steps)
-  eval_spec = tf.estimator.EvalSpec(
+  eval_spec = tf.compat.v1.estimator.EvalSpec(
       name='default', input_fn=input_fn, steps=hparams.num_eval_steps)
 
   # Run training and evaluation for some steps.
-  tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
+  tf.compat.v1.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 
   # Generate predictions and write them to disk.
   yields_prediction = estimator.predict(input_fn)
