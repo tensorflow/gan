@@ -25,7 +25,6 @@ import enum
 
 import tensorflow as tf
 
-from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python import namedtuples as tfgan_tuples
 from tensorflow_gan.python import train as tfgan_train
 from tensorflow_gan.python.eval import summaries as tfgan_summaries
@@ -280,7 +279,8 @@ def _make_prediction_gan_model(input_data, input_data_domain_label,
         input_data_domain_label)
     # pylint:enable=protected-access
     generated_data = generator_fn(input_data, input_data_domain_label)
-  generator_variables = contrib.get_trainable_variables(gen_scope)
+  generator_variables = tf.compat.v1.get_collection(
+      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, gen_scope.name)
 
   return tfgan_tuples.StarGANModel(
       input_data=input_data,
