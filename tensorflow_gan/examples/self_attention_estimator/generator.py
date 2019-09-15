@@ -16,6 +16,7 @@
 """Definitions of generator functions."""
 
 import tensorflow as tf
+import tensorflow_gan as tfgan
 from tensorflow_gan.examples.self_attention_estimator import ops
 
 
@@ -80,13 +81,14 @@ def block(x, labels, out_channels, num_classes, name, training=True):
     A `Tensor` representing the output of the operation.
   """
   with tf.compat.v1.variable_scope(name):
-    bn0 = ops.ConditionalBatchNorm(num_classes, name='cbn_0')
-    bn1 = ops.ConditionalBatchNorm(num_classes, name='cbn_1')
+    labels_onehot = tf.one_hot(labels, num_classes)
     x_0 = x
-    x = tf.nn.relu(bn0(x, labels))
+    x = tf.nn.relu(tfgan.tpu.batch_norm(x, training, labels_onehot,
+                                        name='cbn_0'))
     x = usample(x)
     x = ops.snconv2d(x, out_channels, 3, 3, 1, 1, training, 'snconv1')
-    x = tf.nn.relu(bn1(x, labels))
+    x = tf.nn.relu(tfgan.tpu.batch_norm(x, training, labels_onehot,
+                                        name='cbn_1'))
     x = ops.snconv2d(x, out_channels, 3, 3, 1, 1, training, 'snconv2')
 
     x_0 = usample(x_0)
@@ -112,6 +114,7 @@ def generator(zs, target_class, gf_dim, num_classes, training=True):
   """
   with tf.compat.v1.variable_scope(
       'generator', reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
+
     act0 = ops.snlinear(
         zs, gf_dim * 16 * 4 * 4, training=training, name='g_snh0')
     act0 = tf.reshape(act0, [-1, 4, 4, gf_dim * 16])
@@ -123,9 +126,7 @@ def generator(zs, target_class, gf_dim, num_classes, training=True):
     act3 = ops.sn_non_local_block_sim(act3, training, name='g_ops')  # 32
     act4 = block(act3, target_class, gf_dim * 2, num_classes, 'g_block4', training)  # 64
     act5 = block(act4, target_class, gf_dim, num_classes, 'g_block5', training)  # 128
-    bn = ops.BatchNorm(name='g_bn')
-
-    act5 = tf.nn.relu(bn(act5))
+    act5 = tf.nn.relu(tfgan.tpu.batch_norm(act5, training, conditional_class_labels=None, name='g_bn'))
     act6 = ops.snconv2d(act5, 3, 3, 3, 1, 1, training, 'g_snconv_last')
     out = tf.nn.tanh(act6)
   var_list = tf.compat.v1.get_collection(
