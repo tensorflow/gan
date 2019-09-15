@@ -129,11 +129,13 @@ def preprocess_image(images,
   This is the preprocessing portion of the graph from
   http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz.
 
-  Note that it expects Tensors in [0, 255]. This function maps pixel values to
-  [-1, 1] and resizes to match the InceptionV1 network.
+  Does the following:
+  - If input is uint8, convert to float and rescale to [-1, 1].
+  - If the input is float, assume (but don't check) that values are [-1, 1].
+  - If images are too big or too small, resize to required height and widith.
 
   Args:
-    images: 3-D or 4-D Tensor of images. Values are in [0, 255].
+    images: 3-D or 4-D Tensor of images.
     height: Integer. Height of resized output image.
     width: Integer. Width of resized output image.
     scope: Optional scope for name_scope.
@@ -141,18 +143,28 @@ def preprocess_image(images,
   Returns:
     3-D or 4-D float Tensor of prepared image(s). Values are in [-1, 1].
   """
+  if not (images.dtype == tf.uint8 or images.dtype.is_floating):
+    raise ValueError('Input tensor must be uint8 or floating type. Instead, '
+                     'was %s' % images.dtype)
   is_single = images.shape.ndims == 3
   with tf.compat.v1.name_scope(scope, 'preprocess', [images, height, width]):
-    if not images.dtype.is_floating:
+    if images.dtype == tf.uint8:
       images = _to_float(images)
-    if is_single:
-      images = tf.expand_dims(images, axis=0)
-    resized = tf.compat.v1.image.resize(
-        images, [height, width], method=tf.image.ResizeMethod.BILINEAR)
-    resized = (resized - 128.0) / 128.0
-    if is_single:
-      resized = tf.squeeze(resized, axis=0)
-    return resized
+      # Note: Even though this pixel centering isn't correct, it is what the
+      # original Inception score network used to preprocess images.
+      images = (images - 128.0) / 128.0
+    if images.dtype != tf.float32:
+      images = _to_float(images)
+    if images.shape[1] != height or images.shape[2] != width:
+      if is_single:
+        images = tf.expand_dims(images, axis=0)
+      # TODO(joelshor, marvinritter): Decide whether we can safely switch to
+      # TF 2 resizing, which has fixed some issues.
+      images = tf.compat.v1.image.resize(
+          images, [height, width], method=tf.image.ResizeMethod.BILINEAR)
+      if is_single:
+        images = tf.squeeze(images, axis=0)
+    return images
 
 
 def kl_divergence(p, p_logits, q):
