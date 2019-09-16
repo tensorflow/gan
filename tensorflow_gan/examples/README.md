@@ -28,7 +28,7 @@ outputs. **Be sure to follow the instructions for how to run the examples.**
     ```
 
 1.  Install the necessary dependencies, which depend on which example you want
-    to run. At a minimum, you will need :
+    to run. At a minimum, you will need:
     1. `tensorflow`
     1. `tensorflow_probability`
     1. `tensorflow_datasets`
