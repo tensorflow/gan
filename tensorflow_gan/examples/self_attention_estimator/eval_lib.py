@@ -37,8 +37,6 @@ def default_graph_def_fn():
       url, graph_def, os.path.basename(url))
 
 
-
-
 def get_activations(get_images_fn, num_batches, get_logits=False):
   """Get Inception activations.
 
@@ -60,6 +58,7 @@ def get_activations(get_images_fn, num_batches, get_logits=False):
         images, [inception_img_sz, inception_img_sz],
         method=tf.image.ResizeMethod.BILINEAR)
     return larger_images
+
 
   if get_logits:
     output_tensor = (tfgan.eval.INCEPTION_OUTPUT,

@@ -256,17 +256,6 @@ def _graph_def_or_default(graph_def, default_graph_def_fn):
   return graph_def
 
 
-def _flatten_activations_or_list(activations):
-  if isinstance(activations, list):
-    for i, activation in enumerate(activations):
-      if tf.rank(activation) != 2:
-        activations[i] = tf.compat.v1.layers.flatten(activation)
-  else:
-    if tf.rank(activations) != 2:
-      activations = tf.compat.v1.layers.flatten(activations)
-  return activations
-
-
 def run_inception(images,
                   graph_def=None,
                   default_graph_def_fn=_default_graph_def_fn,
@@ -305,7 +294,7 @@ def run_inception(images,
   graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
   activations = run_image_classifier(images, graph_def, input_tensor,
                                      output_tensor, num_batches)
-  return _flatten_activations_or_list(activations)
+  return tf.nest.map_structure(tf.compat.v1.layers.flatten, activations)
 
 
 def sample_and_run_inception(sample_fn,
@@ -349,16 +338,7 @@ def sample_and_run_inception(sample_fn,
   graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
   activations = sample_and_run_image_classifier(
       sample_fn, sample_inputs, graph_def, input_tensor, output_tensor)
-  return _flatten_activations_or_list(activations)
-
-
-def _combine_outputs_after_while_loop(classifier_outputs):
-  if isinstance(classifier_outputs, tf.Tensor):
-    classifier_outputs = tf.concat(tf.unstack(classifier_outputs), 0)
-  else:
-    classifier_outputs = [tf.concat(tf.unstack(x), 0) for x in
-                          classifier_outputs]
-  return classifier_outputs
+  return tf.nest.map_structure(tf.compat.v1.layers.flatten, activations)
 
 
 def run_image_classifier(tensor,
@@ -424,7 +404,8 @@ def run_image_classifier(tensor,
         back_prop=False,
         swap_memory=True,
         name='RunClassifier')
-    classifier_outputs = _combine_outputs_after_while_loop(classifier_outputs)
+    classifier_outputs = tf.nest.map_structure(
+        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
   else:
     classifier_outputs = _fn(tensor)
   if not output_is_tensor and not isinstance(classifier_outputs, list):
@@ -538,7 +519,8 @@ def sample_and_run_classifier_fn(sample_fn,
         swap_memory=True,
         dtype=dtypes,
         name=scope)
-    classifier_outputs = _combine_outputs_after_while_loop(classifier_outputs)
+    classifier_outputs = tf.nest.map_structure(
+        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
   else:
     classifier_outputs = _fn(sample_inputs[0])
 
