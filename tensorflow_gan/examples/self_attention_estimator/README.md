@@ -123,7 +123,9 @@ Inception score and Frechet Inception distance based on step number:
 
 <img src="images/tpu_vs_gpu_steps.png" title="Metrics by step" width="500" />
 
-You can see that, as a function of train step, the GPU and TPU jobs are similar.
-However, in terms of time, the TPU job is more than 12x faster:
+In this example, we compare the running time of a system with 8 Tesla V100 GPU
+cards to a system with 128 v2 TPUs cores. You can see that, as a function of
+train step, the GPU and TPU jobs are similar. However, in terms of time, the TPU
+job is more than 12x faster:
 
 <img src="images/tpu_vs_gpu_relative.png" title="Metrics by time" width="500" />
