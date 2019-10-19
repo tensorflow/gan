@@ -78,6 +78,7 @@ run_unittests_tests() {
   pip install --upgrade oauth2client
   install_tfp "${tf_version}"
   install_tfds "${tf_version}"
+  pip install tensorflow-hub  # Package is the same regardless of TF version.
 
   # Run the tests.
   python setup.py test
