@@ -24,9 +24,9 @@ install_tensorflow() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow
+    pip install tensorflow==1.15
   elif [[ "$tf_version" == "TF2.x" ]]; then
-    pip install tf-nightly-2.0-preview
+    pip install tensorflow
   else
     echo "TensorFlow version not recognized: ${tf_version}"
     exit -1
