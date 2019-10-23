@@ -103,6 +103,7 @@ test_build_and_install_whl() {
   # Install TensorFlow explicitly (see http://g/tf-oss/vpEioAGbZ4Q).
   install_tensorflow "${tf_version}"
   install_tfp "${tf_version}"
+  pip install tensorflow-hub  # Package is the same regardless of TF version.
 
   # Install tf_gan package.
   WHEEL_PATH=${venv_dir}/wheel/${py_version}
