@@ -13,16 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for TF-GAN tfgan.eval.classifier_metrics."""
+"""Tests for TF-GAN classifier_metrics."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-
-import os
-import sys
-import tarfile
-import tempfile
 
 from absl.testing import parameterized
 import numpy as np
@@ -31,20 +26,13 @@ from scipy import linalg as scp_linalg
 import tensorflow as tf
 import tensorflow_gan as tfgan
 
-# Internal functions to mock.
-from tensorflow_gan.python.eval.classifier_metrics import get_graph_def_from_url_tarball
-
 # Internal functions and constants to test.
 from tensorflow_gan.python.eval.classifier_metrics import _classifier_score_from_logits_helper  # pylint: disable=g-bad-import-order
-from tensorflow_gan.python.eval.classifier_metrics import INCEPTION_FINAL_POOL
-from tensorflow_gan.python.eval.classifier_metrics import INCEPTION_OUTPUT
 from tensorflow_gan.python.eval.classifier_metrics import kl_divergence
 from tensorflow_gan.python.eval.classifier_metrics import trace_sqrt_product
 
-from google.protobuf import text_format
 
 mock = tf.compat.v1.test.mock
-classifier_module = sys.modules[get_graph_def_from_url_tarball.__module__]
 
 
 def _numpy_softmax(x):
@@ -131,333 +119,120 @@ def _expected_kid_and_std(real_imgs, gen_imgs, max_block_size=1024):
   return np.mean(ests), np.sqrt(var / len(ests))
 
 
-# A dummy GraphDef string with the minimum number of Ops.
-graphdef_string = """
-node {
-  name: "Mul"
-  op: "Placeholder"
-  attr {
-    key: "dtype"
-    value {
-      type: DT_FLOAT
-    }
-  }
-  attr {
-    key: "shape"
-    value {
-      shape {
-        dim {
-          size: -1
-        }
-        dim {
-          size: 299
-        }
-        dim {
-          size: 299
-        }
-        dim {
-          size: 3
-        }
-      }
-    }
-  }
-}
-node {
-  name: "logits"
-  op: "Placeholder"
-  attr {
-    key: "dtype"
-    value {
-      type: DT_FLOAT
-    }
-  }
-  attr {
-    key: "shape"
-    value {
-      shape {
-        dim {
-          size: -1
-        }
-        dim {
-          size: 1001
-        }
-      }
-    }
-  }
-}
-node {
-  name: "pool_3"
-  op: "Placeholder"
-  attr {
-    key: "dtype"
-    value {
-      type: DT_FLOAT
-    }
-  }
-  attr {
-    key: "shape"
-    value {
-      shape {
-        dim {
-          size: -1
-        }
-        dim {
-          size: 2048
-        }
-      }
-    }
-  }
-}
-versions {
-  producer: 24
-}
-"""
+class RunClassifierFnTest(tf.test.TestCase, parameterized.TestCase):
 
-
-def _get_dummy_graphdef():
-  dummy_graphdef = tf.compat.v1.GraphDef()
-  text_format.Merge(graphdef_string, dummy_graphdef)
-  return dummy_graphdef
-
-
-def _run_with_mock(function, *args, **kwargs):
-  with mock.patch.object(
-      classifier_module,
-      'get_graph_def_from_url_tarball') as mock_tarball_getter:
-    mock_tarball_getter.return_value = _get_dummy_graphdef()
-    return function(*args, **kwargs)
-
-
-class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
+  def setUp(self):
+    super(RunClassifierFnTest, self).setUp()
+    def multiple_outputs(x):
+      return {'2x': x * 2.0, '5x': x * 5.0,
+              'int': tf.ones_like(x, dtype=tf.int32)}
+    def single_output(x):
+      return {'2x': x * 2.0}
+    self.multiple_out = multiple_outputs
+    self.single_out = single_output
+    self.dtypes = {'2x': tf.float32, '5x': tf.float32, 'int': tf.int32}
+    self.single_dtype = {'2x': tf.float32}
 
   @parameterized.parameters(
-      {'use_default_graph_def': False, 'singleton': True, 'num_batches': 1},
-      {'use_default_graph_def': False, 'singleton': True, 'num_batches': 4},
-      {'use_default_graph_def': True, 'singleton': True, 'num_batches': 1},
-      {'use_default_graph_def': True, 'singleton': True, 'num_batches': 4},
-      {'use_default_graph_def': False, 'singleton': False, 'num_batches': 1},
+      {'num_batches': 1, 'single_output': True},
+      {'num_batches': 1, 'single_output': False},
+      {'num_batches': 4, 'single_output': True},
+      {'num_batches': 4, 'single_output': False},
   )
-  def test_run_inception_graph(self, use_default_graph_def, singleton,
-                               num_batches):
-    """Test `run_inception` graph construction."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
+  def test_run_classifier_fn(self, num_batches, single_output):
+    """Test graph construction."""
+    img = tf.ones([8, 4, 4, 2])
 
-    batch_size = 8
-    img = tf.ones([batch_size, 299, 299, 3])
-    output_tensor = INCEPTION_OUTPUT if singleton else [INCEPTION_OUTPUT]
-
-    if use_default_graph_def:
-      logits = _run_with_mock(
-          tfgan.eval.run_inception, img, output_tensor=output_tensor,
-          num_batches=num_batches)
+    classifier_fn = self.single_out if single_output else self.multiple_out
+    if single_output and num_batches == 1:
+      dtypes = None
+    elif single_output:
+      dtypes = self.single_dtype
     else:
-      logits = tfgan.eval.run_inception(
-          img, _get_dummy_graphdef(), output_tensor=output_tensor,
-          num_batches=num_batches)
+      dtypes = self.dtypes
+    results = tfgan.eval.run_classifier_fn(
+        img, classifier_fn, num_batches=num_batches, dtypes=dtypes)
 
-    if not singleton:
-      self.assertIsInstance(logits, list)
-      logits = logits[0]
-    self.assertIsInstance(logits, tf.Tensor)
-    logits.shape.assert_is_compatible_with([batch_size, 1001])
+    self.assertIsInstance(results, dict)
+    self.assertLen(results, 1 if single_output else 3)
 
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
+    self.assertIn('2x', results)
+    self.assertIsInstance(results['2x'], tf.Tensor)
+    self.assertAllEqual(results['2x'], img * 2)
 
-  @parameterized.parameters(
-      {'use_default_graph_def': True, 'num_batches': 1},
-      {'use_default_graph_def': True, 'num_batches': 4},
-      {'use_default_graph_def': False, 'num_batches': 1},
-      {'use_default_graph_def': False, 'num_batches': 4},
-  )
-  def test_run_inception_graph_pool_output(self, use_default_graph_def,
-                                           num_batches):
-    """Test `run_inception` graph construction with pool output."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
+    if not single_output:
+      self.assertIn('5x', results)
+      self.assertIsInstance(results['5x'], tf.Tensor)
+      self.assertAllEqual(results['5x'], img * 5)
 
-    batch_size = 8
-    img = tf.ones([batch_size, 299, 299, 3])
-
-    if use_default_graph_def:
-      pool = _run_with_mock(
-          tfgan.eval.run_inception, img, output_tensor=INCEPTION_FINAL_POOL,
-          num_batches=num_batches)
-    else:
-      pool = tfgan.eval.run_inception(
-          img, _get_dummy_graphdef(), output_tensor=INCEPTION_FINAL_POOL,
-          num_batches=num_batches)
-
-    self.assertIsInstance(pool, tf.Tensor)
-    pool.shape.assert_is_compatible_with([batch_size, 2048])
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
-
-  def test_run_inception_unicode(self):
-    """Test `run_inception` with unicode input and output names."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-
-    batch_size = 8
-    img = tf.ones([batch_size, 299, 299, 3])
-
-    tfgan.eval.run_inception(
-        img, _get_dummy_graphdef(), output_tensor=u'pool_3:0', num_batches=2)
-
-  def test_run_inception_multiple_outputs(self):
-    """Test `run_inception` graph construction with multiple outputs."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-
-    batch_size = 3
-    img = tf.ones([batch_size, 299, 299, 3])
-    logits, pool = _run_with_mock(
-        tfgan.eval.run_inception,
-        img,
-        output_tensor=[INCEPTION_OUTPUT, INCEPTION_FINAL_POOL])
-
-    self.assertIsInstance(logits, tf.Tensor)
-    self.assertIsInstance(pool, tf.Tensor)
-    logits.shape.assert_is_compatible_with([batch_size, 1001])
-    pool.shape.assert_is_compatible_with([batch_size, 2048])
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
+      self.assertIn('int', results)
+      self.assertIsInstance(results['int'], tf.Tensor)
+      self.assertAllEqual(results['int'], np.ones(results['int'].shape))
 
   def test_run_inception_multicall(self):
-    """Test that `run_inception` can be called multiple times."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-
+    """Test that `run_classifier_fn` can be called multiple times."""
     for batch_size in (7, 3, 2):
       img = tf.ones([batch_size, 299, 299, 3])
-      _run_with_mock(tfgan.eval.run_inception, img)
-
-  def test_invalid_input(self):
-    """Test that functions properly fail on invalid input."""
-    with self.assertRaisesRegexp(ValueError, 'Shapes .* are incompatible'):
-      tfgan.eval.run_inception(tf.ones([7, 50, 50, 3]))
-
-    p = tf.zeros([8, 10])
-    p_logits = tf.zeros([8, 10])
-    q = tf.zeros([10])
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
-      kl_divergence(tf.zeros([8, 10], dtype=tf.int32), p_logits, q)
-
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
-      kl_divergence(p, tf.zeros([8, 10], dtype=tf.int32), q)
-
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
-      kl_divergence(p, p_logits, tf.zeros([10], dtype=tf.int32))
-
-    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
-      kl_divergence(tf.zeros([8]), p_logits, q)
-
-    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
-      kl_divergence(p, tf.zeros([8]), q)
-
-    with self.assertRaisesRegexp(ValueError, 'must have rank 1'):
-      kl_divergence(p, p_logits, tf.zeros([10, 8]))
+      tfgan.eval.run_classifier_fn(img, self.single_out)
 
 
-class InceptionScoreTest(tf.test.TestCase, parameterized.TestCase):
+class SampleAndRunClassifierFn(tf.test.TestCase, parameterized.TestCase):
 
-  def test_inception_score_graph(self):
-    """Test `inception_score` graph construction."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-
-    score = _run_with_mock(
-        tfgan.eval.inception_score, tf.zeros([6, 299, 299, 3]), num_batches=3)
-    self.assertIsInstance(score, tf.Tensor)
-    score.shape.assert_has_rank(0)
-
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
-
-  def test_classifier_score_from_logits_value(self):
-    """Test value of `_classifier_score_from_logits_helper`."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-
-    logits = np.array(
-        [np.array([1., 2.] * 500 + [4.]),
-         np.array([4., 5.] * 500 + [6.])])
-    unused_image = tf.zeros([2, 299, 299, 3])
-    incscore = _classifier_score_from_logits_helper(logits)
-
-    with self.cached_session(use_gpu=True) as sess:
-      incscore_np = sess.run(incscore)
-
-    self.assertAllClose(_expected_inception_score(logits), incscore_np)
-
-
-class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
+  def setUp(self):
+    super(SampleAndRunClassifierFn, self).setUp()
+    def multiple_outputs(x):
+      return {'2x': x * 2.0, '5x': x * 5.0,
+              'int': tf.ones_like(x, dtype=tf.int32)}
+    def single_output(x):
+      return {'2x': x * 2.0}
+    self.multiple_out = multiple_outputs
+    self.single_out = single_output
+    self.dtypes = {'2x': tf.float32, '5x': tf.float32, 'int': tf.int32}
+    self.single_dtype = {'2x': tf.float32}
 
   @parameterized.parameters(
-      {'use_default_graph_def': False, 'num_outputs': 0, 'num_batches': 1},
-      {'use_default_graph_def': False, 'num_outputs': 0, 'num_batches': 4},
-      {'use_default_graph_def': False, 'num_outputs': 1, 'num_batches': 1},
-      {'use_default_graph_def': False, 'num_outputs': 1, 'num_batches': 4},
-      {'use_default_graph_def': False, 'num_outputs': 2, 'num_batches': 1},
-      {'use_default_graph_def': False, 'num_outputs': 2, 'num_batches': 4},
-      {'use_default_graph_def': True, 'num_outputs': 0, 'num_batches': 1},
-      {'use_default_graph_def': True, 'num_outputs': 0, 'num_batches': 4},
-      {'use_default_graph_def': True, 'num_outputs': 1, 'num_batches': 1},
-      {'use_default_graph_def': True, 'num_outputs': 1, 'num_batches': 4},
-      {'use_default_graph_def': True, 'num_outputs': 2, 'num_batches': 1},
-      {'use_default_graph_def': True, 'num_outputs': 2, 'num_batches': 4},
+      {'num_batches': 1, 'single_output': True},
+      {'num_batches': 1, 'single_output': False},
+      {'num_batches': 4, 'single_output': True},
+      {'num_batches': 4, 'single_output': False},
   )
-  def test_sample_and_run_inception_graph(
-      self, use_default_graph_def, num_outputs, num_batches):
-    """Test `test_sample_and_run_inception_graph` graph construction."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-    batch_size = 8
+  def test_sample_and_run_inception_graph(self, num_batches, single_output):
+    """Test graph construction."""
+    img = np.ones([8, 244, 244, 3])
     def sample_fn(_):
-      return tf.ones([batch_size, 299, 299, 3])
+      return tf.constant(img, dtype=tf.float32)
     sample_inputs = [1] * num_batches
 
-    output_tensor = {
-        0: INCEPTION_OUTPUT,
-        1: [INCEPTION_OUTPUT],
-        2: [INCEPTION_OUTPUT, INCEPTION_FINAL_POOL],
-    }[num_outputs]
-
-    if use_default_graph_def:
-      logits = _run_with_mock(
-          tfgan.eval.sample_and_run_inception, sample_fn, sample_inputs,
-          output_tensor=output_tensor)
+    classifier_fn = self.single_out if single_output else self.multiple_out
+    if single_output and num_batches == 1:
+      dtypes = None
+    elif single_output:
+      dtypes = self.single_dtype
     else:
-      logits = tfgan.eval.sample_and_run_inception(
-          sample_fn, sample_inputs, _get_dummy_graphdef(),
-          output_tensor=output_tensor)
+      dtypes = self.dtypes
 
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
+    results = tfgan.eval.sample_and_run_classifier_fn(
+        sample_fn, sample_inputs, classifier_fn, dtypes=dtypes)
 
-    if num_outputs == 0:
-      self.assertIsInstance(logits, tf.Tensor)
-      logits.shape.assert_is_compatible_with([batch_size, 1001])
-    elif num_outputs == 1:
-      self.assertIsInstance(logits, list)
-      self.assertLen(logits, 1)
-      logits[0].shape.assert_is_compatible_with([batch_size, 1001])
-    elif num_outputs == 2:
-      self.assertIsInstance(logits, list)
-      self.assertLen(logits, 2)
-      logits[0].shape.assert_is_compatible_with([batch_size, 1001])
-      logits[1].shape.assert_is_compatible_with([batch_size, 2048])
+    self.assertIsInstance(results, dict)
+    self.assertLen(results, 1 if single_output else 3)
+
+    def _repeat(x, times):
+      return np.concatenate([x] * times)
+
+    self.assertIn('2x', results)
+    self.assertIsInstance(results['2x'], tf.Tensor)
+    self.assertAllEqual(results['2x'], _repeat(img * 2, num_batches))
+
+    if not single_output:
+      self.assertIn('5x', results)
+      self.assertIsInstance(results['5x'], tf.Tensor)
+      self.assertAllEqual(results['5x'], _repeat(img * 5, num_batches))
+
+      self.assertIn('int', results)
+      self.assertIsInstance(results['int'], tf.Tensor)
+      ones = np.ones(img.shape)
+      self.assertAllEqual(results['int'], _repeat(ones, num_batches))
 
   def test_assign_variables_in_sampler_runs(self):
     """Clarify that variables are changed by sampling function.
@@ -467,9 +242,6 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
     If the sampler is ever changed to not modify the graph and this test fails,
     this test should modified or simply removed.
     """
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
     if tf.compat.v1.resource_variables_enabled():
       # Under the resource variables semantics the behavior of this test is
       # undefined.
@@ -486,52 +258,117 @@ class SampleAndClassifyTest(tf.test.TestCase, parameterized.TestCase):
     tf.compat.v1.random.set_random_seed(1023)
     sample_input = tf.random.uniform([1, 100])
     sample_inputs = [sample_input] * 10
-    g = tf.Graph()
-    with g.as_default():
-      input_tensor = tf.compat.v1.placeholder(
-          tf.float32, shape=[None, 1], name='input')
-      output = input_tensor * 2
-    outputs = tfgan.eval.sample_and_run_image_classifier(
-        sample_fn, sample_inputs, g.as_graph_def(), input_tensor.name,
-        output.name)
+    outputs = tfgan.eval.sample_and_run_classifier_fn(
+        sample_fn, sample_inputs, self.single_out, self.single_dtype)
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.initializers.global_variables())
-      outputs_np = sess.run(outputs)
+      outputs_np = sess.run(outputs)['2x']
     self.assertEqual((10, 100), outputs_np.shape)
 
     for i in range(1, 10):
       self.assertFalse(np.array_equal(outputs_np[0], outputs_np[i]))
 
 
-class FIDTest(tf.test.TestCase, parameterized.TestCase):
+class ClassifierScoreTest(tf.test.TestCase, parameterized.TestCase):
 
-  def test_frechet_inception_distance_graph(self):
-    """Test `frechet_inception_distance` graph construction."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
+  def setUp(self):
+    super(ClassifierScoreTest, self).setUp()
+    def classifier_fn(x):
+      return 2.0 * x
+    self.classifier_fn = classifier_fn
+
+  @parameterized.parameters(
+      {'num_batches': 1, 'is_streaming': False},
+      {'num_batches': 4, 'is_streaming': False},
+      {'num_batches': 1, 'is_streaming': True},
+      {'num_batches': 4, 'is_streaming': True},
+  )
+  def test_classifier_score_graph(self, num_batches, is_streaming):
+    """Test graph construction."""
+    if is_streaming and tf.executing_eagerly():
+      # Streaming is not compatible with eager execution.
       return
-    img = tf.ones([7, 299, 299, 3])
-    distance = _run_with_mock(tfgan.eval.frechet_inception_distance, img, img)
+    input_tensor = tf.zeros([16, 32])
+    fn = (tfgan.eval.classifier_score_streaming if is_streaming else
+          tfgan.eval.classifier_score)
+    score = fn(input_tensor, self.classifier_fn, num_batches)
 
-    self.assertIsInstance(distance, tf.Tensor)
-    distance.shape.assert_has_rank(0)
+    if is_streaming:
+      score, update_op = score
+      self.assertIsInstance(update_op, tf.Tensor)
+      update_op.shape.assert_has_rank(0)
+    self.assertIsInstance(score, tf.Tensor)
+    score.shape.assert_has_rank(0)
 
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
+  def test_classifier_score_from_logits_value(self):
+    """Test value of `_classifier_score_from_logits_helper`."""
+    logits = np.array(
+        [np.array([1., 2.] * 500 + [4.]),
+         np.array([4., 5.] * 500 + [6.])])
+    unused_image = tf.zeros([2, 299, 299, 3])
+    incscore = _classifier_score_from_logits_helper(logits)
 
-  def test_kernel_inception_distance_graph(self):
-    """Test `frechet_inception_distance` graph construction."""
+    with self.cached_session(use_gpu=True) as sess:
+      incscore_np = sess.run(incscore)
+
+    self.assertAllClose(_expected_inception_score(logits), incscore_np)
+
+  def test_streaming_classifier_score_from_logits_consistency(self):
+    """Tests consistency of classifier_score_from_logits[_streaming]."""
     if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
+      # tf.placeholder() is not compatible with eager execution.
       return
-    img = tf.ones([7, 299, 299, 3])
-    distance = _run_with_mock(tfgan.eval.kernel_inception_distance, img, img)
+    np.random.seed(0)
+    num_batches = 100
+    test_data = np.random.randn(num_batches, 512, 256).astype(np.float32)
 
-    self.assertIsInstance(distance, tf.Tensor)
-    distance.shape.assert_has_rank(0)
+    test_data_large_batch = tf.reshape(test_data, (num_batches * 512, 256))
+    large_batch_score = tfgan.eval.classifier_score_from_logits(
+        test_data_large_batch)
 
-    # Check that none of the model variables are trainable.
-    self.assertListEqual([], tf.compat.v1.trainable_variables())
+    placeholder = tf.compat.v1.placeholder(tf.float32, shape=(512, 256))
+    streaming_score_value, streaming_score_update_op = (
+        tfgan.eval.classifier_score_from_logits_streaming(placeholder))
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.initializers.local_variables())
+      for i in range(num_batches):
+        update_op_value = sess.run(streaming_score_update_op,
+                                   {placeholder: test_data[i]})
+        score_value = sess.run(streaming_score_value)
+        self.assertAllClose(update_op_value, score_value)
+      self.assertAllClose(large_batch_score, score_value, 1e-15)
+
+
+class FrechetTest(tf.test.TestCase, parameterized.TestCase):
+
+  def setUp(self):
+    super(FrechetTest, self).setUp()
+    def classifier_fn(x):
+      return 2.0 * x
+    self.classifier_fn = classifier_fn
+
+  @parameterized.parameters(
+      {'num_batches': 1, 'is_streaming': False},
+      {'num_batches': 4, 'is_streaming': False},
+      {'num_batches': 1, 'is_streaming': True},
+      {'num_batches': 4, 'is_streaming': True},
+  )
+  def test_frechet_classifier_distance_graph(self, num_batches, is_streaming):
+    """Test graph construction."""
+    if is_streaming and tf.executing_eagerly():
+      # Streaming is not compatible with eager execution.
+      return
+    input_tensor = tf.zeros([16, 32])
+    fn = (tfgan.eval.frechet_classifier_distance_streaming if is_streaming else
+          tfgan.eval.frechet_classifier_distance)
+    score = fn(input_tensor, input_tensor, self.classifier_fn, num_batches)
+
+    if is_streaming:
+      score, update_op = score
+      self.assertIsInstance(update_op, tf.Tensor)
+      update_op.shape.assert_has_rank(0)
+    self.assertIsInstance(score, tf.Tensor)
+    score.shape.assert_has_rank(0)
 
   def test_mean_only_frechet_classifier_distance_value(self):
     """Test that `frechet_classifier_distance` gives the correct value."""
@@ -582,8 +419,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     test_pool_real_a = np.float32(np.random.randn(512, 256))
     test_pool_gen_a = np.float32(np.random.randn(512, 256))
 
-    fid_op = _run_with_mock(
-        tfgan.eval.frechet_classifier_distance,
+    fid_op = tfgan.eval.frechet_classifier_distance(
         test_pool_real_a,
         test_pool_gen_a,
         classifier_fn=lambda x: x)
@@ -614,8 +450,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
         dtype=tf.float32, shape=(512, 256))
     gen_placeholder = tf.compat.v1.placeholder(
         dtype=tf.float32, shape=(512, 256))
-    fid_value, fid_update_op = _run_with_mock(
-        tfgan.eval.frechet_classifier_distance_streaming,
+    fid_value, fid_update_op = tfgan.eval.frechet_classifier_distance_streaming(
         real_placeholder,
         gen_placeholder,
         classifier_fn=lambda x: x)
@@ -649,8 +484,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     fid_ops = []
     for i in range(len(test_pool_reals)):
       fid_ops.append(
-          _run_with_mock(
-              tfgan.eval.frechet_classifier_distance,
+          tfgan.eval.frechet_classifier_distance(
               test_pool_reals[i],
               test_pool_gens[i],
               classifier_fn=lambda x: x))
@@ -663,6 +497,28 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     # Check that the FIDs increase monotonically.
     self.assertTrue(all(fid_a < fid_b for fid_a, fid_b in zip(fids, fids[1:])))
 
+
+class KernelTest(tf.test.TestCase, parameterized.TestCase):
+
+  def setUp(self):
+    super(KernelTest, self).setUp()
+    def classifier_fn(x):
+      return tf.compat.v1.layers.flatten(2.0 * x)
+    self.classifier_fn = classifier_fn
+
+  @parameterized.parameters(
+      {'num_batches': 1},
+      {'num_batches': 4},
+  )
+  def test_kernel_classifier_distance_graph(self, num_batches):
+    """Test `frechet_classifier_distance` graph construction."""
+    input_tensor = tf.ones([8, 299, 299, 3])
+    distance = tfgan.eval.kernel_classifier_distance(
+        input_tensor, input_tensor, self.classifier_fn, num_batches)
+
+    self.assertIsInstance(distance, tf.Tensor)
+    distance.shape.assert_has_rank(0)
+
   def test_kernel_classifier_distance_value(self):
     """Test that `kernel_classifier_distance` gives the correct value."""
     np.random.seed(0)
@@ -670,8 +526,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     test_pool_real_a = np.float32(np.random.randn(512, 256))
     test_pool_gen_a = np.float32(np.random.randn(512, 256) * 1.1 + .05)
 
-    kid_op = _run_with_mock(
-        tfgan.eval.kernel_classifier_distance_and_std,
+    kid_op = tfgan.eval.kernel_classifier_distance_and_std(
         test_pool_real_a,
         test_pool_gen_a,
         classifier_fn=lambda x: x,
@@ -696,8 +551,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
     actual_expected_l = []
     if tf.executing_eagerly():
       for block_size in [50, 512, 1000]:
-        actual_kid, actual_std = _run_with_mock(
-            tfgan.eval.kernel_classifier_distance_and_std_from_activations,
+        actual_kid, actual_std = tfgan.eval.kernel_classifier_distance_and_std_from_activations(
             tf.constant(test_pool_real_a),
             tf.constant(test_pool_gen_a),
             max_block_size=block_size)
@@ -707,8 +561,7 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
         actual_expected_l.append((actual_std, expected_std))
     else:
       max_block_size = tf.compat.v1.placeholder(tf.int32, shape=())
-      kid_op = _run_with_mock(
-          tfgan.eval.kernel_classifier_distance_and_std_from_activations,
+      kid_op = tfgan.eval.kernel_classifier_distance_and_std_from_activations(
           tf.constant(test_pool_real_a),
           tf.constant(test_pool_gen_a),
           max_block_size=max_block_size)
@@ -726,34 +579,6 @@ class FIDTest(tf.test.TestCase, parameterized.TestCase):
       self.assertAllClose(expected, actual, 0.001)
 
 
-class ClassifierScoreTest(tf.test.TestCase):
-
-  def test_streaming_classifier_score_from_logits_consistency(self):
-    """Tests consistency of classifier_score_from_logits[_streaming]."""
-    if tf.executing_eagerly():
-      # tf.placeholder() is not compatible with eager execution.
-      return
-    np.random.seed(0)
-    num_batches = 100
-    test_data = np.random.randn(num_batches, 512, 256).astype(np.float32)
-
-    test_data_large_batch = tf.reshape(test_data, (num_batches * 512, 256))
-    large_batch_score = tfgan.eval.classifier_score_from_logits(
-        test_data_large_batch)
-
-    placeholder = tf.compat.v1.placeholder(tf.float32, shape=(512, 256))
-    streaming_score_value, streaming_score_update_op = (
-        tfgan.eval.classifier_score_from_logits_streaming(placeholder))
-    with self.cached_session() as sess:
-      sess.run(tf.compat.v1.initializers.local_variables())
-      for i in range(num_batches):
-        update_op_value = sess.run(streaming_score_update_op,
-                                   {placeholder: test_data[i]})
-        score_value = sess.run(streaming_score_value)
-        self.assertAllClose(update_op_value, score_value)
-      self.assertAllClose(large_batch_score, score_value, 1e-15)
-
-
 class UtilsTest(tf.test.TestCase, parameterized.TestCase):
 
   def test_trace_sqrt_product_value(self):
@@ -768,45 +593,37 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
     cov_real = np.cov(test_pool_real_a, rowvar=False)
     cov_gen = np.cov(test_pool_gen_a, rowvar=False)
 
-    trace_sqrt_prod_op = _run_with_mock(trace_sqrt_product, cov_real, cov_gen)
+    trace_sqrt_prod_op = trace_sqrt_product(cov_real, cov_gen)
 
     with self.cached_session() as sess:
-      # trace_sqrt_product: tsp
       actual_tsp = sess.run(trace_sqrt_prod_op)
 
     expected_tsp = _expected_trace_sqrt_product(cov_real, cov_gen)
 
     self.assertAllClose(actual_tsp, expected_tsp, 0.01)
 
-  def test_preprocess_image_graph(self):
-    """Test `preprocess_image` graph construction."""
-    if tf.executing_eagerly():
-      # `run_image_classifier` doesn't work in eager execution.
-      return
-    incorrectly_sized_image = tf.zeros([520, 240, 3])
-    correct_image = tfgan.eval.preprocess_image(images=incorrectly_sized_image)
-    _run_with_mock(tfgan.eval.run_inception, tf.expand_dims(correct_image, 0))
+  def test_invalid_input(self):
+    """Test that functions properly fail on invalid input."""
+    p = tf.zeros([8, 10])
+    p_logits = tf.zeros([8, 10])
+    q = tf.zeros([10])
+    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+      kl_divergence(tf.zeros([8, 10], dtype=tf.int32), p_logits, q)
 
-  def test_get_graph_def_from_url_tarball(self):
-    """Test `get_graph_def_from_url_tarball`."""
-    # Write dummy binary GraphDef to tempfile.
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-      tmp_file.write(_get_dummy_graphdef().SerializeToString())
-    relative_path = os.path.relpath(tmp_file.name)
+    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+      kl_divergence(p, tf.zeros([8, 10], dtype=tf.int32), q)
 
-    # Create gzip tarball.
-    tar_dir = tempfile.mkdtemp()
-    tar_filename = os.path.join(tar_dir, 'tmp.tar.gz')
-    with tarfile.open(tar_filename, 'w:gz') as tar:
-      tar.add(relative_path)
+    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+      kl_divergence(p, p_logits, tf.zeros([10], dtype=tf.int32))
 
-    with mock.patch.object(classifier_module, 'urllib') as mock_urllib:
-      mock_urllib.request.urlretrieve.return_value = tar_filename, None
-      graph_def = tfgan.eval.get_graph_def_from_url_tarball(
-          'unused_url', relative_path)
+    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
+      kl_divergence(tf.zeros([8]), p_logits, q)
 
-    self.assertIsInstance(graph_def, tf.compat.v1.GraphDef)
-    self.assertEqual(_get_dummy_graphdef(), graph_def)
+    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
+      kl_divergence(p, tf.zeros([8]), q)
+
+    with self.assertRaisesRegexp(ValueError, 'must have rank 1'):
+      kl_divergence(p, p_logits, tf.zeros([10, 8]))
 
 
 if __name__ == '__main__':

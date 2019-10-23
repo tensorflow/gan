@@ -39,7 +39,7 @@ from tensorflow_gan.examples.mnist import util
 
 HParams = collections.namedtuple('HParams', [
     'checkpoint_dir', 'eval_dir', 'noise_samples', 'unstructured_noise_dims',
-    'continuous_noise_dims', 'classifier_filename', 'max_number_of_evaluations',
+    'continuous_noise_dims', 'max_number_of_evaluations',
     'write_to_disk'
 ])
 
@@ -96,8 +96,7 @@ def evaluate(hparams, run_eval_loop=True):
   all_images = tf.concat(
       [categorical_images, continuous1_images, continuous2_images], 0)
   tf.compat.v1.summary.scalar(
-      'MNIST_Classifier_score',
-      util.mnist_score(all_images, hparams.classifier_filename))
+      'MNIST_Classifier_score', util.mnist_score(all_images))
 
   # Write images to disk.
   image_write_ops = []

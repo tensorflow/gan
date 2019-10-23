@@ -43,11 +43,6 @@ flags.DEFINE_boolean('eval_real_images', False,
 flags.DEFINE_integer('noise_dims', 64,
                      'Dimensions of the generator noise vector')
 
-flags.DEFINE_string(
-    'classifier_filename', None,
-    'Location of the pretrained classifier. If `None`, use '
-    'default.')
-
 flags.DEFINE_integer(
     'max_number_of_evaluations', None,
     'Number of times to run evaluation. If `None`, run '
@@ -60,7 +55,6 @@ def main(_):
   hparams = eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
                              FLAGS.dataset_dir, FLAGS.num_images_generated,
                              FLAGS.eval_real_images, FLAGS.noise_dims,
-                             FLAGS.classifier_filename,
                              FLAGS.max_number_of_evaluations,
                              FLAGS.write_to_disk)
   eval_lib.evaluate(hparams, run_eval_loop=True)

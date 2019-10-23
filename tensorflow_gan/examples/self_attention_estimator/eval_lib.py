@@ -28,15 +28,6 @@ from tensorflow_gan.examples.self_attention_estimator import data_provider
 import tensorflow_gan as tfgan  # tf
 
 
-# TODO(joelshor, marvinritter): Make a combined  TPU/CPU/GPU graph the TF-GAN
-# default, so this isn't necessary.
-def default_graph_def_fn():
-  url = 'http://download.tensorflow.org/models/frozen_inception_v1_2015_12_05_v4.tar.gz'
-  graph_def = 'inceptionv1_for_inception_score_tpu.pb'
-  return tfgan.eval.get_graph_def_from_url_tarball(
-      url, graph_def, os.path.basename(url))
-
-
 def get_activations(get_images_fn, num_batches, get_logits=False):
   """Get Inception activations.
 
@@ -51,27 +42,14 @@ def get_activations(get_images_fn, num_batches, get_logits=False):
   Returns:
     1 or 2 Tensors of Inception activations.
   """
-  def sample_fn(_):
-    images = get_images_fn()
-    inception_img_sz = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-    larger_images = tf.compat.v1.image.resize(
-        images, [inception_img_sz, inception_img_sz],
-        method=tf.image.ResizeMethod.BILINEAR)
-    return larger_images
-
-
+  # Image resizing happens inside the Inception SavedModel.
+  outputs = tfgan.eval.sample_and_run_inception(
+      sample_fn=lambda _: get_images_fn(),
+      sample_inputs=[1.0] * num_batches)  # dummy inputs
   if get_logits:
-    output_tensor = (tfgan.eval.INCEPTION_OUTPUT,
-                     tfgan.eval.INCEPTION_FINAL_POOL)
+    return outputs['logits'], outputs['pool_3']
   else:
-    output_tensor = tfgan.eval.INCEPTION_FINAL_POOL
-  output = tfgan.eval.sample_and_run_inception(
-      sample_fn,
-      sample_inputs=[1.0] * num_batches,  # dummy inputs
-      output_tensor=output_tensor,
-      default_graph_def_fn=default_graph_def_fn)
-
-  return output
+    return outputs['pool_3']
 
 
 def get_activations_from_dataset(image_ds, num_batches, get_logits=False):

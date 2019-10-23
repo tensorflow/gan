@@ -48,11 +48,6 @@ flags.DEFINE_integer('unstructured_noise_dims', 62,
 flags.DEFINE_integer('continuous_noise_dims', 2,
                      'The number of dimensions of the continuous noise.')
 
-flags.DEFINE_string(
-    'classifier_filename', None,
-    'Location of the pretrained classifier. If `None`, use '
-    'default.')
-
 flags.DEFINE_integer(
     'max_number_of_evaluations', None,
     'Number of times to run evaluation. If `None`, run '
@@ -67,7 +62,7 @@ def main(_):
   hparams = infogan_eval_lib.HParams(
       FLAGS.checkpoint_dir, FLAGS.eval_dir, FLAGS.noise_samples,
       FLAGS.unstructured_noise_dims, FLAGS.continuous_noise_dims,
-      FLAGS.classifier_filename, FLAGS.max_number_of_evaluations,
+      FLAGS.max_number_of_evaluations,
       FLAGS.write_to_disk)
   infogan_eval_lib.evaluate(hparams, run_eval_loop=True)
 

@@ -34,7 +34,6 @@ class ConditionalEvalTest(tf.test.TestCase):
         eval_dir='/tmp/mnist/',
         num_images_per_class=10,
         noise_dims=64,
-        classifier_filename=None,
         max_number_of_evaluations=None,
         write_to_disk=True)
     conditional_eval_lib.evaluate(hparams, run_eval_loop=False)

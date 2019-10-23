@@ -23,15 +23,18 @@ distance, and Sliced Wasserstein distance.
 # Collapse eval into a single namespace.
 from .classifier_metrics import *
 from .eval_utils import *
+from .inception_metrics import *
 from .sliced_wasserstein import *
 from .summaries import *
 
 # Collect list of exposed symbols.
 from .classifier_metrics import __all__ as classifier_metrics_symbols
 from .eval_utils import __all__ as eval_utils_symbols
+from .inception_metrics import __all__ as inception_metrics_symbols
 from .sliced_wasserstein import __all__ as sliced_wasserstein_symbols
 from .summaries import __all__ as summaries_symbols
 __all__ = classifier_metrics_symbols
 __all__ += eval_utils_symbols
+__all__ += inception_metrics_symbols
 __all__ += sliced_wasserstein_symbols
 __all__ += summaries_symbols

@@ -27,11 +27,12 @@ from tensorflow_gan.examples.self_attention_estimator import eval_lib
 mock = tf.compat.v1.test.mock
 
 
-def _mock_inception(*args, **kwargs):
+def _mock_inception(*args, **kwargs):  # pylint: disable=function-redefined
   del args, kwargs
-  return tf.zeros([12, 2048])
-
-
+  return {
+      'logits': tf.zeros([12, 1008]),
+      'pool_3': tf.zeros([12, 2048]),
+  }
 
 
 class EvalLibTest(tf.test.TestCase):

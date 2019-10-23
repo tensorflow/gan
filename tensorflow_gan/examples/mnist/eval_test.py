@@ -41,7 +41,6 @@ class EvalTest(tf.test.TestCase, parameterized.TestCase):
         num_images_generated=1000,
         eval_real_images=eval_real_images,
         noise_dims=64,
-        classifier_filename=None,
         max_number_of_evaluations=None,
         write_to_disk=True)
 

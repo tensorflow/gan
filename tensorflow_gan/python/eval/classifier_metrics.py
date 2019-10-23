@@ -13,85 +13,149 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Model evaluation tools for TF-GAN.
+"""Classifier-based evaluation tools for TF-GAN.
 
 These methods come from https://arxiv.org/abs/1606.03498,
 https://arxiv.org/abs/1706.08500, and https://arxiv.org/abs/1801.01401.
-
-NOTE: This implementation uses the same weights as in
-https://github.com/openai/improved-gan/blob/master/inception_score/model.py,
-but is more numerically stable and is an unbiased estimator of the true
-Inception score even when splitting the inputs into batches.
 """
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import functools
-import os
-import sys
-import tarfile
-
-import six
-from six.moves import urllib
-
 import tensorflow as tf
 from tensorflow_gan.python.eval import eval_utils
 import tensorflow_probability as tfp
 
 __all__ = [
-    'get_graph_def_from_disk',
-    'get_graph_def_from_resource',
-    'get_graph_def_from_url_tarball',
-    'preprocess_image',
-    'run_image_classifier',
-    'sample_and_run_image_classifier',
+    'run_classifier_fn',
     'sample_and_run_classifier_fn',
-    'run_inception',
-    'sample_and_run_inception',
-    'inception_score',
-    'inception_score_streaming',
     'classifier_score',
     'classifier_score_streaming',
     'classifier_score_from_logits',
     'classifier_score_from_logits_streaming',
-    'frechet_inception_distance',
-    'frechet_inception_distance_streaming',
     'frechet_classifier_distance',
     'frechet_classifier_distance_streaming',
     'frechet_classifier_distance_from_activations',
     'frechet_classifier_distance_from_activations_streaming',
     'mean_only_frechet_classifier_distance_from_activations',
     'diagonal_only_frechet_classifier_distance_from_activations',
-    'kernel_inception_distance',
-    'kernel_inception_distance_and_std',
     'kernel_classifier_distance',
     'kernel_classifier_distance_and_std',
     'kernel_classifier_distance_from_activations',
     'kernel_classifier_distance_and_std_from_activations',
-    'INCEPTION_DEFAULT_IMAGE_SIZE',
-    'INCEPTION_OUTPUT',
-    'INCEPTION_FINAL_POOL',
 ]
 
-INCEPTION_URL = 'http://download.tensorflow.org/models/frozen_inception_v1_2015_12_05.tar.gz'
-INCEPTION_FROZEN_GRAPH = 'inceptionv1_for_inception_score.pb'
-INCEPTION_INPUT = 'Mul:0'
-INCEPTION_OUTPUT = 'logits:0'
-INCEPTION_FINAL_POOL = 'pool_3:0'
-INCEPTION_DEFAULT_IMAGE_SIZE = 299
+
+def run_classifier_fn(input_tensor,
+                      classifier_fn,
+                      num_batches=1,
+                      dtypes=None,
+                      name='RunClassifierFn'):
+  """Runs a network from a TF-Hub module.
+
+  If there are multiple outputs, cast them to tf.float32.
+
+  Args:
+    input_tensor: Input tensors.
+    classifier_fn: A function that takes a single argument and returns the
+      outputs of the classifier. If `num_batches` is greater than 1, the
+      structure of the outputs of `classifier_fn` must match the structure of
+      `dtypes`.
+    num_batches: Number of batches to split `tensor` in to in order to
+      efficiently run them through the classifier network. This is useful if
+      running a large batch would consume too much memory, but running smaller
+      batches is feasible.
+    dtypes: If `classifier_fn` returns more than one element or `num_batches` is
+      greater than 1, `dtypes` must have the same structure as the return value
+      of `classifier_fn` but with each output replaced by the expected dtype of
+      the output. If `classifier_fn` returns on element or `num_batches` is 1,
+      then `dtype` can be `None.
+    name: Name scope for classifier.
+
+  Returns:
+    The output of the module, or just `outputs`.
+
+  Raises:
+    ValueError: If `classifier_fn` return multiple outputs but `dtypes` isn't
+      specified, or is incorrect.
+  """
+  if num_batches > 1:
+    # Compute the classifier splits using the memory-efficient `map_fn`.
+    input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
+    classifier_outputs = tf.map_fn(
+        fn=classifier_fn,
+        elems=tf.stack(input_list),
+        dtype=dtypes,
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        name=name)
+    classifier_outputs = tf.nest.map_structure(
+        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
+  else:
+    classifier_outputs = classifier_fn(input_tensor)
+
+  return classifier_outputs
 
 
-def _validate_images(images, image_size):
-  images = tf.convert_to_tensor(value=images)
-  images.shape.with_rank(4)
-  images.shape.assert_is_compatible_with([None, image_size, image_size, None])
-  return images
+def sample_and_run_classifier_fn(sample_fn,
+                                 sample_inputs,
+                                 classifier_fn,
+                                 dtypes=None,
+                                 name='SampleAndRunClassifierFn'):
+  """Sampes Tensors from distribution then runs them through a function.
 
+  This is the same as `sample_and_run_image_classifier`, but instead of taking
+  a classifier GraphDef it takes a function.
 
-def _to_float(tensor):
-  return tf.cast(tensor, tf.float32)
+  If there are multiple outputs, cast them to tf.float32.
+
+  NOTE: Running the sampler can affect the original weights if, for instance,
+  there are assign ops in the sampler. See
+  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
+
+  Args:
+    sample_fn: A function that takes a single argument and returns images. This
+      function samples from an image distribution.
+    sample_inputs: A list of inputs to pass to `sample_fn`.
+    classifier_fn: A function that takes a single argument and returns the
+      outputs of the classifier. If `num_batches` is greater than 1, the
+      structure of the outputs of `classifier_fn` must match the structure of
+      `dtypes`.
+    dtypes: If `classifier_fn` returns more than one element or `num_batches` is
+      greater than 1, `dtypes` must have the same structure as the return value
+      of `classifier_fn` but with each output replaced by the expected dtype of
+      the output. If `classifier_fn` returns on element or `num_batches` is 1,
+      then `dtype` can be `None.
+    name: Name scope for classifier.
+
+  Returns:
+    Classifier output if `output_tensor` is a string, or a list of outputs if
+    `output_tensor` is a list.
+
+  Raises:
+    ValueError: If `classifier_fn` return multiple outputs but `dtypes` isn't
+      specified, or is incorrect.
+  """
+  def _fn(x):
+    tensor = sample_fn(x)
+    return classifier_fn(tensor)
+  if len(sample_inputs) > 1:
+    classifier_outputs = tf.map_fn(
+        fn=_fn,
+        elems=tf.stack(sample_inputs),
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        dtype=dtypes,
+        name=name)
+    classifier_outputs = tf.nest.map_structure(
+        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
+  else:
+    classifier_outputs = _fn(sample_inputs[0])
+
+  return classifier_outputs
 
 
 def _symmetric_matrix_square_root(mat, eps=1e-10):
@@ -118,53 +182,6 @@ def _symmetric_matrix_square_root(mat, eps=1e-10):
   # (when referencing the equation A = U S V^T)
   # This is unlike Numpy which returns v = V^T
   return tf.matmul(tf.matmul(u, tf.linalg.tensor_diag(si)), v, transpose_b=True)
-
-
-def preprocess_image(images,
-                     height=INCEPTION_DEFAULT_IMAGE_SIZE,
-                     width=INCEPTION_DEFAULT_IMAGE_SIZE,
-                     scope=None):
-  """Prepare a batch of images for evaluation.
-
-  This is the preprocessing portion of the graph from
-  http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz.
-
-  Does the following:
-  - If input is uint8, convert to float and rescale to [-1, 1].
-  - If the input is float, assume (but don't check) that values are [-1, 1].
-  - If images are too big or too small, resize to required height and widith.
-
-  Args:
-    images: 3-D or 4-D Tensor of images.
-    height: Integer. Height of resized output image.
-    width: Integer. Width of resized output image.
-    scope: Optional scope for name_scope.
-
-  Returns:
-    3-D or 4-D float Tensor of prepared image(s). Values are in [-1, 1].
-  """
-  if not (images.dtype == tf.uint8 or images.dtype.is_floating):
-    raise ValueError('Input tensor must be uint8 or floating type. Instead, '
-                     'was %s' % images.dtype)
-  is_single = images.shape.ndims == 3
-  with tf.compat.v1.name_scope(scope, 'preprocess', [images, height, width]):
-    if images.dtype == tf.uint8:
-      images = _to_float(images)
-      # Note: Even though this pixel centering isn't correct, it is what the
-      # original Inception score network used to preprocess images.
-      images = (images - 128.0) / 128.0
-    if images.dtype != tf.float32:
-      images = _to_float(images)
-    if images.shape[1] != height or images.shape[2] != width:
-      if is_single:
-        images = tf.expand_dims(images, axis=0)
-      # TODO(joelshor, marvinritter): Decide whether we can safely switch to
-      # TF 2 resizing, which has fixed some issues.
-      images = tf.compat.v1.image.resize(
-          images, [height, width], method=tf.image.ResizeMethod.BILINEAR)
-      if is_single:
-        images = tf.squeeze(images, axis=0)
-    return images
 
 
 def kl_divergence(p, p_logits, q):
@@ -205,349 +222,29 @@ def kl_divergence(p, p_logits, q):
       input_tensor=p * (tf.nn.log_softmax(p_logits) - tf.math.log(q)), axis=1)
 
 
-def get_graph_def_from_disk(filename):
-  """Get a GraphDef proto from a disk location."""
-  with tf.compat.v1.gfile.GFile(filename, 'rb') as f:
-    return tf.compat.v1.GraphDef.FromString(f.read())
-
-
-def get_graph_def_from_resource(filename):
-  """Get a GraphDef proto from within a .par file."""
-  return tf.compat.v1.GraphDef.FromString(
-      tf.compat.v1.resource_loader.load_resource(filename))
-
-
-def get_graph_def_from_url_tarball(url, filename, tar_filename=None):
-  """Get a GraphDef proto from a tarball on the web.
-
-  Args:
-    url: Web address of tarball
-    filename: Filename of graph definition within tarball
-    tar_filename: Temporary download filename (None = always download)
-
-  Returns:
-    A GraphDef loaded from a file in the downloaded tarball.
-  """
-  if not (tar_filename and os.path.exists(tar_filename)):
-
-    def _progress(count, block_size, total_size):
-      sys.stdout.write(
-          '\r>> Downloading %s %.1f%%' %
-          (url, float(count * block_size) / float(total_size) * 100.0))
-      sys.stdout.flush()
-
-    tar_filename, _ = urllib.request.urlretrieve(url, tar_filename, _progress)
-  with tarfile.open(tar_filename, 'r:gz') as tar:
-    proto_str = tar.extractfile(filename).read()
-  return tf.compat.v1.GraphDef.FromString(proto_str)
-
-
-def _default_graph_def_fn():
-  return get_graph_def_from_url_tarball(INCEPTION_URL, INCEPTION_FROZEN_GRAPH,
-                                        os.path.basename(INCEPTION_URL))
-
-
-def _graph_def_or_default(graph_def, default_graph_def_fn):
-  if graph_def is None:
-    if default_graph_def_fn is None:
-      raise ValueError('If `graph_def` is `None`, must provide '
-                       '`default_graph_def_fn`.')
-    return default_graph_def_fn()
-  return graph_def
-
-
-def run_inception(images,
-                  graph_def=None,
-                  default_graph_def_fn=_default_graph_def_fn,
-                  image_size=INCEPTION_DEFAULT_IMAGE_SIZE,
-                  input_tensor=INCEPTION_INPUT,
-                  output_tensor=INCEPTION_OUTPUT,
-                  num_batches=1):
-  """Run images through a pretrained Inception classifier.
-
-  Args:
-    images: Input tensors. Must be [batch, height, width, channels]. Input shape
-      and values must be in [-1, 1], which can be achieved using
-      `preprocess_image`.
-    graph_def: A GraphDef proto of a pretrained Inception graph. If `None`, call
-      `default_graph_def_fn` to get GraphDef.
-    default_graph_def_fn: A function that returns a GraphDef. Used if
-      `graph_def` is `None. By default, returns a pretrained InceptionV3 graph.
-    image_size: Required image width and height. See unit tests for the default
-      values.
-    input_tensor: Name of input Tensor.
-    output_tensor: Name or list of output Tensors. This function will compute
-      activations at the specified layer. Examples include INCEPTION_V3_OUTPUT
-      and INCEPTION_V3_FINAL_POOL which would result in this function computing
-      the final logits or the penultimate pooling layer.
-    num_batches: Number of batches to split `images` in to in order to
-      efficiently run them through the classifier network.
-
-  Returns:
-    Tensor or Tensors corresponding to computed `output_tensor`.
-
-  Raises:
-    ValueError: If images are not the correct size.
-    ValueError: If neither `graph_def` nor `default_graph_def_fn` are provided.
-  """
-  images = _validate_images(images, image_size)
-  graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
-  activations = run_image_classifier(images, graph_def, input_tensor,
-                                     output_tensor, num_batches)
-  return tf.nest.map_structure(tf.compat.v1.layers.flatten, activations)
-
-
-def sample_and_run_inception(sample_fn,
-                             sample_inputs,
-                             graph_def=None,
-                             default_graph_def_fn=_default_graph_def_fn,
-                             input_tensor=INCEPTION_INPUT,
-                             output_tensor=INCEPTION_OUTPUT):
-  """Generates images then passes them through an Inception classifier.
-
-  This is the same as `run_inception`, but instead of taking images it takes a
-  function that samples from an image distribution. This is essential when
-  running inception on large batches, since it may be impossible to hold all the
-  images in memory at once.
-
-  NOTE: Running the sampler can affect the original weights if, for instance,
-  there are assign ops in the sampler. See
-  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
-
-  Args:
-    sample_fn: A function that takes a single argument and returns images. This
-      function samples from an image distribution.
-    sample_inputs: A list of inputs to pass to `sample_fn`.
-    graph_def: A GraphDef proto of a pretrained Inception graph. If `None`, call
-      `default_graph_def_fn` to get GraphDef.
-    default_graph_def_fn: A function that returns a GraphDef. Used if
-      `graph_def` is `None. By default, returns a pretrained InceptionV3 graph.
-    input_tensor: Name of input Tensor.
-    output_tensor: Name or list of output Tensors. This function will compute
-      activations at the specified layer. Examples include INCEPTION_V3_OUTPUT
-      and INCEPTION_V3_FINAL_POOL which would result in this function computing
-      the final logits or the penultimate pooling layer.
-
-  Returns:
-    Tensor or Tensors corresponding to computed `output_tensor`.
-
-  Raises:
-    ValueError: If images are not the correct size.
-    ValueError: If neither `graph_def` nor `default_graph_def_fn` are provided.
-  """
-  graph_def = _graph_def_or_default(graph_def, default_graph_def_fn)
-  activations = sample_and_run_image_classifier(
-      sample_fn, sample_inputs, graph_def, input_tensor, output_tensor)
-  return tf.nest.map_structure(tf.compat.v1.layers.flatten, activations)
-
-
-def run_image_classifier(tensor,
-                         graph_def,
-                         input_tensor,
-                         output_tensor,
-                         num_batches=1,
-                         dtypes=None,
-                         scope='RunClassifier'):
-  """Runs a network from a frozen graph.
-
-  If there are multiple outputs, cast them to tf.float32.
-
-  Args:
-    tensor: An Input tensor.
-    graph_def: A GraphDef proto.
-    input_tensor: Name of input tensor in graph def.
-    output_tensor: A tensor name or list of tensor names in graph def.
-    num_batches: Number of batches to split `tensor` in to in order to
-      efficiently run them through the classifier network. This is useful if
-      running a large batch would consume too much memory, but running smaller
-      batches is feasible.
-    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
-      every output. If `dtypes` is `None` in this case, assume every output type
-      is `tf.float32`.
-    scope: Name scope for classifier.
-
-  Returns:
-    Classifier output if `output_tensor` is a string, or a list of outputs if
-    `output_tensor` is a list.
-
-  Raises:
-    ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
-    ValueError: If executing eagerly.
-  """
-  if tf.executing_eagerly():
-    raise ValueError('`run_image_classifier` doesn\'t work in eager.')
-
-  if isinstance(output_tensor, six.string_types):
-    output_tensor = [output_tensor]
-    output_is_tensor = True
-  elif len(output_tensor) == 1:
-    output_is_tensor = False
-  else:
-    output_is_tensor = False
-    dtypes = dtypes or [tf.float32] * len(output_tensor)
-
-  def _fn(tensor):
-    input_map = {input_tensor: tensor}
-    outputs = tf.graph_util.import_graph_def(
-        graph_def, input_map, output_tensor, name=scope)
-    if len(outputs) == 1:
-      outputs = outputs[0]
-    return outputs
-  if num_batches > 1:
-    # Compute the classifier splits using the memory-efficient `map_fn`.
-    input_list = tf.split(tensor, num_or_size_splits=num_batches)
-    classifier_outputs = tf.map_fn(
-        fn=_fn,
-        elems=tf.stack(input_list),
-        dtype=dtypes,
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name='RunClassifier')
-    classifier_outputs = tf.nest.map_structure(
-        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
-  else:
-    classifier_outputs = _fn(tensor)
-  if not output_is_tensor and not isinstance(classifier_outputs, list):
-    classifier_outputs = [classifier_outputs]
-
-  return classifier_outputs
-
-
-def sample_and_run_image_classifier(sample_fn,
-                                    sample_inputs,
-                                    graph_def,
-                                    input_tensor,
-                                    output_tensor,
-                                    dtypes=None,
-                                    scope='SampleAndRunClassifier'):
-  """Sampes Tensors from distribution then runs them through a frozen graph.
-
-  This is the same as `run_image_classifier`, but instead of taking images it
-  takes a function that samples from an image distribution. This is essential
-  when running inception on large batches, since it may be impossible to hold
-  all the images in memory at once.
-
-  If there are multiple outputs, cast them to tf.float32.
-
-  NOTE: Running the sampler can affect the original weights if, for instance,
-  there are assign ops in the sampler. See
-  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
-
-  Args:
-    sample_fn: A function that takes a single argument and returns images. This
-      function samples from an image distribution.
-    sample_inputs: A list of inputs to pass to `sample_fn`.
-    graph_def: A GraphDef proto.
-    input_tensor: Name of input tensor in graph def.
-    output_tensor: A tensor name or list of tensor names in graph def.
-    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
-      every output. If `dtypes` is `None` in this case, assume every output type
-      is `tf.float32`.
-    scope: Name scope for classifier.
-
-  Returns:
-    Classifier output if `output_tensor` is a string, or a list of outputs if
-    `output_tensor` is a list.
-
-  Raises:
-    ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
-  """
-  if isinstance(output_tensor, six.string_types):
-    dtypes = dtypes or tf.float32
-  else:
-    dtypes = dtypes or [tf.float32] * len(output_tensor)
-
-  def _classifier_fn(tensor):
-    return run_image_classifier(
-        tensor, graph_def, input_tensor, output_tensor)
-
-  classifier_outputs = sample_and_run_classifier_fn(
-      sample_fn, sample_inputs, _classifier_fn, dtypes, scope)
-
-  if (isinstance(output_tensor, list) and
-      not isinstance(classifier_outputs, list)):
-    classifier_outputs = [classifier_outputs]
-
-  return classifier_outputs
-
-
-def sample_and_run_classifier_fn(sample_fn,
-                                 sample_inputs,
-                                 classifier_fn,
-                                 dtypes=None,
-                                 scope='SampleAndRunClassifierFn'):
-  """Sampes Tensors from distribution then runs them through a function.
-
-  This is the same as `sample_and_run_image_classifier`, but instead of taking
-  a classifier GraphDef it takes a function.
-
-  If there are multiple outputs, cast them to tf.float32.
-
-  NOTE: Running the sampler can affect the original weights if, for instance,
-  there are assign ops in the sampler. See
-  `test_assign_variables_in_sampler_runs` in the unit tests for an example.
-
-  Args:
-    sample_fn: A function that takes a single argument and returns images. This
-      function samples from an image distribution.
-    sample_inputs: A list of inputs to pass to `sample_fn`.
-    classifier_fn: A function that takes a single argument and returns the
-      outputs of the classifier.
-    dtypes: If `output_tensor` is a list, the `while_loop` must have a dtype for
-      every output. If `dtypes` is `None` in this case, assume every output type
-      is `tf.float32`.
-    scope: Name scope for classifier.
-
-  Returns:
-    Classifier output if `output_tensor` is a string, or a list of outputs if
-    `output_tensor` is a list.
-
-  Raises:
-    ValueError: If `input_tensor` or `output_tensor` aren't in the graph_def.
-  """
-
-  def _fn(x):
-    tensor = sample_fn(x)
-    return classifier_fn(tensor)
-  if len(sample_inputs) > 1:
-    classifier_outputs = tf.map_fn(
-        fn=_fn,
-        elems=tf.stack(sample_inputs),
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        dtype=dtypes,
-        name=scope)
-    classifier_outputs = tf.nest.map_structure(
-        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
-  else:
-    classifier_outputs = _fn(sample_inputs[0])
-
-  return classifier_outputs
-
-
-def _classifier_score_helper(images,
+def _classifier_score_helper(input_tensor,
                              classifier_fn,
                              num_batches=1,
                              streaming=False):
   """A helper function for evaluating the classifier score."""
-  generated_images_list = tf.split(images, num_or_size_splits=num_batches)
-
-  # Compute the classifier splits using the memory-efficient `map_fn`.
-  logits = tf.map_fn(
-      fn=classifier_fn,
-      elems=tf.stack(generated_images_list),
-      parallel_iterations=1,
-      back_prop=False,
-      swap_memory=True,
-      name='RunClassifier')
-  logits = tf.concat(tf.unstack(logits), 0)
+  if num_batches > 1:
+    # Compute the classifier splits using the memory-efficient `map_fn`.
+    input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
+    logits = tf.map_fn(
+        fn=classifier_fn,
+        elems=tf.stack(input_list),
+        parallel_iterations=1,
+        back_prop=False,
+        swap_memory=True,
+        name='RunClassifier')
+    logits = tf.concat(tf.unstack(logits), 0)
+  else:
+    logits = classifier_fn(input_tensor)
 
   return _classifier_score_from_logits_helper(logits, streaming=streaming)
 
 
-def classifier_score(images, classifier_fn, num_batches=1):
+def classifier_score(input_tensor, classifier_fn, num_batches=1):
   """Classifier score for evaluating a conditional generative model.
 
   This is based on the Inception Score, but for an arbitrary classifier.
@@ -560,14 +257,14 @@ def classifier_score(images, classifier_fn, num_batches=1):
   which captures how different the network's classification prediction is from
   the prior distribution over classes.
 
-  NOTE: This function consumes images, computes their logits, and then
+  NOTE: This function consumes input tensors, computes their logits, and then
   computes the classifier score. If you would like to precompute many logits for
   large batches, use classifier_score_from_logits(), which this method also
   uses.
 
   Args:
-    images: Images to calculate the classifier score for.
-    classifier_fn: A function that takes images and produces logits based on a
+    input_tensor: Input to the classifier function.
+    classifier_fn: A function that takes tensors and produces logits based on a
       classifier.
     num_batches: Number of batches to split `generated_images` in to in order to
       efficiently run them through the classifier network.
@@ -577,18 +274,18 @@ def classifier_score(images, classifier_fn, num_batches=1):
     of `classifier_fn`.
   """
   return _classifier_score_helper(
-      images, classifier_fn, num_batches, streaming=False)
+      input_tensor, classifier_fn, num_batches, streaming=False)
 
 
-def classifier_score_streaming(images, classifier_fn, num_batches=1):
+def classifier_score_streaming(input_tensor, classifier_fn, num_batches=1):
   """A streaming version of classifier_score.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
 
   Args:
-    images: Images to calculate the classifier score for.
-    classifier_fn: A function that takes images and produces logits based on a
+    input_tensor: Input to the classifier function.
+    classifier_fn: A function that takes tensors and produces logits based on a
       classifier.
     num_batches: Number of batches to split `generated_images` in to in order to
       efficiently run them through the classifier network.
@@ -599,7 +296,7 @@ def classifier_score_streaming(images, classifier_fn, num_batches=1):
     updating the internal state with the given tensors.
   """
   return _classifier_score_helper(
-      images, classifier_fn, num_batches, streaming=True)
+      input_tensor, classifier_fn, num_batches, streaming=True)
 
 
 def _classifier_score_from_logits_helper(logits, streaming=False):
@@ -700,18 +397,6 @@ def classifier_score_from_logits_streaming(logits):
   return _classifier_score_from_logits_helper(logits, streaming=True)
 
 
-inception_score = functools.partial(
-    classifier_score,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_OUTPUT))
-
-
-inception_score_streaming = functools.partial(
-    classifier_score_streaming,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_OUTPUT))
-
-
 def trace_sqrt_product(sigma, sigma_v):
   """Find the trace of the positive sqrt of product of covariance matrices.
 
@@ -753,18 +438,17 @@ def trace_sqrt_product(sigma, sigma_v):
   return tf.linalg.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
 
 
-def _frechet_classifier_distance_helper(real_images,
-                                        generated_images,
+def _frechet_classifier_distance_helper(input_tensor1,
+                                        input_tensor2,
                                         classifier_fn,
                                         num_batches=1,
                                         streaming=False):
   """A helper function for evaluating the frechet classifier distance."""
-  real_images_list = tf.split(real_images, num_or_size_splits=num_batches)
-  generated_images_list = tf.split(
-      generated_images, num_or_size_splits=num_batches)
+  input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
+  input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
 
-  real_imgs = tf.stack(real_images_list)
-  generated_imgs = tf.stack(generated_images_list)
+  stack1 = tf.stack(input_list1)
+  stack2 = tf.stack(input_list2)
 
   # Compute the activations using the memory-efficient `map_fn`.
   def compute_activations(elems):
@@ -776,19 +460,19 @@ def _frechet_classifier_distance_helper(real_images,
         swap_memory=True,
         name='RunClassifier')
 
-  real_a = compute_activations(real_imgs)
-  gen_a = compute_activations(generated_imgs)
+  activations1 = compute_activations(stack1)
+  activations2 = compute_activations(stack2)
 
   # Ensure the activations have the right shapes.
-  real_a = tf.concat(tf.unstack(real_a), 0)
-  gen_a = tf.concat(tf.unstack(gen_a), 0)
+  activations1 = tf.concat(tf.unstack(activations1), 0)
+  activations2 = tf.concat(tf.unstack(activations2), 0)
 
   return _frechet_classifier_distance_from_activations_helper(
-      real_a, gen_a, streaming=streaming)
+      activations1, activations2, streaming=streaming)
 
 
-def frechet_classifier_distance(real_images,
-                                generated_images,
+def frechet_classifier_distance(input_tensor1,
+                                input_tensor2,
                                 classifier_fn,
                                 num_batches=1):
   """Classifier distance for evaluating a generative model.
@@ -814,16 +498,15 @@ def frechet_classifier_distance(real_images,
   sample size to compute Frechet classifier distance when comparing two
   generative models.
 
-  NOTE: This function consumes images, computes their activations, and then
+  NOTE: This function consumes inputs, computes their activations, and then
   computes the classifier score. If you would like to precompute many
-  activations for real and generated images for large batches, please use
+  activations for large batches, please use
   frechet_clasifier_distance_from_activations(), which this method also uses.
 
   Args:
-    real_images: Real images to use to compute Frechet Inception distance.
-    generated_images: Generated images to use to compute Frechet Inception
-      distance.
-    classifier_fn: A function that takes images and produces activations based
+    input_tensor1: First tensor to use as inputs.
+    input_tensor2: Second tensor to use as inputs.
+    classifier_fn: A function that takes tensors and produces activations based
       on a classifier.
     num_batches: Number of batches to split images in to in order to efficiently
       run them through the classifier network.
@@ -833,15 +516,15 @@ def frechet_classifier_distance(real_images,
     as the output of `classifier_fn`.
   """
   return _frechet_classifier_distance_helper(
-      real_images,
-      generated_images,
+      input_tensor1,
+      input_tensor2,
       classifier_fn,
       num_batches,
       streaming=False)
 
 
-def frechet_classifier_distance_streaming(real_images,
-                                          generated_images,
+def frechet_classifier_distance_streaming(input_tensor1,
+                                          input_tensor2,
                                           classifier_fn,
                                           num_batches=1):
   """A streaming version of frechet_classifier_distance.
@@ -850,10 +533,9 @@ def frechet_classifier_distance_streaming(real_images,
   state should be initialized with tf.initializers.local_variables().
 
   Args:
-    real_images: Real images to use to compute Frechet Inception distance.
-    generated_images: Generated images to use to compute Frechet Inception
-      distance.
-    classifier_fn: A function that takes images and produces activations based
+    input_tensor1: First tensor to use as inputs.
+    input_tensor2: Second tensor to use as inputs.
+    classifier_fn: A function that takes tensors and produces activations based
       on a classifier.
     num_batches: Number of batches to split images in to in order to efficiently
       run them through the classifier network.
@@ -864,15 +546,15 @@ def frechet_classifier_distance_streaming(real_images,
     updating the internal state with the given tensors.
   """
   return _frechet_classifier_distance_helper(
-      real_images,
-      generated_images,
+      input_tensor1,
+      input_tensor2,
       classifier_fn,
       num_batches,
       streaming=True)
 
 
 def mean_only_frechet_classifier_distance_from_activations(
-    real_activations, generated_activations):
+    activations1, activations2):
   """Classifier distance for evaluating a generative model from activations.
 
   Given two Gaussian distribution with means m and m_w and covariance matrices
@@ -897,26 +579,26 @@ def mean_only_frechet_classifier_distance_from_activations(
   still retains much of the same information as FID.
 
   Args:
-    real_activations: 2D array of activations of real images of size
+    activations1: 2D array of activations of size
       [num_images, num_dims] to use to compute Frechet Inception distance.
-    generated_activations: 2D array of activations of generated images of size
+    activations2: 2D array of activations of size
       [num_images, num_dims] to use to compute Frechet Inception distance.
 
   Returns:
     The mean-only Frechet Inception distance. A floating-point scalar of the
     same type as the output of the activations.
   """
-  real_activations.shape.assert_has_rank(2)
-  generated_activations.shape.assert_has_rank(2)
+  activations1.shape.assert_has_rank(2)
+  activations2.shape.assert_has_rank(2)
 
-  activations_dtype = real_activations.dtype
+  activations_dtype = activations1.dtype
   if activations_dtype != tf.float64:
-    real_activations = tf.cast(real_activations, tf.float64)
-    generated_activations = tf.cast(generated_activations, tf.float64)
+    activations1 = tf.cast(activations1, tf.float64)
+    activations2 = tf.cast(activations2, tf.float64)
 
   # Compute means of activations.
-  m = tf.reduce_mean(input_tensor=real_activations, axis=0)
-  m_w = tf.reduce_mean(input_tensor=generated_activations, axis=0)
+  m = tf.reduce_mean(input_tensor=activations1, axis=0)
+  m_w = tf.reduce_mean(input_tensor=activations2, axis=0)
 
   # Next the distance between means.
   mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
@@ -929,7 +611,7 @@ def mean_only_frechet_classifier_distance_from_activations(
 
 
 def diagonal_only_frechet_classifier_distance_from_activations(
-    real_activations, generated_activations):
+    activations1, activations2):
   """Classifier distance for evaluating a generative model.
 
   This is based on the Frechet Inception distance, but for an arbitrary
@@ -956,8 +638,9 @@ def diagonal_only_frechet_classifier_distance_from_activations(
   generative models.
 
   Args:
-    real_activations: Real images to use to compute Frechet Inception distance.
-    generated_activations: Generated images to use to compute Frechet Inception
+    activations1: First activations to use to compute Frechet Inception
+      distance.
+    activations2: Second activations to use to compute Frechet Inception
       distance.
 
   Returns:
@@ -967,17 +650,17 @@ def diagonal_only_frechet_classifier_distance_from_activations(
   Raises:
     ValueError: If the shape of the variance and mean vectors are not equal.
   """
-  real_activations.shape.assert_has_rank(2)
-  generated_activations.shape.assert_has_rank(2)
+  activations1.shape.assert_has_rank(2)
+  activations2.shape.assert_has_rank(2)
 
-  activations_dtype = real_activations.dtype
+  activations_dtype = activations1.dtype
   if activations_dtype != tf.float64:
-    real_activations = tf.cast(real_activations, tf.float64)
-    generated_activations = tf.cast(generated_activations, tf.float64)
+    activations1 = tf.cast(activations1, tf.float64)
+    activations2 = tf.cast(activations2, tf.float64)
 
   # Compute mean and covariance matrices of activations.
-  m, var = tf.nn.moments(x=real_activations, axes=[0])
-  m_w, var_w = tf.nn.moments(x=generated_activations, axes=[0])
+  m, var = tf.nn.moments(x=activations1, axes=[0])
+  m_w, var_w = tf.nn.moments(x=activations2, axes=[0])
 
   actual_shape = var.get_shape()
   expected_shape = m.get_shape()
@@ -1004,38 +687,38 @@ def diagonal_only_frechet_classifier_distance_from_activations(
 
 
 def _frechet_classifier_distance_from_activations_helper(
-    real_activations, generated_activations, streaming=False):
+    activations1, activations2, streaming=False):
   """A helper function evaluating the frechet classifier distance."""
-  real_activations = tf.convert_to_tensor(value=real_activations)
-  real_activations.shape.assert_has_rank(2)
-  generated_activations = tf.convert_to_tensor(value=generated_activations)
-  generated_activations.shape.assert_has_rank(2)
+  activations1 = tf.convert_to_tensor(value=activations1)
+  activations1.shape.assert_has_rank(2)
+  activations2 = tf.convert_to_tensor(value=activations2)
+  activations2.shape.assert_has_rank(2)
 
-  activations_dtype = real_activations.dtype
+  activations_dtype = activations1.dtype
   if activations_dtype != tf.float64:
-    real_activations = tf.cast(real_activations, tf.float64)
-    generated_activations = tf.cast(generated_activations, tf.float64)
+    activations1 = tf.cast(activations1, tf.float64)
+    activations2 = tf.cast(activations2, tf.float64)
 
   # Compute mean and covariance matrices of activations.
   if streaming:
     m = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(input_tensor=real_activations, axis=0))
+        tf.reduce_mean(input_tensor=activations1, axis=0))
     m_w = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(input_tensor=generated_activations, axis=0))
-    sigma = eval_utils.streaming_covariance(real_activations)
-    sigma_w = eval_utils.streaming_covariance(generated_activations)
+        tf.reduce_mean(input_tensor=activations2, axis=0))
+    sigma = eval_utils.streaming_covariance(activations1)
+    sigma_w = eval_utils.streaming_covariance(activations2)
   else:
-    m = (tf.reduce_mean(input_tensor=real_activations, axis=0),)
-    m_w = (tf.reduce_mean(input_tensor=generated_activations, axis=0),)
-    # Calculate the unbiased covariance matrix of real_activations.
-    num_examples_real = tf.cast(tf.shape(input=real_activations)[0], tf.float64)
+    m = (tf.reduce_mean(input_tensor=activations1, axis=0),)
+    m_w = (tf.reduce_mean(input_tensor=activations2, axis=0),)
+    # Calculate the unbiased covariance matrix of first activations.
+    num_examples_real = tf.cast(tf.shape(input=activations1)[0], tf.float64)
     sigma = (num_examples_real / (num_examples_real - 1) *
-             tfp.stats.covariance(real_activations),)
-    # Calculate the unbiased covariance matrix of generated_activations.
+             tfp.stats.covariance(activations1),)
+    # Calculate the unbiased covariance matrix of second activations.
     num_examples_generated = tf.cast(
-        tf.shape(input=generated_activations)[0], tf.float64)
+        tf.shape(input=activations2)[0], tf.float64)
     sigma_w = (num_examples_generated / (num_examples_generated - 1) *
-               tfp.stats.covariance(generated_activations),)
+               tfp.stats.covariance(activations2),)
   # m, m_w, sigma, sigma_w are tuples containing one or two elements: the first
   # element will be used to calculate the score value and the second will be
   # used to create the update_op. We apply the same operation on the two
@@ -1069,8 +752,7 @@ def _frechet_classifier_distance_from_activations_helper(
     return result[0]
 
 
-def frechet_classifier_distance_from_activations(real_activations,
-                                                 generated_activations):
+def frechet_classifier_distance_from_activations(activations1, activations2):
   """Classifier distance for evaluating a generative model.
 
   This methods computes the Frechet classifier distance from activations of
@@ -1098,31 +780,31 @@ def frechet_classifier_distance_from_activations(real_activations,
   generative models.
 
   Args:
-    real_activations: 2D Tensor containing activations of real data. Shape is
+    activations1: 2D Tensor containing activations. Shape is
       [batch_size, activation_size].
-    generated_activations: 2D Tensor containing activations of generated data.
-      Shape is [batch_size, activation_size].
+    activations2: 2D Tensor containing activations.
+      [batch_size, activation_size].
 
   Returns:
    The Frechet Inception distance. A floating-point scalar of the same type
    as the output of the activations.
   """
   return _frechet_classifier_distance_from_activations_helper(
-      real_activations, generated_activations, streaming=False)
+      activations1, activations2, streaming=False)
 
 
 def frechet_classifier_distance_from_activations_streaming(
-    real_activations, generated_activations):
+    activations1, activations2):
   """A streaming version of frechet_classifier_distance_from_activations.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
 
   Args:
-    real_activations: 2D Tensor containing activations of real data. Shape is
+    activations1: 2D Tensor containing activations. Shape is
       [batch_size, activation_size].
-    generated_activations: 2D Tensor containing activations of generated data.
-      Shape is [batch_size, activation_size].
+    activations2: 2D Tensor containing activations. Shape is
+      [batch_size, activation_size].
 
   Returns:
    A tuple containing the classifier score and a tf.Operation. The tf.Operation
@@ -1130,25 +812,13 @@ def frechet_classifier_distance_from_activations_streaming(
    updating the internal state with the given tensors.
   """
   return _frechet_classifier_distance_from_activations_helper(
-      real_activations, generated_activations, streaming=True)
+      activations1, activations2, streaming=True)
 
 
-frechet_inception_distance = functools.partial(
-    frechet_classifier_distance,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_FINAL_POOL))
-
-
-frechet_inception_distance_streaming = functools.partial(
-    frechet_classifier_distance_streaming,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_FINAL_POOL))
-
-
-def kernel_classifier_distance(real_images,
-                               generated_images,
+def kernel_classifier_distance(input_tensor1,
+                               input_tensor2,
                                classifier_fn,
-                               num_classifier_batches=1,
+                               num_batches=1,
                                max_block_size=1024,
                                dtype=None):
   """Kernel "classifier" distance for evaluating a generative model.
@@ -1189,12 +859,11 @@ def kernel_classifier_distance(real_images,
   kernel_clasifier_distance_from_activations(), which this method also uses.
 
   Args:
-    real_images: Real images to use to compute Kernel Inception distance.
-    generated_images: Generated images to use to compute Kernel Inception
-      distance.
-    classifier_fn: A function that takes images and produces activations based
+    input_tensor1: First input to use to compute Kernel Inception distance.
+    input_tensor2: Second input to use to compute Kernel Inception distance.
+    classifier_fn: A function that takes tensors and produces activations based
       on a classifier.
-    num_classifier_batches: Number of batches to split images in to in order to
+    num_batches: Number of batches to split images in to in order to
       efficiently run them through the classifier network.
     max_block_size: integer, default 1024. The distance estimator splits samples
       into blocks for computational efficiency. Larger values are more
@@ -1207,24 +876,18 @@ def kernel_classifier_distance(real_images,
    as the output of the activations.
   """
   return kernel_classifier_distance_and_std(
-      real_images,
-      generated_images,
+      input_tensor1,
+      input_tensor2,
       classifier_fn,
-      num_classifier_batches=num_classifier_batches,
+      num_batches=num_batches,
       max_block_size=max_block_size,
       dtype=dtype)[0]
 
 
-kernel_inception_distance = functools.partial(
-    kernel_classifier_distance,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_FINAL_POOL))
-
-
-def kernel_classifier_distance_and_std(real_images,
-                                       generated_images,
+def kernel_classifier_distance_and_std(input_tensor1,
+                                       input_tensor2,
                                        classifier_fn,
-                                       num_classifier_batches=1,
+                                       num_batches=1,
                                        max_block_size=1024,
                                        dtype=None):
   """Kernel "classifier" distance for evaluating a generative model.
@@ -1266,12 +929,11 @@ def kernel_classifier_distance_and_std(real_images,
   kernel_clasifier_distance_from_activations(), which this method also uses.
 
   Args:
-    real_images: Real images to use to compute Kernel Inception distance.
-    generated_images: Generated images to use to compute Kernel Inception
-      distance.
-    classifier_fn: A function that takes images and produces activations based
+    input_tensor1: Input tensor to use to compute Kernel Inception distance.
+    input_tensor2: Input tensor to use to compute Kernel Inception distance.
+    classifier_fn: A function that takes tensors and produces activations based
       on a classifier.
-    num_classifier_batches: Number of batches to split images in to in order to
+    num_batches: Number of batches to split images in to in order to
       efficiently run them through the classifier network.
     max_block_size: integer, default 1024. The distance estimator splits samples
       into blocks for computational efficiency. Larger values are more
@@ -1286,13 +948,11 @@ def kernel_classifier_distance_and_std(real_images,
    An estimate of the standard error of the distance estimator (a scalar of
      the same type).
   """
-  real_images_list = tf.split(
-      real_images, num_or_size_splits=num_classifier_batches)
-  generated_images_list = tf.split(
-      generated_images, num_or_size_splits=num_classifier_batches)
+  input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
+  input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
 
-  real_imgs = tf.stack(real_images_list)
-  generated_imgs = tf.stack(generated_images_list)
+  stack1 = tf.stack(input_list1)
+  stack2 = tf.stack(input_list2)
 
   # Compute the activations using the memory-efficient `map_fn`.
   def compute_activations(elems):
@@ -1304,25 +964,19 @@ def kernel_classifier_distance_and_std(real_images,
         swap_memory=True,
         name='RunClassifier')
 
-  real_a = compute_activations(real_imgs)
-  gen_a = compute_activations(generated_imgs)
+  acts1 = compute_activations(stack1)
+  acts2 = compute_activations(stack2)
 
   # Ensure the activations have the right shapes.
-  real_a = tf.concat(tf.unstack(real_a), 0)
-  gen_a = tf.concat(tf.unstack(gen_a), 0)
+  acts1 = tf.concat(tf.unstack(acts1), 0)
+  acts2 = tf.concat(tf.unstack(acts2), 0)
 
   return kernel_classifier_distance_and_std_from_activations(
-      real_a, gen_a, max_block_size, dtype)
+      acts1, acts2, max_block_size, dtype)
 
 
-kernel_inception_distance_and_std = functools.partial(
-    kernel_classifier_distance_and_std,
-    classifier_fn=functools.partial(
-        run_inception, output_tensor=INCEPTION_FINAL_POOL))
-
-
-def kernel_classifier_distance_from_activations(real_activations,
-                                                generated_activations,
+def kernel_classifier_distance_from_activations(activations1,
+                                                activations2,
                                                 max_block_size=1024,
                                                 dtype=None):
   """Kernel "classifier" distance for evaluating a generative model.
@@ -1361,10 +1015,10 @@ def kernel_classifier_distance_from_activations(real_activations,
   meaningful order, the estimator will behave poorly.
 
   Args:
-    real_activations: 2D Tensor containing activations of real data. Shape is
+    activations1: 2D Tensor containing activations. Shape is
       [batch_size, activation_size].
-    generated_activations: 2D Tensor containing activations of generated data.
-      Shape is [batch_size, activation_size].
+    activations2: 2D Tensor containing activations. Shape is
+      [batch_size, activation_size].
     max_block_size: integer, default 1024. The distance estimator splits samples
       into blocks for computational efficiency. Larger values are more
       computationally expensive but decrease the variance of the distance
@@ -1376,11 +1030,11 @@ def kernel_classifier_distance_from_activations(real_activations,
    as the output of the activations.
   """
   return kernel_classifier_distance_and_std_from_activations(
-      real_activations, generated_activations, max_block_size, dtype)[0]
+      activations1, activations2, max_block_size, dtype)[0]
 
 
-def kernel_classifier_distance_and_std_from_activations(real_activations,
-                                                        generated_activations,
+def kernel_classifier_distance_and_std_from_activations(activations1,
+                                                        activations2,
                                                         max_block_size=1024,
                                                         dtype=None):
   """Kernel "classifier" distance for evaluating a generative model.
@@ -1422,10 +1076,10 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
   meaningful order, the estimator will behave poorly.
 
   Args:
-    real_activations: 2D Tensor containing activations of real data. Shape is
+    activations1: 2D Tensor containing activations. Shape is
       [batch_size, activation_size].
-    generated_activations: 2D Tensor containing activations of generated data.
-      Shape is [batch_size, activation_size].
+    activations2: 2D Tensor containing activations. Shape is
+      [batch_size, activation_size].
     max_block_size: integer, default 1024. The distance estimator splits samples
       into blocks for computational efficiency. Larger values are more
       computationally expensive but decrease the variance of the distance
@@ -1439,23 +1093,21 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
    An estimate of the standard error of the distance estimator (a scalar of
      the same type).
   """
-
-  real_activations.shape.assert_has_rank(2)
-  generated_activations.shape.assert_has_rank(2)
-  real_activations.shape[1:2].assert_is_compatible_with(
-      generated_activations.shape[1:2])
+  activations1.shape.assert_has_rank(2)
+  activations2.shape.assert_has_rank(2)
+  activations1.shape[1:2].assert_is_compatible_with(activations2.shape[1:2])
 
   if dtype is None:
-    dtype = real_activations.dtype
-    assert generated_activations.dtype == dtype
+    dtype = activations1.dtype
+    assert activations2.dtype == dtype
   else:
-    real_activations = tf.cast(real_activations, dtype)
-    generated_activations = tf.cast(generated_activations, dtype)
+    activations1 = tf.cast(activations1, dtype)
+    activations2 = tf.cast(activations2, dtype)
 
   # Figure out how to split the activations into blocks of approximately
   # equal size, with none larger than max_block_size.
-  n_r = tf.shape(input=real_activations)[0]
-  n_g = tf.shape(input=generated_activations)[0]
+  n_r = tf.shape(input=activations1)[0]
+  n_g = tf.shape(input=activations2)[0]
 
   n_bigger = tf.maximum(n_r, n_g)
   n_blocks = tf.cast(tf.math.ceil(n_bigger / max_block_size), dtype=tf.int32)
@@ -1479,18 +1131,18 @@ def kernel_classifier_distance_and_std_from_activations(real_activations,
   inds_r = tf.concat([zero, tf.cumsum(sizes_r)], 0)
   inds_g = tf.concat([zero, tf.cumsum(sizes_g)], 0)
 
-  dim = tf.cast(real_activations.shape[1], dtype)
+  dim = tf.cast(activations1.shape[1], dtype)
 
   def compute_kid_block(i):
     """Computes the ith block of the KID estimate."""
     r_s = inds_r[i]
     r_e = inds_r[i + 1]
-    r = real_activations[r_s:r_e]
+    r = activations1[r_s:r_e]
     m = tf.cast(r_e - r_s, dtype)
 
     g_s = inds_g[i]
     g_e = inds_g[i + 1]
-    g = generated_activations[g_s:g_e]
+    g = activations2[g_s:g_e]
     n = tf.cast(g_e - g_s, dtype)
 
     k_rr = (tf.matmul(r, r, transpose_b=True) / dim + 1)**3

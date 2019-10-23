@@ -33,7 +33,7 @@ NUM_CLASSES = 10
 
 HParams = collections.namedtuple('HParams', [
     'checkpoint_dir', 'eval_dir', 'num_images_per_class', 'noise_dims',
-    'classifier_filename', 'max_number_of_evaluations', 'write_to_disk'
+    'max_number_of_evaluations', 'write_to_disk'
 ])
 
 
@@ -61,12 +61,10 @@ def evaluate(hparams, run_eval_loop=True):
 
   # Calculate evaluation metrics.
   tf.compat.v1.summary.scalar(
-      'MNIST_Classifier_score',
-      util.mnist_score(images, hparams.classifier_filename))
+      'MNIST_Classifier_score', util.mnist_score(images))
   tf.compat.v1.summary.scalar(
       'MNIST_Cross_entropy',
-      util.mnist_cross_entropy(images, one_hot_labels,
-                               hparams.classifier_filename))
+      util.mnist_cross_entropy(images, one_hot_labels))
 
   # Write images to disk.
   image_write_ops = None

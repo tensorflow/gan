@@ -31,8 +31,8 @@ from tensorflow_gan.examples.mnist import util
 
 HParams = collections.namedtuple('HParams', [
     'checkpoint_dir', 'eval_dir', 'dataset_dir', 'num_images_generated',
-    'eval_real_images', 'noise_dims', 'classifier_filename',
-    'max_number_of_evaluations', 'write_to_disk'
+    'eval_real_images', 'noise_dims', 'max_number_of_evaluations',
+    'write_to_disk'
 ])
 
 
@@ -52,8 +52,7 @@ def evaluate(hparams, run_eval_loop=True):
   image_write_ops = None
   if hparams.eval_real_images:
     tf.compat.v1.summary.scalar(
-        'MNIST_Classifier_score',
-        util.mnist_score(real_images, hparams.classifier_filename))
+        'MNIST_Classifier_score', util.mnist_score(real_images))
   else:
     # In order for variables to load, use the same variable scope as in the
     # train job.
@@ -63,11 +62,9 @@ def evaluate(hparams, run_eval_loop=True):
           is_training=False)
     tf.compat.v1.summary.scalar(
         'MNIST_Frechet_distance',
-        util.mnist_frechet_distance(real_images, images,
-                                    hparams.classifier_filename))
+        util.mnist_frechet_distance(real_images, images))
     tf.compat.v1.summary.scalar(
-        'MNIST_Classifier_score',
-        util.mnist_score(images, hparams.classifier_filename))
+        'MNIST_Classifier_score', util.mnist_score(images))
     if hparams.num_images_generated >= 100 and hparams.write_to_disk:
       reshaped_images = tfgan.eval.image_reshaper(
           images[:100, ...], num_cols=10)
