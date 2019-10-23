@@ -78,9 +78,10 @@ def _verify_dataset_shape(ds, z_dim):
   img_shape = tf.TensorShape([None, 128, 128, 3])
   lbl_shape = tf.TensorShape([None])
 
-  ds.output_shapes[0].assert_is_compatible_with(noise_shape)
-  ds.output_shapes[1]['images'].assert_is_compatible_with(img_shape)
-  ds.output_shapes[1]['labels'].assert_is_compatible_with(lbl_shape)
+  ds_shape = tf.compat.v1.data.get_output_shapes(ds)
+  ds_shape[0].assert_is_compatible_with(noise_shape)
+  ds_shape[1]['images'].assert_is_compatible_with(img_shape)
+  ds_shape[1]['labels'].assert_is_compatible_with(lbl_shape)
 
 
 def train_eval_input_fn(mode, params):
