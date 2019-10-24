@@ -23,7 +23,7 @@ import os
 from absl import flags
 from absl import logging
 import numpy as np
-import PIL
+from PIL import Image as image_lib
 
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -118,7 +118,7 @@ class InferenceDemoTest(tf.test.TestCase):
     logging.info('Testing %s for realism.', image_path)
     # If the normalization is off or forgotten, then the generated image is
     # all one pixel value. This tests that different pixel values are achieved.
-    input_np = np.asarray(PIL.Image.open(image_path))
+    input_np = np.asarray(image_lib.open(image_path))
     self.assertEqual(len(input_np.shape), 3)
     self.assertGreaterEqual(input_np.shape[0], 50)
     self.assertGreaterEqual(input_np.shape[1], 50)

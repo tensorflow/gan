@@ -22,7 +22,7 @@ from __future__ import print_function
 import collections
 import os
 import numpy as np
-import PIL
+from PIL import Image as image_lib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 import tensorflow as tf
@@ -115,7 +115,7 @@ def write_predictions_to_disk(predictions, out_dir, current_step):
   with tf.io.gfile.GFile(fn, 'w') as f:
     # Convert tiled_image from float32 in [-1, 1] to unit8 [0, 255].
     img_np = np.squeeze((255 / 2.0) * (tiled_image + 1.0), axis=2)
-    pil_image = PIL.Image.fromarray(img_np.astype(np.uint8))
+    pil_image = image_lib.fromarray(img_np.astype(np.uint8))
     pil_image.convert('RGB').save(f, 'PNG')
   tf.compat.v1.logging.info('Wrote output to: %s', fn)
 

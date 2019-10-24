@@ -21,7 +21,7 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 import numpy as np
-import PIL
+from PIL import Image as image_lib
 import tensorflow as tf
 from tensorflow_gan.examples.self_attention_estimator import data_provider
 
@@ -44,8 +44,8 @@ def _center_crop(x, crop_h, crop_w=None, resize_w=64):
   # return scipy.misc.imresize(x[j:j + crop_h, i:i + crop_w],
   #                            [resize_w, resize_w])
   return np.array(
-      PIL.Image.fromarray(x[j:j + crop_h, i:i + crop_w]).resize(
-          [resize_w, resize_w], PIL.Image.BILINEAR))
+      image_lib.fromarray(x[j:j + crop_h, i:i + crop_w]).resize(
+          [resize_w, resize_w], image_lib.BILINEAR))
 
 
 def _transform(image, npx=64, is_crop=True, resize_w=64):
@@ -135,7 +135,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
       # of PIL's sampling strategy. E.g.,
       # """
       # test_image = np.array([[0], [255]], dtype=np.uint8)
-      # PIL.Image.fromarray(test_image).resize([2, 2], PIL.Image.BILINEAR)
+      # image_lib.fromarray(test_image).resize([2, 2], image_lib.BILINEAR)
       # """
       # results with [[0, 0], [127, 127]] (instead of [[0, 0], [255, 255]]).
       self.assertLess(

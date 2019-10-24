@@ -22,7 +22,7 @@ from __future__ import print_function
 import collections
 import os
 import numpy as np
-import PIL
+from PIL import Image as image_lib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 import tensorflow as tf
@@ -95,6 +95,6 @@ def train(hparams):
   with tf.io.gfile.GFile(
       os.path.join(hparams.output_dir, 'unconditional_gan.png'), 'w') as f:
     # Convert tiled_image from float32 in [-1, 1] to unit8 [0, 255].
-    pil_image = PIL.Image.fromarray(
+    pil_image = image_lib.fromarray(
         np.squeeze((255 / 2.0) * (tiled_image + 1.0), axis=2).astype(np.uint8))
     pil_image.convert('RGB').save(f, 'PNG')
