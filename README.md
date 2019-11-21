@@ -43,6 +43,7 @@ Numerous projects inside Google. The following are some published papers that us
 *   [Boundless: Generative Adversarial Networks for Image Extension](http://arxiv.org/abs/1908.07007)
 *   [NetGAN: Generating Graphs via Random Walks](https://arxiv.org/abs/1803.00816)
 *   [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
+*   [Generative Models for Effective ML on Private, Decentralized Datasets](https://arxiv.org/pdf/1911.06679.pdf)
 
 The framework [Compare GAN](https://github.com/google/compare_gan) uses TF-GAN,
 especially the evaluation metrics. [Their papers](https://github.com/google/compare_gan#compare-gan)
