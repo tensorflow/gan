@@ -24,36 +24,42 @@ from absl import flags
 
 from tensorflow_gan.examples.mnist import conditional_eval_lib
 
-flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
-                    'Directory where the model was written to.')
+flags.DEFINE_string(
+    "checkpoint_dir", "/tmp/mnist/", "Directory where the model was written to."
+)
 
-flags.DEFINE_string('eval_dir', '/tmp/mnist/',
-                    'Directory where the results are saved to.')
-
-flags.DEFINE_integer('num_images_per_class', 10,
-                     'Number of images to generate per class.')
-
-flags.DEFINE_integer('noise_dims', 64,
-                     'Dimensions of the generator noise vector')
+flags.DEFINE_string(
+    "eval_dir", "/tmp/mnist/", "Directory where the results are saved to."
+)
 
 flags.DEFINE_integer(
-    'max_number_of_evaluations', None,
-    'Number of times to run evaluation. If `None`, run '
-    'forever.')
+    "num_images_per_class", 10, "Number of images to generate per class."
+)
 
-flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
+flags.DEFINE_integer("noise_dims", 64, "Dimensions of the generator noise vector")
+
+flags.DEFINE_integer(
+    "max_number_of_evaluations",
+    None,
+    "Number of times to run evaluation. If `None`, run " "forever.",
+)
+
+flags.DEFINE_boolean("write_to_disk", True, "If `True`, run images to disk.")
 
 FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = conditional_eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                                         FLAGS.num_images_per_class,
-                                         FLAGS.noise_dims,
-                                         FLAGS.max_number_of_evaluations,
-                                         FLAGS.write_to_disk)
-  conditional_eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = conditional_eval_lib.HParams(
+        FLAGS.checkpoint_dir,
+        FLAGS.eval_dir,
+        FLAGS.num_images_per_class,
+        FLAGS.noise_dims,
+        FLAGS.max_number_of_evaluations,
+        FLAGS.write_to_disk,
+    )
+    conditional_eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+    app.run(main)

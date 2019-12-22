@@ -25,20 +25,20 @@ from tensorflow_gan.examples.mnist import infogan_eval_lib
 
 
 class MnistInfoGANEvalTest(tf.test.TestCase):
+    def test_build_graph(self):
+        if tf.executing_eagerly():
+            return
+        hparams = infogan_eval_lib.HParams(
+            checkpoint_dir="/tmp/mnist/",
+            eval_dir="/tmp/mnist/",
+            noise_samples=6,
+            unstructured_noise_dims=62,
+            continuous_noise_dims=2,
+            max_number_of_evaluations=None,
+            write_to_disk=True,
+        )
+        infogan_eval_lib.evaluate(hparams, run_eval_loop=False)
 
-  def test_build_graph(self):
-    if tf.executing_eagerly():
-      return
-    hparams = infogan_eval_lib.HParams(
-        checkpoint_dir='/tmp/mnist/',
-        eval_dir='/tmp/mnist/',
-        noise_samples=6,
-        unstructured_noise_dims=62,
-        continuous_noise_dims=2,
-        max_number_of_evaluations=None,
-        write_to_disk=True)
-    infogan_eval_lib.evaluate(hparams, run_eval_loop=False)
 
-
-if __name__ == '__main__':
-  tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()

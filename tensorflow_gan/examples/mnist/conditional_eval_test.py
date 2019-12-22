@@ -25,19 +25,19 @@ from tensorflow_gan.examples.mnist import conditional_eval_lib
 
 
 class ConditionalEvalTest(tf.test.TestCase):
+    def test_build_graph(self):
+        if tf.executing_eagerly():
+            return
+        hparams = conditional_eval_lib.HParams(
+            checkpoint_dir="/tmp/mnist/",
+            eval_dir="/tmp/mnist/",
+            num_images_per_class=10,
+            noise_dims=64,
+            max_number_of_evaluations=None,
+            write_to_disk=True,
+        )
+        conditional_eval_lib.evaluate(hparams, run_eval_loop=False)
 
-  def test_build_graph(self):
-    if tf.executing_eagerly():
-      return
-    hparams = conditional_eval_lib.HParams(
-        checkpoint_dir='/tmp/mnist/',
-        eval_dir='/tmp/mnist/',
-        num_images_per_class=10,
-        noise_dims=64,
-        max_number_of_evaluations=None,
-        write_to_disk=True)
-    conditional_eval_lib.evaluate(hparams, run_eval_loop=False)
 
-
-if __name__ == '__main__':
-  tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()

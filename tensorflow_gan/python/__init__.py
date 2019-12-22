@@ -48,16 +48,10 @@ from tensorflow_gan.python.train import *  # pylint:disable=wildcard-import
 from tensorflow_gan.python.version import __version__
 
 # Collect allowed top-level symbols to expose to users.
-__all__ = [
-    'estimator',
-    'eval',
-    'features',
-    'losses',
-    'tpu',
-    '__version__',
-]
+__all__ = ["estimator", "eval", "features", "losses", "tpu", "__version__"]
 from tensorflow_gan.python.namedtuples import __all__ as namedtuple_symbols
 from tensorflow_gan.python.train import __all__ as train_symbols
+
 __all__ += namedtuple_symbols
 __all__ += train_symbols
 

@@ -28,31 +28,29 @@ from tensorflow_gan.python.eval import eval_utils
 import tensorflow_probability as tfp
 
 __all__ = [
-    'run_classifier_fn',
-    'sample_and_run_classifier_fn',
-    'classifier_score',
-    'classifier_score_streaming',
-    'classifier_score_from_logits',
-    'classifier_score_from_logits_streaming',
-    'frechet_classifier_distance',
-    'frechet_classifier_distance_streaming',
-    'frechet_classifier_distance_from_activations',
-    'frechet_classifier_distance_from_activations_streaming',
-    'mean_only_frechet_classifier_distance_from_activations',
-    'diagonal_only_frechet_classifier_distance_from_activations',
-    'kernel_classifier_distance',
-    'kernel_classifier_distance_and_std',
-    'kernel_classifier_distance_from_activations',
-    'kernel_classifier_distance_and_std_from_activations',
+    "run_classifier_fn",
+    "sample_and_run_classifier_fn",
+    "classifier_score",
+    "classifier_score_streaming",
+    "classifier_score_from_logits",
+    "classifier_score_from_logits_streaming",
+    "frechet_classifier_distance",
+    "frechet_classifier_distance_streaming",
+    "frechet_classifier_distance_from_activations",
+    "frechet_classifier_distance_from_activations_streaming",
+    "mean_only_frechet_classifier_distance_from_activations",
+    "diagonal_only_frechet_classifier_distance_from_activations",
+    "kernel_classifier_distance",
+    "kernel_classifier_distance_and_std",
+    "kernel_classifier_distance_from_activations",
+    "kernel_classifier_distance_and_std_from_activations",
 ]
 
 
-def run_classifier_fn(input_tensor,
-                      classifier_fn,
-                      num_batches=1,
-                      dtypes=None,
-                      name='RunClassifierFn'):
-  """Runs a network from a TF-Hub module.
+def run_classifier_fn(
+    input_tensor, classifier_fn, num_batches=1, dtypes=None, name="RunClassifierFn"
+):
+    """Runs a network from a TF-Hub module.
 
   If there are multiple outputs, cast them to tf.float32.
 
@@ -80,31 +78,35 @@ def run_classifier_fn(input_tensor,
     ValueError: If `classifier_fn` return multiple outputs but `dtypes` isn't
       specified, or is incorrect.
   """
-  if num_batches > 1:
-    # Compute the classifier splits using the memory-efficient `map_fn`.
-    input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
-    classifier_outputs = tf.map_fn(
-        fn=classifier_fn,
-        elems=tf.stack(input_list),
-        dtype=dtypes,
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name=name)
-    classifier_outputs = tf.nest.map_structure(
-        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
-  else:
-    classifier_outputs = classifier_fn(input_tensor)
+    if num_batches > 1:
+        # Compute the classifier splits using the memory-efficient `map_fn`.
+        input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
+        classifier_outputs = tf.map_fn(
+            fn=classifier_fn,
+            elems=tf.stack(input_list),
+            dtype=dtypes,
+            parallel_iterations=1,
+            back_prop=False,
+            swap_memory=True,
+            name=name,
+        )
+        classifier_outputs = tf.nest.map_structure(
+            lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs
+        )
+    else:
+        classifier_outputs = classifier_fn(input_tensor)
 
-  return classifier_outputs
+    return classifier_outputs
 
 
-def sample_and_run_classifier_fn(sample_fn,
-                                 sample_inputs,
-                                 classifier_fn,
-                                 dtypes=None,
-                                 name='SampleAndRunClassifierFn'):
-  """Sampes Tensors from distribution then runs them through a function.
+def sample_and_run_classifier_fn(
+    sample_fn,
+    sample_inputs,
+    classifier_fn,
+    dtypes=None,
+    name="SampleAndRunClassifierFn",
+):
+    """Sampes Tensors from distribution then runs them through a function.
 
   This is the same as `sample_and_run_image_classifier`, but instead of taking
   a classifier GraphDef it takes a function.
@@ -138,28 +140,32 @@ def sample_and_run_classifier_fn(sample_fn,
     ValueError: If `classifier_fn` return multiple outputs but `dtypes` isn't
       specified, or is incorrect.
   """
-  def _fn(x):
-    tensor = sample_fn(x)
-    return classifier_fn(tensor)
-  if len(sample_inputs) > 1:
-    classifier_outputs = tf.map_fn(
-        fn=_fn,
-        elems=tf.stack(sample_inputs),
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        dtype=dtypes,
-        name=name)
-    classifier_outputs = tf.nest.map_structure(
-        lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs)
-  else:
-    classifier_outputs = _fn(sample_inputs[0])
 
-  return classifier_outputs
+    def _fn(x):
+        tensor = sample_fn(x)
+        return classifier_fn(tensor)
+
+    if len(sample_inputs) > 1:
+        classifier_outputs = tf.map_fn(
+            fn=_fn,
+            elems=tf.stack(sample_inputs),
+            parallel_iterations=1,
+            back_prop=False,
+            swap_memory=True,
+            dtype=dtypes,
+            name=name,
+        )
+        classifier_outputs = tf.nest.map_structure(
+            lambda x: tf.concat(tf.unstack(x), 0), classifier_outputs
+        )
+    else:
+        classifier_outputs = _fn(sample_inputs[0])
+
+    return classifier_outputs
 
 
 def _symmetric_matrix_square_root(mat, eps=1e-10):
-  """Compute square root of a symmetric matrix.
+    """Compute square root of a symmetric matrix.
 
   Note that this is different from an elementwise square root. We want to
   compute M' where M' = sqrt(mat) such that M' * M' = mat.
@@ -174,18 +180,18 @@ def _symmetric_matrix_square_root(mat, eps=1e-10):
   Returns:
     Matrix square root of mat.
   """
-  # Unlike numpy, tensorflow's return order is (s, u, v)
-  s, u, v = tf.linalg.svd(mat)
-  # sqrt is unstable around 0, just use 0 in such case
-  si = tf.compat.v1.where(tf.less(s, eps), s, tf.sqrt(s))
-  # Note that the v returned by Tensorflow is v = V
-  # (when referencing the equation A = U S V^T)
-  # This is unlike Numpy which returns v = V^T
-  return tf.matmul(tf.matmul(u, tf.linalg.tensor_diag(si)), v, transpose_b=True)
+    # Unlike numpy, tensorflow's return order is (s, u, v)
+    s, u, v = tf.linalg.svd(mat)
+    # sqrt is unstable around 0, just use 0 in such case
+    si = tf.compat.v1.where(tf.less(s, eps), s, tf.sqrt(s))
+    # Note that the v returned by Tensorflow is v = V
+    # (when referencing the equation A = U S V^T)
+    # This is unlike Numpy which returns v = V^T
+    return tf.matmul(tf.matmul(u, tf.linalg.tensor_diag(si)), v, transpose_b=True)
 
 
 def kl_divergence(p, p_logits, q):
-  """Computes the Kullback-Liebler divergence between p and q.
+    """Computes the Kullback-Liebler divergence between p and q.
 
   This function uses p's logits in some places to improve numerical stability.
 
@@ -211,41 +217,42 @@ def kl_divergence(p, p_logits, q):
     ValueError: If p or p_logits aren't 2D.
     ValueError: If q isn't 1D.
   """
-  for tensor in [p, p_logits, q]:
-    if not tensor.dtype.is_floating:
-      tensor_name = tensor if tf.executing_eagerly() else tensor.name
-      raise ValueError('Input %s must be floating type.' % tensor_name)
-  p.shape.assert_has_rank(2)
-  p_logits.shape.assert_has_rank(2)
-  q.shape.assert_has_rank(1)
-  return tf.reduce_sum(
-      input_tensor=p * (tf.nn.log_softmax(p_logits) - tf.math.log(q)), axis=1)
+    for tensor in [p, p_logits, q]:
+        if not tensor.dtype.is_floating:
+            tensor_name = tensor if tf.executing_eagerly() else tensor.name
+            raise ValueError("Input %s must be floating type." % tensor_name)
+    p.shape.assert_has_rank(2)
+    p_logits.shape.assert_has_rank(2)
+    q.shape.assert_has_rank(1)
+    return tf.reduce_sum(
+        input_tensor=p * (tf.nn.log_softmax(p_logits) - tf.math.log(q)), axis=1
+    )
 
 
-def _classifier_score_helper(input_tensor,
-                             classifier_fn,
-                             num_batches=1,
-                             streaming=False):
-  """A helper function for evaluating the classifier score."""
-  if num_batches > 1:
-    # Compute the classifier splits using the memory-efficient `map_fn`.
-    input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
-    logits = tf.map_fn(
-        fn=classifier_fn,
-        elems=tf.stack(input_list),
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name='RunClassifier')
-    logits = tf.concat(tf.unstack(logits), 0)
-  else:
-    logits = classifier_fn(input_tensor)
+def _classifier_score_helper(
+    input_tensor, classifier_fn, num_batches=1, streaming=False
+):
+    """A helper function for evaluating the classifier score."""
+    if num_batches > 1:
+        # Compute the classifier splits using the memory-efficient `map_fn`.
+        input_list = tf.split(input_tensor, num_or_size_splits=num_batches)
+        logits = tf.map_fn(
+            fn=classifier_fn,
+            elems=tf.stack(input_list),
+            parallel_iterations=1,
+            back_prop=False,
+            swap_memory=True,
+            name="RunClassifier",
+        )
+        logits = tf.concat(tf.unstack(logits), 0)
+    else:
+        logits = classifier_fn(input_tensor)
 
-  return _classifier_score_from_logits_helper(logits, streaming=streaming)
+    return _classifier_score_from_logits_helper(logits, streaming=streaming)
 
 
 def classifier_score(input_tensor, classifier_fn, num_batches=1):
-  """Classifier score for evaluating a conditional generative model.
+    """Classifier score for evaluating a conditional generative model.
 
   This is based on the Inception Score, but for an arbitrary classifier.
 
@@ -273,12 +280,13 @@ def classifier_score(input_tensor, classifier_fn, num_batches=1):
     The classifier score. A floating-point scalar of the same type as the output
     of `classifier_fn`.
   """
-  return _classifier_score_helper(
-      input_tensor, classifier_fn, num_batches, streaming=False)
+    return _classifier_score_helper(
+        input_tensor, classifier_fn, num_batches, streaming=False
+    )
 
 
 def classifier_score_streaming(input_tensor, classifier_fn, num_batches=1):
-  """A streaming version of classifier_score.
+    """A streaming version of classifier_score.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
@@ -295,65 +303,72 @@ def classifier_score_streaming(input_tensor, classifier_fn, num_batches=1):
     has the same value as the score, and has an additional side effect of
     updating the internal state with the given tensors.
   """
-  return _classifier_score_helper(
-      input_tensor, classifier_fn, num_batches, streaming=True)
+    return _classifier_score_helper(
+        input_tensor, classifier_fn, num_batches, streaming=True
+    )
 
 
 def _classifier_score_from_logits_helper(logits, streaming=False):
-  """A helper function for evaluating the classifier score from logits."""
-  logits = tf.convert_to_tensor(value=logits)
-  logits.shape.assert_has_rank(2)
+    """A helper function for evaluating the classifier score from logits."""
+    logits = tf.convert_to_tensor(value=logits)
+    logits.shape.assert_has_rank(2)
 
-  # Use maximum precision for best results.
-  logits_dtype = logits.dtype
-  if logits_dtype != tf.float64:
-    logits = tf.cast(logits, tf.float64)
+    # Use maximum precision for best results.
+    logits_dtype = logits.dtype
+    if logits_dtype != tf.float64:
+        logits = tf.cast(logits, tf.float64)
 
-  p = tf.nn.softmax(logits)
-  if streaming:
-    # Note: The following streaming mean operation assumes all instances of
-    # logits have the same batch size.
-    q_ops = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(input_tensor=p, axis=0))
-    # kl = kl_divergence(p, logits, q)
-    # = tf.reduce_sum(p * (tf.nn.log_softmax(logits) - tf.math.log(q)), axis=1)
-    # = tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1)
-    #   - tf.reduce_sum(p * tf.math.log(q), axis=1)
-    # log_score = tf.reduce_mean(kl)
-    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
-    #   - tf.reduce_mean(tf.reduce_sum(p * tf.math.log(q), axis=1))
-    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
-    #   - tf.reduce_sum(tf.reduce_mean(p, axis=0) * tf.math.log(q))
-    # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
-    #   - tf.reduce_sum(q * tf.math.log(q))
-    plogp_mean_ops = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(
-            input_tensor=tf.reduce_sum(
-                input_tensor=p * tf.nn.log_softmax(logits), axis=1)))
-    log_score_ops = tuple(
-        plogp_mean_val - tf.reduce_sum(input_tensor=q_val * tf.math.log(q_val))
-        for plogp_mean_val, q_val in zip(plogp_mean_ops, q_ops))
-  else:
-    q = tf.reduce_mean(input_tensor=p, axis=0)
-    kl = kl_divergence(p, logits, q)
-    kl.shape.assert_has_rank(1)
-    log_score_ops = (tf.reduce_mean(input_tensor=kl),)
-  # log_score_ops contains the score value and possibly the update_op. We
-  # apply the same operation on all its elements to make sure their value is
-  # consistent.
-  final_score_tuple = tuple(tf.exp(value) for value in log_score_ops)
-  if logits_dtype != tf.float64:
-    final_score_tuple = tuple(
-        tf.cast(value, logits_dtype) for value in final_score_tuple)
+    p = tf.nn.softmax(logits)
+    if streaming:
+        # Note: The following streaming mean operation assumes all instances of
+        # logits have the same batch size.
+        q_ops = eval_utils.streaming_mean_tensor_float64(
+            tf.reduce_mean(input_tensor=p, axis=0)
+        )
+        # kl = kl_divergence(p, logits, q)
+        # = tf.reduce_sum(p * (tf.nn.log_softmax(logits) - tf.math.log(q)), axis=1)
+        # = tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1)
+        #   - tf.reduce_sum(p * tf.math.log(q), axis=1)
+        # log_score = tf.reduce_mean(kl)
+        # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+        #   - tf.reduce_mean(tf.reduce_sum(p * tf.math.log(q), axis=1))
+        # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+        #   - tf.reduce_sum(tf.reduce_mean(p, axis=0) * tf.math.log(q))
+        # = tf.reduce_mean(tf.reduce_sum(p * tf.nn.log_softmax(logits), axis=1))
+        #   - tf.reduce_sum(q * tf.math.log(q))
+        plogp_mean_ops = eval_utils.streaming_mean_tensor_float64(
+            tf.reduce_mean(
+                input_tensor=tf.reduce_sum(
+                    input_tensor=p * tf.nn.log_softmax(logits), axis=1
+                )
+            )
+        )
+        log_score_ops = tuple(
+            plogp_mean_val - tf.reduce_sum(input_tensor=q_val * tf.math.log(q_val))
+            for plogp_mean_val, q_val in zip(plogp_mean_ops, q_ops)
+        )
+    else:
+        q = tf.reduce_mean(input_tensor=p, axis=0)
+        kl = kl_divergence(p, logits, q)
+        kl.shape.assert_has_rank(1)
+        log_score_ops = (tf.reduce_mean(input_tensor=kl),)
+    # log_score_ops contains the score value and possibly the update_op. We
+    # apply the same operation on all its elements to make sure their value is
+    # consistent.
+    final_score_tuple = tuple(tf.exp(value) for value in log_score_ops)
+    if logits_dtype != tf.float64:
+        final_score_tuple = tuple(
+            tf.cast(value, logits_dtype) for value in final_score_tuple
+        )
 
-  if streaming:
-    return final_score_tuple
-  else:
-    return final_score_tuple[0]
+    if streaming:
+        return final_score_tuple
+    else:
+        return final_score_tuple[0]
 
 
 def classifier_score_from_logits(logits):
-  """Classifier score for evaluating a generative model from logits.
+    """Classifier score for evaluating a generative model from logits.
 
   This method computes the classifier score for a set of logits. This can be
   used independently of the classifier_score() method, especially in the case
@@ -376,11 +391,11 @@ def classifier_score_from_logits(logits):
     The classifier score. A floating-point scalar of the same type as the output
     of `logits`.
   """
-  return _classifier_score_from_logits_helper(logits, streaming=False)
+    return _classifier_score_from_logits_helper(logits, streaming=False)
 
 
 def classifier_score_from_logits_streaming(logits):
-  """A streaming version of classifier_score_from_logits.
+    """A streaming version of classifier_score_from_logits.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
@@ -394,11 +409,11 @@ def classifier_score_from_logits_streaming(logits):
     has the same value as the score, and has an additional side effect of
     updating the internal state with the given tensors.
   """
-  return _classifier_score_from_logits_helper(logits, streaming=True)
+    return _classifier_score_from_logits_helper(logits, streaming=True)
 
 
 def trace_sqrt_product(sigma, sigma_v):
-  """Find the trace of the positive sqrt of product of covariance matrices.
+    """Find the trace of the positive sqrt of product of covariance matrices.
 
   '_symmetric_matrix_square_root' only works for symmetric matrices, so we
   cannot just take _symmetric_matrix_square_root(sigma * sigma_v).
@@ -429,53 +444,52 @@ def trace_sqrt_product(sigma, sigma_v):
     The trace of the positive square root of sigma*sigma_v
   """
 
-  # Note sqrt_sigma is called "A" in the proof above
-  sqrt_sigma = _symmetric_matrix_square_root(sigma)
+    # Note sqrt_sigma is called "A" in the proof above
+    sqrt_sigma = _symmetric_matrix_square_root(sigma)
 
-  # This is sqrt(A sigma_v A) above
-  sqrt_a_sigmav_a = tf.matmul(sqrt_sigma, tf.matmul(sigma_v, sqrt_sigma))
+    # This is sqrt(A sigma_v A) above
+    sqrt_a_sigmav_a = tf.matmul(sqrt_sigma, tf.matmul(sigma_v, sqrt_sigma))
 
-  return tf.linalg.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
-
-
-def _frechet_classifier_distance_helper(input_tensor1,
-                                        input_tensor2,
-                                        classifier_fn,
-                                        num_batches=1,
-                                        streaming=False):
-  """A helper function for evaluating the frechet classifier distance."""
-  input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
-  input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
-
-  stack1 = tf.stack(input_list1)
-  stack2 = tf.stack(input_list2)
-
-  # Compute the activations using the memory-efficient `map_fn`.
-  def compute_activations(elems):
-    return tf.map_fn(
-        fn=classifier_fn,
-        elems=elems,
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name='RunClassifier')
-
-  activations1 = compute_activations(stack1)
-  activations2 = compute_activations(stack2)
-
-  # Ensure the activations have the right shapes.
-  activations1 = tf.concat(tf.unstack(activations1), 0)
-  activations2 = tf.concat(tf.unstack(activations2), 0)
-
-  return _frechet_classifier_distance_from_activations_helper(
-      activations1, activations2, streaming=streaming)
+    return tf.linalg.trace(_symmetric_matrix_square_root(sqrt_a_sigmav_a))
 
 
-def frechet_classifier_distance(input_tensor1,
-                                input_tensor2,
-                                classifier_fn,
-                                num_batches=1):
-  """Classifier distance for evaluating a generative model.
+def _frechet_classifier_distance_helper(
+    input_tensor1, input_tensor2, classifier_fn, num_batches=1, streaming=False
+):
+    """A helper function for evaluating the frechet classifier distance."""
+    input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
+    input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
+
+    stack1 = tf.stack(input_list1)
+    stack2 = tf.stack(input_list2)
+
+    # Compute the activations using the memory-efficient `map_fn`.
+    def compute_activations(elems):
+        return tf.map_fn(
+            fn=classifier_fn,
+            elems=elems,
+            parallel_iterations=1,
+            back_prop=False,
+            swap_memory=True,
+            name="RunClassifier",
+        )
+
+    activations1 = compute_activations(stack1)
+    activations2 = compute_activations(stack2)
+
+    # Ensure the activations have the right shapes.
+    activations1 = tf.concat(tf.unstack(activations1), 0)
+    activations2 = tf.concat(tf.unstack(activations2), 0)
+
+    return _frechet_classifier_distance_from_activations_helper(
+        activations1, activations2, streaming=streaming
+    )
+
+
+def frechet_classifier_distance(
+    input_tensor1, input_tensor2, classifier_fn, num_batches=1
+):
+    """Classifier distance for evaluating a generative model.
 
   This is based on the Frechet Inception distance, but for an arbitrary
   classifier.
@@ -515,19 +529,15 @@ def frechet_classifier_distance(input_tensor1,
     The Frechet Inception distance. A floating-point scalar of the same type
     as the output of `classifier_fn`.
   """
-  return _frechet_classifier_distance_helper(
-      input_tensor1,
-      input_tensor2,
-      classifier_fn,
-      num_batches,
-      streaming=False)
+    return _frechet_classifier_distance_helper(
+        input_tensor1, input_tensor2, classifier_fn, num_batches, streaming=False
+    )
 
 
-def frechet_classifier_distance_streaming(input_tensor1,
-                                          input_tensor2,
-                                          classifier_fn,
-                                          num_batches=1):
-  """A streaming version of frechet_classifier_distance.
+def frechet_classifier_distance_streaming(
+    input_tensor1, input_tensor2, classifier_fn, num_batches=1
+):
+    """A streaming version of frechet_classifier_distance.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
@@ -545,17 +555,13 @@ def frechet_classifier_distance_streaming(input_tensor1,
     has the same value as the score, and has an additional side effect of
     updating the internal state with the given tensors.
   """
-  return _frechet_classifier_distance_helper(
-      input_tensor1,
-      input_tensor2,
-      classifier_fn,
-      num_batches,
-      streaming=True)
+    return _frechet_classifier_distance_helper(
+        input_tensor1, input_tensor2, classifier_fn, num_batches, streaming=True
+    )
 
 
-def mean_only_frechet_classifier_distance_from_activations(
-    activations1, activations2):
-  """Classifier distance for evaluating a generative model from activations.
+def mean_only_frechet_classifier_distance_from_activations(activations1, activations2):
+    """Classifier distance for evaluating a generative model from activations.
 
   Given two Gaussian distribution with means m and m_w and covariance matrices
   C and C_w, this function calcuates
@@ -588,31 +594,33 @@ def mean_only_frechet_classifier_distance_from_activations(
     The mean-only Frechet Inception distance. A floating-point scalar of the
     same type as the output of the activations.
   """
-  activations1.shape.assert_has_rank(2)
-  activations2.shape.assert_has_rank(2)
+    activations1.shape.assert_has_rank(2)
+    activations2.shape.assert_has_rank(2)
 
-  activations_dtype = activations1.dtype
-  if activations_dtype != tf.float64:
-    activations1 = tf.cast(activations1, tf.float64)
-    activations2 = tf.cast(activations2, tf.float64)
+    activations_dtype = activations1.dtype
+    if activations_dtype != tf.float64:
+        activations1 = tf.cast(activations1, tf.float64)
+        activations2 = tf.cast(activations2, tf.float64)
 
-  # Compute means of activations.
-  m = tf.reduce_mean(input_tensor=activations1, axis=0)
-  m_w = tf.reduce_mean(input_tensor=activations2, axis=0)
+    # Compute means of activations.
+    m = tf.reduce_mean(input_tensor=activations1, axis=0)
+    m_w = tf.reduce_mean(input_tensor=activations2, axis=0)
 
-  # Next the distance between means.
-  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
-      m, m_w))  # Equivalent to L2 but more stable.
-  mofid = mean
-  if activations_dtype != tf.float64:
-    mofid = tf.cast(mofid, activations_dtype)
+    # Next the distance between means.
+    mean = tf.reduce_sum(
+        input_tensor=tf.math.squared_difference(m, m_w)
+    )  # Equivalent to L2 but more stable.
+    mofid = mean
+    if activations_dtype != tf.float64:
+        mofid = tf.cast(mofid, activations_dtype)
 
-  return mofid
+    return mofid
 
 
 def diagonal_only_frechet_classifier_distance_from_activations(
-    activations1, activations2):
-  """Classifier distance for evaluating a generative model.
+    activations1, activations2
+):
+    """Classifier distance for evaluating a generative model.
 
   This is based on the Frechet Inception distance, but for an arbitrary
   classifier.
@@ -650,110 +658,125 @@ def diagonal_only_frechet_classifier_distance_from_activations(
   Raises:
     ValueError: If the shape of the variance and mean vectors are not equal.
   """
-  activations1.shape.assert_has_rank(2)
-  activations2.shape.assert_has_rank(2)
+    activations1.shape.assert_has_rank(2)
+    activations2.shape.assert_has_rank(2)
 
-  activations_dtype = activations1.dtype
-  if activations_dtype != tf.float64:
-    activations1 = tf.cast(activations1, tf.float64)
-    activations2 = tf.cast(activations2, tf.float64)
+    activations_dtype = activations1.dtype
+    if activations_dtype != tf.float64:
+        activations1 = tf.cast(activations1, tf.float64)
+        activations2 = tf.cast(activations2, tf.float64)
 
-  # Compute mean and covariance matrices of activations.
-  m, var = tf.nn.moments(x=activations1, axes=[0])
-  m_w, var_w = tf.nn.moments(x=activations2, axes=[0])
+    # Compute mean and covariance matrices of activations.
+    m, var = tf.nn.moments(x=activations1, axes=[0])
+    m_w, var_w = tf.nn.moments(x=activations2, axes=[0])
 
-  actual_shape = var.get_shape()
-  expected_shape = m.get_shape()
+    actual_shape = var.get_shape()
+    expected_shape = m.get_shape()
 
-  if actual_shape != expected_shape:
-    raise ValueError('shape: {} must match expected shape: {}'.format(
-        actual_shape, expected_shape))
-
-  # Compute the two components of FID.
-
-  # First the covariance component.
-  # Here, note that trace(A + B) = trace(A) + trace(B)
-  trace = tf.reduce_sum(
-      input_tensor=(var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w)))
-
-  # Next the distance between means.
-  mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
-      m, m_w))  # Equivalent to L2 but more stable.
-  dofid = trace + mean
-  if activations_dtype != tf.float64:
-    dofid = tf.cast(dofid, activations_dtype)
-
-  return dofid
-
-
-def _frechet_classifier_distance_from_activations_helper(
-    activations1, activations2, streaming=False):
-  """A helper function evaluating the frechet classifier distance."""
-  activations1 = tf.convert_to_tensor(value=activations1)
-  activations1.shape.assert_has_rank(2)
-  activations2 = tf.convert_to_tensor(value=activations2)
-  activations2.shape.assert_has_rank(2)
-
-  activations_dtype = activations1.dtype
-  if activations_dtype != tf.float64:
-    activations1 = tf.cast(activations1, tf.float64)
-    activations2 = tf.cast(activations2, tf.float64)
-
-  # Compute mean and covariance matrices of activations.
-  if streaming:
-    m = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(input_tensor=activations1, axis=0))
-    m_w = eval_utils.streaming_mean_tensor_float64(
-        tf.reduce_mean(input_tensor=activations2, axis=0))
-    sigma = eval_utils.streaming_covariance(activations1)
-    sigma_w = eval_utils.streaming_covariance(activations2)
-  else:
-    m = (tf.reduce_mean(input_tensor=activations1, axis=0),)
-    m_w = (tf.reduce_mean(input_tensor=activations2, axis=0),)
-    # Calculate the unbiased covariance matrix of first activations.
-    num_examples_real = tf.cast(tf.shape(input=activations1)[0], tf.float64)
-    sigma = (num_examples_real / (num_examples_real - 1) *
-             tfp.stats.covariance(activations1),)
-    # Calculate the unbiased covariance matrix of second activations.
-    num_examples_generated = tf.cast(
-        tf.shape(input=activations2)[0], tf.float64)
-    sigma_w = (num_examples_generated / (num_examples_generated - 1) *
-               tfp.stats.covariance(activations2),)
-  # m, m_w, sigma, sigma_w are tuples containing one or two elements: the first
-  # element will be used to calculate the score value and the second will be
-  # used to create the update_op. We apply the same operation on the two
-  # elements to make sure their value is consistent.
-
-  def _calculate_fid(m, m_w, sigma, sigma_w):
-    """Returns the Frechet distance given the sample mean and covariance."""
-    # Find the Tr(sqrt(sigma sigma_w)) component of FID
-    sqrt_trace_component = trace_sqrt_product(sigma, sigma_w)
+    if actual_shape != expected_shape:
+        raise ValueError(
+            "shape: {} must match expected shape: {}".format(
+                actual_shape, expected_shape
+            )
+        )
 
     # Compute the two components of FID.
 
     # First the covariance component.
     # Here, note that trace(A + B) = trace(A) + trace(B)
-    trace = tf.linalg.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
+    trace = tf.reduce_sum(
+        input_tensor=(var + var_w) - 2.0 * tf.sqrt(tf.multiply(var, var_w))
+    )
 
     # Next the distance between means.
-    mean = tf.reduce_sum(input_tensor=tf.math.squared_difference(
-        m, m_w))  # Equivalent to L2 but more stable.
-    fid = trace + mean
+    mean = tf.reduce_sum(
+        input_tensor=tf.math.squared_difference(m, m_w)
+    )  # Equivalent to L2 but more stable.
+    dofid = trace + mean
     if activations_dtype != tf.float64:
-      fid = tf.cast(fid, activations_dtype)
-    return fid
+        dofid = tf.cast(dofid, activations_dtype)
 
-  result = tuple(
-      _calculate_fid(m_val, m_w_val, sigma_val, sigma_w_val)
-      for m_val, m_w_val, sigma_val, sigma_w_val in zip(m, m_w, sigma, sigma_w))
-  if streaming:
-    return result
-  else:
-    return result[0]
+    return dofid
+
+
+def _frechet_classifier_distance_from_activations_helper(
+    activations1, activations2, streaming=False
+):
+    """A helper function evaluating the frechet classifier distance."""
+    activations1 = tf.convert_to_tensor(value=activations1)
+    activations1.shape.assert_has_rank(2)
+    activations2 = tf.convert_to_tensor(value=activations2)
+    activations2.shape.assert_has_rank(2)
+
+    activations_dtype = activations1.dtype
+    if activations_dtype != tf.float64:
+        activations1 = tf.cast(activations1, tf.float64)
+        activations2 = tf.cast(activations2, tf.float64)
+
+    # Compute mean and covariance matrices of activations.
+    if streaming:
+        m = eval_utils.streaming_mean_tensor_float64(
+            tf.reduce_mean(input_tensor=activations1, axis=0)
+        )
+        m_w = eval_utils.streaming_mean_tensor_float64(
+            tf.reduce_mean(input_tensor=activations2, axis=0)
+        )
+        sigma = eval_utils.streaming_covariance(activations1)
+        sigma_w = eval_utils.streaming_covariance(activations2)
+    else:
+        m = (tf.reduce_mean(input_tensor=activations1, axis=0),)
+        m_w = (tf.reduce_mean(input_tensor=activations2, axis=0),)
+        # Calculate the unbiased covariance matrix of first activations.
+        num_examples_real = tf.cast(tf.shape(input=activations1)[0], tf.float64)
+        sigma = (
+            num_examples_real
+            / (num_examples_real - 1)
+            * tfp.stats.covariance(activations1),
+        )
+        # Calculate the unbiased covariance matrix of second activations.
+        num_examples_generated = tf.cast(tf.shape(input=activations2)[0], tf.float64)
+        sigma_w = (
+            num_examples_generated
+            / (num_examples_generated - 1)
+            * tfp.stats.covariance(activations2),
+        )
+    # m, m_w, sigma, sigma_w are tuples containing one or two elements: the first
+    # element will be used to calculate the score value and the second will be
+    # used to create the update_op. We apply the same operation on the two
+    # elements to make sure their value is consistent.
+
+    def _calculate_fid(m, m_w, sigma, sigma_w):
+        """Returns the Frechet distance given the sample mean and covariance."""
+        # Find the Tr(sqrt(sigma sigma_w)) component of FID
+        sqrt_trace_component = trace_sqrt_product(sigma, sigma_w)
+
+        # Compute the two components of FID.
+
+        # First the covariance component.
+        # Here, note that trace(A + B) = trace(A) + trace(B)
+        trace = tf.linalg.trace(sigma + sigma_w) - 2.0 * sqrt_trace_component
+
+        # Next the distance between means.
+        mean = tf.reduce_sum(
+            input_tensor=tf.math.squared_difference(m, m_w)
+        )  # Equivalent to L2 but more stable.
+        fid = trace + mean
+        if activations_dtype != tf.float64:
+            fid = tf.cast(fid, activations_dtype)
+        return fid
+
+    result = tuple(
+        _calculate_fid(m_val, m_w_val, sigma_val, sigma_w_val)
+        for m_val, m_w_val, sigma_val, sigma_w_val in zip(m, m_w, sigma, sigma_w)
+    )
+    if streaming:
+        return result
+    else:
+        return result[0]
 
 
 def frechet_classifier_distance_from_activations(activations1, activations2):
-  """Classifier distance for evaluating a generative model.
+    """Classifier distance for evaluating a generative model.
 
   This methods computes the Frechet classifier distance from activations of
   real images and generated images. This can be used independently of the
@@ -789,13 +812,13 @@ def frechet_classifier_distance_from_activations(activations1, activations2):
    The Frechet Inception distance. A floating-point scalar of the same type
    as the output of the activations.
   """
-  return _frechet_classifier_distance_from_activations_helper(
-      activations1, activations2, streaming=False)
+    return _frechet_classifier_distance_from_activations_helper(
+        activations1, activations2, streaming=False
+    )
 
 
-def frechet_classifier_distance_from_activations_streaming(
-    activations1, activations2):
-  """A streaming version of frechet_classifier_distance_from_activations.
+def frechet_classifier_distance_from_activations_streaming(activations1, activations2):
+    """A streaming version of frechet_classifier_distance_from_activations.
 
   Keeps an internal state that continuously tracks the score. This internal
   state should be initialized with tf.initializers.local_variables().
@@ -811,17 +834,20 @@ def frechet_classifier_distance_from_activations_streaming(
    has the same value as the score, and has an additional side effect of
    updating the internal state with the given tensors.
   """
-  return _frechet_classifier_distance_from_activations_helper(
-      activations1, activations2, streaming=True)
+    return _frechet_classifier_distance_from_activations_helper(
+        activations1, activations2, streaming=True
+    )
 
 
-def kernel_classifier_distance(input_tensor1,
-                               input_tensor2,
-                               classifier_fn,
-                               num_batches=1,
-                               max_block_size=1024,
-                               dtype=None):
-  """Kernel "classifier" distance for evaluating a generative model.
+def kernel_classifier_distance(
+    input_tensor1,
+    input_tensor2,
+    classifier_fn,
+    num_batches=1,
+    max_block_size=1024,
+    dtype=None,
+):
+    """Kernel "classifier" distance for evaluating a generative model.
 
   This is based on the Kernel Inception distance, but for an arbitrary
   embedding.
@@ -875,22 +901,25 @@ def kernel_classifier_distance(input_tensor1,
    The Kernel Inception Distance. A floating-point scalar of the same type
    as the output of the activations.
   """
-  return kernel_classifier_distance_and_std(
-      input_tensor1,
-      input_tensor2,
-      classifier_fn,
-      num_batches=num_batches,
-      max_block_size=max_block_size,
-      dtype=dtype)[0]
+    return kernel_classifier_distance_and_std(
+        input_tensor1,
+        input_tensor2,
+        classifier_fn,
+        num_batches=num_batches,
+        max_block_size=max_block_size,
+        dtype=dtype,
+    )[0]
 
 
-def kernel_classifier_distance_and_std(input_tensor1,
-                                       input_tensor2,
-                                       classifier_fn,
-                                       num_batches=1,
-                                       max_block_size=1024,
-                                       dtype=None):
-  """Kernel "classifier" distance for evaluating a generative model.
+def kernel_classifier_distance_and_std(
+    input_tensor1,
+    input_tensor2,
+    classifier_fn,
+    num_batches=1,
+    max_block_size=1024,
+    dtype=None,
+):
+    """Kernel "classifier" distance for evaluating a generative model.
 
   This is based on the Kernel Inception distance, but for an arbitrary
   embedding. Also returns an estimate of the standard error of the distance
@@ -948,38 +977,39 @@ def kernel_classifier_distance_and_std(input_tensor1,
    An estimate of the standard error of the distance estimator (a scalar of
      the same type).
   """
-  input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
-  input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
+    input_list1 = tf.split(input_tensor1, num_or_size_splits=num_batches)
+    input_list2 = tf.split(input_tensor2, num_or_size_splits=num_batches)
 
-  stack1 = tf.stack(input_list1)
-  stack2 = tf.stack(input_list2)
+    stack1 = tf.stack(input_list1)
+    stack2 = tf.stack(input_list2)
 
-  # Compute the activations using the memory-efficient `map_fn`.
-  def compute_activations(elems):
-    return tf.map_fn(
-        fn=classifier_fn,
-        elems=elems,
-        parallel_iterations=1,
-        back_prop=False,
-        swap_memory=True,
-        name='RunClassifier')
+    # Compute the activations using the memory-efficient `map_fn`.
+    def compute_activations(elems):
+        return tf.map_fn(
+            fn=classifier_fn,
+            elems=elems,
+            parallel_iterations=1,
+            back_prop=False,
+            swap_memory=True,
+            name="RunClassifier",
+        )
 
-  acts1 = compute_activations(stack1)
-  acts2 = compute_activations(stack2)
+    acts1 = compute_activations(stack1)
+    acts2 = compute_activations(stack2)
 
-  # Ensure the activations have the right shapes.
-  acts1 = tf.concat(tf.unstack(acts1), 0)
-  acts2 = tf.concat(tf.unstack(acts2), 0)
+    # Ensure the activations have the right shapes.
+    acts1 = tf.concat(tf.unstack(acts1), 0)
+    acts2 = tf.concat(tf.unstack(acts2), 0)
 
-  return kernel_classifier_distance_and_std_from_activations(
-      acts1, acts2, max_block_size, dtype)
+    return kernel_classifier_distance_and_std_from_activations(
+        acts1, acts2, max_block_size, dtype
+    )
 
 
-def kernel_classifier_distance_from_activations(activations1,
-                                                activations2,
-                                                max_block_size=1024,
-                                                dtype=None):
-  """Kernel "classifier" distance for evaluating a generative model.
+def kernel_classifier_distance_from_activations(
+    activations1, activations2, max_block_size=1024, dtype=None
+):
+    """Kernel "classifier" distance for evaluating a generative model.
 
   This methods computes the kernel classifier distance from activations of
   real images and generated images. This can be used independently of the
@@ -1029,15 +1059,15 @@ def kernel_classifier_distance_from_activations(activations1,
    The Kernel Inception Distance. A floating-point scalar of the same type
    as the output of the activations.
   """
-  return kernel_classifier_distance_and_std_from_activations(
-      activations1, activations2, max_block_size, dtype)[0]
+    return kernel_classifier_distance_and_std_from_activations(
+        activations1, activations2, max_block_size, dtype
+    )[0]
 
 
-def kernel_classifier_distance_and_std_from_activations(activations1,
-                                                        activations2,
-                                                        max_block_size=1024,
-                                                        dtype=None):
-  """Kernel "classifier" distance for evaluating a generative model.
+def kernel_classifier_distance_and_std_from_activations(
+    activations1, activations2, max_block_size=1024, dtype=None
+):
+    """Kernel "classifier" distance for evaluating a generative model.
 
   This methods computes the kernel classifier distance from activations of
   real images and generated images. This can be used independently of the
@@ -1093,78 +1123,78 @@ def kernel_classifier_distance_and_std_from_activations(activations1,
    An estimate of the standard error of the distance estimator (a scalar of
      the same type).
   """
-  activations1.shape.assert_has_rank(2)
-  activations2.shape.assert_has_rank(2)
-  activations1.shape[1:2].assert_is_compatible_with(activations2.shape[1:2])
+    activations1.shape.assert_has_rank(2)
+    activations2.shape.assert_has_rank(2)
+    activations1.shape[1:2].assert_is_compatible_with(activations2.shape[1:2])
 
-  if dtype is None:
-    dtype = activations1.dtype
-    assert activations2.dtype == dtype
-  else:
-    activations1 = tf.cast(activations1, dtype)
-    activations2 = tf.cast(activations2, dtype)
+    if dtype is None:
+        dtype = activations1.dtype
+        assert activations2.dtype == dtype
+    else:
+        activations1 = tf.cast(activations1, dtype)
+        activations2 = tf.cast(activations2, dtype)
 
-  # Figure out how to split the activations into blocks of approximately
-  # equal size, with none larger than max_block_size.
-  n_r = tf.shape(input=activations1)[0]
-  n_g = tf.shape(input=activations2)[0]
+    # Figure out how to split the activations into blocks of approximately
+    # equal size, with none larger than max_block_size.
+    n_r = tf.shape(input=activations1)[0]
+    n_g = tf.shape(input=activations2)[0]
 
-  n_bigger = tf.maximum(n_r, n_g)
-  n_blocks = tf.cast(tf.math.ceil(n_bigger / max_block_size), dtype=tf.int32)
+    n_bigger = tf.maximum(n_r, n_g)
+    n_blocks = tf.cast(tf.math.ceil(n_bigger / max_block_size), dtype=tf.int32)
 
-  v_r = n_r // n_blocks
-  v_g = n_g // n_blocks
+    v_r = n_r // n_blocks
+    v_g = n_g // n_blocks
 
-  n_plusone_r = n_r - v_r * n_blocks
-  n_plusone_g = n_g - v_g * n_blocks
+    n_plusone_r = n_r - v_r * n_blocks
+    n_plusone_g = n_g - v_g * n_blocks
 
-  sizes_r = tf.concat([
-      tf.fill([n_blocks - n_plusone_r], v_r),
-      tf.fill([n_plusone_r], v_r + 1),
-  ], 0)
-  sizes_g = tf.concat([
-      tf.fill([n_blocks - n_plusone_g], v_g),
-      tf.fill([n_plusone_g], v_g + 1),
-  ], 0)
+    sizes_r = tf.concat(
+        [tf.fill([n_blocks - n_plusone_r], v_r), tf.fill([n_plusone_r], v_r + 1)], 0
+    )
+    sizes_g = tf.concat(
+        [tf.fill([n_blocks - n_plusone_g], v_g), tf.fill([n_plusone_g], v_g + 1)], 0
+    )
 
-  zero = tf.zeros([1], dtype=tf.int32)
-  inds_r = tf.concat([zero, tf.cumsum(sizes_r)], 0)
-  inds_g = tf.concat([zero, tf.cumsum(sizes_g)], 0)
+    zero = tf.zeros([1], dtype=tf.int32)
+    inds_r = tf.concat([zero, tf.cumsum(sizes_r)], 0)
+    inds_g = tf.concat([zero, tf.cumsum(sizes_g)], 0)
 
-  dim = tf.cast(activations1.shape[1], dtype)
+    dim = tf.cast(activations1.shape[1], dtype)
 
-  def compute_kid_block(i):
-    """Computes the ith block of the KID estimate."""
-    r_s = inds_r[i]
-    r_e = inds_r[i + 1]
-    r = activations1[r_s:r_e]
-    m = tf.cast(r_e - r_s, dtype)
+    def compute_kid_block(i):
+        """Computes the ith block of the KID estimate."""
+        r_s = inds_r[i]
+        r_e = inds_r[i + 1]
+        r = activations1[r_s:r_e]
+        m = tf.cast(r_e - r_s, dtype)
 
-    g_s = inds_g[i]
-    g_e = inds_g[i + 1]
-    g = activations2[g_s:g_e]
-    n = tf.cast(g_e - g_s, dtype)
+        g_s = inds_g[i]
+        g_e = inds_g[i + 1]
+        g = activations2[g_s:g_e]
+        n = tf.cast(g_e - g_s, dtype)
 
-    k_rr = (tf.matmul(r, r, transpose_b=True) / dim + 1)**3
-    k_rg = (tf.matmul(r, g, transpose_b=True) / dim + 1)**3
-    k_gg = (tf.matmul(g, g, transpose_b=True) / dim + 1)**3
-    return (-2 * tf.reduce_mean(input_tensor=k_rg) +
-            (tf.reduce_sum(input_tensor=k_rr) - tf.linalg.trace(k_rr)) /
-            (m * (m - 1)) +
-            (tf.reduce_sum(input_tensor=k_gg) - tf.linalg.trace(k_gg)) /
-            (n * (n - 1)))
+        k_rr = (tf.matmul(r, r, transpose_b=True) / dim + 1) ** 3
+        k_rg = (tf.matmul(r, g, transpose_b=True) / dim + 1) ** 3
+        k_gg = (tf.matmul(g, g, transpose_b=True) / dim + 1) ** 3
+        return (
+            -2 * tf.reduce_mean(input_tensor=k_rg)
+            + (tf.reduce_sum(input_tensor=k_rr) - tf.linalg.trace(k_rr)) / (m * (m - 1))
+            + (tf.reduce_sum(input_tensor=k_gg) - tf.linalg.trace(k_gg)) / (n * (n - 1))
+        )
 
-  ests = tf.map_fn(
-      compute_kid_block, tf.range(n_blocks), dtype=dtype, back_prop=False)
+    ests = tf.map_fn(
+        compute_kid_block, tf.range(n_blocks), dtype=dtype, back_prop=False
+    )
 
-  mn = tf.reduce_mean(input_tensor=ests)
+    mn = tf.reduce_mean(input_tensor=ests)
 
-  # tf.nn.moments doesn't use the Bessel correction, which we want here
-  n_blocks_ = tf.cast(n_blocks, dtype)
-  var = tf.cond(
-      pred=tf.less_equal(n_blocks, 1),
-      true_fn=lambda: tf.constant(float('nan'), dtype=dtype),
-      false_fn=lambda: tf.reduce_sum(input_tensor=tf.square(ests - mn)) / (
-          n_blocks_ - 1))
+    # tf.nn.moments doesn't use the Bessel correction, which we want here
+    n_blocks_ = tf.cast(n_blocks, dtype)
+    var = tf.cond(
+        pred=tf.less_equal(n_blocks, 1),
+        true_fn=lambda: tf.constant(float("nan"), dtype=dtype),
+        false_fn=lambda: tf.reduce_sum(input_tensor=tf.square(ests - mn))
+        / (n_blocks_ - 1),
+    )
 
-  return mn, tf.sqrt(var / n_blocks_)
+    return mn, tf.sqrt(var / n_blocks_)

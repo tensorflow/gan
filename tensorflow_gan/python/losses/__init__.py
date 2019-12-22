@@ -25,4 +25,5 @@ from tensorflow_gan.python.losses import losses_wargs as wargs
 
 # Collect list of exposed symbols.
 from tensorflow_gan.python.losses import tuple_losses
-__all__ = ['wargs'] + tuple_losses.__all__
+
+__all__ = ["wargs"] + tuple_losses.__all__

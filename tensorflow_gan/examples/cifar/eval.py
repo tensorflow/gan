@@ -27,43 +27,58 @@ from tensorflow_gan.examples.cifar import eval_lib
 FLAGS = flags.FLAGS
 
 
-flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
+flags.DEFINE_string("master", "", "Name of the TensorFlow master to use.")
 
-flags.DEFINE_string('checkpoint_dir', '/tmp/cifar10/',
-                    'Directory where the model was written to.')
+flags.DEFINE_string(
+    "checkpoint_dir", "/tmp/cifar10/", "Directory where the model was written to."
+)
 
-flags.DEFINE_string('eval_dir', '/tmp/cifar10/',
-                    'Directory where the results are saved to.')
+flags.DEFINE_string(
+    "eval_dir", "/tmp/cifar10/", "Directory where the results are saved to."
+)
 
-flags.DEFINE_integer('num_images_generated', 100,
-                     'Number of images to generate at once.')
+flags.DEFINE_integer(
+    "num_images_generated", 100, "Number of images to generate at once."
+)
 
-flags.DEFINE_integer('num_inception_images', 10,
-                     'The number of images to run through Inception at once.')
+flags.DEFINE_integer(
+    "num_inception_images", 10, "The number of images to run through Inception at once."
+)
 
-flags.DEFINE_boolean('eval_real_images', False,
-                     'If `True`, run Inception network on real images.')
+flags.DEFINE_boolean(
+    "eval_real_images", False, "If `True`, run Inception network on real images."
+)
 
-flags.DEFINE_boolean('eval_frechet_inception_distance', True,
-                     'If `True`, compute Frechet Inception distance using real '
-                     'images and generated images.')
+flags.DEFINE_boolean(
+    "eval_frechet_inception_distance",
+    True,
+    "If `True`, compute Frechet Inception distance using real "
+    "images and generated images.",
+)
 
-flags.DEFINE_integer('max_number_of_evaluations', None,
-                     'Number of times to run evaluation. If `None`, run '
-                     'forever.')
+flags.DEFINE_integer(
+    "max_number_of_evaluations",
+    None,
+    "Number of times to run evaluation. If `None`, run " "forever.",
+)
 
-flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
+flags.DEFINE_boolean("write_to_disk", True, "If `True`, run images to disk.")
 
 
 def main(_):
-  hparams = eval_lib.HParams(FLAGS.master, FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                             FLAGS.num_images_generated,
-                             FLAGS.num_inception_images, FLAGS.eval_real_images,
-                             FLAGS.eval_frechet_inception_distance,
-                             FLAGS.max_number_of_evaluations,
-                             FLAGS.write_to_disk)
-  eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = eval_lib.HParams(
+        FLAGS.master,
+        FLAGS.checkpoint_dir,
+        FLAGS.eval_dir,
+        FLAGS.num_images_generated,
+        FLAGS.num_inception_images,
+        FLAGS.eval_real_images,
+        FLAGS.eval_frechet_inception_distance,
+        FLAGS.max_number_of_evaluations,
+        FLAGS.write_to_disk,
+    )
+    eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+    app.run(main)

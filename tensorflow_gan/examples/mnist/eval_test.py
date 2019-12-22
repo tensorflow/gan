@@ -29,35 +29,36 @@ mock = tf.compat.v1.test.mock
 
 
 class EvalTest(tf.test.TestCase, parameterized.TestCase):
+    @parameterized.named_parameters(("RealData", True), ("GeneratedData", False))
+    @mock.patch.object(eval_lib.data_provider, "provide_data", autospec=True)
+    @mock.patch.object(eval_lib, "util", autospec=True)
+    def test_build_graph(self, eval_real_images, mock_util, mock_provide_data):
+        hparams = eval_lib.HParams(
+            checkpoint_dir="/tmp/mnist/",
+            eval_dir="/tmp/mnist/",
+            dataset_dir=None,
+            num_images_generated=1000,
+            eval_real_images=eval_real_images,
+            noise_dims=64,
+            max_number_of_evaluations=None,
+            write_to_disk=True,
+        )
 
-  @parameterized.named_parameters(('RealData', True), ('GeneratedData', False))
-  @mock.patch.object(eval_lib.data_provider, 'provide_data', autospec=True)
-  @mock.patch.object(eval_lib, 'util', autospec=True)
-  def test_build_graph(self, eval_real_images, mock_util, mock_provide_data):
-    hparams = eval_lib.HParams(
-        checkpoint_dir='/tmp/mnist/',
-        eval_dir='/tmp/mnist/',
-        dataset_dir=None,
-        num_images_generated=1000,
-        eval_real_images=eval_real_images,
-        noise_dims=64,
-        max_number_of_evaluations=None,
-        write_to_disk=True)
+        # Mock input pipeline.
+        bs = hparams.num_images_generated
+        mock_imgs = np.zeros([bs, 28, 28, 1], dtype=np.float32)
+        mock_lbls = np.concatenate(
+            (np.ones([bs, 1], dtype=np.int32), np.zeros([bs, 9], dtype=np.int32)),
+            axis=1,
+        )
+        mock_provide_data.return_value = (mock_imgs, mock_lbls)
 
-    # Mock input pipeline.
-    bs = hparams.num_images_generated
-    mock_imgs = np.zeros([bs, 28, 28, 1], dtype=np.float32)
-    mock_lbls = np.concatenate((np.ones([bs, 1], dtype=np.int32),
-                                np.zeros([bs, 9], dtype=np.int32)),
-                               axis=1)
-    mock_provide_data.return_value = (mock_imgs, mock_lbls)
+        # Mock expensive eval metrics.
+        mock_util.mnist_frechet_distance.return_value = 1.0
+        mock_util.mnist_score.return_value = 0.0
 
-    # Mock expensive eval metrics.
-    mock_util.mnist_frechet_distance.return_value = 1.0
-    mock_util.mnist_score.return_value = 0.0
-
-    eval_lib.evaluate(hparams, run_eval_loop=False)
+        eval_lib.evaluate(hparams, run_eval_loop=False)
 
 
-if __name__ == '__main__':
-  tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()

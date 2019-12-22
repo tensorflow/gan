@@ -31,6 +31,7 @@ from .gan_estimator import __all__ as gan_estimator_symbols
 from .latent_gan_estimator import __all__ as latent_gan_estimator_symbols
 from .stargan_estimator import __all__ as stargan_estimator_symbols
 from .tpu_gan_estimator import __all__ as tpu_gan_estimator_symbols
+
 __all__ = gan_estimator_symbols
 __all__ += latent_gan_estimator_symbols
 __all__ += stargan_estimator_symbols

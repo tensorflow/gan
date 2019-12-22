@@ -27,48 +27,50 @@ import tensorflow as tf
 
 
 def _leaky_relu(x):
-  return tf.nn.leaky_relu(x, alpha=0.2)
+    return tf.nn.leaky_relu(x, alpha=0.2)
 
 
 def _batch_norm(x, is_training, name):
-  return tf.compat.v1.layers.batch_normalization(
-      x, momentum=0.9, epsilon=1e-5, training=is_training, name=name)
+    return tf.compat.v1.layers.batch_normalization(
+        x, momentum=0.9, epsilon=1e-5, training=is_training, name=name
+    )
 
 
 def _dense(x, channels, name):
-  return tf.compat.v1.layers.dense(
-      x,
-      channels,
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
-      name=name)
+    return tf.compat.v1.layers.dense(
+        x,
+        channels,
+        kernel_initializer=tf.compat.v1.initializers.truncated_normal(stddev=0.02),
+        name=name,
+    )
 
 
 def _conv2d(x, filters, kernel_size, stride, name):
-  return tf.compat.v1.layers.conv2d(
-      x,
-      filters, [kernel_size, kernel_size],
-      strides=[stride, stride],
-      padding='same',
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
-      name=name)
+    return tf.compat.v1.layers.conv2d(
+        x,
+        filters,
+        [kernel_size, kernel_size],
+        strides=[stride, stride],
+        padding="same",
+        kernel_initializer=tf.compat.v1.initializers.truncated_normal(stddev=0.02),
+        name=name,
+    )
 
 
 def _deconv2d(x, filters, kernel_size, stride, name):
-  return tf.compat.v1.layers.conv2d_transpose(
-      x,
-      filters, [kernel_size, kernel_size],
-      strides=[stride, stride],
-      padding='same',
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
-      name=name)
+    return tf.compat.v1.layers.conv2d_transpose(
+        x,
+        filters,
+        [kernel_size, kernel_size],
+        strides=[stride, stride],
+        padding="same",
+        kernel_initializer=tf.compat.v1.initializers.truncated_normal(stddev=0.02),
+        name=name,
+    )
 
 
-def discriminator(images, unused_conditioning, is_training=True,
-                  scope='Discriminator'):
-  """Discriminator for CIFAR images.
+def discriminator(images, unused_conditioning, is_training=True, scope="Discriminator"):
+    """Discriminator for CIFAR images.
 
   Args:
     images: A Tensor of shape [batch size, width, height, channels], that can be
@@ -88,25 +90,25 @@ def discriminator(images, unused_conditioning, is_training=True,
     images are real. The output can lie in [-inf, inf], with positive values
     indicating high confidence that the images are real.
   """
-  with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
-    x = _conv2d(images, 64, 5, 2, name='d_conv1')
-    x = _leaky_relu(x)
+    with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
+        x = _conv2d(images, 64, 5, 2, name="d_conv1")
+        x = _leaky_relu(x)
 
-    x = _conv2d(x, 128, 5, 2, name='d_conv2')
-    x = _leaky_relu(_batch_norm(x, is_training, name='d_bn2'))
+        x = _conv2d(x, 128, 5, 2, name="d_conv2")
+        x = _leaky_relu(_batch_norm(x, is_training, name="d_bn2"))
 
-    x = _conv2d(x, 256, 5, 2, name='d_conv3')
-    x = _leaky_relu(_batch_norm(x, is_training, name='d_bn3'))
+        x = _conv2d(x, 256, 5, 2, name="d_conv3")
+        x = _leaky_relu(_batch_norm(x, is_training, name="d_bn3"))
 
-    x = tf.reshape(x, [-1, 4 * 4 * 256])
+        x = tf.reshape(x, [-1, 4 * 4 * 256])
 
-    x = _dense(x, 1, name='d_fc_4')
+        x = _dense(x, 1, name="d_fc_4")
 
-    return x
+        return x
 
 
-def generator(noise, is_training=True, scope='Generator'):
-  """Generator to produce CIFAR images.
+def generator(noise, is_training=True, scope="Generator"):
+    """Generator to produce CIFAR images.
 
   Args:
     noise: A 2D Tensor of shape [batch size, noise dim]. Since this example
@@ -120,19 +122,19 @@ def generator(noise, is_training=True, scope='Generator'):
   Returns:
     A single Tensor with a batch of generated CIFAR images.
   """
-  with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
-    net = _dense(noise, 4096, name='g_fc1')
-    net = tf.nn.relu(_batch_norm(net, is_training, name='g_bn1'))
+    with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
+        net = _dense(noise, 4096, name="g_fc1")
+        net = tf.nn.relu(_batch_norm(net, is_training, name="g_bn1"))
 
-    net = tf.reshape(net, [-1, 4, 4, 256])
+        net = tf.reshape(net, [-1, 4, 4, 256])
 
-    net = _deconv2d(net, 128, 5, 2, name='g_dconv2')
-    net = tf.nn.relu(_batch_norm(net, is_training, name='g_bn2'))
+        net = _deconv2d(net, 128, 5, 2, name="g_dconv2")
+        net = tf.nn.relu(_batch_norm(net, is_training, name="g_bn2"))
 
-    net = _deconv2d(net, 64, 4, 2, name='g_dconv3')
-    net = tf.nn.relu(_batch_norm(net, is_training, name='g_bn3'))
+        net = _deconv2d(net, 64, 4, 2, name="g_dconv3")
+        net = tf.nn.relu(_batch_norm(net, is_training, name="g_bn3"))
 
-    net = _deconv2d(net, 3, 4, 2, name='g_dconv4')
-    net = tf.tanh(net)
+        net = _deconv2d(net, 3, 4, 2, name="g_dconv4")
+        net = tf.tanh(net)
 
-    return net
+        return net

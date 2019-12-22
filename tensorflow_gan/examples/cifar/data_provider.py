@@ -23,12 +23,10 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 
-def provide_dataset(split,
-                    batch_size,
-                    num_parallel_calls=None,
-                    shuffle=True,
-                    one_hot=True):
-  """Provides batches of CIFAR10 digits.
+def provide_dataset(
+    split, batch_size, num_parallel_calls=None, shuffle=True, one_hot=True
+):
+    """Provides batches of CIFAR10 digits.
 
   Args:
     split: Either 'train' or 'test'.
@@ -48,37 +46,33 @@ def provide_dataset(split,
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = tfds.load('cifar10', split=split, shuffle_files=shuffle)
+    ds = tfds.load("cifar10", split=split, shuffle_files=shuffle)
 
-  def _preprocess(element):
-    """Map elements to the example dicts expected by the model."""
-    images = (tf.cast(element['image'], tf.float32) - 128.0) / 128.0
-    labels = element['label']
-    if one_hot:
-      num_classes = 10
-      labels = tf.one_hot(labels, num_classes)
-    else:
-      labels = tf.cast(labels, tf.float32)
-    return {'images': images, 'labels': labels}
+    def _preprocess(element):
+        """Map elements to the example dicts expected by the model."""
+        images = (tf.cast(element["image"], tf.float32) - 128.0) / 128.0
+        labels = element["label"]
+        if one_hot:
+            num_classes = 10
+            labels = tf.one_hot(labels, num_classes)
+        else:
+            labels = tf.cast(labels, tf.float32)
+        return {"images": images, "labels": labels}
 
-  ds = (
-      ds.map(_preprocess,
-             num_parallel_calls=num_parallel_calls).cache().repeat())
-  if shuffle:
-    ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-  ds = (
-      ds.batch(batch_size,
-               drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
+    ds = ds.map(_preprocess, num_parallel_calls=num_parallel_calls).cache().repeat()
+    if shuffle:
+        ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
+    ds = ds.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE
+    )
 
-  return ds
+    return ds
 
 
-def provide_data(split,
-                 batch_size,
-                 num_parallel_calls=None,
-                 shuffle=True,
-                 one_hot=True):
-  """Provides batches of CIFAR10 digits.
+def provide_data(
+    split, batch_size, num_parallel_calls=None, shuffle=True, one_hot=True
+):
+    """Provides batches of CIFAR10 digits.
 
   Args:
     split: Either 'train' or 'test'.
@@ -97,16 +91,16 @@ def provide_data(split,
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle, one_hot)
+    ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle, one_hot)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
-  images, labels = next_batch['images'], next_batch['labels']
+    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+    images, labels = next_batch["images"], next_batch["labels"]
 
-  return images, labels
+    return images, labels
 
 
 def float_image_to_uint8(image):
-  """Convert float image in [-1, 1) to [0, 255] uint8.
+    """Convert float image in [-1, 1) to [0, 255] uint8.
 
   Note that `1` gets mapped to `0`, but `1 - epsilon` gets mapped to 255.
 
@@ -116,5 +110,5 @@ def float_image_to_uint8(image):
   Returns:
     Input image cast to uint8 and with integer values in [0, 255].
   """
-  image = (image * 128.0) + 128.0
-  return tf.cast(image, tf.uint8)
+    image = (image * 128.0) + 128.0
+    return tf.cast(image, tf.uint8)

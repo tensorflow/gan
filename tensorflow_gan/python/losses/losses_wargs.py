@@ -21,4 +21,5 @@ from tensorflow_gan.python.losses.losses_impl import *
 
 # Collect list of exposed symbols.
 from tensorflow_gan.python.losses.losses_impl import __all__ as losses_impl_all
+
 __all__ = losses_impl_all

@@ -26,39 +26,48 @@ from tensorflow_gan.examples.mnist import eval_lib
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
-                    'Directory where the model was written to.')
+flags.DEFINE_string(
+    "checkpoint_dir", "/tmp/mnist/", "Directory where the model was written to."
+)
 
-flags.DEFINE_string('eval_dir', '/tmp/mnist/',
-                    'Directory where the results are saved to.')
+flags.DEFINE_string(
+    "eval_dir", "/tmp/mnist/", "Directory where the results are saved to."
+)
 
-flags.DEFINE_string('dataset_dir', None, 'Location of data.')
-
-flags.DEFINE_integer('num_images_generated', 1000,
-                     'Number of images to generate at once.')
-
-flags.DEFINE_boolean('eval_real_images', False,
-                     'If `True`, run Inception network on real images.')
-
-flags.DEFINE_integer('noise_dims', 64,
-                     'Dimensions of the generator noise vector')
+flags.DEFINE_string("dataset_dir", None, "Location of data.")
 
 flags.DEFINE_integer(
-    'max_number_of_evaluations', None,
-    'Number of times to run evaluation. If `None`, run '
-    'forever.')
+    "num_images_generated", 1000, "Number of images to generate at once."
+)
 
-flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
+flags.DEFINE_boolean(
+    "eval_real_images", False, "If `True`, run Inception network on real images."
+)
+
+flags.DEFINE_integer("noise_dims", 64, "Dimensions of the generator noise vector")
+
+flags.DEFINE_integer(
+    "max_number_of_evaluations",
+    None,
+    "Number of times to run evaluation. If `None`, run " "forever.",
+)
+
+flags.DEFINE_boolean("write_to_disk", True, "If `True`, run images to disk.")
 
 
 def main(_):
-  hparams = eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                             FLAGS.dataset_dir, FLAGS.num_images_generated,
-                             FLAGS.eval_real_images, FLAGS.noise_dims,
-                             FLAGS.max_number_of_evaluations,
-                             FLAGS.write_to_disk)
-  eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = eval_lib.HParams(
+        FLAGS.checkpoint_dir,
+        FLAGS.eval_dir,
+        FLAGS.dataset_dir,
+        FLAGS.num_images_generated,
+        FLAGS.eval_real_images,
+        FLAGS.noise_dims,
+        FLAGS.max_number_of_evaluations,
+        FLAGS.write_to_disk,
+    )
+    eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+    app.run(main)

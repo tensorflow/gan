@@ -25,7 +25,7 @@ import tensorflow_gan as tfgan  # tf
 
 
 def get_generator_conditioning(batch_size, num_classes):
-  """Generates TF-GAN conditioning inputs for evaluation.
+    """Generates TF-GAN conditioning inputs for evaluation.
 
   Args:
     batch_size: A Python integer. The desired batch size.
@@ -38,16 +38,19 @@ def get_generator_conditioning(batch_size, num_classes):
   Raises:
     ValueError: If `batch_size` isn't evenly divisible by `num_classes`.
   """
-  if batch_size % num_classes != 0:
-    raise ValueError('`batch_size` %i must be evenly divisible by '
-                     '`num_classes` %i.' % (batch_size, num_classes))
-  labels = [lbl for lbl in xrange(num_classes)
-            for _ in xrange(batch_size // num_classes)]
-  return tf.one_hot(tf.constant(labels), num_classes)
+    if batch_size % num_classes != 0:
+        raise ValueError(
+            "`batch_size` %i must be evenly divisible by "
+            "`num_classes` %i." % (batch_size, num_classes)
+        )
+    labels = [
+        lbl for lbl in xrange(num_classes) for _ in xrange(batch_size // num_classes)
+    ]
+    return tf.one_hot(tf.constant(labels), num_classes)
 
 
 def get_image_grid(images, batch_size, num_classes, num_images_per_class):
-  """Combines images from each class in a single summary image.
+    """Combines images from each class in a single summary image.
 
   Args:
     images: Tensor of images that are arranged by class. The first
@@ -68,25 +71,28 @@ def get_image_grid(images, batch_size, num_classes, num_images_per_class):
   Returns:
     A single image.
   """
-  # Validate inputs.
-  images.shape[0:1].assert_is_compatible_with([batch_size])
-  if batch_size < num_classes * num_images_per_class:
-    raise ValueError('Not enough images in batch to show the desired number of '
-                     'images.')
-  if batch_size % num_classes != 0:
-    raise ValueError('`batch_size` must be divisible by `num_classes`.')
+    # Validate inputs.
+    images.shape[0:1].assert_is_compatible_with([batch_size])
+    if batch_size < num_classes * num_images_per_class:
+        raise ValueError(
+            "Not enough images in batch to show the desired number of " "images."
+        )
+    if batch_size % num_classes != 0:
+        raise ValueError("`batch_size` must be divisible by `num_classes`.")
 
-  # Only get a certain number of images per class.
-  num_batches = batch_size // num_classes
-  indices = [i * num_batches + j for i in xrange(num_classes)
-             for j in xrange(num_images_per_class)]
-  sampled_images = tf.gather(images, indices)
-  return tfgan.eval.image_reshaper(
-      sampled_images, num_cols=num_images_per_class)
+    # Only get a certain number of images per class.
+    num_batches = batch_size // num_classes
+    indices = [
+        i * num_batches + j
+        for i in xrange(num_classes)
+        for j in xrange(num_images_per_class)
+    ]
+    sampled_images = tf.gather(images, indices)
+    return tfgan.eval.image_reshaper(sampled_images, num_cols=num_images_per_class)
 
 
 def get_inception_scores(images, batch_size, num_inception_images):
-  """Get Inception score for some images.
+    """Get Inception score for some images.
 
   Args:
     images: Image minibatch. Shape [batch size, width, height, channels]. Values
@@ -102,28 +108,28 @@ def get_inception_scores(images, batch_size, num_inception_images):
       `images`.
     ValueError: If `batch_size` isn't divisible by `num_inception_images`.
   """
-  # Validate inputs.
-  images.shape[0:1].assert_is_compatible_with([batch_size])
-  if batch_size % num_inception_images != 0:
-    raise ValueError(
-        '`batch_size` must be divisible by `num_inception_images`.')
+    # Validate inputs.
+    images.shape[0:1].assert_is_compatible_with([batch_size])
+    if batch_size % num_inception_images != 0:
+        raise ValueError("`batch_size` must be divisible by `num_inception_images`.")
 
-  # Resize images.
-  size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_images = tf.compat.v1.image.resize(
-      images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
+    # Resize images.
+    size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
+    resized_images = tf.compat.v1.image.resize(
+        images, [size, size], method=tf.image.ResizeMethod.BILINEAR
+    )
 
-  # Run images through Inception.
-  num_batches = batch_size // num_inception_images
-  inc_score = tfgan.eval.inception_score(
-      resized_images, num_batches=num_batches)
+    # Run images through Inception.
+    num_batches = batch_size // num_inception_images
+    inc_score = tfgan.eval.inception_score(resized_images, num_batches=num_batches)
 
-  return inc_score
+    return inc_score
 
 
-def get_frechet_inception_distance(real_images, generated_images, batch_size,
-                                   num_inception_images):
-  """Get Frechet Inception Distance between real and generated images.
+def get_frechet_inception_distance(
+    real_images, generated_images, batch_size, num_inception_images
+):
+    """Get Frechet Inception Distance between real and generated images.
 
   Args:
     real_images: Real images minibatch. Shape [batch size, width, height,
@@ -140,20 +146,23 @@ def get_frechet_inception_distance(real_images, generated_images, batch_size,
     ValueError: If the minibatch size is known at graph construction time, and
       doesn't batch `batch_size`.
   """
-  # Validate input dimensions.
-  real_images.shape[0:1].assert_is_compatible_with([batch_size])
-  generated_images.shape[0:1].assert_is_compatible_with([batch_size])
+    # Validate input dimensions.
+    real_images.shape[0:1].assert_is_compatible_with([batch_size])
+    generated_images.shape[0:1].assert_is_compatible_with([batch_size])
 
-  # Resize input images.
-  size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_real_images = tf.compat.v1.image.resize(
-      real_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
-  resized_generated_images = tf.compat.v1.image.resize(
-      generated_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
+    # Resize input images.
+    size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
+    resized_real_images = tf.compat.v1.image.resize(
+        real_images, [size, size], method=tf.image.ResizeMethod.BILINEAR
+    )
+    resized_generated_images = tf.compat.v1.image.resize(
+        generated_images, [size, size], method=tf.image.ResizeMethod.BILINEAR
+    )
 
-  # Compute Frechet Inception Distance.
-  num_batches = batch_size // num_inception_images
-  fid = tfgan.eval.frechet_inception_distance(
-      resized_real_images, resized_generated_images, num_batches=num_batches)
+    # Compute Frechet Inception Distance.
+    num_batches = batch_size // num_inception_images
+    fid = tfgan.eval.frechet_inception_distance(
+        resized_real_images, resized_generated_images, num_batches=num_batches
+    )
 
-  return fid
+    return fid

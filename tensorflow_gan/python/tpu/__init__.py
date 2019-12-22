@@ -23,7 +23,10 @@
 from tensorflow_gan.python.tpu.normalization_ops import *
 
 # Collect list of exposed symbols.
-#from tensorflow_gan.python.tpu.cross_replica_ops import __all__ as cross_replica_ops_symbols
-from tensorflow_gan.python.tpu.normalization_ops import __all__ as normalization_ops_symbols
+# from tensorflow_gan.python.tpu.cross_replica_ops import __all__ as cross_replica_ops_symbols
+from tensorflow_gan.python.tpu.normalization_ops import (
+    __all__ as normalization_ops_symbols,
+)
+
 __all__ = normalization_ops_symbols
 # __all__ += cross_replica_ops_symbols

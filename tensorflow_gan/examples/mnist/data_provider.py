@@ -24,7 +24,7 @@ import tensorflow_datasets as tfds
 
 
 def provide_dataset(split, batch_size, num_parallel_calls=None, shuffle=True):
-  """Provides batches of MNIST digits.
+    """Provides batches of MNIST digits.
 
   Args:
     split: Either 'train' or 'test'.
@@ -41,30 +41,28 @@ def provide_dataset(split, batch_size, num_parallel_calls=None, shuffle=True):
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = tfds.load('mnist', split=split, shuffle_files=shuffle)
+    ds = tfds.load("mnist", split=split, shuffle_files=shuffle)
 
-  def _preprocess(element):
-    """Map elements to the example dicts expected by the model."""
-    # Map [0, 255] to [-1, 1].
-    images = (tf.cast(element['image'], tf.float32) - 127.5) / 127.5
-    num_classes = 10
-    one_hot_labels = tf.one_hot(element['label'], num_classes)
-    return {'images': images, 'labels': one_hot_labels}
+    def _preprocess(element):
+        """Map elements to the example dicts expected by the model."""
+        # Map [0, 255] to [-1, 1].
+        images = (tf.cast(element["image"], tf.float32) - 127.5) / 127.5
+        num_classes = 10
+        one_hot_labels = tf.one_hot(element["label"], num_classes)
+        return {"images": images, "labels": one_hot_labels}
 
-  ds = (
-      ds.map(_preprocess,
-             num_parallel_calls=num_parallel_calls).cache().repeat())
-  if shuffle:
-    ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-  ds = (
-      ds.batch(batch_size,
-               drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
+    ds = ds.map(_preprocess, num_parallel_calls=num_parallel_calls).cache().repeat()
+    if shuffle:
+        ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
+    ds = ds.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE
+    )
 
-  return ds
+    return ds
 
 
 def provide_data(split, batch_size, num_parallel_calls=None, shuffle=True):
-  """Provides batches of MNIST digits.
+    """Provides batches of MNIST digits.
 
   Args:
     split: Either 'train' or 'test'.
@@ -80,16 +78,16 @@ def provide_data(split, batch_size, num_parallel_calls=None, shuffle=True):
   Raises:
     ValueError: If `split` isn't `train` or `test`.
   """
-  ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle)
+    ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
-  images, labels = next_batch['images'], next_batch['labels']
+    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+    images, labels = next_batch["images"], next_batch["labels"]
 
-  return images, labels
+    return images, labels
 
 
 def float_image_to_uint8(image):
-  """Convert float image in [-1, 1) to [0, 255] uint8.
+    """Convert float image in [-1, 1) to [0, 255] uint8.
 
   Note that `1` gets mapped to `0`, but `1 - epsilon` gets mapped to 255.
 
@@ -99,5 +97,5 @@ def float_image_to_uint8(image):
   Returns:
     Input image cast to uint8 and with integer values in [0, 255].
   """
-  image = (image * 128.0) + 128.0
-  return tf.cast(image, tf.uint8)
+    image = (image * 128.0) + 128.0
+    return tf.cast(image, tf.uint8)

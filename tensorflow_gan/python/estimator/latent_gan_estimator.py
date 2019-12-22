@@ -76,66 +76,80 @@ import tensorflow as tf
 from tensorflow_gan.python import train as tfgan_train
 
 
-INPUT_NAME = 'new_var_z_input'  # The name for the new z space input variable.
-OPTIMIZER_NAME = 'latent_gan_optimizer'  # The name for the new optimizer vars.
+INPUT_NAME = "new_var_z_input"  # The name for the new z space input variable.
+OPTIMIZER_NAME = "latent_gan_optimizer"  # The name for the new optimizer vars.
 
-__all__ = [
-    'get_latent_gan_estimator',
-]
+__all__ = ["get_latent_gan_estimator"]
 
 
-def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
-                             optimizer):
-  """Sets up a model function that wraps around a given GAN."""
-  def model_fn(features, labels, mode, params):
-    """Model function defining an inpainting estimator."""
-    batch_size = params['batch_size']
-    z_shape = [batch_size] + params['z_shape']
-    add_summaries = params['add_summaries']
-    input_clip = params['input_clip']
+def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn, optimizer):
+    """Sets up a model function that wraps around a given GAN."""
 
-    z = tf.compat.v1.get_variable(
-        name=INPUT_NAME,
-        initializer=tf.random.truncated_normal(z_shape),
-        constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip))
+    def model_fn(features, labels, mode, params):
+        """Model function defining an inpainting estimator."""
+        batch_size = params["batch_size"]
+        z_shape = [batch_size] + params["z_shape"]
+        add_summaries = params["add_summaries"]
+        input_clip = params["input_clip"]
 
-    generator = functools.partial(generator_fn, mode=mode)
-    discriminator = functools.partial(discriminator_fn, mode=mode)
-    gan_model = tfgan_train.gan_model(generator_fn=generator,
-                                      discriminator_fn=discriminator,
-                                      real_data=labels,
-                                      generator_inputs=z,
-                                      check_shapes=False)
+        z = tf.compat.v1.get_variable(
+            name=INPUT_NAME,
+            initializer=tf.random.truncated_normal(z_shape),
+            constraint=lambda x: tf.clip_by_value(x, -input_clip, input_clip),
+        )
 
-    loss = loss_fn(gan_model, features, labels, add_summaries)
+        generator = functools.partial(generator_fn, mode=mode)
+        discriminator = functools.partial(discriminator_fn, mode=mode)
+        gan_model = tfgan_train.gan_model(
+            generator_fn=generator,
+            discriminator_fn=discriminator,
+            real_data=labels,
+            generator_inputs=z,
+            check_shapes=False,
+        )
 
-    # Use a variable scope to make sure that estimator variables dont cause
-    # save/load problems when restoring from ckpts.
-    with tf.compat.v1.variable_scope(OPTIMIZER_NAME):
-      opt = optimizer(learning_rate=params['learning_rate'],
-                      **params['opt_kwargs'])
-      train_op = opt.minimize(
-          loss=loss,
-          global_step=tf.compat.v1.train.get_or_create_global_step(),
-          var_list=[z])
+        loss = loss_fn(gan_model, features, labels, add_summaries)
 
-    if add_summaries:
-      z_grads = tf.gradients(ys=loss, xs=z)
-      tf.compat.v1.summary.scalar('z_loss/z_grads',
-                                  tf.linalg.global_norm(z_grads))
-      tf.compat.v1.summary.scalar('z_loss/loss', loss)
+        # Use a variable scope to make sure that estimator variables dont cause
+        # save/load problems when restoring from ckpts.
+        with tf.compat.v1.variable_scope(OPTIMIZER_NAME):
+            opt = optimizer(
+                learning_rate=params["learning_rate"], **params["opt_kwargs"]
+            )
+            train_op = opt.minimize(
+                loss=loss,
+                global_step=tf.compat.v1.train.get_or_create_global_step(),
+                var_list=[z],
+            )
 
-    return tf.estimator.EstimatorSpec(mode=mode,
-                                      predictions=gan_model.generated_data,
-                                      loss=loss,
-                                      train_op=train_op)
-  return model_fn
+        if add_summaries:
+            z_grads = tf.gradients(ys=loss, xs=z)
+            tf.compat.v1.summary.scalar(
+                "z_loss/z_grads", tf.linalg.global_norm(z_grads)
+            )
+            tf.compat.v1.summary.scalar("z_loss/loss", loss)
+
+        return tf.estimator.EstimatorSpec(
+            mode=mode,
+            predictions=gan_model.generated_data,
+            loss=loss,
+            train_op=train_op,
+        )
+
+    return model_fn
 
 
-def get_latent_gan_estimator(generator_fn, discriminator_fn, loss_fn,
-                             optimizer, params, config, ckpt_dir,
-                             warmstart_options=True):
-  """Gets an estimator that passes gradients to the input.
+def get_latent_gan_estimator(
+    generator_fn,
+    discriminator_fn,
+    loss_fn,
+    optimizer,
+    params,
+    config,
+    ckpt_dir,
+    warmstart_options=True,
+):
+    """Gets an estimator that passes gradients to the input.
 
   This function takes in a generator and adds a trainable z variable that is
   used as input to this generator_fn. The generator itself is treated as a black
@@ -181,22 +195,25 @@ def get_latent_gan_estimator(generator_fn, discriminator_fn, loss_fn,
   Returns:
     An estimator spec defining a GAN input training estimator.
   """
-  model_fn = _get_latent_gan_model_fn(generator_fn, discriminator_fn,
-                                      loss_fn, optimizer)
+    model_fn = _get_latent_gan_model_fn(
+        generator_fn, discriminator_fn, loss_fn, optimizer
+    )
 
-  if isinstance(warmstart_options, tf.estimator.WarmStartSettings):
-    ws = warmstart_options
-  elif warmstart_options:
-    # Default WarmStart loads all variable names except INPUT_NAME and
-    # OPTIMIZER_NAME.
-    var_regex = '^(?!.*(%s|%s).*)' % (INPUT_NAME, OPTIMIZER_NAME)
-    ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=ckpt_dir,
-                                        vars_to_warm_start=var_regex)
-  else:
-    ws = None
+    if isinstance(warmstart_options, tf.estimator.WarmStartSettings):
+        ws = warmstart_options
+    elif warmstart_options:
+        # Default WarmStart loads all variable names except INPUT_NAME and
+        # OPTIMIZER_NAME.
+        var_regex = "^(?!.*(%s|%s).*)" % (INPUT_NAME, OPTIMIZER_NAME)
+        ws = tf.estimator.WarmStartSettings(
+            ckpt_to_initialize_from=ckpt_dir, vars_to_warm_start=var_regex
+        )
+    else:
+        ws = None
 
-  if 'opt_kwargs' not in params:
-    params['opt_kwargs'] = {}
+    if "opt_kwargs" not in params:
+        params["opt_kwargs"] = {}
 
-  return tf.estimator.Estimator(model_fn=model_fn, config=config, params=params,
-                                warm_start_from=ws)
+    return tf.estimator.Estimator(
+        model_fn=model_fn, config=config, params=params, warm_start_from=ws
+    )

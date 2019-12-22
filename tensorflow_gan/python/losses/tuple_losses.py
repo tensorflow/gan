@@ -68,30 +68,30 @@ from tensorflow_gan.python.losses import losses_impl as tfgan_losses
 
 
 __all__ = [
-    'acgan_discriminator_loss',
-    'acgan_generator_loss',
-    'least_squares_discriminator_loss',
-    'least_squares_generator_loss',
-    'modified_discriminator_loss',
-    'modified_generator_loss',
-    'minimax_discriminator_loss',
-    'minimax_generator_loss',
-    'wasserstein_discriminator_loss',
-    'wasserstein_hinge_discriminator_loss',
-    'wasserstein_hinge_generator_loss',
-    'wasserstein_generator_loss',
-    'wasserstein_gradient_penalty',
-    'mutual_information_penalty',
-    'combine_adversarial_loss',
-    'cycle_consistency_loss',
-    'stargan_generator_loss_wrapper',
-    'stargan_discriminator_loss_wrapper',
-    'stargan_gradient_penalty_wrapper'
+    "acgan_discriminator_loss",
+    "acgan_generator_loss",
+    "least_squares_discriminator_loss",
+    "least_squares_generator_loss",
+    "modified_discriminator_loss",
+    "modified_generator_loss",
+    "minimax_discriminator_loss",
+    "minimax_generator_loss",
+    "wasserstein_discriminator_loss",
+    "wasserstein_hinge_discriminator_loss",
+    "wasserstein_hinge_generator_loss",
+    "wasserstein_generator_loss",
+    "wasserstein_gradient_penalty",
+    "mutual_information_penalty",
+    "combine_adversarial_loss",
+    "cycle_consistency_loss",
+    "stargan_generator_loss_wrapper",
+    "stargan_discriminator_loss_wrapper",
+    "stargan_gradient_penalty_wrapper",
 ]
 
 
 def args_to_gan_model(loss_fn):
-  """Converts a loss taking individual args to one taking a GANModel namedtuple.
+    """Converts a loss taking individual args to one taking a GANModel namedtuple.
 
   The new function has the same name as the original one.
 
@@ -103,18 +103,18 @@ def args_to_gan_model(loss_fn):
   Returns:
     A new function that takes a GANModel namedtuples and returns the same loss.
   """
-  # Match arguments in `loss_fn` to elements of `namedtuple`.
-  # TODO(joelshor): Properly handle `varargs` and `keywords`.
-  argspec = inspect.getargspec(loss_fn)
-  defaults = argspec.defaults or []
+    # Match arguments in `loss_fn` to elements of `namedtuple`.
+    # TODO(joelshor): Properly handle `varargs` and `keywords`.
+    argspec = inspect.getargspec(loss_fn)
+    defaults = argspec.defaults or []
 
-  required_args = set(argspec.args[:-len(defaults)])
-  args_with_defaults = argspec.args[-len(defaults):]
-  default_args_dict = dict(zip(args_with_defaults, defaults))
+    required_args = set(argspec.args[: -len(defaults)])
+    args_with_defaults = argspec.args[-len(defaults) :]
+    default_args_dict = dict(zip(args_with_defaults, defaults))
 
-  def new_loss_fn(gan_model, **kwargs):  # pylint:disable=missing-docstring
-    def _asdict(namedtuple):
-      """Returns a namedtuple as a dictionary.
+    def new_loss_fn(gan_model, **kwargs):  # pylint:disable=missing-docstring
+        def _asdict(namedtuple):
+            """Returns a namedtuple as a dictionary.
 
       This is required because `_asdict()` in Python 3.x.x is broken in classes
       that inherit from `collections.namedtuple`. See
@@ -126,108 +126,114 @@ def args_to_gan_model(loss_fn):
       Returns:
         A dictionary version of the tuple.
       """
-      return {k: getattr(namedtuple, k) for k in namedtuple._fields}
-    gan_model_dict = _asdict(gan_model)
+            return {k: getattr(namedtuple, k) for k in namedtuple._fields}
 
-    # Make sure non-tuple required args are supplied.
-    args_from_tuple = set(argspec.args).intersection(set(gan_model._fields))
-    required_args_not_from_tuple = required_args - args_from_tuple
-    for arg in required_args_not_from_tuple:
-      if arg not in kwargs:
-        raise ValueError('`%s` must be supplied to %s loss function.' % (
-            arg, loss_fn.__name__))
+        gan_model_dict = _asdict(gan_model)
 
-    # Make sure tuple args aren't also supplied as keyword args.
-    ambiguous_args = set(gan_model._fields).intersection(set(kwargs.keys()))
-    if ambiguous_args:
-      raise ValueError(
-          'The following args are present in both the tuple and keyword args '
-          'for %s: %s' % (loss_fn.__name__, ambiguous_args))
+        # Make sure non-tuple required args are supplied.
+        args_from_tuple = set(argspec.args).intersection(set(gan_model._fields))
+        required_args_not_from_tuple = required_args - args_from_tuple
+        for arg in required_args_not_from_tuple:
+            if arg not in kwargs:
+                raise ValueError(
+                    "`%s` must be supplied to %s loss function."
+                    % (arg, loss_fn.__name__)
+                )
 
-    # Add required args to arg dictionary.
-    required_args_from_tuple = required_args.intersection(args_from_tuple)
-    for arg in required_args_from_tuple:
-      assert arg not in kwargs
-      kwargs[arg] = gan_model_dict[arg]
+        # Make sure tuple args aren't also supplied as keyword args.
+        ambiguous_args = set(gan_model._fields).intersection(set(kwargs.keys()))
+        if ambiguous_args:
+            raise ValueError(
+                "The following args are present in both the tuple and keyword args "
+                "for %s: %s" % (loss_fn.__name__, ambiguous_args)
+            )
 
-    # Add arguments that have defaults.
-    for arg in default_args_dict:
-      val_from_tuple = gan_model_dict[arg] if arg in gan_model_dict else None
-      val_from_kwargs = kwargs[arg] if arg in kwargs else None
-      assert not (val_from_tuple is not None and val_from_kwargs is not None)
-      if val_from_tuple is not None:
-        kwargs[arg] = val_from_tuple
-      else:
-        if val_from_kwargs is not None:
-          kwargs[arg] = val_from_kwargs
-        else:
-          kwargs[arg] = default_args_dict[arg]
+        # Add required args to arg dictionary.
+        required_args_from_tuple = required_args.intersection(args_from_tuple)
+        for arg in required_args_from_tuple:
+            assert arg not in kwargs
+            kwargs[arg] = gan_model_dict[arg]
 
-    return loss_fn(**kwargs)
+        # Add arguments that have defaults.
+        for arg in default_args_dict:
+            val_from_tuple = gan_model_dict[arg] if arg in gan_model_dict else None
+            val_from_kwargs = kwargs[arg] if arg in kwargs else None
+            assert not (val_from_tuple is not None and val_from_kwargs is not None)
+            if val_from_tuple is not None:
+                kwargs[arg] = val_from_tuple
+            else:
+                if val_from_kwargs is not None:
+                    kwargs[arg] = val_from_kwargs
+                else:
+                    kwargs[arg] = default_args_dict[arg]
 
-  new_docstring = """The gan_model version of %s.""" % loss_fn.__name__
-  new_loss_fn.__docstring__ = new_docstring
-  new_loss_fn.__name__ = loss_fn.__name__
-  new_loss_fn.__module__ = loss_fn.__module__
-  return new_loss_fn
+        return loss_fn(**kwargs)
+
+    new_docstring = """The gan_model version of %s.""" % loss_fn.__name__
+    new_loss_fn.__docstring__ = new_docstring
+    new_loss_fn.__name__ = loss_fn.__name__
+    new_loss_fn.__module__ = loss_fn.__module__
+    return new_loss_fn
 
 
 # Wasserstein losses from `Wasserstein GAN` (https://arxiv.org/abs/1701.07875).
-wasserstein_generator_loss = args_to_gan_model(
-    tfgan_losses.wasserstein_generator_loss)
+wasserstein_generator_loss = args_to_gan_model(tfgan_losses.wasserstein_generator_loss)
 wasserstein_discriminator_loss = args_to_gan_model(
-    tfgan_losses.wasserstein_discriminator_loss)
+    tfgan_losses.wasserstein_discriminator_loss
+)
 wasserstein_hinge_generator_loss = args_to_gan_model(
-    tfgan_losses.wasserstein_hinge_generator_loss)
+    tfgan_losses.wasserstein_hinge_generator_loss
+)
 wasserstein_hinge_discriminator_loss = args_to_gan_model(
-    tfgan_losses.wasserstein_hinge_discriminator_loss)
+    tfgan_losses.wasserstein_hinge_discriminator_loss
+)
 wasserstein_gradient_penalty = args_to_gan_model(
-    tfgan_losses.wasserstein_gradient_penalty)
+    tfgan_losses.wasserstein_gradient_penalty
+)
 
 # ACGAN losses from `Conditional Image Synthesis With Auxiliary Classifier GANs`
 # (https://arxiv.org/abs/1610.09585).
-acgan_discriminator_loss = args_to_gan_model(
-    tfgan_losses.acgan_discriminator_loss)
-acgan_generator_loss = args_to_gan_model(
-    tfgan_losses.acgan_generator_loss)
+acgan_discriminator_loss = args_to_gan_model(tfgan_losses.acgan_discriminator_loss)
+acgan_generator_loss = args_to_gan_model(tfgan_losses.acgan_generator_loss)
 
 
 # Original losses from `Generative Adversarial Nets`
 # (https://arxiv.org/abs/1406.2661).
-minimax_discriminator_loss = args_to_gan_model(
-    tfgan_losses.minimax_discriminator_loss)
-minimax_generator_loss = args_to_gan_model(
-    tfgan_losses.minimax_generator_loss)
+minimax_discriminator_loss = args_to_gan_model(tfgan_losses.minimax_discriminator_loss)
+minimax_generator_loss = args_to_gan_model(tfgan_losses.minimax_generator_loss)
 modified_discriminator_loss = args_to_gan_model(
-    tfgan_losses.modified_discriminator_loss)
-modified_generator_loss = args_to_gan_model(
-    tfgan_losses.modified_generator_loss)
+    tfgan_losses.modified_discriminator_loss
+)
+modified_generator_loss = args_to_gan_model(tfgan_losses.modified_generator_loss)
 
 
 # Least Squares loss from `Least Squares Generative Adversarial Networks`
 # (https://arxiv.org/abs/1611.04076).
 least_squares_generator_loss = args_to_gan_model(
-    tfgan_losses.least_squares_generator_loss)
+    tfgan_losses.least_squares_generator_loss
+)
 least_squares_discriminator_loss = args_to_gan_model(
-    tfgan_losses.least_squares_discriminator_loss)
+    tfgan_losses.least_squares_discriminator_loss
+)
 
 
 # InfoGAN loss from `InfoGAN: Interpretable Representation Learning by
 # `Information Maximizing Generative Adversarial Nets`
 # https://arxiv.org/abs/1606.03657
-mutual_information_penalty = args_to_gan_model(
-    tfgan_losses.mutual_information_penalty)
+mutual_information_penalty = args_to_gan_model(tfgan_losses.mutual_information_penalty)
 
 
-def combine_adversarial_loss(gan_loss,
-                             gan_model,
-                             non_adversarial_loss,
-                             weight_factor=None,
-                             gradient_ratio=None,
-                             gradient_ratio_epsilon=1e-6,
-                             scalar_summaries=True,
-                             gradient_summaries=True):
-  """Combine adversarial loss and main loss.
+def combine_adversarial_loss(
+    gan_loss,
+    gan_model,
+    non_adversarial_loss,
+    weight_factor=None,
+    gradient_ratio=None,
+    gradient_ratio_epsilon=1e-6,
+    scalar_summaries=True,
+    gradient_summaries=True,
+):
+    """Combine adversarial loss and main loss.
 
   Uses `combine_adversarial_loss` to combine the losses, and returns
   a modified GANLoss namedtuple.
@@ -253,20 +259,21 @@ def combine_adversarial_loss(gan_loss,
     A modified GANLoss namedtuple, with `non_adversarial_loss` included
     appropriately.
   """
-  combined_loss = tfgan_losses.combine_adversarial_loss(
-      non_adversarial_loss,
-      gan_loss.generator_loss,
-      weight_factor,
-      gradient_ratio,
-      gradient_ratio_epsilon,
-      gan_model.generator_variables,
-      scalar_summaries,
-      gradient_summaries)
-  return gan_loss._replace(generator_loss=combined_loss)
+    combined_loss = tfgan_losses.combine_adversarial_loss(
+        non_adversarial_loss,
+        gan_loss.generator_loss,
+        weight_factor,
+        gradient_ratio,
+        gradient_ratio_epsilon,
+        gan_model.generator_variables,
+        scalar_summaries,
+        gradient_summaries,
+    )
+    return gan_loss._replace(generator_loss=combined_loss)
 
 
 def cycle_consistency_loss(cyclegan_model, scope=None, add_summaries=False):
-  """Defines the cycle consistency loss.
+    """Defines the cycle consistency loss.
 
   Uses `cycle_consistency_loss` to compute the cycle consistency loss for a
   `cyclegan_model`.
@@ -284,18 +291,23 @@ def cycle_consistency_loss(cyclegan_model, scope=None, add_summaries=False):
   Raises:
     ValueError: If `cyclegan_model` is not a `CycleGANModel` namedtuple.
   """
-  if not isinstance(cyclegan_model, namedtuples.CycleGANModel):
-    raise ValueError(
-        '`cyclegan_model` must be a `CycleGANModel`. Instead, was %s.' %
-        type(cyclegan_model))
-  return tfgan_losses.cycle_consistency_loss(
-      cyclegan_model.model_x2y.generator_inputs, cyclegan_model.reconstructed_x,
-      cyclegan_model.model_y2x.generator_inputs, cyclegan_model.reconstructed_y,
-      scope, add_summaries)
+    if not isinstance(cyclegan_model, namedtuples.CycleGANModel):
+        raise ValueError(
+            "`cyclegan_model` must be a `CycleGANModel`. Instead, was %s."
+            % type(cyclegan_model)
+        )
+    return tfgan_losses.cycle_consistency_loss(
+        cyclegan_model.model_x2y.generator_inputs,
+        cyclegan_model.reconstructed_x,
+        cyclegan_model.model_y2x.generator_inputs,
+        cyclegan_model.reconstructed_y,
+        scope,
+        add_summaries,
+    )
 
 
 def stargan_generator_loss_wrapper(loss_fn):
-  """Convert a generator loss function to take a StarGANModel.
+    """Convert a generator loss function to take a StarGANModel.
 
   The new function has the same name as the original one.
 
@@ -308,19 +320,20 @@ def stargan_generator_loss_wrapper(loss_fn):
     loss.
   """
 
-  def new_loss_fn(stargan_model, **kwargs):
-    return loss_fn(
-        stargan_model.discriminator_generated_data_source_predication, **kwargs)
+    def new_loss_fn(stargan_model, **kwargs):
+        return loss_fn(
+            stargan_model.discriminator_generated_data_source_predication, **kwargs
+        )
 
-  new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
-  new_loss_fn.__docstring__ = new_docstring
-  new_loss_fn.__name__ = loss_fn.__name__
-  new_loss_fn.__module__ = loss_fn.__module__
-  return new_loss_fn
+    new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
+    new_loss_fn.__docstring__ = new_docstring
+    new_loss_fn.__name__ = loss_fn.__name__
+    new_loss_fn.__module__ = loss_fn.__module__
+    return new_loss_fn
 
 
 def stargan_discriminator_loss_wrapper(loss_fn):
-  """Convert a discriminator loss function to take a StarGANModel.
+    """Convert a discriminator loss function to take a StarGANModel.
 
   The new function has the same name as the original one.
 
@@ -333,20 +346,22 @@ def stargan_discriminator_loss_wrapper(loss_fn):
     loss.
   """
 
-  def new_loss_fn(stargan_model, **kwargs):
-    return loss_fn(
-        stargan_model.discriminator_input_data_source_predication,
-        stargan_model.discriminator_generated_data_source_predication, **kwargs)
+    def new_loss_fn(stargan_model, **kwargs):
+        return loss_fn(
+            stargan_model.discriminator_input_data_source_predication,
+            stargan_model.discriminator_generated_data_source_predication,
+            **kwargs
+        )
 
-  new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
-  new_loss_fn.__docstring__ = new_docstring
-  new_loss_fn.__name__ = loss_fn.__name__
-  new_loss_fn.__module__ = loss_fn.__module__
-  return new_loss_fn
+    new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
+    new_loss_fn.__docstring__ = new_docstring
+    new_loss_fn.__name__ = loss_fn.__name__
+    new_loss_fn.__module__ = loss_fn.__module__
+    return new_loss_fn
 
 
 def stargan_gradient_penalty_wrapper(loss_fn):
-  """Convert a gradient penalty function to take a StarGANModel.
+    """Convert a gradient penalty function to take a StarGANModel.
 
   The new function has the same name as the original one.
 
@@ -360,18 +375,19 @@ def stargan_gradient_penalty_wrapper(loss_fn):
     loss.
   """
 
-  def new_loss_fn(stargan_model, **kwargs):
-    num_domains = stargan_model.input_data_domain_label.shape.as_list()[-1]
-    return loss_fn(
-        real_data=stargan_model.input_data,
-        generated_data=stargan_model.generated_data,
-        generator_inputs=num_domains,
-        discriminator_fn=stargan_model.discriminator_fn,
-        discriminator_scope=stargan_model.discriminator_scope,
-        **kwargs)
+    def new_loss_fn(stargan_model, **kwargs):
+        num_domains = stargan_model.input_data_domain_label.shape.as_list()[-1]
+        return loss_fn(
+            real_data=stargan_model.input_data,
+            generated_data=stargan_model.generated_data,
+            generator_inputs=num_domains,
+            discriminator_fn=stargan_model.discriminator_fn,
+            discriminator_scope=stargan_model.discriminator_scope,
+            **kwargs
+        )
 
-  new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
-  new_loss_fn.__docstring__ = new_docstring
-  new_loss_fn.__name__ = loss_fn.__name__
-  new_loss_fn.__module__ = loss_fn.__module__
-  return new_loss_fn
+    new_docstring = """The stargan_model version of %s.""" % loss_fn.__name__
+    new_loss_fn.__docstring__ = new_docstring
+    new_loss_fn.__name__ = loss_fn.__name__
+    new_loss_fn.__module__ = loss_fn.__module__
+    return new_loss_fn

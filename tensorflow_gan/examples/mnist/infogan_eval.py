@@ -31,41 +31,51 @@ from absl import flags
 
 from tensorflow_gan.examples.mnist import infogan_eval_lib
 
-flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
-                    'Directory where the model was written to.')
+flags.DEFINE_string(
+    "checkpoint_dir", "/tmp/mnist/", "Directory where the model was written to."
+)
 
-flags.DEFINE_string('eval_dir', '/tmp/mnist/',
-                    'Directory where the results are saved to.')
-
-flags.DEFINE_integer(
-    'noise_samples', 6,
-    'Number of samples to draw from the continuous structured '
-    'noise.')
-
-flags.DEFINE_integer('unstructured_noise_dims', 62,
-                     'The number of dimensions of the unstructured noise.')
-
-flags.DEFINE_integer('continuous_noise_dims', 2,
-                     'The number of dimensions of the continuous noise.')
+flags.DEFINE_string(
+    "eval_dir", "/tmp/mnist/", "Directory where the results are saved to."
+)
 
 flags.DEFINE_integer(
-    'max_number_of_evaluations', None,
-    'Number of times to run evaluation. If `None`, run '
-    'forever.')
+    "noise_samples",
+    6,
+    "Number of samples to draw from the continuous structured " "noise.",
+)
 
-flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
+flags.DEFINE_integer(
+    "unstructured_noise_dims", 62, "The number of dimensions of the unstructured noise."
+)
+
+flags.DEFINE_integer(
+    "continuous_noise_dims", 2, "The number of dimensions of the continuous noise."
+)
+
+flags.DEFINE_integer(
+    "max_number_of_evaluations",
+    None,
+    "Number of times to run evaluation. If `None`, run " "forever.",
+)
+
+flags.DEFINE_boolean("write_to_disk", True, "If `True`, run images to disk.")
 
 FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = infogan_eval_lib.HParams(
-      FLAGS.checkpoint_dir, FLAGS.eval_dir, FLAGS.noise_samples,
-      FLAGS.unstructured_noise_dims, FLAGS.continuous_noise_dims,
-      FLAGS.max_number_of_evaluations,
-      FLAGS.write_to_disk)
-  infogan_eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = infogan_eval_lib.HParams(
+        FLAGS.checkpoint_dir,
+        FLAGS.eval_dir,
+        FLAGS.noise_samples,
+        FLAGS.unstructured_noise_dims,
+        FLAGS.continuous_noise_dims,
+        FLAGS.max_number_of_evaluations,
+        FLAGS.write_to_disk,
+    )
+    infogan_eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
-if __name__ == '__main__':
-  app.run(main)
+if __name__ == "__main__":
+    app.run(main)

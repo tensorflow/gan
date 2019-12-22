@@ -24,5 +24,5 @@ import tensorflow as tf
 from tensorflow_gan.python.estimator.tpu_gan_estimator_test_lib import *  # pylint:disable=wildcard-import
 
 
-if __name__ == '__main__':
-  tf.test.main()
+if __name__ == "__main__":
+    tf.test.main()
