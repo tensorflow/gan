@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Evaluates a conditional TF-GAN trained MNIST model."""
 
 from __future__ import absolute_import
@@ -47,13 +46,13 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = conditional_eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                                         FLAGS.num_images_per_class,
-                                         FLAGS.noise_dims,
-                                         FLAGS.max_number_of_evaluations,
-                                         FLAGS.write_to_disk)
-  conditional_eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = conditional_eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
+                                           FLAGS.num_images_per_class,
+                                           FLAGS.noise_dims,
+                                           FLAGS.max_number_of_evaluations,
+                                           FLAGS.write_to_disk)
+    conditional_eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

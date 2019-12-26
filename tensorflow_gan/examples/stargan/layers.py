@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Layers for a StarGAN model.
 
 This module contains basic layers to build a StarGAN model.
@@ -33,30 +32,28 @@ from tensorflow_gan.examples.stargan import ops
 
 
 def _conv2d(inputs, filters, kernel_size, stride, name):
-  """Conv2d for the network."""
-  return tf.compat.v1.layers.conv2d(
-      inputs,
-      filters,
-      kernel_size,
-      strides=stride,
-      padding='VALID',
-      use_bias=False,
-      name=name)
+    """Conv2d for the network."""
+    return tf.compat.v1.layers.conv2d(inputs,
+                                      filters,
+                                      kernel_size,
+                                      strides=stride,
+                                      padding='VALID',
+                                      use_bias=False,
+                                      name=name)
 
 
 def _conv2d_transpose(inputs, filters, kernel_size, stride, name):
-  return tf.compat.v1.layers.conv2d_transpose(
-      inputs,
-      filters,
-      kernel_size,
-      strides=stride,
-      padding='VALID',
-      use_bias=False,
-      name=name)
+    return tf.compat.v1.layers.conv2d_transpose(inputs,
+                                                filters,
+                                                kernel_size,
+                                                strides=stride,
+                                                padding='VALID',
+                                                use_bias=False,
+                                                name=name)
 
 
 def generator_down_sample(input_net, final_num_outputs=256):
-  """Down-sampling module in Generator.
+    """Down-sampling module in Generator.
 
   Down sampling pathway of the Generator Architecture:
 
@@ -82,62 +79,61 @@ def generator_down_sample(input_net, final_num_outputs=256):
       or dimension 1 and dimension 2 of input_net are not divisible by 4.
   """
 
-  if final_num_outputs % 4 != 0:
-    raise ValueError('Final number outputs need to be divisible by 4.')
+    if final_num_outputs % 4 != 0:
+        raise ValueError('Final number outputs need to be divisible by 4.')
 
-  # Check the rank of input_net.
-  input_net.shape.assert_has_rank(4)
+    # Check the rank of input_net.
+    input_net.shape.assert_has_rank(4)
 
-  # Check dimension 1 and dimension 2 are defined and divisible by 4.
-  if input_net.shape[1]:
-    if input_net.shape[1] % 4 != 0:
-      raise ValueError(
-          'Dimension 1 of the input should be divisible by 4, but is {} '
-          'instead.'.format(input_net.shape[1]))
-  else:
-    raise ValueError('Dimension 1 of the input should be explicitly defined.')
+    # Check dimension 1 and dimension 2 are defined and divisible by 4.
+    if input_net.shape[1]:
+        if input_net.shape[1] % 4 != 0:
+            raise ValueError(
+                'Dimension 1 of the input should be divisible by 4, but is {} '
+                'instead.'.format(input_net.shape[1]))
+    else:
+        raise ValueError(
+            'Dimension 1 of the input should be explicitly defined.')
 
-  # Check dimension 1 and dimension 2 are defined and divisible by 4.
-  if input_net.shape[2]:
-    if input_net.shape[2] % 4 != 0:
-      raise ValueError(
-          'Dimension 2 of the input should be divisible by 4, but is {} '
-          'instead.'.format(input_net.shape[2]))
-  else:
-    raise ValueError('Dimension 2 of the input should be explicitly defined.')
+    # Check dimension 1 and dimension 2 are defined and divisible by 4.
+    if input_net.shape[2]:
+        if input_net.shape[2] % 4 != 0:
+            raise ValueError(
+                'Dimension 2 of the input should be divisible by 4, but is {} '
+                'instead.'.format(input_net.shape[2]))
+    else:
+        raise ValueError(
+            'Dimension 2 of the input should be explicitly defined.')
 
-  with tf.compat.v1.variable_scope('generator_down_sample'):
-    down_sample = ops.pad(input_net, 3)
-    down_sample = _conv2d(
-        inputs=down_sample,
-        filters=final_num_outputs // 4,
-        kernel_size=7,
-        stride=1,
-        name='conv_0')
-    down_sample = tfgan.features.instance_norm(down_sample)
-    down_sample = tf.nn.relu(down_sample)
+    with tf.compat.v1.variable_scope('generator_down_sample'):
+        down_sample = ops.pad(input_net, 3)
+        down_sample = _conv2d(inputs=down_sample,
+                              filters=final_num_outputs // 4,
+                              kernel_size=7,
+                              stride=1,
+                              name='conv_0')
+        down_sample = tfgan.features.instance_norm(down_sample)
+        down_sample = tf.nn.relu(down_sample)
 
-    down_sample = ops.pad(down_sample, 1)
-    down_sample = _conv2d(
-        inputs=down_sample,
-        filters=final_num_outputs // 2,
-        kernel_size=4,
-        stride=2,
-        name='conv_1')
-    down_sample = tfgan.features.instance_norm(down_sample)
-    down_sample = tf.nn.relu(down_sample)
+        down_sample = ops.pad(down_sample, 1)
+        down_sample = _conv2d(inputs=down_sample,
+                              filters=final_num_outputs // 2,
+                              kernel_size=4,
+                              stride=2,
+                              name='conv_1')
+        down_sample = tfgan.features.instance_norm(down_sample)
+        down_sample = tf.nn.relu(down_sample)
 
-    down_sample = ops.pad(down_sample, 1)
-    output_net = _conv2d(
-        inputs=down_sample,
-        filters=final_num_outputs,
-        kernel_size=4,
-        stride=2,
-        name='conv_2')
-    down_sample = tfgan.features.instance_norm(down_sample)
-    down_sample = tf.nn.relu(down_sample)
+        down_sample = ops.pad(down_sample, 1)
+        output_net = _conv2d(inputs=down_sample,
+                             filters=final_num_outputs,
+                             kernel_size=4,
+                             stride=2,
+                             name='conv_2')
+        down_sample = tfgan.features.instance_norm(down_sample)
+        down_sample = tf.nn.relu(down_sample)
 
-  return output_net
+    return output_net
 
 
 def _residual_block(input_net,
@@ -148,7 +144,7 @@ def _residual_block(input_net,
                     activation_fn=tf.nn.relu,
                     normalizer_fn=None,
                     name='residual_block'):
-  """Residual Block.
+    """Residual Block.
 
   Input Tensor X - > Conv1 -> IN -> ReLU -> Conv2 -> IN + X
 
@@ -168,36 +164,34 @@ def _residual_block(input_net,
   Returns:
     Residual Tensor with the same shape as the input tensor.
   """
-  with tf.compat.v1.variable_scope(name):
+    with tf.compat.v1.variable_scope(name):
 
-    res_block = ops.pad(input_net, padding_size)
-    res_block = _conv2d(
-        inputs=res_block,
-        filters=num_outputs,
-        kernel_size=kernel_size,
-        stride=stride,
-        name='conv_0')
-    if normalizer_fn:
-      res_block = normalizer_fn(res_block)
-    res_block = activation_fn(res_block, name='activation_0')
+        res_block = ops.pad(input_net, padding_size)
+        res_block = _conv2d(inputs=res_block,
+                            filters=num_outputs,
+                            kernel_size=kernel_size,
+                            stride=stride,
+                            name='conv_0')
+        if normalizer_fn:
+            res_block = normalizer_fn(res_block)
+        res_block = activation_fn(res_block, name='activation_0')
 
-    res_block = ops.pad(res_block, padding_size)
-    res_block = _conv2d(
-        inputs=res_block,
-        filters=num_outputs,
-        kernel_size=kernel_size,
-        stride=stride,
-        name='conv_1')
-    if normalizer_fn:
-      res_block = normalizer_fn(res_block)
+        res_block = ops.pad(res_block, padding_size)
+        res_block = _conv2d(inputs=res_block,
+                            filters=num_outputs,
+                            kernel_size=kernel_size,
+                            stride=stride,
+                            name='conv_1')
+        if normalizer_fn:
+            res_block = normalizer_fn(res_block)
 
-    output_net = res_block + input_net
+        output_net = res_block + input_net
 
-  return output_net
+    return output_net
 
 
 def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
-  """Bottleneck module in Generator.
+    """Bottleneck module in Generator.
 
   Residual bottleneck pathway in Generator.
 
@@ -220,41 +214,41 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
       or the last channel of the input_tensor is not the same as num_outputs.
   """
 
-  # Check the rank of input_net.
-  input_net.shape.assert_has_rank(4)
+    # Check the rank of input_net.
+    input_net.shape.assert_has_rank(4)
 
-  # Check dimension 4 of the input_net.
-  if input_net.shape[-1]:
-    if input_net.shape[-1] != num_outputs:
-      raise ValueError(
-          'The last dimension of the input_net should be the same as '
-          'num_outputs: but {} vs. {} instead.'.format(input_net.shape[-1],
-                                                       num_outputs))
-  else:
-    raise ValueError(
-        'The last dimension of the input_net should be explicitly defined.')
+    # Check dimension 4 of the input_net.
+    if input_net.shape[-1]:
+        if input_net.shape[-1] != num_outputs:
+            raise ValueError(
+                'The last dimension of the input_net should be the same as '
+                'num_outputs: but {} vs. {} instead.'.format(
+                    input_net.shape[-1], num_outputs))
+    else:
+        raise ValueError(
+            'The last dimension of the input_net should be explicitly defined.')
 
-  with tf.compat.v1.variable_scope('generator_bottleneck'):
+    with tf.compat.v1.variable_scope('generator_bottleneck'):
 
-    bottleneck = input_net
+        bottleneck = input_net
 
-    for i in range(residual_block_num):
+        for i in range(residual_block_num):
 
-      bottleneck = _residual_block(
-          input_net=bottleneck,
-          num_outputs=num_outputs,
-          kernel_size=3,
-          stride=1,
-          padding_size=1,
-          activation_fn=tf.nn.relu,
-          normalizer_fn=tfgan.features.instance_norm,
-          name='residual_block_{}'.format(i))
+            bottleneck = _residual_block(
+                input_net=bottleneck,
+                num_outputs=num_outputs,
+                kernel_size=3,
+                stride=1,
+                padding_size=1,
+                activation_fn=tf.nn.relu,
+                normalizer_fn=tfgan.features.instance_norm,
+                name='residual_block_{}'.format(i))
 
-  return bottleneck
+    return bottleneck
 
 
 def generator_up_sample(input_net, num_outputs):
-  """Up-sampling module in Generator.
+    """Up-sampling module in Generator.
 
   Up sampling path for image generation in the Generator.
 
@@ -269,34 +263,39 @@ def generator_up_sample(input_net, num_outputs):
     Tensor of shape (batch_size, h, w, num_outputs).
   """
 
-  with tf.compat.v1.variable_scope('generator_up_sample'):
+    with tf.compat.v1.variable_scope('generator_up_sample'):
 
-    up_sample = _conv2d_transpose(
-        input_net, filters=128, kernel_size=4, stride=2, name='deconv_0')
-    up_sample = tfgan.features.instance_norm(up_sample)
-    up_sample = tf.nn.relu(up_sample)
-    up_sample = up_sample[:, 1:-1, 1:-1, :]
+        up_sample = _conv2d_transpose(input_net,
+                                      filters=128,
+                                      kernel_size=4,
+                                      stride=2,
+                                      name='deconv_0')
+        up_sample = tfgan.features.instance_norm(up_sample)
+        up_sample = tf.nn.relu(up_sample)
+        up_sample = up_sample[:, 1:-1, 1:-1, :]
 
-    up_sample = _conv2d_transpose(
-        up_sample, filters=64, kernel_size=4, stride=2, name='deconv_1')
-    up_sample = tfgan.features.instance_norm(up_sample)
-    up_sample = tf.nn.relu(up_sample)
-    up_sample = up_sample[:, 1:-1, 1:-1, :]
+        up_sample = _conv2d_transpose(up_sample,
+                                      filters=64,
+                                      kernel_size=4,
+                                      stride=2,
+                                      name='deconv_1')
+        up_sample = tfgan.features.instance_norm(up_sample)
+        up_sample = tf.nn.relu(up_sample)
+        up_sample = up_sample[:, 1:-1, 1:-1, :]
 
-    output_net = ops.pad(up_sample, 3)
-    output_net = _conv2d(
-        inputs=output_net,
-        filters=num_outputs,
-        kernel_size=7,
-        stride=1,
-        name='conv_0')
-    output_net = tf.nn.tanh(output_net)
+        output_net = ops.pad(up_sample, 3)
+        output_net = _conv2d(inputs=output_net,
+                             filters=num_outputs,
+                             kernel_size=7,
+                             stride=1,
+                             name='conv_0')
+        output_net = tf.nn.tanh(output_net)
 
-  return output_net
+    return output_net
 
 
 def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
-  """Input Layer + Hidden Layer in the Discriminator.
+    """Input Layer + Hidden Layer in the Discriminator.
 
   Feature extraction pathway in the Discriminator.
 
@@ -315,30 +314,29 @@ def discriminator_input_hidden(input_net, hidden_layer=6, init_num_outputs=64):
     Tensor of shape (batch_size, h / 64, w / 64, 2048) as features.
   """
 
-  num_outputs = init_num_outputs
+    num_outputs = init_num_outputs
 
-  with tf.compat.v1.variable_scope('discriminator_input_hidden'):
+    with tf.compat.v1.variable_scope('discriminator_input_hidden'):
 
-    hidden = input_net
+        hidden = input_net
 
-    for i in range(hidden_layer):
+        for i in range(hidden_layer):
 
-      hidden = ops.pad(hidden, 1)
-      hidden = _conv2d(
-          inputs=hidden,
-          filters=num_outputs,
-          kernel_size=4,
-          stride=2,
-          name='conv_{}'.format(i))
-      hidden = tf.nn.leaky_relu(hidden, alpha=0.01)
+            hidden = ops.pad(hidden, 1)
+            hidden = _conv2d(inputs=hidden,
+                             filters=num_outputs,
+                             kernel_size=4,
+                             stride=2,
+                             name='conv_{}'.format(i))
+            hidden = tf.nn.leaky_relu(hidden, alpha=0.01)
 
-      num_outputs = 2 * num_outputs
+            num_outputs = 2 * num_outputs
 
-  return hidden
+    return hidden
 
 
 def discriminator_output_source(input_net):
-  """Output Layer for Source in the Discriminator.
+    """Output Layer for Source in the Discriminator.
 
   Determine if the image is real/fake based on the feature extracted. We follow
   the original paper design where the output is not a simple (batch_size) shape
@@ -355,21 +353,20 @@ def discriminator_output_source(input_net):
     Tensor of shape (batch_size, h / 64, w / 64, 1) as the score.
   """
 
-  with tf.compat.v1.variable_scope('discriminator_output_source'):
+    with tf.compat.v1.variable_scope('discriminator_output_source'):
 
-    output_src = ops.pad(input_net, 1)
-    output_src = _conv2d(
-        inputs=output_src,
-        filters=1,
-        kernel_size=3,
-        stride=1,
-        name='conv')
+        output_src = ops.pad(input_net, 1)
+        output_src = _conv2d(inputs=output_src,
+                             filters=1,
+                             kernel_size=3,
+                             stride=1,
+                             name='conv')
 
-  return output_src
+    return output_src
 
 
 def discriminator_output_class(input_net, class_num):
-  """Output Layer for Domain Classification in the Discriminator.
+    """Output Layer for Domain Classification in the Discriminator.
 
   The original paper use convolution layer where the kernel size is the height
   and width of the Tensor. We use an equivalent operation here where we first
@@ -386,13 +383,12 @@ def discriminator_output_class(input_net, class_num):
     Tensor of shape (batch_size, class_num).
   """
 
-  with tf.compat.v1.variable_scope('discriminator_output_class'):
+    with tf.compat.v1.variable_scope('discriminator_output_class'):
 
-    output_cls = tf.compat.v1.layers.flatten(input_net, name='flatten')
-    output_cls = tf.compat.v1.layers.dense(
-        inputs=output_cls,
-        units=class_num,
-        use_bias=False,
-        name='fully_connected')
+        output_cls = tf.compat.v1.layers.flatten(input_net, name='flatten')
+        output_cls = tf.compat.v1.layers.dense(inputs=output_cls,
+                                               units=class_num,
+                                               use_bias=False,
+                                               name='fully_connected')
 
-  return output_cls
+    return output_cls

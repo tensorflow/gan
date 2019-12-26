@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a GANEstimator on MNIST data."""
 
 from __future__ import absolute_import
@@ -30,8 +29,8 @@ flags.DEFINE_integer('batch_size', 32,
 flags.DEFINE_integer('max_number_of_steps', 20000,
                      'The maximum number of gradient steps.')
 
-flags.DEFINE_integer(
-    'noise_dims', 64, 'Dimensions of the generator noise vector')
+flags.DEFINE_integer('noise_dims', 64,
+                     'Dimensions of the generator noise vector')
 
 flags.DEFINE_string('output_dir', '/tmp/tfgan_logdir/mnist-estimator/',
                     'Directory where the results are saved to.')
@@ -40,10 +39,10 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
-                              FLAGS.noise_dims, FLAGS.output_dir)
-  train_lib.train(hparams)
+    hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
+                                FLAGS.noise_dims, FLAGS.output_dir)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

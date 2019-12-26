@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """TF-GAN TPU support."""
 # pylint: disable=wildcard-import,g-bad-import-order,line-too-long,g-no-space-after-comment
 

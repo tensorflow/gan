@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """TF-GAN is a lightweight library for training and evaluating GANs.
 
 In addition to providing the infrastructure for easily training and evaluating

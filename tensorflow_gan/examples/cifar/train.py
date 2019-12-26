@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a generator on CIFAR data."""
 from __future__ import absolute_import
 from __future__ import division
@@ -49,13 +48,13 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
-                              FLAGS.generator_lr, FLAGS.discriminator_lr,
-                              FLAGS.master, FLAGS.train_log_dir,
-                              FLAGS.ps_replicas, FLAGS.task)
-  train_lib.train(hparams)
+    hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.max_number_of_steps,
+                                FLAGS.generator_lr, FLAGS.discriminator_lr,
+                                FLAGS.master, FLAGS.train_log_dir,
+                                FLAGS.ps_replicas, FLAGS.task)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  logging.set_verbosity(logging.INFO)
-  app.run(main)
+    logging.set_verbosity(logging.INFO)
+    app.run(main)

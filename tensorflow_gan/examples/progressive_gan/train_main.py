@@ -120,51 +120,53 @@ FLAGS = flags.FLAGS
 
 
 def _make_config_from_flags():
-  """Makes a config dictionary from commandline flags."""
-  return dict([(flag.name, flag.value)
-               for flag in FLAGS.get_key_flags_for_module(sys.argv[0])])
+    """Makes a config dictionary from commandline flags."""
+    return dict([(flag.name, flag.value)
+                 for flag in FLAGS.get_key_flags_for_module(sys.argv[0])])
 
 
 def _provide_real_images(batch_size, **kwargs):
-  """Provides real images."""
-  dataset_file_pattern = kwargs.get('dataset_file_pattern')
-  colors = kwargs['colors']
-  final_height, final_width = train.make_resolution_schedule(
-      **kwargs).final_resolutions
-  if not dataset_file_pattern:
-    return data_provider.provide_data(
-        split='train',
-        batch_size=batch_size,
-        patch_height=final_height,
-        patch_width=final_width,
-        colors=colors)
-  else:
-    return data_provider.provide_data_from_image_files(
-        file_pattern=dataset_file_pattern,
-        batch_size=batch_size,
-        patch_height=final_height,
-        patch_width=final_width,
-        colors=colors)
+    """Provides real images."""
+    dataset_file_pattern = kwargs.get('dataset_file_pattern')
+    colors = kwargs['colors']
+    final_height, final_width = train.make_resolution_schedule(
+        **kwargs).final_resolutions
+    if not dataset_file_pattern:
+        return data_provider.provide_data(split='train',
+                                          batch_size=batch_size,
+                                          patch_height=final_height,
+                                          patch_width=final_width,
+                                          colors=colors)
+    else:
+        return data_provider.provide_data_from_image_files(
+            file_pattern=dataset_file_pattern,
+            batch_size=batch_size,
+            patch_height=final_height,
+            patch_width=final_width,
+            colors=colors)
 
 
 def main(_):
-  if not tf.io.gfile.exists(FLAGS.train_log_dir):
-    tf.io.gfile.makedirs(FLAGS.train_log_dir)
+    if not tf.io.gfile.exists(FLAGS.train_log_dir):
+        tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
-  config = _make_config_from_flags()
-  logging.info('\n'.join(['{}={}'.format(k, v) for k, v in config.iteritems()]))
+    config = _make_config_from_flags()
+    logging.info('\n'.join(
+        ['{}={}'.format(k, v) for k, v in config.iteritems()]))
 
-  for stage_id in train.get_stage_ids(**config):
-    batch_size = train.get_batch_size(stage_id, **config)
-    tf.compat.v1.reset_default_graph()
-    with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
-      real_images = None
-      with tf.device('/cpu:0'), tf.compat.v1.name_scope('inputs'):
-        real_images = _provide_real_images(batch_size, **config)
-      model = train.build_model(stage_id, batch_size, real_images, **config)
-      train.add_model_summaries(model, **config)
-      train.train(model, **config)
+    for stage_id in train.get_stage_ids(**config):
+        batch_size = train.get_batch_size(stage_id, **config)
+        tf.compat.v1.reset_default_graph()
+        with tf.device(
+                tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
+            real_images = None
+            with tf.device('/cpu:0'), tf.compat.v1.name_scope('inputs'):
+                real_images = _provide_real_images(batch_size, **config)
+            model = train.build_model(stage_id, batch_size, real_images,
+                                      **config)
+            train.add_model_summaries(model, **config)
+            train.train(model, **config)
 
 
 if __name__ == '__main__':
-  tf.compat.v1.app.run()
+    tf.compat.v1.app.run()

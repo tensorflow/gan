@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Evaluates a TF-GAN trained MNIST model."""
 
 from __future__ import absolute_import
@@ -52,13 +51,13 @@ flags.DEFINE_boolean('write_to_disk', True, 'If `True`, run images to disk.')
 
 
 def main(_):
-  hparams = eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                             FLAGS.dataset_dir, FLAGS.num_images_generated,
-                             FLAGS.eval_real_images, FLAGS.noise_dims,
-                             FLAGS.max_number_of_evaluations,
-                             FLAGS.write_to_disk)
-  eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
+                               FLAGS.dataset_dir, FLAGS.num_images_generated,
+                               FLAGS.eval_real_images, FLAGS.noise_dims,
+                               FLAGS.max_number_of_evaluations,
+                               FLAGS.write_to_disk)
+    eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

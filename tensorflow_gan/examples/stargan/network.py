@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Neural network for a StarGAN model.
 
 This module contains the Generator and Discriminator Neural Network to build a
@@ -34,7 +33,7 @@ from tensorflow_gan.examples.stargan import ops
 
 
 def generator(inputs, targets):
-  """Generator module.
+    """Generator module.
 
   Piece everything together for the Generator.
 
@@ -51,22 +50,22 @@ def generator(inputs, targets):
     Tensor of shape (batch_size, h, w, c) as the inputs.
   """
 
-  with tf.compat.v1.variable_scope('generator'):
+    with tf.compat.v1.variable_scope('generator'):
 
-    input_with_condition = ops.condition_input_with_pixel_padding(
-        inputs, targets)
+        input_with_condition = ops.condition_input_with_pixel_padding(
+            inputs, targets)
 
-    down_sample = layers.generator_down_sample(input_with_condition)
+        down_sample = layers.generator_down_sample(input_with_condition)
 
-    bottleneck = layers.generator_bottleneck(down_sample)
+        bottleneck = layers.generator_bottleneck(down_sample)
 
-    up_sample = layers.generator_up_sample(bottleneck, inputs.shape[-1])
+        up_sample = layers.generator_up_sample(bottleneck, inputs.shape[-1])
 
-  return up_sample
+    return up_sample
 
 
 def discriminator(input_net, class_num):
-  """Discriminator Module.
+    """Discriminator Module.
 
   Piece everything together and reshape the output source tensor
 
@@ -88,14 +87,14 @@ def discriminator(input_net, class_num):
     logit representing whether the image is in the associated domain.
   """
 
-  with tf.compat.v1.variable_scope('discriminator'):
+    with tf.compat.v1.variable_scope('discriminator'):
 
-    hidden = layers.discriminator_input_hidden(input_net)
+        hidden = layers.discriminator_input_hidden(input_net)
 
-    output_src = layers.discriminator_output_source(hidden)
-    output_src = tf.compat.v1.layers.flatten(output_src)
-    output_src = tf.reduce_mean(input_tensor=output_src, axis=1)
+        output_src = layers.discriminator_output_source(hidden)
+        output_src = tf.compat.v1.layers.flatten(output_src)
+        output_src = tf.reduce_mean(input_tensor=output_src, axis=1)
 
-    output_cls = layers.discriminator_output_class(hidden, class_num)
+        output_cls = layers.discriminator_output_class(hidden, class_num)
 
-  return output_src, output_cls
+    return output_src, output_cls

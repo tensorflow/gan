@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """A tensor pool stores values from an input tensor and returns a stored one.
 
 We use this to keep a history of values created by a generator, such that
@@ -33,21 +32,20 @@ from __future__ import print_function
 
 import tensorflow as tf
 
-
 __all__ = [
     'tensor_pool',
 ]
 
 
 def _to_list(x):
-  return [x] if isinstance(x, tf.Tensor) else list(x)
+    return [x] if isinstance(x, tf.Tensor) else list(x)
 
 
 def tensor_pool(input_values,
                 pool_size=50,
                 pooling_probability=0.5,
                 name='tensor_pool'):
-  """Queue storing input values and returning random previously stored ones.
+    """Queue storing input values and returning random previously stored ones.
 
   Every time the returned `output_value` is evaluated, `input_value` is
   evaluated and its value either directly returned (with
@@ -75,60 +73,58 @@ def tensor_pool(input_values,
   Raises:
     ValueError: If `pool_size` is negative.
   """
-  pool_size = int(pool_size)
-  if pool_size < 0:
-    raise ValueError('`pool_size` is negative.')
-  elif pool_size == 0:
-    return input_values
+    pool_size = int(pool_size)
+    if pool_size < 0:
+        raise ValueError('`pool_size` is negative.')
+    elif pool_size == 0:
+        return input_values
 
-  original_input_values = input_values
-  input_values = tf.nest.flatten(input_values)
+    original_input_values = input_values
+    input_values = tf.nest.flatten(input_values)
 
-  with tf.compat.v1.name_scope(
-      '{}_pool_queue'.format(name),
-      values=input_values + [pooling_probability]):
-    pool_queue = tf.queue.RandomShuffleQueue(
-        capacity=pool_size,
-        min_after_dequeue=0,
-        dtypes=[v.dtype for v in input_values],
-        shapes=None)
+    with tf.compat.v1.name_scope('{}_pool_queue'.format(name),
+                                 values=input_values + [pooling_probability]):
+        pool_queue = tf.queue.RandomShuffleQueue(
+            capacity=pool_size,
+            min_after_dequeue=0,
+            dtypes=[v.dtype for v in input_values],
+            shapes=None)
 
-    # In pseudo code this code does the following:
-    # if not pool_full:
-    #   enqueue(input_values)
-    #   return input_values
-    # else
-    #   dequeue_values = dequeue_random_sample()
-    #   enqueue(input_values)
-    #   if rand() < pooling_probability:
-    #     return dequeue_values
-    #   else
-    #     return input_values
+        # In pseudo code this code does the following:
+        # if not pool_full:
+        #   enqueue(input_values)
+        #   return input_values
+        # else
+        #   dequeue_values = dequeue_random_sample()
+        #   enqueue(input_values)
+        #   if rand() < pooling_probability:
+        #     return dequeue_values
+        #   else
+        #     return input_values
 
-    def _get_input_value_pooled():
-      enqueue_op = pool_queue.enqueue(input_values)
-      with tf.control_dependencies([enqueue_op]):
-        return [tf.identity(v) for v in input_values]
+        def _get_input_value_pooled():
+            enqueue_op = pool_queue.enqueue(input_values)
+            with tf.control_dependencies([enqueue_op]):
+                return [tf.identity(v) for v in input_values]
 
-    def _get_random_pool_value_and_enqueue_input():
-      dequeue_values = _to_list(pool_queue.dequeue())
-      with tf.control_dependencies(dequeue_values):
-        enqueue_op = pool_queue.enqueue(input_values)
-        with tf.control_dependencies([enqueue_op]):
-          prob = tf.random.uniform((), dtype=tf.float32) < pooling_probability
-          return tf.cond(
-              pred=prob,
-              true_fn=lambda: dequeue_values,
-              false_fn=lambda: input_values)
+        def _get_random_pool_value_and_enqueue_input():
+            dequeue_values = _to_list(pool_queue.dequeue())
+            with tf.control_dependencies(dequeue_values):
+                enqueue_op = pool_queue.enqueue(input_values)
+                with tf.control_dependencies([enqueue_op]):
+                    prob = tf.random.uniform(
+                        (), dtype=tf.float32) < pooling_probability
+                    return tf.cond(pred=prob,
+                                   true_fn=lambda: dequeue_values,
+                                   false_fn=lambda: input_values)
 
-    output_values = _to_list(
-        tf.cond(
-            pred=pool_queue.size() < pool_size,
-            true_fn=_get_input_value_pooled,
-            false_fn=_get_random_pool_value_and_enqueue_input))
+        output_values = _to_list(
+            tf.cond(pred=pool_queue.size() < pool_size,
+                    true_fn=_get_input_value_pooled,
+                    false_fn=_get_random_pool_value_and_enqueue_input))
 
-    # Make sure that the shape of `output_value` is set.
-    for input_value, output_value in zip(input_values, output_values):
-      output_value.set_shape(input_value.shape)
+        # Make sure that the shape of `output_value` is set.
+        for input_value, output_value in zip(input_values, output_values):
+            output_value.set_shape(input_value.shape)
 
-  return tf.nest.pack_sequence_as(original_input_values, output_values)
+    return tf.nest.pack_sequence_as(original_input_values, output_values)

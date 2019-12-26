@@ -29,11 +29,10 @@ from absl import app
 from absl import flags
 from tensorflow_gan.examples.self_attention_estimator import train_experiment
 
-
-flags.DEFINE_string('model_dir', '/tmp/tfgan_logdir/sagan-estimator',
-                    'Optional location to save model. If `None`, use a '
-                    'default provided by tf.Estimator.')
-
+flags.DEFINE_string(
+    'model_dir', '/tmp/tfgan_logdir/sagan-estimator',
+    'Optional location to save model. If `None`, use a '
+    'default provided by tf.Estimator.')
 
 # ML Hparams.
 flags.DEFINE_integer(
@@ -43,15 +42,13 @@ flags.DEFINE_integer(
     'since the TPU always pads the tensors to this size. The ideal batch size '
     'when training on the TPU is 1024 (128 per TPU core), since this '
     'eliminates inefficiencies related to memory transfer and padding."')
-flags.DEFINE_integer('z_dim', 128,
-                     'Dimensions of the generator noise vector.')
+flags.DEFINE_integer('z_dim', 128, 'Dimensions of the generator noise vector.')
 flags.DEFINE_integer('gf_dim', 64, 'Dimensionality of gf. [64]')
 flags.DEFINE_integer('df_dim', 64, 'Dimensionality of df. [64]')
 flags.DEFINE_float('generator_lr', 0.0001, 'The generator learning rate.')
 flags.DEFINE_float('discriminator_lr', 0.0004,
                    'The discriminator learning rate.')
 flags.DEFINE_float('beta1', 0.0, 'Momentum term of adam. [0.0]')
-
 
 # ML Infra.
 flags.DEFINE_enum(
@@ -97,47 +94,47 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  tpu_location = FLAGS.tpu
-  hparams = train_experiment.HParams(
-      train_batch_size=FLAGS.train_batch_size,
-      eval_batch_size=FLAGS.eval_batch_size,
-      predict_batch_size=FLAGS.predict_batch_size,
-      generator_lr=FLAGS.generator_lr,
-      discriminator_lr=FLAGS.discriminator_lr,
-      beta1=FLAGS.beta1,
-      gf_dim=FLAGS.gf_dim,
-      df_dim=FLAGS.df_dim,
-      num_classes=1000,
-      shuffle_buffer_size=10000,
-      z_dim=FLAGS.z_dim,
-      model_dir=FLAGS.model_dir,
-      max_number_of_steps=FLAGS.max_number_of_steps,
-      train_steps_per_eval=FLAGS.train_steps_per_eval,
-      num_eval_steps=FLAGS.num_eval_steps,
-      debug_params=train_experiment.DebugParams(
-          use_tpu=FLAGS.use_tpu,
-          eval_on_tpu=FLAGS.eval_on_tpu,
-          fake_nets=False,
-          fake_data=False,
-          continuous_eval_timeout_secs=FLAGS.continuous_eval_timeout_secs,
-      ),
-      tpu_params=train_experiment.TPUParams(
-          use_tpu_estimator=FLAGS.use_tpu_estimator,
-          tpu_location=tpu_location,
-          gcp_project=FLAGS.gcp_project,
-          tpu_zone=FLAGS.tpu_zone,
-          tpu_iterations_per_loop=FLAGS.tpu_iterations_per_loop,
-      ),
-  )
-  if FLAGS.mode == 'train':
-    train_experiment.run_train(hparams)
-  elif FLAGS.mode == 'continuous_eval':
-    train_experiment.run_continuous_eval(hparams)
-  elif FLAGS.mode == 'train_and_eval' or FLAGS.mode is None:
-    train_experiment.run_train_and_eval(hparams)
-  else:
-    raise ValueError('Mode not recognized: ', FLAGS.mode)
+    tpu_location = FLAGS.tpu
+    hparams = train_experiment.HParams(
+        train_batch_size=FLAGS.train_batch_size,
+        eval_batch_size=FLAGS.eval_batch_size,
+        predict_batch_size=FLAGS.predict_batch_size,
+        generator_lr=FLAGS.generator_lr,
+        discriminator_lr=FLAGS.discriminator_lr,
+        beta1=FLAGS.beta1,
+        gf_dim=FLAGS.gf_dim,
+        df_dim=FLAGS.df_dim,
+        num_classes=1000,
+        shuffle_buffer_size=10000,
+        z_dim=FLAGS.z_dim,
+        model_dir=FLAGS.model_dir,
+        max_number_of_steps=FLAGS.max_number_of_steps,
+        train_steps_per_eval=FLAGS.train_steps_per_eval,
+        num_eval_steps=FLAGS.num_eval_steps,
+        debug_params=train_experiment.DebugParams(
+            use_tpu=FLAGS.use_tpu,
+            eval_on_tpu=FLAGS.eval_on_tpu,
+            fake_nets=False,
+            fake_data=False,
+            continuous_eval_timeout_secs=FLAGS.continuous_eval_timeout_secs,
+        ),
+        tpu_params=train_experiment.TPUParams(
+            use_tpu_estimator=FLAGS.use_tpu_estimator,
+            tpu_location=tpu_location,
+            gcp_project=FLAGS.gcp_project,
+            tpu_zone=FLAGS.tpu_zone,
+            tpu_iterations_per_loop=FLAGS.tpu_iterations_per_loop,
+        ),
+    )
+    if FLAGS.mode == 'train':
+        train_experiment.run_train(hparams)
+    elif FLAGS.mode == 'continuous_eval':
+        train_experiment.run_continuous_eval(hparams)
+    elif FLAGS.mode == 'train_and_eval' or FLAGS.mode is None:
+        train_experiment.run_train_and_eval(hparams)
+    else:
+        raise ValueError('Mode not recognized: ', FLAGS.mode)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

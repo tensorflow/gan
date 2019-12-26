@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Named tuples for TF-GAN.
 
 TF-GAN training occurs in four steps, and each step communicates with the next
@@ -40,20 +39,20 @@ __all__ = [
 
 
 class GANModel(
-    collections.namedtuple('GANModel', (
-        'generator_inputs',
-        'generated_data',
-        'generator_variables',
-        'generator_scope',
-        'generator_fn',
-        'real_data',
-        'discriminator_real_outputs',
-        'discriminator_gen_outputs',
-        'discriminator_variables',
-        'discriminator_scope',
-        'discriminator_fn',
-    ))):
-  """A GANModel contains all the pieces needed for GAN training.
+        collections.namedtuple('GANModel', (
+            'generator_inputs',
+            'generated_data',
+            'generator_variables',
+            'generator_scope',
+            'generator_fn',
+            'real_data',
+            'discriminator_real_outputs',
+            'discriminator_gen_outputs',
+            'discriminator_variables',
+            'discriminator_scope',
+            'discriminator_fn',
+        ))):
+    """A GANModel contains all the pieces needed for GAN training.
 
   Generative Adversarial Networks (https://arxiv.org/abs/1406.2661) attempt
   to create an implicit generative model of data by solving a two agent game.
@@ -79,12 +78,13 @@ class GANModel(
 
 # TODO(joelshor): Have this class inherit from `GANModel`.
 class InfoGANModel(
-    collections.namedtuple('InfoGANModel', GANModel._fields + (
-        'structured_generator_inputs',
-        'predicted_distributions',
-        'discriminator_and_aux_fn',
-    ))):
-  """An InfoGANModel contains all the pieces needed for InfoGAN training.
+        collections.namedtuple(
+            'InfoGANModel', GANModel._fields + (
+                'structured_generator_inputs',
+                'predicted_distributions',
+                'discriminator_and_aux_fn',
+            ))):
+    """An InfoGANModel contains all the pieces needed for InfoGAN training.
 
   See https://arxiv.org/abs/1606.03657 for more details.
 
@@ -101,11 +101,13 @@ class InfoGANModel(
 
 
 class ACGANModel(
-    collections.namedtuple('ACGANModel', GANModel._fields +
-                           ('one_hot_labels',
-                            'discriminator_real_classification_logits',
-                            'discriminator_gen_classification_logits',))):
-  """An ACGANModel contains all the pieces needed for ACGAN training.
+        collections.namedtuple(
+            'ACGANModel', GANModel._fields + (
+                'one_hot_labels',
+                'discriminator_real_classification_logits',
+                'discriminator_gen_classification_logits',
+            ))):
+    """An ACGANModel contains all the pieces needed for ACGAN training.
 
   See https://arxiv.org/abs/1610.09585 for more details.
 
@@ -119,10 +121,10 @@ class ACGANModel(
 
 
 class CycleGANModel(
-    collections.namedtuple(
-        'CycleGANModel',
-        ('model_x2y', 'model_y2x', 'reconstructed_x', 'reconstructed_y'))):
-  """An CycleGANModel contains all the pieces needed for CycleGAN training.
+        collections.namedtuple(
+            'CycleGANModel',
+            ('model_x2y', 'model_y2x', 'reconstructed_x', 'reconstructed_y'))):
+    """An CycleGANModel contains all the pieces needed for CycleGAN training.
 
   The model `model_x2y` generator F maps data set X to Y, while the model
   `model_y2x` generator G maps data set Y to X.
@@ -138,24 +140,24 @@ class CycleGANModel(
 
 
 class StarGANModel(
-    collections.namedtuple('StarGANModel', (
-        'input_data',
-        'input_data_domain_label',
-        'generated_data',
-        'generated_data_domain_target',
-        'reconstructed_data',
-        'discriminator_input_data_source_predication',
-        'discriminator_generated_data_source_predication',
-        'discriminator_input_data_domain_predication',
-        'discriminator_generated_data_domain_predication',
-        'generator_variables',
-        'generator_scope',
-        'generator_fn',
-        'discriminator_variables',
-        'discriminator_scope',
-        'discriminator_fn',
-    ))):
-  """A StarGANModel contains all the pieces needed for StarGAN training.
+        collections.namedtuple('StarGANModel', (
+            'input_data',
+            'input_data_domain_label',
+            'generated_data',
+            'generated_data_domain_target',
+            'reconstructed_data',
+            'discriminator_input_data_source_predication',
+            'discriminator_generated_data_source_predication',
+            'discriminator_input_data_domain_predication',
+            'discriminator_generated_data_domain_predication',
+            'generator_variables',
+            'generator_scope',
+            'generator_fn',
+            'discriminator_variables',
+            'discriminator_scope',
+            'discriminator_fn',
+        ))):
+    """A StarGANModel contains all the pieces needed for StarGAN training.
 
   Args:
     input_data: The real images that need to be transferred by the generator.
@@ -186,11 +188,9 @@ class StarGANModel(
 
 
 class GANLoss(
-    collections.namedtuple('GANLoss', (
-        'generator_loss',
-        'discriminator_loss'
-    ))):
-  """GANLoss contains the generator and discriminator losses.
+        collections.namedtuple('GANLoss',
+                               ('generator_loss', 'discriminator_loss'))):
+    """GANLoss contains the generator and discriminator losses.
 
   Args:
     generator_loss: A tensor for the generator loss.
@@ -199,8 +199,8 @@ class GANLoss(
 
 
 class CycleGANLoss(
-    collections.namedtuple('CycleGANLoss', ('loss_x2y', 'loss_y2x'))):
-  """CycleGANLoss contains the losses for `CycleGANModel`.
+        collections.namedtuple('CycleGANLoss', ('loss_x2y', 'loss_y2x'))):
+    """CycleGANLoss contains the losses for `CycleGANModel`.
 
   See https://arxiv.org/abs/1703.10593 for more details.
 
@@ -211,13 +211,10 @@ class CycleGANLoss(
 
 
 class GANTrainOps(
-    collections.namedtuple('GANTrainOps', (
-        'generator_train_op',
-        'discriminator_train_op',
-        'global_step_inc_op',
-        'train_hooks'
-    ))):
-  """GANTrainOps contains the training ops.
+        collections.namedtuple('GANTrainOps',
+                               ('generator_train_op', 'discriminator_train_op',
+                                'global_step_inc_op', 'train_hooks'))):
+    """GANTrainOps contains the training ops.
 
   Args:
     generator_train_op: Op that performs a generator update step.
@@ -228,19 +225,21 @@ class GANTrainOps(
       sync hooks.
   """
 
-  def __new__(cls, generator_train_op, discriminator_train_op,
-              global_step_inc_op, train_hooks=()):
-    return super(GANTrainOps, cls).__new__(cls, generator_train_op,
-                                           discriminator_train_op,
-                                           global_step_inc_op, train_hooks)
+    def __new__(cls,
+                generator_train_op,
+                discriminator_train_op,
+                global_step_inc_op,
+                train_hooks=()):
+        return super(GANTrainOps, cls).__new__(cls, generator_train_op,
+                                               discriminator_train_op,
+                                               global_step_inc_op, train_hooks)
 
 
 class GANTrainSteps(
-    collections.namedtuple('GANTrainSteps', (
-        'generator_train_steps',
-        'discriminator_train_steps'
-    ))):
-  """Contains configuration for the GAN Training.
+        collections.namedtuple(
+            'GANTrainSteps',
+            ('generator_train_steps', 'discriminator_train_steps'))):
+    """Contains configuration for the GAN Training.
 
   Args:
     generator_train_steps: Number of generator steps to take in each GAN step.

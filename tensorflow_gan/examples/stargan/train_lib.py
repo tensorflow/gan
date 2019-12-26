@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a StarGAN model."""
 
 from __future__ import absolute_import
@@ -35,7 +34,7 @@ HParams = collections.namedtuple('HParams', [
 
 
 def _define_model(images, labels):
-  """Create the StarGAN Model.
+    """Create the StarGAN Model.
 
   Args:
     images: `Tensor` or list of `Tensor` of shape (N, H, W, C).
@@ -45,15 +44,14 @@ def _define_model(images, labels):
     `StarGANModel` namedtuple.
   """
 
-  return tfgan.stargan_model(
-      generator_fn=network.generator,
-      discriminator_fn=network.discriminator,
-      input_data=images,
-      input_data_domain_label=labels)
+    return tfgan.stargan_model(generator_fn=network.generator,
+                               discriminator_fn=network.discriminator,
+                               input_data=images,
+                               input_data_domain_label=labels)
 
 
 def _get_lr(base_lr, max_number_of_steps):
-  """Returns a learning rate `Tensor`.
+    """Returns a learning rate `Tensor`.
 
   Args:
     base_lr: A scalar float `Tensor` or a Python number.  The base learning
@@ -65,24 +63,23 @@ def _get_lr(base_lr, max_number_of_steps):
     global training step is less than Fmax_number_of_steps / 2, afterwards
     it linearly decays to zero.
   """
-  global_step = tf.compat.v1.train.get_or_create_global_step()
-  lr_constant_steps = max_number_of_steps // 2
+    global_step = tf.compat.v1.train.get_or_create_global_step()
+    lr_constant_steps = max_number_of_steps // 2
 
-  def _lr_decay():
-    return tf.compat.v1.train.polynomial_decay(
-        learning_rate=base_lr,
-        global_step=(global_step - lr_constant_steps),
-        decay_steps=(max_number_of_steps - lr_constant_steps),
-        end_learning_rate=0.0)
+    def _lr_decay():
+        return tf.compat.v1.train.polynomial_decay(
+            learning_rate=base_lr,
+            global_step=(global_step - lr_constant_steps),
+            decay_steps=(max_number_of_steps - lr_constant_steps),
+            end_learning_rate=0.0)
 
-  return tf.cond(
-      pred=global_step < lr_constant_steps,
-      true_fn=lambda: base_lr,
-      false_fn=_lr_decay)
+    return tf.cond(pred=global_step < lr_constant_steps,
+                   true_fn=lambda: base_lr,
+                   false_fn=_lr_decay)
 
 
 def _get_optimizer(gen_lr, dis_lr, beta1, beta2):
-  """Returns generator optimizer and discriminator optimizer.
+    """Returns generator optimizer and discriminator optimizer.
 
   Args:
     gen_lr: A scalar float `Tensor` or a Python number.  The Generator learning
@@ -97,16 +94,20 @@ def _get_optimizer(gen_lr, dis_lr, beta1, beta2):
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
   """
-  gen_opt = tf.compat.v1.train.AdamOptimizer(
-      gen_lr, beta1=beta1, beta2=beta2, use_locking=True)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(
-      dis_lr, beta1=beta1, beta2=beta2, use_locking=True)
-  return gen_opt, dis_opt
+    gen_opt = tf.compat.v1.train.AdamOptimizer(gen_lr,
+                                               beta1=beta1,
+                                               beta2=beta2,
+                                               use_locking=True)
+    dis_opt = tf.compat.v1.train.AdamOptimizer(dis_lr,
+                                               beta1=beta1,
+                                               beta2=beta2,
+                                               use_locking=True)
+    return gen_opt, dis_opt
 
 
 def _define_train_ops(model, loss, gen_lr, dis_lr, beta1, beta2,
                       max_number_of_steps):
-  """Defines train ops that trains `stargan_model` with `stargan_loss`.
+    """Defines train ops that trains `stargan_model` with `stargan_loss`.
 
   Args:
     model: A `StarGANModel` namedtuple.
@@ -125,26 +126,26 @@ def _define_train_ops(model, loss, gen_lr, dis_lr, beta1, beta2,
     A `GANTrainOps` namedtuple.
   """
 
-  gen_lr = _get_lr(gen_lr, max_number_of_steps)
-  dis_lr = _get_lr(dis_lr, max_number_of_steps)
-  gen_opt, dis_opt = _get_optimizer(gen_lr, dis_lr, beta1, beta2)
-  train_ops = tfgan.gan_train_ops(
-      model,
-      loss,
-      generator_optimizer=gen_opt,
-      discriminator_optimizer=dis_opt,
-      summarize_gradients=True,
-      colocate_gradients_with_ops=True,
-      aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
+    gen_lr = _get_lr(gen_lr, max_number_of_steps)
+    dis_lr = _get_lr(dis_lr, max_number_of_steps)
+    gen_opt, dis_opt = _get_optimizer(gen_lr, dis_lr, beta1, beta2)
+    train_ops = tfgan.gan_train_ops(
+        model,
+        loss,
+        generator_optimizer=gen_opt,
+        discriminator_optimizer=dis_opt,
+        summarize_gradients=True,
+        colocate_gradients_with_ops=True,
+        aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
-  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
+    tf.compat.v1.summary.scalar('generator_lr', gen_lr)
+    tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
 
-  return train_ops
+    return train_ops
 
 
 def _define_train_step(gen_disc_step_ratio):
-  """Get the training step for generator and discriminator for each GAN step.
+    """Get the training step for generator and discriminator for each GAN step.
 
   Args:
     gen_disc_step_ratio: A python number. The ratio of generator to
@@ -154,69 +155,76 @@ def _define_train_step(gen_disc_step_ratio):
     GANTrainSteps namedtuple representing the training step configuration.
   """
 
-  if gen_disc_step_ratio <= 1:
-    discriminator_step = int(1 / gen_disc_step_ratio)
-    return tfgan.GANTrainSteps(1, discriminator_step)
-  else:
-    generator_step = int(gen_disc_step_ratio)
-    return tfgan.GANTrainSteps(generator_step, 1)
+    if gen_disc_step_ratio <= 1:
+        discriminator_step = int(1 / gen_disc_step_ratio)
+        return tfgan.GANTrainSteps(1, discriminator_step)
+    else:
+        generator_step = int(gen_disc_step_ratio)
+        return tfgan.GANTrainSteps(generator_step, 1)
 
 
 def train(hparams):
-  """Trains a StarGAN.
+    """Trains a StarGAN.
 
   Args:
     hparams: An HParams instance containing the hyperparameters for training.
   """
 
-  # Create the log_dir if not exist.
-  if not tf.io.gfile.exists(hparams.train_log_dir):
-    tf.io.gfile.makedirs(hparams.train_log_dir)
+    # Create the log_dir if not exist.
+    if not tf.io.gfile.exists(hparams.train_log_dir):
+        tf.io.gfile.makedirs(hparams.train_log_dir)
 
-  # Shard the model to different parameter servers.
-  with tf.device(tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
+    # Shard the model to different parameter servers.
+    with tf.device(tf.compat.v1.train.replica_device_setter(
+            hparams.ps_replicas)):
 
-    # Create the input dataset.
-    with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
-      images, labels = data_provider.provide_data('train', hparams.batch_size,
-                                                  hparams.patch_size)
+        # Create the input dataset.
+        with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
+            images, labels = data_provider.provide_data('train',
+                                                        hparams.batch_size,
+                                                        hparams.patch_size)
 
-    # Define the model.
-    with tf.compat.v1.name_scope('model'):
-      model = _define_model(images, labels)
+        # Define the model.
+        with tf.compat.v1.name_scope('model'):
+            model = _define_model(images, labels)
 
-    # Add image summary.
-    tfgan.eval.add_stargan_image_summaries(
-        model, num_images=3 * hparams.batch_size, display_diffs=True)
+        # Add image summary.
+        tfgan.eval.add_stargan_image_summaries(model,
+                                               num_images=3 *
+                                               hparams.batch_size,
+                                               display_diffs=True)
 
-    # Define the model loss.
-    loss = tfgan.stargan_loss(model)
+        # Define the model loss.
+        loss = tfgan.stargan_loss(model)
 
-    # Define the train ops.
-    with tf.compat.v1.name_scope('train_ops'):
-      train_ops = _define_train_ops(model, loss, hparams.generator_lr,
-                                    hparams.discriminator_lr,
-                                    hparams.adam_beta1, hparams.adam_beta2,
-                                    hparams.max_number_of_steps)
+        # Define the train ops.
+        with tf.compat.v1.name_scope('train_ops'):
+            train_ops = _define_train_ops(model, loss, hparams.generator_lr,
+                                          hparams.discriminator_lr,
+                                          hparams.adam_beta1,
+                                          hparams.adam_beta2,
+                                          hparams.max_number_of_steps)
 
-    # Define the train steps.
-    train_steps = _define_train_step(hparams.gen_disc_step_ratio)
+        # Define the train steps.
+        train_steps = _define_train_step(hparams.gen_disc_step_ratio)
 
-    # Define a status message.
-    status_message = tf.strings.join([
-        'Starting train step: ',
-        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
-    ],
-                                     name='status_message')
-
-    # Train the model.
-    tfgan.gan_train(
-        train_ops,
-        hparams.train_log_dir,
-        get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
-        hooks=[
-            tf.estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
-            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
+        # Define a status message.
+        status_message = tf.strings.join([
+            'Starting train step: ',
+            tf.as_string(tf.compat.v1.train.get_or_create_global_step())
         ],
-        master=hparams.tf_master,
-        is_chief=hparams.task == 0)
+                                         name='status_message')
+
+        # Train the model.
+        tfgan.gan_train(
+            train_ops,
+            hparams.train_log_dir,
+            get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
+            hooks=[
+                tf.estimator.StopAtStepHook(
+                    num_steps=hparams.max_number_of_steps),
+                tf.estimator.LoggingTensorHook([status_message],
+                                               every_n_iter=10)
+            ],
+            master=hparams.tf_master,
+            is_chief=hparams.task == 0)

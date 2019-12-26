@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a generator on MNIST data."""
 
 from __future__ import absolute_import
@@ -24,7 +23,6 @@ from absl import flags
 from absl import logging
 
 from tensorflow_gan.examples.mnist import train_lib
-
 
 flags.DEFINE_integer('batch_size', 32, 'The number of images in each batch.')
 
@@ -46,12 +44,12 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.train_log_dir,
-                              FLAGS.max_number_of_steps, FLAGS.gan_type,
-                              FLAGS.grid_size, FLAGS.noise_dims)
-  train_lib.train(hparams)
+    hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.train_log_dir,
+                                FLAGS.max_number_of_steps, FLAGS.gan_type,
+                                FLAGS.grid_size, FLAGS.noise_dims)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  logging.set_verbosity(logging.INFO)
-  app.run(main)
+    logging.set_verbosity(logging.INFO)
+    app.run(main)

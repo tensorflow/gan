@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Losses that are useful for training GANs.
 
 The losses belong to two main groups, but there are others that do not:
@@ -40,7 +39,6 @@ from __future__ import print_function
 import tensorflow as tf
 from tensorflow_gan.python import contrib_utils as contrib
 
-
 __all__ = [
     'acgan_discriminator_loss',
     'acgan_generator_loss',
@@ -62,7 +60,7 @@ __all__ = [
 
 
 def _to_float(tensor):
-  return tf.cast(tensor, tf.float32)
+    return tf.cast(tensor, tf.float32)
 
 
 # Wasserstein losses from `Wasserstein GAN` (https://arxiv.org/abs/1701.07875).
@@ -73,7 +71,7 @@ def wasserstein_generator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Wasserstein generator loss for GANs.
+    """Wasserstein generator loss for GANs.
 
   See `Wasserstein GAN` (https://arxiv.org/abs/1701.07875) for more details.
 
@@ -92,18 +90,18 @@ def wasserstein_generator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(scope, 'generator_wasserstein_loss',
-                               (discriminator_gen_outputs, weights)) as scope:
-    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+    with tf.compat.v1.name_scope(scope, 'generator_wasserstein_loss',
+                                 (discriminator_gen_outputs, weights)) as scope:
+        discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
 
-    loss = - discriminator_gen_outputs
-    loss = tf.compat.v1.losses.compute_weighted_loss(loss, weights, scope,
-                                                     loss_collection, reduction)
+        loss = -discriminator_gen_outputs
+        loss = tf.compat.v1.losses.compute_weighted_loss(
+            loss, weights, scope, loss_collection, reduction)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('generator_wass_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('generator_wass_loss', loss)
 
-  return loss
+    return loss
 
 
 def wasserstein_discriminator_loss(
@@ -115,7 +113,7 @@ def wasserstein_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Wasserstein discriminator loss for GANs.
+    """Wasserstein discriminator loss for GANs.
 
   See `Wasserstein GAN` (https://arxiv.org/abs/1701.07875) for more details.
 
@@ -137,37 +135,38 @@ def wasserstein_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'discriminator_wasserstein_loss',
-      (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
-       generated_weights)) as scope:
-    discriminator_real_outputs = _to_float(discriminator_real_outputs)
-    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
-    discriminator_real_outputs.shape.assert_is_compatible_with(
-        discriminator_gen_outputs.shape)
+    with tf.compat.v1.name_scope(
+            scope, 'discriminator_wasserstein_loss',
+        (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+         generated_weights)) as scope:
+        discriminator_real_outputs = _to_float(discriminator_real_outputs)
+        discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+        discriminator_real_outputs.shape.assert_is_compatible_with(
+            discriminator_gen_outputs.shape)
 
-    loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
-        discriminator_gen_outputs,
-        generated_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
-        discriminator_real_outputs,
-        real_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss = loss_on_generated - loss_on_real
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+        loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
+            discriminator_gen_outputs,
+            generated_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
+            discriminator_real_outputs,
+            real_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss = loss_on_generated - loss_on_real
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('discriminator_gen_wass_loss',
-                                  loss_on_generated)
-      tf.compat.v1.summary.scalar('discriminator_real_wass_loss', loss_on_real)
-      tf.compat.v1.summary.scalar('discriminator_wass_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('discriminator_gen_wass_loss',
+                                        loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_wass_loss',
+                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_wass_loss', loss)
 
-  return loss
+    return loss
 
 
 wasserstein_hinge_generator_loss = wasserstein_generator_loss
@@ -185,7 +184,7 @@ def wasserstein_hinge_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Hinged wasserstein discriminator loss for GANs.
+    """Hinged wasserstein discriminator loss for GANs.
 
   See `Spectral Normalization for Generative Adversarial Networks`
   (https://arxiv.org/abs/1802.05957).
@@ -210,43 +209,43 @@ def wasserstein_hinge_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'discriminator_wasserstein_hinge_loss',
-      (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
-       generated_weights)) as scope:
-    discriminator_real_outputs = _to_float(discriminator_real_outputs)
-    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
-    discriminator_real_outputs.shape.assert_is_compatible_with(
-        discriminator_gen_outputs.shape)
+    with tf.compat.v1.name_scope(
+            scope, 'discriminator_wasserstein_hinge_loss',
+        (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+         generated_weights)) as scope:
+        discriminator_real_outputs = _to_float(discriminator_real_outputs)
+        discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+        discriminator_real_outputs.shape.assert_is_compatible_with(
+            discriminator_gen_outputs.shape)
 
-    # Compute the hinge.
-    hinged_real = tf.nn.relu(real_hinge - discriminator_real_outputs)
-    hinged_gen = tf.nn.relu(generated_hinge + discriminator_gen_outputs)
+        # Compute the hinge.
+        hinged_real = tf.nn.relu(real_hinge - discriminator_real_outputs)
+        hinged_gen = tf.nn.relu(generated_hinge + discriminator_gen_outputs)
 
-    # Average.
-    loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
-        hinged_real,
-        real_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
-        hinged_gen,
-        generated_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss = loss_on_generated + loss_on_real
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+        # Average.
+        loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
+            hinged_real,
+            real_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
+            hinged_gen,
+            generated_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss = loss_on_generated + loss_on_real
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('discriminator_gen_wass_hinge_loss',
-                                  loss_on_generated)
-      tf.compat.v1.summary.scalar('discriminator_real_wass_hinge_loss',
-                                  loss_on_real)
-      tf.compat.v1.summary.scalar('discriminator_wass_hinge_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('discriminator_gen_wass_hinge_loss',
+                                        loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_wass_hinge_loss',
+                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_wass_hinge_loss', loss)
 
-  return loss
+    return loss
 
 
 # ACGAN losses from `Conditional Image Synthesis With Auxiliary Classifier GANs`
@@ -262,7 +261,7 @@ def acgan_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """ACGAN loss for the discriminator.
+    """ACGAN loss for the discriminator.
 
   The ACGAN loss adds a classification loss to the conditional discriminator.
   Therefore, the discriminator must output a tuple consisting of
@@ -299,35 +298,36 @@ def acgan_discriminator_loss(
   Raises:
     TypeError: If the discriminator does not output a tuple.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'acgan_discriminator_loss',
-      (discriminator_real_classification_logits,
-       discriminator_gen_classification_logits, one_hot_labels)) as scope:
-    loss_on_generated = tf.compat.v1.losses.softmax_cross_entropy(
-        one_hot_labels,
-        discriminator_gen_classification_logits,
-        weights=generated_weights,
-        scope=scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss_on_real = tf.compat.v1.losses.softmax_cross_entropy(
-        one_hot_labels,
-        discriminator_real_classification_logits,
-        weights=real_weights,
-        label_smoothing=label_smoothing,
-        scope=scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss = loss_on_generated + loss_on_real
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+    with tf.compat.v1.name_scope(
+            scope, 'acgan_discriminator_loss',
+        (discriminator_real_classification_logits,
+         discriminator_gen_classification_logits, one_hot_labels)) as scope:
+        loss_on_generated = tf.compat.v1.losses.softmax_cross_entropy(
+            one_hot_labels,
+            discriminator_gen_classification_logits,
+            weights=generated_weights,
+            scope=scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss_on_real = tf.compat.v1.losses.softmax_cross_entropy(
+            one_hot_labels,
+            discriminator_real_classification_logits,
+            weights=real_weights,
+            label_smoothing=label_smoothing,
+            scope=scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss = loss_on_generated + loss_on_real
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('discriminator_gen_ac_loss',
-                                  loss_on_generated)
-      tf.compat.v1.summary.scalar('discriminator_real_ac_loss', loss_on_real)
-      tf.compat.v1.summary.scalar('discriminator_ac_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('discriminator_gen_ac_loss',
+                                        loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_ac_loss',
+                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_ac_loss', loss)
 
-  return loss
+    return loss
 
 
 def acgan_generator_loss(
@@ -338,7 +338,7 @@ def acgan_generator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """ACGAN loss for the generator.
+    """ACGAN loss for the generator.
 
   The ACGAN loss adds a classification loss to the conditional discriminator.
   Therefore, the discriminator must output a tuple consisting of
@@ -369,21 +369,21 @@ def acgan_generator_loss(
     ValueError: if arg module not either `generator` or `discriminator`
     TypeError: if the discriminator does not output a tuple.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'acgan_generator_loss',
-      (discriminator_gen_classification_logits, one_hot_labels)) as scope:
-    loss = tf.compat.v1.losses.softmax_cross_entropy(
-        one_hot_labels,
-        discriminator_gen_classification_logits,
-        weights=weights,
-        scope=scope,
-        loss_collection=loss_collection,
-        reduction=reduction)
+    with tf.compat.v1.name_scope(
+            scope, 'acgan_generator_loss',
+        (discriminator_gen_classification_logits, one_hot_labels)) as scope:
+        loss = tf.compat.v1.losses.softmax_cross_entropy(
+            one_hot_labels,
+            discriminator_gen_classification_logits,
+            weights=weights,
+            scope=scope,
+            loss_collection=loss_collection,
+            reduction=reduction)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('generator_ac_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('generator_ac_loss', loss)
 
-  return loss
+    return loss
 
 
 # Wasserstein Gradient Penalty losses from `Improved Training of Wasserstein
@@ -404,7 +404,7 @@ def wasserstein_gradient_penalty(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """The gradient penalty for the Wasserstein discriminator loss.
+    """The gradient penalty for the Wasserstein discriminator loss.
 
   See `Improved Training of Wasserstein GANs`
   (https://arxiv.org/abs/1704.00028) for more details.
@@ -438,62 +438,63 @@ def wasserstein_gradient_penalty(
     ValueError: If the rank of data Tensors is unknown.
     RuntimeError: If TensorFlow is executing eagerly.
   """
-  if tf.executing_eagerly():
-    raise RuntimeError('Can\'t use `tf.gradient` when executing eagerly.')
-  with tf.compat.v1.name_scope(scope, 'wasserstein_gradient_penalty',
-                               (real_data, generated_data)) as scope:
-    real_data = tf.convert_to_tensor(value=real_data)
-    generated_data = tf.convert_to_tensor(value=generated_data)
-    if real_data.shape.ndims is None:
-      raise ValueError('`real_data` can\'t have unknown rank.')
-    if generated_data.shape.ndims is None:
-      raise ValueError('`generated_data` can\'t have unknown rank.')
+    if tf.executing_eagerly():
+        raise RuntimeError('Can\'t use `tf.gradient` when executing eagerly.')
+    with tf.compat.v1.name_scope(scope, 'wasserstein_gradient_penalty',
+                                 (real_data, generated_data)) as scope:
+        real_data = tf.convert_to_tensor(value=real_data)
+        generated_data = tf.convert_to_tensor(value=generated_data)
+        if real_data.shape.ndims is None:
+            raise ValueError('`real_data` can\'t have unknown rank.')
+        if generated_data.shape.ndims is None:
+            raise ValueError('`generated_data` can\'t have unknown rank.')
 
-    differences = generated_data - real_data
-    batch_size = (tf.compat.dimension_value(differences.shape.dims[0]) or
-                  tf.shape(input=differences)[0])
-    alpha_shape = [batch_size] + [1] * (differences.shape.ndims - 1)
-    alpha = tf.random.uniform(shape=alpha_shape)
-    interpolates = real_data + (alpha * differences)
+        differences = generated_data - real_data
+        batch_size = (tf.compat.dimension_value(differences.shape.dims[0]) or
+                      tf.shape(input=differences)[0])
+        alpha_shape = [batch_size] + [1] * (differences.shape.ndims - 1)
+        alpha = tf.random.uniform(shape=alpha_shape)
+        interpolates = real_data + (alpha * differences)
 
-    with tf.compat.v1.name_scope(
-        ''):  # Clear scope so update ops are added properly.
-      # Reuse variables if variables already exists.
-      with tf.compat.v1.variable_scope(
-          discriminator_scope, 'gpenalty_dscope',
-          reuse=tf.compat.v1.AUTO_REUSE):
-        disc_interpolates = discriminator_fn(interpolates, generator_inputs)
+        with tf.compat.v1.name_scope(
+                ''):  # Clear scope so update ops are added properly.
+            # Reuse variables if variables already exists.
+            with tf.compat.v1.variable_scope(discriminator_scope,
+                                             'gpenalty_dscope',
+                                             reuse=tf.compat.v1.AUTO_REUSE):
+                disc_interpolates = discriminator_fn(interpolates,
+                                                     generator_inputs)
 
-    if isinstance(disc_interpolates, tuple):
-      # ACGAN case: disc outputs more than one tensor
-      disc_interpolates = disc_interpolates[0]
+        if isinstance(disc_interpolates, tuple):
+            # ACGAN case: disc outputs more than one tensor
+            disc_interpolates = disc_interpolates[0]
 
-    gradients = tf.gradients(ys=disc_interpolates, xs=interpolates)[0]
-    gradient_squares = tf.reduce_sum(
-        input_tensor=tf.square(gradients),
-        axis=list(range(1, gradients.shape.ndims)))
-    # Propagate shape information, if possible.
-    if isinstance(batch_size, int):
-      gradient_squares.set_shape([
-          batch_size] + gradient_squares.shape.as_list()[1:])
-    # For numerical stability, add epsilon to the sum before taking the square
-    # root. Note tf.norm does not add epsilon.
-    slopes = tf.sqrt(gradient_squares + epsilon)
-    penalties = slopes / target - 1.0
-    if one_sided:
-      penalties = tf.maximum(0., penalties)
-    penalties_squared = tf.square(penalties)
-    penalty = tf.compat.v1.losses.compute_weighted_loss(
-        penalties_squared,
-        weights,
-        scope=scope,
-        loss_collection=loss_collection,
-        reduction=reduction)
+        gradients = tf.gradients(ys=disc_interpolates, xs=interpolates)[0]
+        gradient_squares = tf.reduce_sum(input_tensor=tf.square(gradients),
+                                         axis=list(
+                                             range(1, gradients.shape.ndims)))
+        # Propagate shape information, if possible.
+        if isinstance(batch_size, int):
+            gradient_squares.set_shape([batch_size] +
+                                       gradient_squares.shape.as_list()[1:])
+        # For numerical stability, add epsilon to the sum before taking the square
+        # root. Note tf.norm does not add epsilon.
+        slopes = tf.sqrt(gradient_squares + epsilon)
+        penalties = slopes / target - 1.0
+        if one_sided:
+            penalties = tf.maximum(0., penalties)
+        penalties_squared = tf.square(penalties)
+        penalty = tf.compat.v1.losses.compute_weighted_loss(
+            penalties_squared,
+            weights,
+            scope=scope,
+            loss_collection=loss_collection,
+            reduction=reduction)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('gradient_penalty_loss', penalty)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('gradient_penalty_loss', penalty)
 
-    return penalty
+        return penalty
 
 
 # Original losses from `Generative Adversarial Nets`
@@ -510,7 +511,7 @@ def minimax_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Original minimax discriminator loss for GANs, with label smoothing.
+    """Original minimax discriminator loss for GANs, with label smoothing.
 
   Note that the authors don't recommend using this loss. A more practically
   useful loss is `modified_discriminator_loss`.
@@ -541,40 +542,40 @@ def minimax_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'discriminator_minimax_loss',
-      (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
-       generated_weights, label_smoothing)) as scope:
+    with tf.compat.v1.name_scope(
+            scope, 'discriminator_minimax_loss',
+        (discriminator_real_outputs, discriminator_gen_outputs, real_weights,
+         generated_weights, label_smoothing)) as scope:
 
-    # -log((1 - label_smoothing) - sigmoid(D(x)))
-    loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(
-        tf.ones_like(discriminator_real_outputs),
-        discriminator_real_outputs,
-        real_weights,
-        label_smoothing,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    # -log(- sigmoid(D(G(x))))
-    loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
-        tf.zeros_like(discriminator_gen_outputs),
-        discriminator_gen_outputs,
-        generated_weights,
-        scope=scope,
-        loss_collection=None,
-        reduction=reduction)
+        # -log((1 - label_smoothing) - sigmoid(D(x)))
+        loss_on_real = tf.compat.v1.losses.sigmoid_cross_entropy(
+            tf.ones_like(discriminator_real_outputs),
+            discriminator_real_outputs,
+            real_weights,
+            label_smoothing,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        # -log(- sigmoid(D(G(x))))
+        loss_on_generated = tf.compat.v1.losses.sigmoid_cross_entropy(
+            tf.zeros_like(discriminator_gen_outputs),
+            discriminator_gen_outputs,
+            generated_weights,
+            scope=scope,
+            loss_collection=None,
+            reduction=reduction)
 
-    loss = loss_on_real + loss_on_generated
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+        loss = loss_on_real + loss_on_generated
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
-                                  loss_on_generated)
-      tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
-                                  loss_on_real)
-      tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('discriminator_gen_minimax_loss',
+                                        loss_on_generated)
+            tf.compat.v1.summary.scalar('discriminator_real_minimax_loss',
+                                        loss_on_real)
+            tf.compat.v1.summary.scalar('discriminator_minimax_loss', loss)
 
-  return loss
+    return loss
 
 
 def minimax_generator_loss(
@@ -585,7 +586,7 @@ def minimax_generator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Original minimax generator loss for GANs.
+    """Original minimax generator loss for GANs.
 
   Note that the authors don't recommend using this loss. A more practically
   useful loss is `modified_generator_loss`.
@@ -613,16 +614,22 @@ def minimax_generator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(scope, 'generator_minimax_loss') as scope:
-    loss = - minimax_discriminator_loss(
-        tf.ones_like(discriminator_gen_outputs),
-        discriminator_gen_outputs, label_smoothing, weights, weights, scope,
-        loss_collection, reduction, add_summaries=False)
+    with tf.compat.v1.name_scope(scope, 'generator_minimax_loss') as scope:
+        loss = -minimax_discriminator_loss(
+            tf.ones_like(discriminator_gen_outputs),
+            discriminator_gen_outputs,
+            label_smoothing,
+            weights,
+            weights,
+            scope,
+            loss_collection,
+            reduction,
+            add_summaries=False)
 
-  if add_summaries:
-    tf.compat.v1.summary.scalar('generator_minimax_loss', loss)
+    if add_summaries:
+        tf.compat.v1.summary.scalar('generator_minimax_loss', loss)
 
-  return loss
+    return loss
 
 
 def modified_discriminator_loss(
@@ -635,7 +642,7 @@ def modified_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Same as minimax discriminator loss.
+    """Same as minimax discriminator loss.
 
   See `Generative Adversarial Nets` (https://arxiv.org/abs/1406.2661) for more
   details.
@@ -661,16 +668,12 @@ def modified_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  return minimax_discriminator_loss(
-      discriminator_real_outputs,
-      discriminator_gen_outputs,
-      label_smoothing,
-      real_weights,
-      generated_weights,
-      scope or 'discriminator_modified_loss',
-      loss_collection,
-      reduction,
-      add_summaries)
+    return minimax_discriminator_loss(discriminator_real_outputs,
+                                      discriminator_gen_outputs,
+                                      label_smoothing, real_weights,
+                                      generated_weights, scope or
+                                      'discriminator_modified_loss',
+                                      loss_collection, reduction, add_summaries)
 
 
 def modified_generator_loss(
@@ -681,7 +684,7 @@ def modified_generator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Modified generator loss for GANs.
+    """Modified generator loss for GANs.
 
   L = -log(sigmoid(D(G(z))))
 
@@ -707,16 +710,16 @@ def modified_generator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(scope, 'generator_modified_loss',
-                               [discriminator_gen_outputs]) as scope:
-    loss = tf.compat.v1.losses.sigmoid_cross_entropy(
-        tf.ones_like(discriminator_gen_outputs), discriminator_gen_outputs,
-        weights, label_smoothing, scope, loss_collection, reduction)
+    with tf.compat.v1.name_scope(scope, 'generator_modified_loss',
+                                 [discriminator_gen_outputs]) as scope:
+        loss = tf.compat.v1.losses.sigmoid_cross_entropy(
+            tf.ones_like(discriminator_gen_outputs), discriminator_gen_outputs,
+            weights, label_smoothing, scope, loss_collection, reduction)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('generator_modified_loss', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('generator_modified_loss', loss)
 
-  return loss
+    return loss
 
 
 # Least Squares loss from `Least Squares Generative Adversarial Networks`
@@ -731,7 +734,7 @@ def least_squares_generator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Least squares generator loss.
+    """Least squares generator loss.
 
   This loss comes from `Least Squares Generative Adversarial Networks`
   (https://arxiv.org/abs/1611.04076).
@@ -757,19 +760,19 @@ def least_squares_generator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'lsq_generator_loss',
-      (discriminator_gen_outputs, real_label)) as scope:
-    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
-    loss = tf.math.squared_difference(discriminator_gen_outputs,
-                                      real_label) / 2.0
-    loss = tf.compat.v1.losses.compute_weighted_loss(loss, weights, scope,
-                                                     loss_collection, reduction)
+    with tf.compat.v1.name_scope(
+            scope, 'lsq_generator_loss',
+        (discriminator_gen_outputs, real_label)) as scope:
+        discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+        loss = tf.math.squared_difference(discriminator_gen_outputs,
+                                          real_label) / 2.0
+        loss = tf.compat.v1.losses.compute_weighted_loss(
+            loss, weights, scope, loss_collection, reduction)
 
-  if add_summaries:
-    tf.compat.v1.summary.scalar('generator_lsq_loss', loss)
+    if add_summaries:
+        tf.compat.v1.summary.scalar('generator_lsq_loss', loss)
 
-  return loss
+    return loss
 
 
 def least_squares_discriminator_loss(
@@ -783,7 +786,7 @@ def least_squares_discriminator_loss(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Least squares discriminator loss.
+    """Least squares discriminator loss.
 
   This loss comes from `Least Squares Generative Adversarial Networks`
   (https://arxiv.org/abs/1611.04076).
@@ -813,41 +816,42 @@ def least_squares_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-  with tf.compat.v1.name_scope(
-      scope, 'lsq_discriminator_loss',
-      (discriminator_gen_outputs, real_label)) as scope:
-    discriminator_real_outputs = _to_float(discriminator_real_outputs)
-    discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
-    discriminator_real_outputs.shape.assert_is_compatible_with(
-        discriminator_gen_outputs.shape)
+    with tf.compat.v1.name_scope(
+            scope, 'lsq_discriminator_loss',
+        (discriminator_gen_outputs, real_label)) as scope:
+        discriminator_real_outputs = _to_float(discriminator_real_outputs)
+        discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
+        discriminator_real_outputs.shape.assert_is_compatible_with(
+            discriminator_gen_outputs.shape)
 
-    real_losses = tf.math.squared_difference(discriminator_real_outputs,
-                                             real_label) / 2.0
-    fake_losses = tf.math.squared_difference(discriminator_gen_outputs,
-                                             fake_label) / 2.0
+        real_losses = tf.math.squared_difference(discriminator_real_outputs,
+                                                 real_label) / 2.0
+        fake_losses = tf.math.squared_difference(discriminator_gen_outputs,
+                                                 fake_label) / 2.0
 
-    loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
-        real_losses,
-        real_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
-    loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
-        fake_losses,
-        generated_weights,
-        scope,
-        loss_collection=None,
-        reduction=reduction)
+        loss_on_real = tf.compat.v1.losses.compute_weighted_loss(
+            real_losses,
+            real_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
+        loss_on_generated = tf.compat.v1.losses.compute_weighted_loss(
+            fake_losses,
+            generated_weights,
+            scope,
+            loss_collection=None,
+            reduction=reduction)
 
-    loss = loss_on_real + loss_on_generated
-    tf.compat.v1.losses.add_loss(loss, loss_collection)
+        loss = loss_on_real + loss_on_generated
+        tf.compat.v1.losses.add_loss(loss, loss_collection)
 
-  if add_summaries:
-    tf.compat.v1.summary.scalar('discriminator_gen_lsq_loss', loss_on_generated)
-    tf.compat.v1.summary.scalar('discriminator_real_lsq_loss', loss_on_real)
-    tf.compat.v1.summary.scalar('discriminator_lsq_loss', loss)
+    if add_summaries:
+        tf.compat.v1.summary.scalar('discriminator_gen_lsq_loss',
+                                    loss_on_generated)
+        tf.compat.v1.summary.scalar('discriminator_real_lsq_loss', loss_on_real)
+        tf.compat.v1.summary.scalar('discriminator_lsq_loss', loss)
 
-  return loss
+    return loss
 
 
 # InfoGAN loss from `InfoGAN: Interpretable Representation Learning by
@@ -856,30 +860,31 @@ def least_squares_discriminator_loss(
 
 
 def _validate_distributions(distributions):
-  """Check that input is a distribution."""
-  if not isinstance(distributions, (list, tuple)):
-    raise ValueError('`distributions` must be a list or tuple. Instead, '
-                     'found %s.' % type(distributions))
-  for x in distributions:
-    # We used to check with `isinstance(x, tf.distributions.Distribution)`.
-    # However, distributions have migrated to `tfp.distributions.Distribution`,
-    # which is a new code repo, so we can't check this way anymore until
-    # TF-GAN is migrated to a new repo as well.
-    # This new check is not sufficient, but is a useful heuristic for now.
-    if not callable(getattr(x, 'log_prob', None)):
-      raise ValueError('`distributions` must be a list of `Distributions`. '
-                       'Instead, found %s.' % type(x))
+    """Check that input is a distribution."""
+    if not isinstance(distributions, (list, tuple)):
+        raise ValueError('`distributions` must be a list or tuple. Instead, '
+                         'found %s.' % type(distributions))
+    for x in distributions:
+        # We used to check with `isinstance(x, tf.distributions.Distribution)`.
+        # However, distributions have migrated to `tfp.distributions.Distribution`,
+        # which is a new code repo, so we can't check this way anymore until
+        # TF-GAN is migrated to a new repo as well.
+        # This new check is not sufficient, but is a useful heuristic for now.
+        if not callable(getattr(x, 'log_prob', None)):
+            raise ValueError(
+                '`distributions` must be a list of `Distributions`. '
+                'Instead, found %s.' % type(x))
 
 
-def _validate_information_penalty_inputs(
-    structured_generator_inputs, predicted_distributions):
-  """Validate input to `mutual_information_penalty`."""
-  _validate_distributions(predicted_distributions)
-  if len(structured_generator_inputs) != len(predicted_distributions):
-    raise ValueError('`structured_generator_inputs` length %i must be the same '
-                     'as `predicted_distributions` length %i.' % (
-                         len(structured_generator_inputs),
-                         len(predicted_distributions)))
+def _validate_information_penalty_inputs(structured_generator_inputs,
+                                         predicted_distributions):
+    """Validate input to `mutual_information_penalty`."""
+    _validate_distributions(predicted_distributions)
+    if len(structured_generator_inputs) != len(predicted_distributions):
+        raise ValueError(
+            '`structured_generator_inputs` length %i must be the same '
+            'as `predicted_distributions` length %i.' %
+            (len(structured_generator_inputs), len(predicted_distributions)))
 
 
 def mutual_information_penalty(
@@ -890,7 +895,7 @@ def mutual_information_penalty(
     loss_collection=tf.compat.v1.GraphKeys.LOSSES,
     reduction=tf.compat.v1.losses.Reduction.SUM_BY_NONZERO_WEIGHTS,
     add_summaries=False):
-  """Returns a penalty on the mutual information in an InfoGAN model.
+    """Returns a penalty on the mutual information in an InfoGAN model.
 
   This loss comes from an InfoGAN paper https://arxiv.org/abs/1606.03657.
 
@@ -911,30 +916,30 @@ def mutual_information_penalty(
   Returns:
     A scalar Tensor representing the mutual information loss.
   """
-  _validate_information_penalty_inputs(
-      structured_generator_inputs, predicted_distributions)
+    _validate_information_penalty_inputs(structured_generator_inputs,
+                                         predicted_distributions)
 
-  with tf.compat.v1.name_scope(scope, 'mutual_information_loss') as scope:
-    # Calculate the negative log-likelihood of the reconstructed noise.
-    log_probs = [
-        tf.reduce_mean(input_tensor=dist.log_prob(noise)) for dist, noise in
-        zip(predicted_distributions, structured_generator_inputs)
-    ]
-    loss = -1 * tf.compat.v1.losses.compute_weighted_loss(
-        log_probs,
-        weights,
-        scope,
-        loss_collection=loss_collection,
-        reduction=reduction)
+    with tf.compat.v1.name_scope(scope, 'mutual_information_loss') as scope:
+        # Calculate the negative log-likelihood of the reconstructed noise.
+        log_probs = [
+            tf.reduce_mean(input_tensor=dist.log_prob(noise)) for dist, noise in
+            zip(predicted_distributions, structured_generator_inputs)
+        ]
+        loss = -1 * tf.compat.v1.losses.compute_weighted_loss(
+            log_probs,
+            weights,
+            scope,
+            loss_collection=loss_collection,
+            reduction=reduction)
 
-    if add_summaries:
-      tf.compat.v1.summary.scalar('mutual_information_penalty', loss)
+        if add_summaries:
+            tf.compat.v1.summary.scalar('mutual_information_penalty', loss)
 
-  return loss
+    return loss
 
 
 def numerically_stable_global_norm(tensor_list):
-  """Compute the global norm of a list of Tensors, with improved stability.
+    """Compute the global norm of a list of Tensors, with improved stability.
 
   The global norm computation sometimes overflows due to the intermediate L2
   step. To avoid this, we divide by a cheap-to-compute max over the
@@ -946,31 +951,31 @@ def numerically_stable_global_norm(tensor_list):
   Returns:
     A scalar tensor with the global norm.
   """
-  if all(x is None for x in tensor_list):
-    return 0.0
+    if all(x is None for x in tensor_list):
+        return 0.0
 
-  list_max = tf.reduce_max(input_tensor=[
-      tf.reduce_max(input_tensor=tf.abs(x))
-      for x in tensor_list
-      if x is not None
-  ])
-  return list_max * tf.linalg.global_norm(
-      [x / list_max for x in tensor_list if x is not None])
+    list_max = tf.reduce_max(input_tensor=[
+        tf.reduce_max(input_tensor=tf.abs(x))
+        for x in tensor_list
+        if x is not None
+    ])
+    return list_max * tf.linalg.global_norm(
+        [x / list_max for x in tensor_list if x is not None])
 
 
 def _used_weight(weights_list):
-  for weight in weights_list:
-    if weight is not None:
-      return tf.get_static_value(tf.convert_to_tensor(value=weight))
+    for weight in weights_list:
+        if weight is not None:
+            return tf.get_static_value(tf.convert_to_tensor(value=weight))
 
 
 def _validate_args(weight_factor, gradient_ratio):
-  if weight_factor is None and gradient_ratio is None:
-    raise ValueError(
-        '`weight_factor` and `gradient_ratio` cannot both be `None.`')
-  if weight_factor is not None and gradient_ratio is not None:
-    raise ValueError(
-        '`weight_factor` and `gradient_ratio` cannot both be specified.')
+    if weight_factor is None and gradient_ratio is None:
+        raise ValueError(
+            '`weight_factor` and `gradient_ratio` cannot both be `None.`')
+    if weight_factor is not None and gradient_ratio is not None:
+        raise ValueError(
+            '`weight_factor` and `gradient_ratio` cannot both be specified.')
 
 
 # TODO(joelshor): Add ability to pass in gradients, to avoid recomputing.
@@ -983,7 +988,7 @@ def combine_adversarial_loss(main_loss,
                              scalar_summaries=True,
                              gradient_summaries=True,
                              scope=None):
-  """Utility to combine main and adversarial losses.
+    """Utility to combine main and adversarial losses.
 
   This utility combines the main and adversarial losses in one of two ways.
   1) Fixed coefficient on adversarial loss. Use `weight_factor` in this case.
@@ -1032,69 +1037,72 @@ def combine_adversarial_loss(main_loss,
     RuntimeError: If `tf.gradients` require computing, and TensorFlow is
       executing eagerly.
   """
-  _validate_args(weight_factor, gradient_ratio)
-  if variables is None:
-    variables = contrib.get_trainable_variables()
+    _validate_args(weight_factor, gradient_ratio)
+    if variables is None:
+        variables = contrib.get_trainable_variables()
 
-  with tf.compat.v1.name_scope(
-      scope, 'adversarial_loss', values=[main_loss, adversarial_loss]):
-    # If losses are not the same shape, reduce them to both be shape [batch,].
-    if not main_loss.shape.is_compatible_with(adversarial_loss.shape):
-      if main_loss.shape[0] != adversarial_loss.shape[0]:
-        raise ValueError(
-            'main_loss and adversarial_loss must have the same sized first '
-            'dimension. Found %d and %d.' %
-            (main_loss.shape[0], adversarial_loss.shape[0]))
-      tf.compat.v1.logging.warning(
-          'Applying mean reduction per-batch-element to main and adversarial '
-          'losses to make shapes compatible. If this is undesirable, ensure '
-          'that the shapes are compatible before passing them into '
-          'combine_adversarial_loss.')
-      main_loss = tf.math.reduce_mean(
-          input_tensor=main_loss, axis=list(range(1, main_loss.shape.rank)))
-      adversarial_loss = tf.math.reduce_mean(
-          input_tensor=adversarial_loss,
-          axis=list(range(1, adversarial_loss.shape.rank)))
+    with tf.compat.v1.name_scope(scope,
+                                 'adversarial_loss',
+                                 values=[main_loss, adversarial_loss]):
+        # If losses are not the same shape, reduce them to both be shape [batch,].
+        if not main_loss.shape.is_compatible_with(adversarial_loss.shape):
+            if main_loss.shape[0] != adversarial_loss.shape[0]:
+                raise ValueError(
+                    'main_loss and adversarial_loss must have the same sized first '
+                    'dimension. Found %d and %d.' %
+                    (main_loss.shape[0], adversarial_loss.shape[0]))
+            tf.compat.v1.logging.warning(
+                'Applying mean reduction per-batch-element to main and adversarial '
+                'losses to make shapes compatible. If this is undesirable, ensure '
+                'that the shapes are compatible before passing them into '
+                'combine_adversarial_loss.')
+            main_loss = tf.math.reduce_mean(input_tensor=main_loss,
+                                            axis=list(
+                                                range(1, main_loss.shape.rank)))
+            adversarial_loss = tf.math.reduce_mean(
+                input_tensor=adversarial_loss,
+                axis=list(range(1, adversarial_loss.shape.rank)))
 
-    # Compute gradients if we will need them.
-    if gradient_summaries or gradient_ratio is not None:
-      # `tf.gradients` doesn't work in eager.
-      if tf.executing_eagerly():
-        raise RuntimeError('`tf.gradients` doesn\'t work in eager.')
-      main_loss_grad_mag = numerically_stable_global_norm(
-          tf.gradients(ys=main_loss, xs=variables))
-      adv_loss_grad_mag = numerically_stable_global_norm(
-          tf.gradients(ys=adversarial_loss, xs=variables))
+        # Compute gradients if we will need them.
+        if gradient_summaries or gradient_ratio is not None:
+            # `tf.gradients` doesn't work in eager.
+            if tf.executing_eagerly():
+                raise RuntimeError('`tf.gradients` doesn\'t work in eager.')
+            main_loss_grad_mag = numerically_stable_global_norm(
+                tf.gradients(ys=main_loss, xs=variables))
+            adv_loss_grad_mag = numerically_stable_global_norm(
+                tf.gradients(ys=adversarial_loss, xs=variables))
 
-    # Add summaries, if applicable.
-    if scalar_summaries:
-      tf.compat.v1.summary.scalar('main_loss',
-                                  tf.math.reduce_mean(input_tensor=main_loss))
-      tf.compat.v1.summary.scalar(
-          'adversarial_loss',
-          tf.math.reduce_mean(input_tensor=adversarial_loss))
-    if gradient_summaries:
-      tf.compat.v1.summary.scalar('main_loss_gradients', main_loss_grad_mag)
-      tf.compat.v1.summary.scalar('adversarial_loss_gradients',
-                                  adv_loss_grad_mag)
+        # Add summaries, if applicable.
+        if scalar_summaries:
+            tf.compat.v1.summary.scalar(
+                'main_loss', tf.math.reduce_mean(input_tensor=main_loss))
+            tf.compat.v1.summary.scalar(
+                'adversarial_loss',
+                tf.math.reduce_mean(input_tensor=adversarial_loss))
+        if gradient_summaries:
+            tf.compat.v1.summary.scalar('main_loss_gradients',
+                                        main_loss_grad_mag)
+            tf.compat.v1.summary.scalar('adversarial_loss_gradients',
+                                        adv_loss_grad_mag)
 
-    # Combine losses in the appropriate way.
-    # If `weight_factor` is always `0`, avoid computing the adversarial loss
-    # tensor entirely.
-    if _used_weight((weight_factor, gradient_ratio)) == 0:
-      final_loss = main_loss
-    elif weight_factor is not None:
-      final_loss = (main_loss +
-                    tf.stop_gradient(weight_factor) * adversarial_loss)
-    elif gradient_ratio is not None:
-      grad_mag_ratio = main_loss_grad_mag / (
-          adv_loss_grad_mag + gradient_ratio_epsilon)
-      adv_coeff = grad_mag_ratio / gradient_ratio
-      tf.compat.v1.summary.scalar('adversarial_coefficient', adv_coeff)
-      final_loss = (main_loss +
-                    tf.stop_gradient(adv_coeff) * adversarial_loss)
+        # Combine losses in the appropriate way.
+        # If `weight_factor` is always `0`, avoid computing the adversarial loss
+        # tensor entirely.
+        if _used_weight((weight_factor, gradient_ratio)) == 0:
+            final_loss = main_loss
+        elif weight_factor is not None:
+            final_loss = (main_loss +
+                          tf.stop_gradient(weight_factor) * adversarial_loss)
+        elif gradient_ratio is not None:
+            grad_mag_ratio = main_loss_grad_mag / (adv_loss_grad_mag +
+                                                   gradient_ratio_epsilon)
+            adv_coeff = grad_mag_ratio / gradient_ratio
+            tf.compat.v1.summary.scalar('adversarial_coefficient', adv_coeff)
+            final_loss = (main_loss +
+                          tf.stop_gradient(adv_coeff) * adversarial_loss)
 
-  return final_loss
+    return final_loss
 
 
 def cycle_consistency_loss(data_x,
@@ -1103,7 +1111,7 @@ def cycle_consistency_loss(data_x,
                            reconstructed_data_y,
                            scope=None,
                            add_summaries=False):
-  """Defines the cycle consistency loss.
+    """Defines the cycle consistency loss.
 
   The cyclegan model has two partial models where `model_x2y` generator F maps
   data set X to Y, `model_y2x` generator G maps data set Y to X. For a `data_x`
@@ -1140,18 +1148,19 @@ def cycle_consistency_loss(data_x,
     A scalar `Tensor` of cycle consistency loss.
   """
 
-  with tf.compat.v1.name_scope(
-      scope,
-      'cycle_consistency_loss',
-      values=[data_x, reconstructed_data_x, data_y, reconstructed_data_y]):
-    loss_x2x = tf.compat.v1.losses.absolute_difference(data_x,
-                                                       reconstructed_data_x)
-    loss_y2y = tf.compat.v1.losses.absolute_difference(data_y,
-                                                       reconstructed_data_y)
-    loss = (loss_x2x + loss_y2y) / 2.0
-    if add_summaries:
-      tf.compat.v1.summary.scalar('cycle_consistency_loss_x2x', loss_x2x)
-      tf.compat.v1.summary.scalar('cycle_consistency_loss_y2y', loss_y2y)
-      tf.compat.v1.summary.scalar('cycle_consistency_loss', loss)
+    with tf.compat.v1.name_scope(
+            scope,
+            'cycle_consistency_loss',
+            values=[data_x, reconstructed_data_x, data_y,
+                    reconstructed_data_y]):
+        loss_x2x = tf.compat.v1.losses.absolute_difference(
+            data_x, reconstructed_data_x)
+        loss_y2y = tf.compat.v1.losses.absolute_difference(
+            data_y, reconstructed_data_y)
+        loss = (loss_x2x + loss_y2y) / 2.0
+        if add_summaries:
+            tf.compat.v1.summary.scalar('cycle_consistency_loss_x2x', loss_x2x)
+            tf.compat.v1.summary.scalar('cycle_consistency_loss_y2y', loss_y2y)
+            tf.compat.v1.summary.scalar('cycle_consistency_loss', loss)
 
-  return loss
+    return loss

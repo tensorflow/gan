@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a StarGAN model."""
 
 from __future__ import absolute_import
@@ -56,14 +55,14 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.patch_size,
-                              FLAGS.train_log_dir, FLAGS.generator_lr,
-                              FLAGS.discriminator_lr, FLAGS.max_number_of_steps,
-                              FLAGS.adam_beta1, FLAGS.adam_beta2,
-                              FLAGS.gen_disc_step_ratio, FLAGS.tf_master,
-                              FLAGS.ps_replicas, FLAGS.task)
-  train_lib.train(hparams)
+    hparams = train_lib.HParams(FLAGS.batch_size, FLAGS.patch_size,
+                                FLAGS.train_log_dir, FLAGS.generator_lr,
+                                FLAGS.discriminator_lr,
+                                FLAGS.max_number_of_steps, FLAGS.adam_beta1,
+                                FLAGS.adam_beta2, FLAGS.gen_disc_step_ratio,
+                                FLAGS.tf_master, FLAGS.ps_replicas, FLAGS.task)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

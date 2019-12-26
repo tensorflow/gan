@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for gan.cifar.util."""
 
 from __future__ import absolute_import
@@ -27,39 +26,40 @@ mock = tf.compat.v1.test.mock
 
 class UtilTest(tf.test.TestCase):
 
-  def test_get_generator_conditioning(self):
-    conditioning = util.get_generator_conditioning(12, 4)
-    self.assertEqual([12, 4], conditioning.shape.as_list())
+    def test_get_generator_conditioning(self):
+        conditioning = util.get_generator_conditioning(12, 4)
+        self.assertEqual([12, 4], conditioning.shape.as_list())
 
-  def test_get_image_grid(self):
-    util.get_image_grid(
-        tf.zeros([6, 28, 28, 1]),
-        batch_size=6,
-        num_classes=3,
-        num_images_per_class=1)
+    def test_get_image_grid(self):
+        util.get_image_grid(tf.zeros([6, 28, 28, 1]),
+                            batch_size=6,
+                            num_classes=3,
+                            num_images_per_class=1)
 
-  # Mock `inception_score` which is expensive.
-  @mock.patch.object(util.tfgan.eval, 'inception_score', autospec=True)
-  def test_get_inception_scores(self, mock_inception_score):
-    mock_inception_score.return_value = 1.0
-    batch_size = 100
-    util.get_inception_scores(
-        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
-        batch_size=batch_size,
-        num_inception_images=10)
+    # Mock `inception_score` which is expensive.
+    @mock.patch.object(util.tfgan.eval, 'inception_score', autospec=True)
+    def test_get_inception_scores(self, mock_inception_score):
+        mock_inception_score.return_value = 1.0
+        batch_size = 100
+        util.get_inception_scores(tf.zeros([batch_size, 28, 28, 3],
+                                           dtype=tf.float32),
+                                  batch_size=batch_size,
+                                  num_inception_images=10)
 
-  # Mock `frechet_inception_distance` which is expensive.
-  @mock.patch.object(util.tfgan.eval, 'frechet_inception_distance',
-                     autospec=True)
-  def test_get_frechet_inception_distance(self, mock_fid):
-    mock_fid.return_value = 1.0
-    batch_size = 100
-    util.get_frechet_inception_distance(
-        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
-        tf.zeros([batch_size, 28, 28, 3], dtype=tf.float32),
-        batch_size=batch_size,
-        num_inception_images=10)
+    # Mock `frechet_inception_distance` which is expensive.
+    @mock.patch.object(util.tfgan.eval,
+                       'frechet_inception_distance',
+                       autospec=True)
+    def test_get_frechet_inception_distance(self, mock_fid):
+        mock_fid.return_value = 1.0
+        batch_size = 100
+        util.get_frechet_inception_distance(tf.zeros([batch_size, 28, 28, 3],
+                                                     dtype=tf.float32),
+                                            tf.zeros([batch_size, 28, 28, 3],
+                                                     dtype=tf.float32),
+                                            batch_size=batch_size,
+                                            num_inception_images=10)
 
 
 if __name__ == '__main__':
-  tf.test.main()
+    tf.test.main()

@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Demo that makes inference requests against a running inference server."""
 
 from __future__ import absolute_import
@@ -59,18 +58,18 @@ FLAGS = flags.FLAGS
 
 
 def _make_dir_if_not_exists(dir_path):
-  """Make a directory if it does not exist."""
-  if not tf.io.gfile.exists(dir_path):
-    tf.io.gfile.makedirs(dir_path)
+    """Make a directory if it does not exist."""
+    if not tf.io.gfile.exists(dir_path):
+        tf.io.gfile.makedirs(dir_path)
 
 
 def _file_output_path(dir_path, input_file_path):
-  """Create output path for an individual file."""
-  return os.path.join(dir_path, os.path.basename(input_file_path))
+    """Create output path for an individual file."""
+    return os.path.join(dir_path, os.path.basename(input_file_path))
 
 
 def make_inference_graph(model_name, patch_dim):
-  """Build the inference graph for either the X2Y or Y2X GAN.
+    """Build the inference graph for either the X2Y or Y2X GAN.
 
   Args:
     model_name: The var scope name 'ModelX2Y' or 'ModelY2X'.
@@ -79,20 +78,20 @@ def make_inference_graph(model_name, patch_dim):
   Returns:
     Tuple of (input_placeholder, generated_tensor).
   """
-  input_hwc_pl = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
+    input_hwc_pl = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
 
-  # Expand HWC to NHWC
-  images_x = tf.expand_dims(
-      data_provider.full_image_to_patch(input_hwc_pl, patch_dim), 0)
+    # Expand HWC to NHWC
+    images_x = tf.expand_dims(
+        data_provider.full_image_to_patch(input_hwc_pl, patch_dim), 0)
 
-  with tf.compat.v1.variable_scope(model_name):
-    with tf.compat.v1.variable_scope('Generator'):
-      generated = networks.generator(images_x)
-  return input_hwc_pl, generated
+    with tf.compat.v1.variable_scope(model_name):
+        with tf.compat.v1.variable_scope('Generator'):
+            generated = networks.generator(images_x)
+    return input_hwc_pl, generated
 
 
 def export(sess, input_pl, output_tensor, input_file_pattern, output_dir):
-  """Exports inference outputs to an output directory.
+    """Exports inference outputs to an output directory.
 
   Args:
     sess: tf.Session with variables already loaded.
@@ -101,49 +100,49 @@ def export(sess, input_pl, output_tensor, input_file_pattern, output_dir):
     input_file_pattern: Glob file pattern for input images.
     output_dir: Output directory.
   """
-  if output_dir:
-    _make_dir_if_not_exists(output_dir)
+    if output_dir:
+        _make_dir_if_not_exists(output_dir)
 
-  if input_file_pattern:
-    for file_path in tf.io.gfile.glob(input_file_pattern):
-      # Grab a single image and run it through inference
-      input_np = np.asarray(PIL.Image.open(file_path))
-      output_np = sess.run(output_tensor, feed_dict={input_pl: input_np})
-      image_np = data_provider.undo_normalize_image(output_np)
-      output_path = _file_output_path(output_dir, file_path)
-      PIL.Image.fromarray(image_np).save(output_path)
+    if input_file_pattern:
+        for file_path in tf.io.gfile.glob(input_file_pattern):
+            # Grab a single image and run it through inference
+            input_np = np.asarray(PIL.Image.open(file_path))
+            output_np = sess.run(output_tensor, feed_dict={input_pl: input_np})
+            image_np = data_provider.undo_normalize_image(output_np)
+            output_path = _file_output_path(output_dir, file_path)
+            PIL.Image.fromarray(image_np).save(output_path)
 
 
 def _validate_flags():
-  flags.register_validator('checkpoint_path', bool,
-                           'Must provide `checkpoint_path`.')
-  flags.register_validator(
-      'generated_x_dir',
-      lambda x: False if (FLAGS.image_set_y_glob and not x) else True,
-      'Must provide `generated_x_dir`.')
-  flags.register_validator(
-      'generated_y_dir',
-      lambda x: False if (FLAGS.image_set_x_glob and not x) else True,
-      'Must provide `generated_y_dir`.')
+    flags.register_validator('checkpoint_path', bool,
+                             'Must provide `checkpoint_path`.')
+    flags.register_validator(
+        'generated_x_dir', lambda x: False
+        if (FLAGS.image_set_y_glob and not x) else True,
+        'Must provide `generated_x_dir`.')
+    flags.register_validator(
+        'generated_y_dir', lambda x: False
+        if (FLAGS.image_set_x_glob and not x) else True,
+        'Must provide `generated_y_dir`.')
 
 
 def main(_):
-  _validate_flags()
-  images_x_hwc_pl, generated_y = make_inference_graph('ModelX2Y',
-                                                      FLAGS.patch_dim)
-  images_y_hwc_pl, generated_x = make_inference_graph('ModelY2X',
-                                                      FLAGS.patch_dim)
+    _validate_flags()
+    images_x_hwc_pl, generated_y = make_inference_graph('ModelX2Y',
+                                                        FLAGS.patch_dim)
+    images_y_hwc_pl, generated_x = make_inference_graph('ModelY2X',
+                                                        FLAGS.patch_dim)
 
-  # Restore all the variables that were saved in the checkpoint.
-  saver = tf.compat.v1.train.Saver()
-  with tf.compat.v1.Session() as sess:
-    saver.restore(sess, FLAGS.checkpoint_path)
+    # Restore all the variables that were saved in the checkpoint.
+    saver = tf.compat.v1.train.Saver()
+    with tf.compat.v1.Session() as sess:
+        saver.restore(sess, FLAGS.checkpoint_path)
 
-    export(sess, images_x_hwc_pl, generated_y, FLAGS.image_set_x_glob,
-           FLAGS.generated_y_dir)
-    export(sess, images_y_hwc_pl, generated_x, FLAGS.image_set_y_glob,
-           FLAGS.generated_x_dir)
+        export(sess, images_x_hwc_pl, generated_y, FLAGS.image_set_x_glob,
+               FLAGS.generated_y_dir)
+        export(sess, images_y_hwc_pl, generated_x, FLAGS.image_set_y_glob,
+               FLAGS.generated_x_dir)
 
 
 if __name__ == '__main__':
-  app.run()
+    app.run()

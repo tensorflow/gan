@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Trains a CycleGAN model."""
 
 from __future__ import absolute_import
@@ -54,13 +53,13 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = train_lib.HParams(
-      FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern,
-      FLAGS.batch_size, FLAGS.patch_size, FLAGS.master, FLAGS.train_log_dir,
-      FLAGS.generator_lr, FLAGS.discriminator_lr, FLAGS.max_number_of_steps,
-      FLAGS.ps_replicas, FLAGS.task, FLAGS.cycle_consistency_loss_weight)
-  train_lib.train(hparams)
+    hparams = train_lib.HParams(
+        FLAGS.image_set_x_file_pattern, FLAGS.image_set_y_file_pattern,
+        FLAGS.batch_size, FLAGS.patch_size, FLAGS.master, FLAGS.train_log_dir,
+        FLAGS.generator_lr, FLAGS.discriminator_lr, FLAGS.max_number_of_steps,
+        FLAGS.ps_replicas, FLAGS.task, FLAGS.cycle_consistency_loss_weight)
+    train_lib.train(hparams)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Layers for a progressive GAN model.
 
 This module contains basic building blocks to build a progressive GAN model.
@@ -34,7 +33,7 @@ from tensorflow_gan.examples import compat_utils
 
 
 def pixel_norm(images, epsilon=1.0e-8):
-  """Pixel normalization.
+    """Pixel normalization.
 
   For each pixel a[i,j,k] of image in HWC format, normalize its value to
   b[i,j,k] = a[i,j,k] / SQRT(SUM_k(a[i,j,k]^2) / C + eps).
@@ -46,21 +45,21 @@ def pixel_norm(images, epsilon=1.0e-8):
   Returns:
     A 4D `Tensor` with pixel-wise normalized channels.
   """
-  return images * tf.math.rsqrt(
-      tf.reduce_mean(input_tensor=tf.square(images), axis=3, keepdims=True) +
-      epsilon)
+    return images * tf.math.rsqrt(
+        tf.reduce_mean(input_tensor=tf.square(images), axis=3, keepdims=True) +
+        epsilon)
 
 
 def _get_validated_scale(scale):
-  """Returns the scale guaranteed to be a positive integer."""
-  scale = int(scale)
-  if scale <= 0:
-    raise ValueError('`scale` must be a positive integer.')
-  return scale
+    """Returns the scale guaranteed to be a positive integer."""
+    scale = int(scale)
+    if scale <= 0:
+        raise ValueError('`scale` must be a positive integer.')
+    return scale
 
 
 def downscale(images, scale):
-  """Box downscaling of images.
+    """Box downscaling of images.
 
   Args:
     images: A 4D `Tensor` in NHWC format.
@@ -72,18 +71,17 @@ def downscale(images, scale):
   Raises:
     ValueError: If `scale` is not a positive integer.
   """
-  scale = _get_validated_scale(scale)
-  if scale == 1:
-    return images
-  return compat_utils.nn_avg_pool2d(
-      input=images,
-      ksize=[1, scale, scale, 1],
-      strides=[1, scale, scale, 1],
-      padding='VALID')
+    scale = _get_validated_scale(scale)
+    if scale == 1:
+        return images
+    return compat_utils.nn_avg_pool2d(input=images,
+                                      ksize=[1, scale, scale, 1],
+                                      strides=[1, scale, scale, 1],
+                                      padding='VALID')
 
 
 def upscale(images, scale):
-  """Box upscaling (also called nearest neighbors) of images.
+    """Box upscaling (also called nearest neighbors) of images.
 
   Args:
     images: A 4D `Tensor` in NHWC format.
@@ -95,17 +93,17 @@ def upscale(images, scale):
   Raises:
     ValueError: If `scale` is not a positive integer.
   """
-  scale = _get_validated_scale(scale)
-  if scale == 1:
-    return images
-  return compat_utils.batch_to_space(
-      input=tf.tile(images, [scale**2, 1, 1, 1]),
-      crops=[[0, 0], [0, 0]],
-      block_shape=scale)
+    scale = _get_validated_scale(scale)
+    if scale == 1:
+        return images
+    return compat_utils.batch_to_space(input=tf.tile(images,
+                                                     [scale**2, 1, 1, 1]),
+                                       crops=[[0, 0], [0, 0]],
+                                       block_shape=scale)
 
 
 def minibatch_mean_stddev(x):
-  """Computes the standard deviation average.
+    """Computes the standard deviation average.
 
   This is used by the discriminator as a form of batch discrimination.
 
@@ -116,13 +114,13 @@ def minibatch_mean_stddev(x):
   Returns:
     A scalar `Tensor` which is the mean variance of variable x.
   """
-  mean, var = tf.nn.moments(x=x, axes=[0])
-  del mean
-  return tf.reduce_mean(input_tensor=tf.sqrt(var))
+    mean, var = tf.nn.moments(x=x, axes=[0])
+    del mean
+    return tf.reduce_mean(input_tensor=tf.sqrt(var))
 
 
 def scalar_concat(tensor, scalar):
-  """Concatenates a scalar to the last dimension of a tensor.
+    """Concatenates a scalar to the last dimension of a tensor.
 
   Args:
     tensor: A `Tensor`.
@@ -135,18 +133,18 @@ def scalar_concat(tensor, scalar):
   Raises:
     ValueError: If `tensor` is a scalar `Tensor`.
   """
-  ndims = tensor.shape.ndims
-  if ndims < 1:
-    raise ValueError('`tensor` must have number of dimensions >= 1.')
-  shape = tf.shape(input=tensor)
-  return tf.concat(
-      [tensor,
-       tf.ones([shape[i] for i in range(ndims - 1)] + [1]) * scalar],
-      axis=ndims - 1)
+    ndims = tensor.shape.ndims
+    if ndims < 1:
+        raise ValueError('`tensor` must have number of dimensions >= 1.')
+    shape = tf.shape(input=tensor)
+    return tf.concat(
+        [tensor,
+         tf.ones([shape[i] for i in range(ndims - 1)] + [1]) * scalar],
+        axis=ndims - 1)
 
 
 def he_initializer_scale(shape, slope=1.0):
-  """The scale of He neural network initializer.
+    """The scale of He neural network initializer.
 
   Args:
     shape: A list of ints representing the dimensions of a tensor.
@@ -155,13 +153,13 @@ def he_initializer_scale(shape, slope=1.0):
   Returns:
     A float of he initializer scale.
   """
-  fan_in = np.prod(shape[:-1])
-  return np.sqrt(2. / ((1. + slope**2) * fan_in))
+    fan_in = np.prod(shape[:-1])
+    return np.sqrt(2. / ((1. + slope**2) * fan_in))
 
 
 def _custom_layer_impl(apply_kernel, kernel_shape, bias_shape, activation,
                        he_initializer_slope, use_weight_scaling):
-  """Helper function to implement custom_xxx layer.
+    """Helper function to implement custom_xxx layer.
 
   Args:
     apply_kernel: A function that transforms kernel to output.
@@ -176,21 +174,22 @@ def _custom_layer_impl(apply_kernel, kernel_shape, bias_shape, activation,
     `Tensor` variable with shape `kernel_shape`, bias is a `Tensor` variable
     with shape `bias_shape`.
   """
-  kernel_scale = he_initializer_scale(kernel_shape, he_initializer_slope)
-  init_scale, post_scale = kernel_scale, 1.0
-  if use_weight_scaling:
-    init_scale, post_scale = post_scale, init_scale
+    kernel_scale = he_initializer_scale(kernel_shape, he_initializer_slope)
+    init_scale, post_scale = kernel_scale, 1.0
+    if use_weight_scaling:
+        init_scale, post_scale = post_scale, init_scale
 
-  kernel_initializer = tf.compat.v1.random_normal_initializer(stddev=init_scale)
+    kernel_initializer = tf.compat.v1.random_normal_initializer(
+        stddev=init_scale)
 
-  bias = tf.compat.v1.get_variable(
-      'bias', shape=bias_shape, initializer=tf.compat.v1.zeros_initializer())
+    bias = tf.compat.v1.get_variable(
+        'bias', shape=bias_shape, initializer=tf.compat.v1.zeros_initializer())
 
-  output = post_scale * apply_kernel(kernel_shape, kernel_initializer) + bias
+    output = post_scale * apply_kernel(kernel_shape, kernel_initializer) + bias
 
-  if activation is not None:
-    output = activation(output)
-  return output
+    if activation is not None:
+        output = activation(output)
+    return output
 
 
 def custom_conv2d(x,
@@ -203,7 +202,7 @@ def custom_conv2d(x,
                   use_weight_scaling=True,
                   scope='custom_conv2d',
                   reuse=None):
-  """Custom conv2d layer.
+    """Custom conv2d layer.
 
   In comparison with tf.layers.conv2d this implementation use the He initializer
   to initialize convolutional kernel and the weight scaling trick (if
@@ -226,28 +225,27 @@ def custom_conv2d(x,
   Returns:
     A `Tensor` of NHWC format where the last dimension has size `filters`.
   """
-  if not isinstance(kernel_size, (list, tuple)):
-    kernel_size = [kernel_size] * 2
-  kernel_size = list(kernel_size)
+    if not isinstance(kernel_size, (list, tuple)):
+        kernel_size = [kernel_size] * 2
+    kernel_size = list(kernel_size)
 
-  def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.compat.v1.layers.conv2d(
-        x,
-        filters=filters,
-        kernel_size=kernel_shape[0:2],
-        strides=strides,
-        padding=padding,
-        use_bias=False,
-        kernel_initializer=kernel_initializer)
+    def _apply_kernel(kernel_shape, kernel_initializer):
+        return tf.compat.v1.layers.conv2d(x,
+                                          filters=filters,
+                                          kernel_size=kernel_shape[0:2],
+                                          strides=strides,
+                                          padding=padding,
+                                          use_bias=False,
+                                          kernel_initializer=kernel_initializer)
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
-    return _custom_layer_impl(
-        _apply_kernel,
-        kernel_shape=kernel_size + [x.shape.as_list()[3], filters],
-        bias_shape=(filters,),
-        activation=activation,
-        he_initializer_slope=he_initializer_slope,
-        use_weight_scaling=use_weight_scaling)
+    with tf.compat.v1.variable_scope(scope, reuse=reuse):
+        return _custom_layer_impl(_apply_kernel,
+                                  kernel_shape=kernel_size +
+                                  [x.shape.as_list()[3], filters],
+                                  bias_shape=(filters,),
+                                  activation=activation,
+                                  he_initializer_slope=he_initializer_slope,
+                                  use_weight_scaling=use_weight_scaling)
 
 
 def custom_dense(x,
@@ -257,7 +255,7 @@ def custom_dense(x,
                  use_weight_scaling=True,
                  scope='custom_dense',
                  reuse=None):
-  """Custom dense layer.
+    """Custom dense layer.
 
   In comparison with tf.layers.dense This implementation use the He
   initializer to initialize weights and the weight scaling trick
@@ -277,20 +275,18 @@ def custom_dense(x,
   Returns:
     A `Tensor` where the last dimension has size `units`.
   """
-  x = tf.compat.v1.layers.flatten(x)
+    x = tf.compat.v1.layers.flatten(x)
 
-  def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.compat.v1.layers.dense(
-        x,
-        kernel_shape[1],
-        use_bias=False,
-        kernel_initializer=kernel_initializer)
+    def _apply_kernel(kernel_shape, kernel_initializer):
+        return tf.compat.v1.layers.dense(x,
+                                         kernel_shape[1],
+                                         use_bias=False,
+                                         kernel_initializer=kernel_initializer)
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
-    return _custom_layer_impl(
-        _apply_kernel,
-        kernel_shape=(x.shape.as_list()[-1], units),
-        bias_shape=(units,),
-        activation=activation,
-        he_initializer_slope=he_initializer_slope,
-        use_weight_scaling=use_weight_scaling)
+    with tf.compat.v1.variable_scope(scope, reuse=reuse):
+        return _custom_layer_impl(_apply_kernel,
+                                  kernel_shape=(x.shape.as_list()[-1], units),
+                                  bias_shape=(units,),
+                                  activation=activation,
+                                  he_initializer_slope=he_initializer_slope,
+                                  use_weight_scaling=use_weight_scaling)

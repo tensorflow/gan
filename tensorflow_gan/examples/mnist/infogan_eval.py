@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Evaluates an InfoGAN TFGAN trained MNIST model.
 
 The image visualizations, as in https://arxiv.org/abs/1606.03657, show the
@@ -59,13 +58,14 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-  hparams = infogan_eval_lib.HParams(
-      FLAGS.checkpoint_dir, FLAGS.eval_dir, FLAGS.noise_samples,
-      FLAGS.unstructured_noise_dims, FLAGS.continuous_noise_dims,
-      FLAGS.max_number_of_evaluations,
-      FLAGS.write_to_disk)
-  infogan_eval_lib.evaluate(hparams, run_eval_loop=True)
+    hparams = infogan_eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
+                                       FLAGS.noise_samples,
+                                       FLAGS.unstructured_noise_dims,
+                                       FLAGS.continuous_noise_dims,
+                                       FLAGS.max_number_of_evaluations,
+                                       FLAGS.write_to_disk)
+    infogan_eval_lib.evaluate(hparams, run_eval_loop=True)
 
 
 if __name__ == '__main__':
-  app.run(main)
+    app.run(main)

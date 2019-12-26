@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Tests for TF-GAN's TPU Estimator."""
 
 from __future__ import absolute_import
@@ -23,6 +22,5 @@ import tensorflow as tf
 
 from tensorflow_gan.python.estimator.tpu_gan_estimator_test_lib import *  # pylint:disable=wildcard-import
 
-
 if __name__ == '__main__':
-  tf.test.main()
+    tf.test.main()

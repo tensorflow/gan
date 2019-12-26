@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Normalization functions.
 
 Copied from tensorflow/contrib/layers/python/layers/normalization.py.
@@ -22,7 +21,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
 
 __all__ = [
     'group_norm',
@@ -44,7 +42,7 @@ def instance_norm(inputs,
                   trainable=True,
                   data_format=DATA_FORMAT_NHWC,
                   scope=None):
-  """Functional interface for the instance normalization layer.
+    """Functional interface for the instance normalization layer.
 
   Reference: https://arxiv.org/abs/1607.08022.
 
@@ -82,77 +80,83 @@ def instance_norm(inputs,
     ValueError: If the rank of `inputs` is undefined.
     ValueError: If rank or channels dimension of `inputs` is undefined.
   """
-  inputs = tf.convert_to_tensor(value=inputs)
-  inputs_shape = inputs.shape
-  inputs_rank = inputs.shape.ndims
+    inputs = tf.convert_to_tensor(value=inputs)
+    inputs_shape = inputs.shape
+    inputs_rank = inputs.shape.ndims
 
-  if inputs_rank is None:
-    raise ValueError('Inputs %s has undefined rank.' % inputs.name)
-  if data_format not in (DATA_FORMAT_NCHW, DATA_FORMAT_NHWC):
-    raise ValueError('data_format has to be either NCHW or NHWC.')
+    if inputs_rank is None:
+        raise ValueError('Inputs %s has undefined rank.' % inputs.name)
+    if data_format not in (DATA_FORMAT_NCHW, DATA_FORMAT_NHWC):
+        raise ValueError('data_format has to be either NCHW or NHWC.')
 
-  with tf.compat.v1.variable_scope(
-      scope, 'InstanceNorm', [inputs], reuse=reuse):
-    if data_format == DATA_FORMAT_NCHW:
-      reduction_axis = 1
-      # For NCHW format, rather than relying on implicit broadcasting, we
-      # explicitly reshape the params to params_shape_broadcast when computing
-      # the moments and the batch normalization.
-      params_shape_broadcast = list(
-          [1, tf.compat.dimension_value(inputs_shape[1])] +
-          [1 for _ in range(2, inputs_rank)])
-    else:
-      reduction_axis = inputs_rank - 1
-      params_shape_broadcast = None
-    moments_axes = list(range(inputs_rank))
-    del moments_axes[reduction_axis]
-    del moments_axes[0]
-    params_shape = inputs_shape[reduction_axis:reduction_axis + 1]
-    if not params_shape.is_fully_defined():
-      raise ValueError('Inputs %s has undefined channels dimension %s.' % (
-          inputs.name, params_shape))
+    with tf.compat.v1.variable_scope(scope,
+                                     'InstanceNorm', [inputs],
+                                     reuse=reuse):
+        if data_format == DATA_FORMAT_NCHW:
+            reduction_axis = 1
+            # For NCHW format, rather than relying on implicit broadcasting, we
+            # explicitly reshape the params to params_shape_broadcast when computing
+            # the moments and the batch normalization.
+            params_shape_broadcast = list(
+                [1, tf.compat.dimension_value(inputs_shape[1])] +
+                [1 for _ in range(2, inputs_rank)])
+        else:
+            reduction_axis = inputs_rank - 1
+            params_shape_broadcast = None
+        moments_axes = list(range(inputs_rank))
+        del moments_axes[reduction_axis]
+        del moments_axes[0]
+        params_shape = inputs_shape[reduction_axis:reduction_axis + 1]
+        if not params_shape.is_fully_defined():
+            raise ValueError('Inputs %s has undefined channels dimension %s.' %
+                             (inputs.name, params_shape))
 
-    # Allocate parameters for the beta and gamma of the normalization.
-    beta, gamma = None, None
-    dtype = inputs.dtype.base_dtype
-    if param_initializers is None:
-      param_initializers = {}
-    if center:
-      beta_initializer = param_initializers.get(
-          'beta', tf.compat.v1.initializers.zeros())
-      beta = tf.compat.v1.get_variable(
-          name='beta',
-          shape=params_shape,
-          dtype=dtype,
-          initializer=beta_initializer,
-          trainable=trainable)
-      if params_shape_broadcast:
-        beta = tf.reshape(beta, params_shape_broadcast)
-    if scale:
-      gamma_initializer = param_initializers.get(
-          'gamma', tf.compat.v1.initializers.ones())
-      gamma = tf.compat.v1.get_variable(
-          name='gamma',
-          shape=params_shape,
-          dtype=dtype,
-          initializer=gamma_initializer,
-          trainable=trainable)
-      if params_shape_broadcast:
-        gamma = tf.reshape(gamma, params_shape_broadcast)
+        # Allocate parameters for the beta and gamma of the normalization.
+        beta, gamma = None, None
+        dtype = inputs.dtype.base_dtype
+        if param_initializers is None:
+            param_initializers = {}
+        if center:
+            beta_initializer = param_initializers.get(
+                'beta', tf.compat.v1.initializers.zeros())
+            beta = tf.compat.v1.get_variable(name='beta',
+                                             shape=params_shape,
+                                             dtype=dtype,
+                                             initializer=beta_initializer,
+                                             trainable=trainable)
+            if params_shape_broadcast:
+                beta = tf.reshape(beta, params_shape_broadcast)
+        if scale:
+            gamma_initializer = param_initializers.get(
+                'gamma', tf.compat.v1.initializers.ones())
+            gamma = tf.compat.v1.get_variable(name='gamma',
+                                              shape=params_shape,
+                                              dtype=dtype,
+                                              initializer=gamma_initializer,
+                                              trainable=trainable)
+            if params_shape_broadcast:
+                gamma = tf.reshape(gamma, params_shape_broadcast)
 
-    # Calculate the moments (instance activations).
-    mean, variance = tf.nn.moments(x=inputs, axes=moments_axes, keepdims=True)
+        # Calculate the moments (instance activations).
+        mean, variance = tf.nn.moments(x=inputs,
+                                       axes=moments_axes,
+                                       keepdims=True)
 
-    # Compute instance normalization.
-    outputs = tf.nn.batch_normalization(
-        inputs, mean, variance, beta, gamma, epsilon, name='instancenorm')
-    if activation_fn is not None:
-      outputs = activation_fn(outputs)
+        # Compute instance normalization.
+        outputs = tf.nn.batch_normalization(inputs,
+                                            mean,
+                                            variance,
+                                            beta,
+                                            gamma,
+                                            epsilon,
+                                            name='instancenorm')
+        if activation_fn is not None:
+            outputs = activation_fn(outputs)
 
-    if outputs_collections:
-      tf.compat.v1.add_to_collections(outputs_collections, outputs)
+        if outputs_collections:
+            tf.compat.v1.add_to_collections(outputs_collections, outputs)
 
-    return outputs
+        return outputs
 
 
 def group_norm(inputs,
@@ -169,7 +173,7 @@ def group_norm(inputs,
                trainable=True,
                scope=None,
                mean_close_to_zero=False):
-  """Functional interface for the group normalization layer.
+    """Functional interface for the group normalization layer.
 
   Reference: https://arxiv.org/abs/1803.08494.
 
@@ -237,138 +241,140 @@ def group_norm(inputs,
     ValueError: If reduction_axes or channels_axis are out of bounds.
     ValueError: If reduction_axes are not mutually exclusive with channels_axis.
   """
-  # TODO(shlens): Support partially defined shapes for the inputs.
-  inputs = tf.convert_to_tensor(value=inputs)
+    # TODO(shlens): Support partially defined shapes for the inputs.
+    inputs = tf.convert_to_tensor(value=inputs)
 
-  if inputs.shape.ndims is None:
-    raise ValueError('Inputs %s has undefined rank.' % inputs.name)
-  if channels_axis > (inputs.shape.ndims - 1):
-    raise ValueError('Axis is out of bounds.')
+    if inputs.shape.ndims is None:
+        raise ValueError('Inputs %s has undefined rank.' % inputs.name)
+    if channels_axis > (inputs.shape.ndims - 1):
+        raise ValueError('Axis is out of bounds.')
 
-  # Use dynamic shape for not fully defined dimensions in the inputs.
-  dyanmic_shape = tf.shape(input=inputs)
-  input_shape_list = []
-  for i, dim in enumerate(inputs.shape):
-    if tf.compat.dimension_value(dim) is None:
-      input_shape_list.append(dyanmic_shape[i])
-    else:
-      input_shape_list.append(dim)
+    # Use dynamic shape for not fully defined dimensions in the inputs.
+    dyanmic_shape = tf.shape(input=inputs)
+    input_shape_list = []
+    for i, dim in enumerate(inputs.shape):
+        if tf.compat.dimension_value(dim) is None:
+            input_shape_list.append(dyanmic_shape[i])
+        else:
+            input_shape_list.append(dim)
 
-  # Standardize the channels_axis to be positive and identify # of channels.
-  if channels_axis < 0:
-    channels_axis = inputs.shape.ndims + channels_axis
-  channels = tf.compat.dimension_value(inputs.shape[channels_axis])
+    # Standardize the channels_axis to be positive and identify # of channels.
+    if channels_axis < 0:
+        channels_axis = inputs.shape.ndims + channels_axis
+    channels = tf.compat.dimension_value(inputs.shape[channels_axis])
 
-  if channels is None:
-    raise ValueError('Inputs %s has undefined channel dimension: %d.' % (
-        inputs.name, channels_axis))
+    if channels is None:
+        raise ValueError('Inputs %s has undefined channel dimension: %d.' %
+                         (inputs.name, channels_axis))
 
-  # Standardize the reduction_axes to be positive.
-  reduction_axes = list(reduction_axes)
-  for i in range(len(reduction_axes)):
-    if reduction_axes[i] < 0:
-      reduction_axes[i] += inputs.shape.ndims
+    # Standardize the reduction_axes to be positive.
+    reduction_axes = list(reduction_axes)
+    for i in range(len(reduction_axes)):
+        if reduction_axes[i] < 0:
+            reduction_axes[i] += inputs.shape.ndims
 
-  for a in reduction_axes:
-    if a > inputs.shape.ndims:
-      raise ValueError('Axis is out of bounds.')
-    if tf.compat.dimension_value(inputs.shape[a]) is None:
-      raise ValueError('Inputs %s has undefined dimensions %d.' % (
-          inputs.name, a))
-    if channels_axis == a:
-      raise ValueError('reduction_axis must be mutually exclusive '
-                       'with channels_axis')
-  if groups > channels:
-    raise ValueError('Invalid groups %d for %d channels.' % (groups, channels))
-  if channels % groups != 0:
-    raise ValueError('%d channels is not commensurate with %d groups.' %
-                     (channels, groups))
+    for a in reduction_axes:
+        if a > inputs.shape.ndims:
+            raise ValueError('Axis is out of bounds.')
+        if tf.compat.dimension_value(inputs.shape[a]) is None:
+            raise ValueError('Inputs %s has undefined dimensions %d.' %
+                             (inputs.name, a))
+        if channels_axis == a:
+            raise ValueError('reduction_axis must be mutually exclusive '
+                             'with channels_axis')
+    if groups > channels:
+        raise ValueError('Invalid groups %d for %d channels.' %
+                         (groups, channels))
+    if channels % groups != 0:
+        raise ValueError('%d channels is not commensurate with %d groups.' %
+                         (channels, groups))
 
-  # Determine axes before channels. Some examples of common image formats:
-  #  'NCHW': before = [N], after = [HW]
-  #  'NHWC': before = [NHW], after = []
-  axes_before_channels = input_shape_list[:channels_axis]
-  axes_after_channels = input_shape_list[channels_axis+1:]
+    # Determine axes before channels. Some examples of common image formats:
+    #  'NCHW': before = [N], after = [HW]
+    #  'NHWC': before = [NHW], after = []
+    axes_before_channels = input_shape_list[:channels_axis]
+    axes_after_channels = input_shape_list[channels_axis + 1:]
 
-  # Manually broadcast the parameters to conform to the number of groups.
-  params_shape_broadcast = ([1] * len(axes_before_channels) +
-                            [groups, channels // groups] +
-                            [1] * len(axes_after_channels))
+    # Manually broadcast the parameters to conform to the number of groups.
+    params_shape_broadcast = ([1] * len(axes_before_channels) +
+                              [groups, channels // groups] +
+                              [1] * len(axes_after_channels))
 
-  # Reshape the input by the group within the channel dimension.
-  inputs_shape = (axes_before_channels + [groups, channels // groups] +
-                  axes_after_channels)
-  inputs = tf.reshape(inputs, inputs_shape)
+    # Reshape the input by the group within the channel dimension.
+    inputs_shape = (axes_before_channels + [groups, channels // groups] +
+                    axes_after_channels)
+    inputs = tf.reshape(inputs, inputs_shape)
 
-  # Determine the dimensions across which moments are calculated.
-  moments_axes = [channels_axis + 1]
-  for a in reduction_axes:
-    if a > channels_axis:
-      moments_axes.append(a + 1)
-    else:
-      moments_axes.append(a)
+    # Determine the dimensions across which moments are calculated.
+    moments_axes = [channels_axis + 1]
+    for a in reduction_axes:
+        if a > channels_axis:
+            moments_axes.append(a + 1)
+        else:
+            moments_axes.append(a)
 
-  with tf.compat.v1.variable_scope(scope, 'GroupNorm', [inputs], reuse=reuse):
-    # Note that the params_shape is the number of channels always.
-    params_shape = [channels]
+    with tf.compat.v1.variable_scope(scope, 'GroupNorm', [inputs], reuse=reuse):
+        # Note that the params_shape is the number of channels always.
+        params_shape = [channels]
 
-    # Allocate parameters for the beta and gamma of the normalization.
-    beta, gamma = None, None
-    dtype = inputs.dtype.base_dtype
-    if param_initializers is None:
-      param_initializers = {}
-    if center:
-      beta_initializer = param_initializers.get(
-          'beta', tf.compat.v1.initializers.zeros())
-      beta = tf.compat.v1.get_variable(
-          name='beta',
-          shape=params_shape,
-          dtype=dtype,
-          initializer=beta_initializer,
-          trainable=trainable)
-      beta = tf.reshape(beta, params_shape_broadcast)
+        # Allocate parameters for the beta and gamma of the normalization.
+        beta, gamma = None, None
+        dtype = inputs.dtype.base_dtype
+        if param_initializers is None:
+            param_initializers = {}
+        if center:
+            beta_initializer = param_initializers.get(
+                'beta', tf.compat.v1.initializers.zeros())
+            beta = tf.compat.v1.get_variable(name='beta',
+                                             shape=params_shape,
+                                             dtype=dtype,
+                                             initializer=beta_initializer,
+                                             trainable=trainable)
+            beta = tf.reshape(beta, params_shape_broadcast)
 
-    if scale:
-      gamma_initializer = param_initializers.get(
-          'gamma', tf.compat.v1.initializers.ones())
-      gamma = tf.compat.v1.get_variable(
-          name='gamma',
-          shape=params_shape,
-          dtype=dtype,
-          initializer=gamma_initializer,
-          trainable=trainable)
-      gamma = tf.reshape(gamma, params_shape_broadcast)
+        if scale:
+            gamma_initializer = param_initializers.get(
+                'gamma', tf.compat.v1.initializers.ones())
+            gamma = tf.compat.v1.get_variable(name='gamma',
+                                              shape=params_shape,
+                                              dtype=dtype,
+                                              initializer=gamma_initializer,
+                                              trainable=trainable)
+            gamma = tf.reshape(gamma, params_shape_broadcast)
 
-    # Calculate the moments.
-    if mean_close_to_zero:
-      # One pass algorithm returns better result when mean is close to zero.
-      counts, means_ss, variance_ss, _ = tf.nn.sufficient_statistics(
-          inputs, moments_axes, keepdims=True)
-      mean, variance = tf.nn.normalize_moments(
-          counts, means_ss, variance_ss, shift=None)
-    else:
-      mean, variance = tf.nn.moments(
-          x=inputs, axes=moments_axes, keepdims=True)
+        # Calculate the moments.
+        if mean_close_to_zero:
+            # One pass algorithm returns better result when mean is close to zero.
+            counts, means_ss, variance_ss, _ = tf.nn.sufficient_statistics(
+                inputs, moments_axes, keepdims=True)
+            mean, variance = tf.nn.normalize_moments(counts,
+                                                     means_ss,
+                                                     variance_ss,
+                                                     shift=None)
+        else:
+            mean, variance = tf.nn.moments(x=inputs,
+                                           axes=moments_axes,
+                                           keepdims=True)
 
-    # Compute normalization.
-    # TODO(shlens): Fix tf.nn.batch_normalization to handle the 5-D Tensor
-    # appropriately so that this operation may be faster.
-    gain = tf.math.rsqrt(variance + epsilon)
-    offset = -mean * gain
-    if gamma is not None:
-      gain *= gamma
-      offset *= gamma
-    if beta is not None:
-      offset += beta
-    outputs = inputs * gain + offset
+        # Compute normalization.
+        # TODO(shlens): Fix tf.nn.batch_normalization to handle the 5-D Tensor
+        # appropriately so that this operation may be faster.
+        gain = tf.math.rsqrt(variance + epsilon)
+        offset = -mean * gain
+        if gamma is not None:
+            gain *= gamma
+            offset *= gamma
+        if beta is not None:
+            offset += beta
+        outputs = inputs * gain + offset
 
-    # Collapse the groups into the channel dimension.
-    outputs = tf.reshape(outputs, input_shape_list)
+        # Collapse the groups into the channel dimension.
+        outputs = tf.reshape(outputs, input_shape_list)
 
-    if activation_fn is not None:
-      outputs = activation_fn(outputs)
+        if activation_fn is not None:
+            outputs = activation_fn(outputs)
 
-    if outputs_collections:
-      tf.compat.v1.add_to_collections(outputs_collections, outputs)
+        if outputs_collections:
+            tf.compat.v1.add_to_collections(outputs_collections, outputs)
 
-    return outputs
+        return outputs
