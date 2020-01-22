@@ -22,9 +22,16 @@ make_virtual_env() {
 
 install_tensorflow() {
   local tf_version=$1
+  local py_version=$2
+
+  # Workaround for https://github.com/tensorflow/tensorflow/issues/32319.
+  pip install gast==0.2.2
 
   if [[ "$tf_version" == "TF1.x" ]]; then
     pip install tensorflow==1.15
+  elif [[ "$tf_version" == "TF2.x" && "$py_version" == "python2.7" ]]; then
+    # 2.1 is the last version of TF with PY2 support.
+    pip install tensorflow==2.1.0
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tensorflow
   else
@@ -37,7 +44,7 @@ install_tfp() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-probability
+    pip install tensorflow-probability==0.8.0
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tfp-nightly
   else
@@ -66,8 +73,8 @@ run_unittests_tests() {
   venv_dir=$(mktemp -d)
   make_virtual_env "${py_version}" "${venv_dir}"
 
-  # Install TensorFlow explicitly (see http://g/tf-oss/vpEioAGbZ4Q).
-  install_tensorflow "${tf_version}"
+  # Install TensorFlow explicitly.
+  install_tensorflow "${tf_version}" "${py_version}"
 
   # TODO(joelshor): These should get installed in setup.py, but aren't for some
   # reason.
@@ -100,7 +107,7 @@ test_build_and_install_whl() {
 
   make_virtual_env "${py_version}" "${venv_dir}"
 
-  # Install TensorFlow explicitly (see http://g/tf-oss/vpEioAGbZ4Q).
+  # Install TensorFlow explicitly.
   install_tensorflow "${tf_version}"
   install_tfp "${tf_version}"
   pip install tensorflow-hub  # Package is the same regardless of TF version.
