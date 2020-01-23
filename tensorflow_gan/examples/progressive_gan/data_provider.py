@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2019 The TensorFlow GAN Authors.
+# Copyright 2020 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import matplotlib.pyplot
 import numpy as np
+import PIL.Image
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -191,7 +191,8 @@ def provide_data_from_image_files(file_pattern,
   dataset_files = tf.io.gfile.glob(file_pattern)
   if shuffle:
     dataset_files = np.random.permutation(dataset_files)
-  np_data = np.array([matplotlib.pyplot.imread(x) for x in dataset_files])
+  np_data = np.stack([np.asarray(PIL.Image.open(x)) for x in dataset_files],
+                     axis=0)
   ds = tf.data.Dataset.from_tensor_slices(np_data)
   if shuffle:
     ds = ds.shuffle(reshuffle_each_iteration=True)

@@ -5,9 +5,10 @@ Author: Shuo Chen
 ### How to run
 
 
-1. Run the setup instructions in [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
-1. Install matplotlib by executing `pip install matplotlib`
-1. Run:
+1.  Run the setup instructions in
+    [tensorflow_gan/examples/README.md](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/README.md#steps-to-run-an-example)
+1.  Install imageio by executing `pip install Pillow`
+1.  Run:
 
 ```python
 python progressive_gan/train_main.py --alsologtostderr

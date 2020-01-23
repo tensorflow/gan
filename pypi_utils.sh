@@ -80,7 +80,6 @@ run_unittests_tests() {
   # reason.
   pip install Pillow
   pip install scipy
-  pip install matplotlib
   pip install --upgrade google-api-python-client
   pip install --upgrade oauth2client
   install_tfp "${tf_version}"
