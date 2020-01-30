@@ -34,6 +34,14 @@ def dummy_apply_kernel(kernel_shape, kernel_initializer):
 
 class LayersTest(tf.test.TestCase):
 
+  def setUp(self):
+    super(LayersTest, self).setUp()
+
+    # Do a dummy computation to trigger lazy loading of the conv2d method before
+    # mocking it in tests.
+    _ = tf.compat.v1.layers.conv2d(
+        np.ones(shape=[1, 3, 3, 1], dtype=np.float32), filters=1, kernel_size=2)
+
   def test_pixel_norm_4d_images_returns_channel_normalized_images(self):
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
@@ -202,8 +210,8 @@ class LayersTest(tf.test.TestCase):
   def test_custom_conv2d_scalar_kernel_size(self, mock_zeros_initializer,
                                             mock_random_normal_initializer):
     mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = tf.compat.v1.constant_initializer(
-        3.0)
+    mock_random_normal_initializer.return_value = (
+        tf.compat.v1.constant_initializer(3.0))
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
                     dtype=tf.float32)
