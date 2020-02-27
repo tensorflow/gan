@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2019 The TensorFlow GAN Authors.
+# Copyright 2020 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import matplotlib.pyplot
 import numpy as np
+import PIL.Image
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -188,6 +188,7 @@ def provide_data_from_image_files(file_pattern,
     A float `Tensor` of shape [batch_size, patch_height, patch_width, 3]
     representing a batch of images.
   """
+<<<<<<< HEAD
     dataset_files = tf.io.gfile.glob(file_pattern)
     if shuffle:
         dataset_files = np.random.permutation(dataset_files)
@@ -209,3 +210,27 @@ def provide_data_from_image_files(file_pattern,
     images = next_batch['images']
 
     return images
+=======
+  dataset_files = tf.io.gfile.glob(file_pattern)
+  if shuffle:
+    dataset_files = np.random.permutation(dataset_files)
+  np_data = np.stack([np.asarray(PIL.Image.open(x)) for x in dataset_files],
+                     axis=0)
+  ds = tf.data.Dataset.from_tensor_slices(np_data)
+  if shuffle:
+    ds = ds.shuffle(reshuffle_each_iteration=True)
+
+  def _make_dict(img):
+    if img.shape.ndims == 2:
+      img = tf.expand_dims(img, -1)
+    return {'image': img}
+
+  ds = ds.map(_make_dict, num_parallel_calls=num_parallel_calls)
+  ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
+                             num_parallel_calls, shuffle)
+
+  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+  images = next_batch['images']
+
+  return images
+>>>>>>> upstream/master
