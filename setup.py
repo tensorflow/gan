@@ -117,11 +117,11 @@ setup(
         'pip_pkg': InstallCommandBase,
     },
     install_requires=[
+        'tensorflow>=1.12'
         'tensorflow_hub>=0.2',
         'tensorflow_probability>=0.7',
     ],
     extras_require={
-        'tf': ['tensorflow>=1.12'],
         'tensorflow-datasets': ['tensorflow-datasets>=0.5.0'],
     },
     classifiers=[
