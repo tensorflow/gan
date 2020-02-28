@@ -5,6 +5,11 @@
 make_virtual_env() {
   local py_version=$1
   local venv_dir=$2
+
+  if [[ "$py_version" == "python2.7" ]]; then
+    (exit 1) || echo "TF-GAN doesn't support Py2.X anymore".
+  fi
+
   echo "make_virtual_env ${py_version} ${venv_dir}"
 
   # TODO(joelshor): Check that virtualenv exists and, if not, install it.
@@ -12,9 +17,7 @@ make_virtual_env() {
   # using something like `sudo apt-get install virtualenv`.
 
   # Enable python3.6 in pyenv and update its pip.
-  if [[ "$py_version" != "python2.7" ]]; then
-    pyenv global 3.6.1
-  fi
+  pyenv global 3.6.1
 
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
@@ -29,14 +32,15 @@ install_tensorflow() {
   local tf_version=$1
   local py_version=$2
 
+  if [[ "$py_version" == "python2.7" ]]; then
+    (exit 1) || echo "TF-GAN doesn't support Py2.X anymore".
+  fi
+
   # Workaround for https://github.com/tensorflow/tensorflow/issues/32319.
   pip install gast==0.2.2
 
   if [[ "$tf_version" == "TF1.x" ]]; then
     pip install tensorflow==1.15
-  elif [[ "$tf_version" == "TF2.x" && "$py_version" == "python2.7" ]]; then
-    # 2.1 is the last version of TF with PY2 support.
-    pip install tensorflow==2.1.0
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tensorflow
   else
@@ -74,6 +78,10 @@ install_tfds() {
 run_unittests_tests() {
   local py_version=$1
   local tf_version=$2
+
+  if [[ "$py_version" == "python2.7" ]]; then
+    (exit 1) || echo "TF-GAN doesn't support Py2.X anymore".
+  fi
   echo "run_tests ${py_version}" "${tf_version}"
   venv_dir=$(mktemp -d)
   make_virtual_env "${py_version}" "${venv_dir}"
@@ -102,6 +110,10 @@ test_build_and_install_whl() {
   local py_version=$1
   local tf_version=$2
   local venv_dir=$3
+
+  if [[ "$py_version" == "python2.7" ]]; then
+    (exit 1) || echo "TF-GAN doesn't support Py2.X anymore".
+  fi
 
   echo "run_tests ${py_version}" "${tf_version}" "${venv_dir}"
 
