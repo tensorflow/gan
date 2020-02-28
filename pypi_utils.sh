@@ -11,6 +11,11 @@ make_virtual_env() {
   # Probably check using something like `which virtualenv`, and install
   # using something like `sudo apt-get install virtualenv`.
 
+  # Enable python3.6 in pyenv and update its pip.
+  if [[ "$py_version" != "python2.7" ]]; then
+    pyenv global 3.6.1
+  fi
+
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
   # virtualenv directory to use it; we just need to source bin/activate into the

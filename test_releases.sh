@@ -20,12 +20,12 @@ fi
 # Run unit tests.
 run_unittests_tests "python2.7" "TF1.x"
 run_unittests_tests "python2.7" "TF2.x"
-run_unittests_tests "python3.8" "TF1.x"
-run_unittests_tests "python3.8" "TF2.x"
+run_unittests_tests "python3.6" "TF1.x"
+run_unittests_tests "python3.6" "TF2.x"
 
 # Test that we can build the whl.
 test_build_and_install_whl "python2.7" "TF1.x"
 test_build_and_install_whl "python2.7" "TF2.x"
-test_build_and_install_whl "python3.8" "TF1.x"
-test_build_and_install_whl "python3.8" "TF2.x"
+test_build_and_install_whl "python3.6" "TF1.x"
+test_build_and_install_whl "python3.6" "TF2.x"
 
