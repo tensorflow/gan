@@ -45,7 +45,7 @@ read -p "Publish to ${mode}? (y/n) " -r
 echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  make_virtual_env "python3.8" "TF1.x"
+  make_virtual_env "python3.6" "TF1.x"
   # TODO(joelshor): Check that pip exists and, if not, install it.
   # Probably install using `sudo apt-get install python-pip`.
 
