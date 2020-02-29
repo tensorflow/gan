@@ -23,7 +23,6 @@ from tensorflow_gan.examples.self_attention_estimator import discriminator
 
 
 class DiscriminatorTest(tf.test.TestCase):
-
     def test_generator_shapes_and_ranges(self):
         """Tests the discriminator.
 

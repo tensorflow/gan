@@ -50,7 +50,8 @@ def clip_discriminator_weights(optimizer, model, weight_clip):
   Raises:
     ValueError: If `weight_clip` is less than 0.
   """
-    return clip_variables(optimizer, model.discriminator_variables, weight_clip)
+    return clip_variables(optimizer, model.discriminator_variables,
+                          weight_clip)
 
 
 def clip_variables(optimizer, variables, weight_clip):
@@ -76,7 +77,8 @@ def clip_variables(optimizer, variables, weight_clip):
     return VariableClippingOptimizer(
         opt=optimizer,
         # Do no reduction, so clipping happens per-value.
-        vars_to_clip_dims={var: [] for var in variables},
+        vars_to_clip_dims={var: []
+                           for var in variables},
         max_norm=weight_clip,
         use_locking=True,
         colocate_clip_ops_with_vars=True)
@@ -102,7 +104,6 @@ class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
   @@__init__
 
   """
-
     def __init__(self,
                  opt,
                  vars_to_clip_dims,
@@ -129,7 +130,8 @@ class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
         self._opt = opt
         # Defensive copy of input dict
         self._vars_to_clip_dims = {
-            var: clip_dims[:] for var, clip_dims in vars_to_clip_dims.items()
+            var: clip_dims[:]
+            for var, clip_dims in vars_to_clip_dims.items()
         }
         self._max_norm = max_norm
         self._colocate_clip_ops_with_vars = colocate_clip_ops_with_vars
@@ -153,12 +155,14 @@ class VariableClippingOptimizer(tf.compat.v1.train.Optimizer):
                     if grad is None or var not in self._vars_to_clip_dims:
                         continue
                     # `x.op` doesn't work in eager execution.
-                    suffix = var.name if tf.executing_eagerly() else var.op.name
+                    suffix = var.name if tf.executing_eagerly(
+                    ) else var.op.name
                     with tf.compat.v1.name_scope('clip_' + suffix):
                         if isinstance(grad, tf.Tensor):
                             clip_update_ops.append(self._clip_dense(var))
                         else:
-                            clip_update_ops.append(self._clip_sparse(grad, var))
+                            clip_update_ops.append(self._clip_sparse(
+                                grad, var))
 
             # In case no var was clipped, still need to run the update_op.
             return tf.group(*([update_op] + clip_update_ops), name=name)

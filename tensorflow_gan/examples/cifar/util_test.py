@@ -25,7 +25,6 @@ mock = tf.compat.v1.test.mock
 
 
 class UtilTest(tf.test.TestCase):
-
     def test_get_generator_conditioning(self):
         conditioning = util.get_generator_conditioning(12, 4)
         self.assertEqual([12, 4], conditioning.shape.as_list())

@@ -63,7 +63,6 @@ def discriminator_fn(data, unused_conditioning, mode):
 
 class GetGANModelTest(tf.test.TestCase, parameterized.TestCase):
     """Tests that `GetGANModel` produces the correct model."""
-
     @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
                                     ('eval', tf.estimator.ModeKeys.EVAL),
                                     ('predict', tf.estimator.ModeKeys.PREDICT))
@@ -128,14 +127,13 @@ def dummy_loss_fn(gan_model, add_summaries=True):
 def get_metrics(gan_model):
     return {
         'mse_custom_metric':
-            tf.compat.v1.metrics.mean_squared_error(gan_model.real_data,
-                                                    gan_model.generated_data)
+        tf.compat.v1.metrics.mean_squared_error(gan_model.real_data,
+                                                gan_model.generated_data)
     }
 
 
 class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     """Tests that the EstimatorSpec is constructed appropriately."""
-
     @classmethod
     def setUpClass(cls):
         super(GetEstimatorSpecTest, cls).setUpClass()
@@ -184,7 +182,6 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class GANEstimatorIntegrationTest(tf.test.TestCase):
-
     def setUp(self):
         super(GANEstimatorIntegrationTest, self).setUp()
         self._model_dir = tempfile.mkdtemp()
@@ -201,7 +198,6 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
                             predict_input_fn,
                             prediction_size,
                             lr_decay=False):
-
         def make_opt():
             gstep = tf.compat.v1.train.get_or_create_global_step()
             lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
@@ -291,11 +287,11 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
             example = tf.train.Example(features=tf.train.Features(
                 feature={
                     'x':
-                        tf.train.Feature(float_list=tf.train.FloatList(
-                            value=datum)),
+                    tf.train.Feature(float_list=tf.train.FloatList(
+                        value=datum)),
                     'y':
-                        tf.train.Feature(float_list=tf.train.FloatList(
-                            value=datum)),
+                    tf.train.Feature(float_list=tf.train.FloatList(
+                        value=datum)),
                 }))
             serialized_examples.append(example.SerializeToString())
 
@@ -335,7 +331,6 @@ class GANEstimatorIntegrationTest(tf.test.TestCase):
 
 
 class GANEstimatorWarmStartTest(tf.test.TestCase):
-
     def setUp(self):
         super(GANEstimatorWarmStartTest, self).setUp()
         self._model_dir = self.get_temp_dir()
@@ -348,7 +343,6 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
 
     def _test_warm_start(self, warm_start_from=None):
         """Tests whether WarmStartSettings work as intended."""
-
         def generator_with_new_variable(noise_dict, mode):
             tf.compat.v1.get_variable(name=self.new_variable_name,
                                       initializer=self.new_variable_value,
@@ -366,8 +360,8 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
             discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             model_dir=self._model_dir)
 
         est.train(train_input_fn, steps=1)
@@ -379,8 +373,8 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
             discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             model_dir=None if warm_start_from else self._model_dir,
             warm_start_from=warm_start_from)
 
@@ -410,7 +404,6 @@ class GANEstimatorWarmStartTest(tf.test.TestCase):
 
 
 class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(GANEstimatorParamsTest, self).setUp()
         self._model_dir = self.get_temp_dir()
@@ -422,7 +415,6 @@ class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
     @parameterized.named_parameters(('mi_penalty', 1.0),
                                     ('no_mi_penalty', None))
     def test_params_used(self, mi_penalty):
-
         def train_input_fn(params):
             self.assertIn('batch_size', params)
             data = np.zeros([params['batch_size'], 4])
@@ -435,8 +427,8 @@ class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
             discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             model_dir=self._model_dir,
             params={
                 'batch_size': 4,
@@ -450,7 +442,11 @@ class GANEstimatorParamsTest(tf.test.TestCase, parameterized.TestCase):
             est.train(train_input_fn, steps=1)
 
     def test_extract_gan_loss_args_from_params(self):
-        params = {'tensor_pool_fn': 1, 'gradient_penalty_target': 2, 'other': 3}
+        params = {
+            'tensor_pool_fn': 1,
+            'gradient_penalty_target': 2,
+            'other': 3
+        }
         gan_loss_args = extract_gan_loss_args_from_params(params)
         self.assertEqual(gan_loss_args, {
             'tensor_pool_fn': 1,

@@ -230,19 +230,20 @@ def custom_conv2d(x,
     kernel_size = list(kernel_size)
 
     def _apply_kernel(kernel_shape, kernel_initializer):
-        return tf.compat.v1.layers.conv2d(x,
-                                          filters=filters,
-                                          kernel_size=kernel_shape[0:2],
-                                          strides=strides,
-                                          padding=padding,
-                                          use_bias=False,
-                                          kernel_initializer=kernel_initializer)
+        return tf.compat.v1.layers.conv2d(
+            x,
+            filters=filters,
+            kernel_size=kernel_shape[0:2],
+            strides=strides,
+            padding=padding,
+            use_bias=False,
+            kernel_initializer=kernel_initializer)
 
     with tf.compat.v1.variable_scope(scope, reuse=reuse):
         return _custom_layer_impl(_apply_kernel,
                                   kernel_shape=kernel_size +
                                   [x.shape.as_list()[3], filters],
-                                  bias_shape=(filters,),
+                                  bias_shape=(filters, ),
                                   activation=activation,
                                   he_initializer_slope=he_initializer_slope,
                                   use_weight_scaling=use_weight_scaling)
@@ -286,7 +287,7 @@ def custom_dense(x,
     with tf.compat.v1.variable_scope(scope, reuse=reuse):
         return _custom_layer_impl(_apply_kernel,
                                   kernel_shape=(x.shape.as_list()[-1], units),
-                                  bias_shape=(units,),
+                                  bias_shape=(units, ),
                                   activation=activation,
                                   he_initializer_slope=he_initializer_slope,
                                   use_weight_scaling=use_weight_scaling)

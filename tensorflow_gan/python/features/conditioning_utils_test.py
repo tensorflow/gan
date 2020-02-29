@@ -23,7 +23,6 @@ import tensorflow_gan as tfgan
 
 
 class ConditioningUtilsTest(tf.test.TestCase):
-
     def test_condition_tensor_multiple_shapes(self):
         for tensor_shape in [(4, 1), (4, 2), (4, 2, 6)]:
             for conditioning_shape in [(4, 1), (4, 8), (4, 5, 3)]:

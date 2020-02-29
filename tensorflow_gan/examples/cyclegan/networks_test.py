@@ -23,7 +23,6 @@ from tensorflow_gan.examples.cyclegan import networks
 
 
 class NetworksTest(tf.test.TestCase):
-
     def test_generator_run(self):
         img_batch = tf.zeros([3, 128, 128, 3])
         model_output = networks.generator(img_batch)

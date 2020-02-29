@@ -30,7 +30,8 @@ def get_tpu_run_config_from_hparams(hparams):
     """Create a TPU-suitable RunConfig from HParams."""
     tf.compat.v1.logging.info('tpu_location: %s',
                               hparams.tpu_params.tpu_location)
-    tf.compat.v1.logging.info('gcp_project: %s', hparams.tpu_params.gcp_project)
+    tf.compat.v1.logging.info('gcp_project: %s',
+                              hparams.tpu_params.gcp_project)
     tf.compat.v1.logging.info('tpu_zone: %s', hparams.tpu_params.tpu_zone)
     cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
         tpu=hparams.tpu_params.tpu_location,
@@ -47,8 +48,8 @@ def get_tpu_run_config_from_hparams(hparams):
         save_checkpoints_steps=hparams.train_steps_per_eval,
         tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
             iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop,
-            eval_training_input_configuration=eval_training_input_configuration)
-    )
+            eval_training_input_configuration=eval_training_input_configuration
+        ))
 
 
 def get_run_config_from_hparams(hparams):
@@ -64,7 +65,8 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
         generator_fn=generator,
         discriminator_fn=discriminator,
         generator_loss_fn=tfgan.losses.wasserstein_hinge_generator_loss,
-        discriminator_loss_fn=tfgan.losses.wasserstein_hinge_discriminator_loss,
+        discriminator_loss_fn=tfgan.losses.
+        wasserstein_hinge_discriminator_loss,
         generator_optimizer=tf.compat.v1.train.AdamOptimizer(
             hparams.generator_lr, hparams.beta1),
         discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
@@ -82,7 +84,6 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
 
 def get_gpu_estimator(generator, discriminator, hparams, config):
     """Returns an Estimator object to be used for training with GPUs."""
-
     def gpu_get_metric(gan_model):
         """A function compatible with GANEstimator's get_eval_metric_ops_fn arg."""
         metrics_arguments = prepare_metric_arguments(
@@ -104,7 +105,8 @@ def get_gpu_estimator(generator, discriminator, hparams, config):
         generator_fn=generator,
         discriminator_fn=discriminator,
         generator_loss_fn=tfgan.losses.wasserstein_hinge_generator_loss,
-        discriminator_loss_fn=tfgan.losses.wasserstein_hinge_discriminator_loss,
+        discriminator_loss_fn=tfgan.losses.
+        wasserstein_hinge_discriminator_loss,
         generator_optimizer=tf.compat.v1.train.AdamOptimizer(
             hparams.generator_lr, hparams.beta1),
         discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
@@ -171,12 +173,12 @@ def get_metrics(real_logits, real_pools, fake_logits, fake_pools, hparams):
     del hparams
     metric_dict = {
         'eval/real_incscore':
-            tfgan.eval.classifier_score_from_logits_streaming(real_logits),
+        tfgan.eval.classifier_score_from_logits_streaming(real_logits),
         'eval/incscore':
-            tfgan.eval.classifier_score_from_logits_streaming(fake_logits),
+        tfgan.eval.classifier_score_from_logits_streaming(fake_logits),
         'eval/fid':
-            tfgan.eval.frechet_classifier_distance_from_activations_streaming(
-                real_pools, fake_pools),
+        tfgan.eval.frechet_classifier_distance_from_activations_streaming(
+            real_pools, fake_pools),
     }
     return metric_dict
 

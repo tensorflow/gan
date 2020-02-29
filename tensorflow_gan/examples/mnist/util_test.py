@@ -72,9 +72,9 @@ REAL_DIGIT = [
     ],
     [
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -0.859375, 0.7109375,
-        0.9765625, 0.9765625, 0.9765625, 0.9765625,
-        0.9765625, 0.546875, 0.421875, 0.9296875, 0.8828125, -1.0, -1.0, -1.0,
-        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0
+        0.9765625, 0.9765625, 0.9765625, 0.9765625, 0.9765625, 0.546875,
+        0.421875, 0.9296875, 0.8828125, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0
     ],
     [
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -0.375, 0.21875,
@@ -89,8 +89,8 @@ REAL_DIGIT = [
     ],
     [
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-        0.0859375, 0.9765625, 0.484375, -0.984375, -1.0, -1.0, -1.0, -1.0, -1.0,
-        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0
+        0.0859375, 0.9765625, 0.484375, -0.984375, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0
     ],
     [
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
@@ -158,8 +158,8 @@ REAL_DIGIT = [
     ],
     [
         -1.0, -1.0, -1.0, -1.0, 0.0625, 0.9765625, 0.9765625, 0.9765625,
-        0.65625, 0.0546875, 0.03125, -0.875, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0
+        0.65625, 0.0546875, 0.03125, -0.875, -1.0, -1.0, -1.0, -1.0, -1.0,
+        -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0
     ],
     [
         -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
@@ -538,7 +538,6 @@ def one_hot1():
 
 
 class MnistScoreTest(tf.test.TestCase):
-
     def test_any_batch_size(self):
         if tf.executing_eagerly():
             # Placeholders don't work in eager execution mode.
@@ -597,7 +596,6 @@ class MnistScoreTest(tf.test.TestCase):
 
 
 class MnistFrechetDistanceTest(tf.test.TestCase):
-
     def test_any_batch_size(self):
         if tf.executing_eagerly():
             # Placeholders don't work in eager execution mode.
@@ -659,7 +657,6 @@ class MnistFrechetDistanceTest(tf.test.TestCase):
 
 
 class MnistCrossEntropyTest(tf.test.TestCase):
-
     def test_any_batch_size(self):
         if tf.executing_eagerly():
             # Placeholders don't work in eager execution mode.
@@ -672,12 +669,13 @@ class MnistCrossEntropyTest(tf.test.TestCase):
         entropy = util.mnist_cross_entropy(inputs, one_hot_label)
         for batch_size in [4, 16, 30]:
             with self.cached_session() as sess:
-                sess.run(
-                    entropy,
-                    feed_dict={
-                        inputs: np.zeros([batch_size, 28, 28, 1]),
-                        one_hot_label: np.concatenate([one_label] * batch_size)
-                    })
+                sess.run(entropy,
+                         feed_dict={
+                             inputs:
+                             np.zeros([batch_size, 28, 28, 1]),
+                             one_hot_label:
+                             np.concatenate([one_label] * batch_size)
+                         })
 
     def test_deterministic(self):
         if tf.executing_eagerly():
@@ -731,7 +729,6 @@ class MnistCrossEntropyTest(tf.test.TestCase):
 
 
 class GetNoiseTest(tf.test.TestCase):
-
     def test_get_noise_categorical_syntax(self):
         util.get_eval_noise_categorical(
             noise_samples=4,

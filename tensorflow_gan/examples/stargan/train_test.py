@@ -46,7 +46,6 @@ train_lib.network.discriminator = _test_discriminator
 
 
 class TrainTest(tf.test.TestCase):
-
     def setUp(self):
         super(TrainTest, self).setUp()
         self.hparams = train_lib.HParams(
@@ -95,9 +94,11 @@ class TrainTest(tf.test.TestCase):
         base_lr = 0.01
         with self.cached_session(use_gpu=True) as sess:
             mock_get_or_create_global_step.return_value = tf.constant(2)
-            lr_step2 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
+            lr_step2 = sess.run(train_lib._get_lr(base_lr,
+                                                  max_number_of_steps))
             mock_get_or_create_global_step.return_value = tf.constant(9)
-            lr_step9 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
+            lr_step9 = sess.run(train_lib._get_lr(base_lr,
+                                                  max_number_of_steps))
 
         self.assertAlmostEqual(base_lr, lr_step2)
         self.assertAlmostEqual(base_lr * 0.2, lr_step9)
@@ -116,9 +117,12 @@ class TrainTest(tf.test.TestCase):
 
         model = train_lib._define_model(images, labels)
         loss = tfgan.stargan_loss(model)
-        train_ops = train_lib._define_train_ops(
-            model, loss, hparams.generator_lr, hparams.discriminator_lr,
-            hparams.adam_beta1, hparams.adam_beta2, hparams.max_number_of_steps)
+        train_ops = train_lib._define_train_ops(model, loss,
+                                                hparams.generator_lr,
+                                                hparams.discriminator_lr,
+                                                hparams.adam_beta1,
+                                                hparams.adam_beta2,
+                                                hparams.max_number_of_steps)
 
         self.assertIsInstance(train_ops, tfgan.GANTrainOps)
 
@@ -147,7 +151,7 @@ class TrainTest(tf.test.TestCase):
         ]
         img_list = [tf.zeros(images_shape)] * num_domains
         lbl_list = [tf.one_hot([0] * hparams.batch_size, num_domains)
-                   ] * num_domains
+                    ] * num_domains
         mock_provide_data.return_value = (img_list, lbl_list)
 
         train_lib.train(hparams)

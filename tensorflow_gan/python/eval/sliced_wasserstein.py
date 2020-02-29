@@ -102,7 +102,6 @@ def _batch_to_patches(batch, patches_per_image, patch_size):
       Tensor (batch*patches_per_image, patch_size, patch_size, channels) of
       patches.
   """
-
     def py_func_random_patches(batch):
         """Numpy wrapper."""
         batch_size, height, width, channels = batch.shape
@@ -262,17 +261,17 @@ def sliced_wasserstein_distance(real_images,
     ]
 
     # Gather patches for each level of the Laplacian pyramids.
-    patches_real, patches_fake, patches_test = (
-        [[] for _ in resolutions] for _ in range(3))
-    for lod, level in enumerate(laplacian_pyramid(real_images,
-                                                  len(resolutions))):
+    patches_real, patches_fake, patches_test = ([[] for _ in resolutions]
+                                                for _ in range(3))
+    for lod, level in enumerate(
+            laplacian_pyramid(real_images, len(resolutions))):
         patches_real[lod].append(
             _batch_to_patches(level, patches_per_image, patch_size))
         patches_test[lod].append(
             _batch_to_patches(level, patches_per_image, patch_size))
 
-    for lod, level in enumerate(laplacian_pyramid(fake_images,
-                                                  len(resolutions))):
+    for lod, level in enumerate(
+            laplacian_pyramid(fake_images, len(resolutions))):
         patches_fake[lod].append(
             _batch_to_patches(level, patches_per_image, patch_size))
 
@@ -292,7 +291,8 @@ def sliced_wasserstein_distance(real_images,
                                      random_sampling_count,
                                      random_projection_dim)))
         else:
-            scores.append(
-                (_sliced_wasserstein_svd(patches_real[lod], patches_test[lod]),
-                 _sliced_wasserstein_svd(patches_real[lod], patches_fake[lod])))
+            scores.append((_sliced_wasserstein_svd(patches_real[lod],
+                                                   patches_test[lod]),
+                           _sliced_wasserstein_svd(patches_real[lod],
+                                                   patches_fake[lod])))
     return scores

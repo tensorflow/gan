@@ -36,12 +36,12 @@ mock = tf.compat.v1.test.mock
 
 def _basenames_from_glob(file_glob):
     return [
-        os.path.basename(file_path) for file_path in tf.io.gfile.glob(file_glob)
+        os.path.basename(file_path)
+        for file_path in tf.io.gfile.glob(file_glob)
     ]
 
 
 class InferenceDemoTest(tf.test.TestCase):
-
     def setUp(self):
         self._export_dir = os.path.join(FLAGS.test_tmpdir, 'export')
         self._ckpt_path = os.path.join(self._export_dir, 'model.ckpt')

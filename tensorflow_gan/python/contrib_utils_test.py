@@ -35,7 +35,6 @@ def batchnorm_classifier(inputs):
 
 
 class CreateTrainOpTest(tf.test.TestCase, absltest.TestCase):
-
     def setUp(self):
         super(CreateTrainOpTest, self).setUp()
         np.random.seed(0)

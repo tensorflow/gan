@@ -52,8 +52,8 @@ def get_variables_by_name(given_name, scope=None):
 def _with_dependencies(dependencies, output_tensor):
     with tf.compat.v1.name_scope('control_dependency',
                                  values=list(dependencies) + [output_tensor]):
-        with tf.compat.v1.colocate_with(output_tensor), tf.control_dependencies(
-                dependencies):
+        with tf.compat.v1.colocate_with(
+                output_tensor), tf.control_dependencies(dependencies):
             output_tensor = tf.convert_to_tensor(value=output_tensor)
             assert isinstance(output_tensor, tf.Tensor)
             return tf.identity(output_tensor)
@@ -189,7 +189,8 @@ def create_train_op(total_loss,
         train_op = _with_dependencies([grad_updates], total_loss)
 
     # Add the operation used for training to the 'train_op' collection
-    train_ops = tf.compat.v1.get_collection_ref(tf.compat.v1.GraphKeys.TRAIN_OP)
+    train_ops = tf.compat.v1.get_collection_ref(
+        tf.compat.v1.GraphKeys.TRAIN_OP)
     if train_op not in train_ops:
         train_ops.append(train_op)
 

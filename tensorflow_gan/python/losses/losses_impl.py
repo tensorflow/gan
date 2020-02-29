@@ -90,8 +90,9 @@ def wasserstein_generator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-    with tf.compat.v1.name_scope(scope, 'generator_wasserstein_loss',
-                                 (discriminator_gen_outputs, weights)) as scope:
+    with tf.compat.v1.name_scope(
+            scope, 'generator_wasserstein_loss',
+        (discriminator_gen_outputs, weights)) as scope:
         discriminator_gen_outputs = _to_float(discriminator_gen_outputs)
 
         loss = -discriminator_gen_outputs
@@ -450,8 +451,8 @@ def wasserstein_gradient_penalty(
             raise ValueError('`generated_data` can\'t have unknown rank.')
 
         differences = generated_data - real_data
-        batch_size = (tf.compat.dimension_value(differences.shape.dims[0]) or
-                      tf.shape(input=differences)[0])
+        batch_size = (tf.compat.dimension_value(differences.shape.dims[0])
+                      or tf.shape(input=differences)[0])
         alpha_shape = [batch_size] + [1] * (differences.shape.ndims - 1)
         alpha = tf.random.uniform(shape=alpha_shape)
         interpolates = real_data + (alpha * differences)
@@ -668,12 +669,11 @@ def modified_discriminator_loss(
   Returns:
     A loss Tensor. The shape depends on `reduction`.
   """
-    return minimax_discriminator_loss(discriminator_real_outputs,
-                                      discriminator_gen_outputs,
-                                      label_smoothing, real_weights,
-                                      generated_weights, scope or
-                                      'discriminator_modified_loss',
-                                      loss_collection, reduction, add_summaries)
+    return minimax_discriminator_loss(
+        discriminator_real_outputs, discriminator_gen_outputs, label_smoothing,
+        real_weights, generated_weights, scope
+        or 'discriminator_modified_loss', loss_collection, reduction,
+        add_summaries)
 
 
 def modified_generator_loss(
@@ -848,7 +848,8 @@ def least_squares_discriminator_loss(
     if add_summaries:
         tf.compat.v1.summary.scalar('discriminator_gen_lsq_loss',
                                     loss_on_generated)
-        tf.compat.v1.summary.scalar('discriminator_real_lsq_loss', loss_on_real)
+        tf.compat.v1.summary.scalar('discriminator_real_lsq_loss',
+                                    loss_on_real)
         tf.compat.v1.summary.scalar('discriminator_lsq_loss', loss)
 
     return loss
@@ -922,8 +923,8 @@ def mutual_information_penalty(
     with tf.compat.v1.name_scope(scope, 'mutual_information_loss') as scope:
         # Calculate the negative log-likelihood of the reconstructed noise.
         log_probs = [
-            tf.reduce_mean(input_tensor=dist.log_prob(noise)) for dist, noise in
-            zip(predicted_distributions, structured_generator_inputs)
+            tf.reduce_mean(input_tensor=dist.log_prob(noise)) for dist, noise
+            in zip(predicted_distributions, structured_generator_inputs)
         ]
         loss = -1 * tf.compat.v1.losses.compute_weighted_loss(
             log_probs,
@@ -955,8 +956,7 @@ def numerically_stable_global_norm(tensor_list):
         return 0.0
 
     list_max = tf.reduce_max(input_tensor=[
-        tf.reduce_max(input_tensor=tf.abs(x))
-        for x in tensor_list
+        tf.reduce_max(input_tensor=tf.abs(x)) for x in tensor_list
         if x is not None
     ])
     return list_max * tf.linalg.global_norm(
@@ -1058,7 +1058,8 @@ def combine_adversarial_loss(main_loss,
                 'combine_adversarial_loss.')
             main_loss = tf.math.reduce_mean(input_tensor=main_loss,
                                             axis=list(
-                                                range(1, main_loss.shape.rank)))
+                                                range(1,
+                                                      main_loss.shape.rank)))
             adversarial_loss = tf.math.reduce_mean(
                 input_tensor=adversarial_loss,
                 axis=list(range(1, adversarial_loss.shape.rank)))
@@ -1148,11 +1149,12 @@ def cycle_consistency_loss(data_x,
     A scalar `Tensor` of cycle consistency loss.
   """
 
-    with tf.compat.v1.name_scope(
-            scope,
-            'cycle_consistency_loss',
-            values=[data_x, reconstructed_data_x, data_y,
-                    reconstructed_data_y]):
+    with tf.compat.v1.name_scope(scope,
+                                 'cycle_consistency_loss',
+                                 values=[
+                                     data_x, reconstructed_data_x, data_y,
+                                     reconstructed_data_y
+                                 ]):
         loss_x2x = tf.compat.v1.losses.absolute_difference(
             data_x, reconstructed_data_x)
         loss_y2y = tf.compat.v1.losses.absolute_difference(

@@ -39,7 +39,6 @@ HParams = collections.namedtuple('HParams', [
 
 
 def _get_train_input_fn(batch_size, noise_dims, num_parallel_calls=4):
-
     def train_input_fn():
         images, _ = data_provider.provide_data(
             'train', batch_size, num_parallel_calls=num_parallel_calls)
@@ -50,7 +49,6 @@ def _get_train_input_fn(batch_size, noise_dims, num_parallel_calls=4):
 
 
 def _get_predict_input_fn(batch_size, noise_dims):
-
     def predict_input_fn():
         noise = tf.random.normal([batch_size, noise_dims])
         return noise
@@ -81,7 +79,8 @@ def train(hparams):
         add_summaries=tfgan.estimator.SummaryType.IMAGES)
 
     # Train estimator.
-    train_input_fn = _get_train_input_fn(hparams.batch_size, hparams.noise_dims)
+    train_input_fn = _get_train_input_fn(hparams.batch_size,
+                                         hparams.noise_dims)
     gan_estimator.train(train_input_fn, max_steps=hparams.max_number_of_steps)
 
     # Run inference.

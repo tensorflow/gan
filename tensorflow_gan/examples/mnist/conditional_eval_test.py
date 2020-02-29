@@ -24,7 +24,6 @@ from tensorflow_gan.examples.mnist import conditional_eval_lib
 
 
 class ConditionalEvalTest(tf.test.TestCase):
-
     def test_build_graph(self):
         if tf.executing_eagerly():
             return

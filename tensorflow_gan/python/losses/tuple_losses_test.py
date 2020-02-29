@@ -30,7 +30,6 @@ from tensorflow_gan.python.losses.tuple_losses import args_to_gan_model
 
 
 class ArgsToGanModelTest(tf.test.TestCase):
-
     def testargs_to_gan_model(self):
         """Test `args_to_gan_model`."""
         tuple_type = collections.namedtuple('fake_type', ['arg1', 'arg3'])
@@ -63,13 +62,13 @@ class ArgsToGanModelTest(tf.test.TestCase):
 
     def testargs_to_gan_model_name(self):
         """Test that `args_to_gan_model` produces correctly named functions."""
-
         def loss_fn(x):
             return x
 
         new_loss_fn = args_to_gan_model(loss_fn)
         self.assertEqual('loss_fn', new_loss_fn.__name__)
-        self.assertTrue('The gan_model version of' in new_loss_fn.__docstring__)
+        self.assertTrue(
+            'The gan_model version of' in new_loss_fn.__docstring__)
 
     def test_tuple_respects_optional_args(self):
         """Test that optional args can be changed with tuple losses."""
@@ -134,19 +133,18 @@ manual_tests = [
 ]
 
 discriminator_keyword_args = {
-    'discriminator_real_outputs':
-        np.array([[3.4, 2.3, -2.3], [6.3, -2.1, 0.2]]),
-    'discriminator_gen_outputs':
-        np.array([[6.2, -1.5, 2.3], [-2.9, -5.1, 0.1]]),
+    'discriminator_real_outputs': np.array([[3.4, 2.3, -2.3], [6.3, -2.1,
+                                                               0.2]]),
+    'discriminator_gen_outputs': np.array([[6.2, -1.5, 2.3], [-2.9, -5.1,
+                                                              0.1]]),
 }
 generator_keyword_args = {
-    'discriminator_gen_outputs':
-        np.array([[6.2, -1.5, 2.3], [-2.9, -5.1, 0.1]]),
+    'discriminator_gen_outputs': np.array([[6.2, -1.5, 2.3], [-2.9, -5.1,
+                                                              0.1]]),
 }
 
 
 class CycleConsistencyLossTest(tf.test.TestCase):
-
     def setUp(self):
         super(CycleConsistencyLossTest, self).setUp()
 
@@ -178,7 +176,6 @@ class CycleConsistencyLossTest(tf.test.TestCase):
 
 
 class StarGANLossWrapperTest(tf.test.TestCase):
-
     def setUp(self):
 
         super(StarGANLossWrapperTest, self).setUp()
@@ -266,7 +263,8 @@ class StarGANLossWrapperTest(tf.test.TestCase):
             return
         loss_fn = tfgan.losses.wargs.wasserstein_gradient_penalty
         tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)
-        wrapped_loss_fn = tfgan.losses.stargan_gradient_penalty_wrapper(loss_fn)
+        wrapped_loss_fn = tfgan.losses.stargan_gradient_penalty_wrapper(
+            loss_fn)
 
         loss_result_tensor = loss_fn(
             real_data=self.input_data,
@@ -291,6 +289,7 @@ if __name__ == '__main__':
             keyword_args = generator_keyword_args
         else:
             keyword_args = discriminator_keyword_args
-        add_loss_consistency_test(ConsistentLossesTest, loss_name, keyword_args)
+        add_loss_consistency_test(ConsistentLossesTest, loss_name,
+                                  keyword_args)
 
     tf.test.main()

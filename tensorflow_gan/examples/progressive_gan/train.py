@@ -134,8 +134,8 @@ def get_stage_info(stage_id, **kwargs):
     # Even stage_id: stable training stage.
     # Odd stage_id: transition training stage.
     num_blocks = (stage_id + 1) // 2 + 1
-    num_images = ((stage_id // 2 + 1) * kwargs['stable_stage_num_images'] +
-                  ((stage_id + 1) // 2) * kwargs['transition_stage_num_images'])
+    num_images = ((stage_id // 2 + 1) * kwargs['stable_stage_num_images'] + (
+        (stage_id + 1) // 2) * kwargs['transition_stage_num_images'])
 
     total_num_images = kwargs['total_num_images']
     if stage_id >= total_num_stages - 1:
@@ -394,7 +394,6 @@ def build_model(stage_id, batch_size, real_images, **kwargs):
 
 def make_var_scope_custom_getter_for_ema(ema):
     """Makes variable scope custom getter."""
-
     def _custom_getter(getter, name, *args, **kwargs):
         var = getter(name, *args, **kwargs)
         ema_var = ema.average(var)
@@ -579,13 +578,14 @@ def train(model, **kwargs):
     logging.info('stage_id=%d, num_blocks=%d, num_images=%d', model.stage_id,
                  model.num_blocks, model.num_images)
 
-    scaffold = make_scaffold(model.stage_id, model.optimizer_var_list, **kwargs)
+    scaffold = make_scaffold(model.stage_id, model.optimizer_var_list,
+                             **kwargs)
 
     tfgan.gan_train(
         model.gan_train_ops,
         logdir=make_train_sub_dir(model.stage_id, **kwargs),
-        get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(1,
-                                                                          1)),
+        get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(
+            1, 1)),
         hooks=[
             tf.estimator.StopAtStepHook(last_step=model.num_images),
             tf.estimator.LoggingTensorHook([make_status_message(model)],

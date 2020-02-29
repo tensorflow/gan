@@ -35,11 +35,12 @@ def _mock_inception(*args, **kwargs):  # pylint: disable=function-redefined
 
 
 class EvalLibTest(tf.test.TestCase):
-
     @mock.patch.object(eval_lib.tfgan.eval,
                        'sample_and_run_inception',
                        new=_mock_inception)
-    @mock.patch.object(eval_lib.data_provider, 'provide_dataset', autospec=True)
+    @mock.patch.object(eval_lib.data_provider,
+                       'provide_dataset',
+                       autospec=True)
     def test_get_real_activations_syntax(self, mock_dataset):
         mock_dataset.return_value = tf.data.Dataset.from_tensors(
             np.zeros([128, 128, 3])).map(lambda x: (x, 1))

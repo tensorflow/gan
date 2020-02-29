@@ -62,9 +62,9 @@ def image_grid(input_tensor, grid_shape, image_shape=(32, 32), num_channels=3):
                 "Image shape and number of channels incompatible with "
                 "input tensor.")
     elif len(input_tensor.shape) == 4:
-        if (int(input_tensor.shape[1]) != image_shape[0] or
-                int(input_tensor.shape[2]) != image_shape[1] or
-                int(input_tensor.shape[3]) != num_channels):
+        if (int(input_tensor.shape[1]) != image_shape[0]
+                or int(input_tensor.shape[2]) != image_shape[1]
+                or int(input_tensor.shape[3]) != num_channels):
             raise ValueError(
                 "Image shape and number of channels incompatible with "
                 "input tensor. %s vs %s" %
@@ -72,11 +72,11 @@ def image_grid(input_tensor, grid_shape, image_shape=(32, 32), num_channels=3):
                  (image_shape[0], image_shape[1], num_channels)))
     else:
         raise ValueError("Unrecognized input tensor format.")
-    height, width = grid_shape[0] * image_shape[0], grid_shape[1] * image_shape[
-        1]
+    height, width = grid_shape[0] * image_shape[0], grid_shape[
+        1] * image_shape[1]
     input_tensor = tf.reshape(
         input_tensor,
-        tuple(grid_shape) + tuple(image_shape) + (num_channels,))
+        tuple(grid_shape) + tuple(image_shape) + (num_channels, ))
     input_tensor = tf.transpose(a=input_tensor, perm=[0, 1, 3, 2, 4])
     input_tensor = tf.reshape(
         input_tensor, [grid_shape[0], width, image_shape[0], num_channels])
@@ -113,7 +113,7 @@ def python_image_grid(input_array, grid_shape):
                      grid_shape[1] * image_shape[1])
     input_array = np.reshape(
         input_array,
-        tuple(grid_shape) + tuple(image_shape) + (num_channels,))
+        tuple(grid_shape) + tuple(image_shape) + (num_channels, ))
     input_array = np.transpose(input_array, [0, 1, 3, 2, 4])
     input_array = np.reshape(
         input_array, [grid_shape[0], width, image_shape[0], num_channels])
@@ -157,8 +157,8 @@ def image_reshaper(images, num_cols=None):
     _validate_images(images)
 
     num_images = len(images)
-    num_columns = num_cols if num_cols else int(math.ceil(
-        math.sqrt(num_images)))
+    num_columns = num_cols if num_cols else int(
+        math.ceil(math.sqrt(num_images)))
     num_rows = int(math.ceil(float(num_images) / num_columns))
     rows = [
         images[x:x + num_columns] for x in range(0, num_images, num_columns)
@@ -223,7 +223,7 @@ def streaming_mean_tensor_float64(values, updates_collections=None, name=None):
         values = tf.cast(values, tf.float64)
 
     with tf.compat.v1.variable_scope(name, "streaming_mean_tensor_float64",
-                                     (values,)):
+                                     (values, )):
         total = _get_streaming_variable(name="total_tensor",
                                         shape=values.get_shape())
         count = _get_streaming_variable(name="count_tensor",

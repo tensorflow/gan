@@ -46,8 +46,8 @@ def train(hparams):
     if not tf.io.gfile.exists(hparams.train_log_dir):
         tf.io.gfile.makedirs(hparams.train_log_dir)
 
-    with tf.device(tf.compat.v1.train.replica_device_setter(
-            hparams.ps_replicas)):
+    with tf.device(
+            tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
         # Force all input processing onto CPU in order to reserve the GPU for
         # the forward inference and back-propagation.
         with tf.compat.v1.name_scope('inputs'):

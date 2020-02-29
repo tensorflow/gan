@@ -19,7 +19,6 @@ from tensorflow_gan.examples.stargan import layers
 
 
 class LayersTest(tf.test.TestCase):
-
     def test_residual_block(self):
 
         n = 2

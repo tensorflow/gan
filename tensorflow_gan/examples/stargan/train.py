@@ -32,7 +32,8 @@ flags.DEFINE_string('train_log_dir', '/tmp/tfgan_logdir/stargan/',
 
 # FLAGS for training hyper-parameters.
 flags.DEFINE_float('generator_lr', 1e-4, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr', 1e-4, 'The discriminator learning rate.')
+flags.DEFINE_float('discriminator_lr', 1e-4,
+                   'The discriminator learning rate.')
 flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
 flags.DEFINE_float('adam_beta1', 0.5, 'Adam Beta 1 for the Adam optimizer.')

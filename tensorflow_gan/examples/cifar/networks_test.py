@@ -24,7 +24,6 @@ from tensorflow_gan.examples.cifar import networks
 
 
 class NetworksTest(tf.test.TestCase):
-
     def test_generator(self):
         tf.compat.v1.set_random_seed(1234)
         batch_size = 100

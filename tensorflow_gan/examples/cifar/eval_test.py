@@ -26,7 +26,6 @@ mock = tf.compat.v1.test.mock
 
 
 class EvalTest(tf.test.TestCase, parameterized.TestCase):
-
     @parameterized.parameters(
         {'eval_real_images': True},
         {

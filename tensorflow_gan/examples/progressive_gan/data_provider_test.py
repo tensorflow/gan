@@ -31,7 +31,6 @@ mock = tf.compat.v1.test.mock
 
 
 class DataProviderUtilsTest(tf.test.TestCase):
-
     def test_normalize_image(self):
         image_np = np.asarray([0, 255, 210], dtype=np.uint8)
         normalized_image = data_provider.normalize_image(tf.constant(image_np))
@@ -74,7 +73,6 @@ class DataProviderUtilsTest(tf.test.TestCase):
 
 
 class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(DataProviderTest, self).setUp()
         self.testdata_dir = os.path.join(

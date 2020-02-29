@@ -23,7 +23,6 @@ from tensorflow_gan.examples.cyclegan import discriminator
 
 
 class DiscriminatorTest(tf.test.TestCase):
-
     def _layer_output_size(self, input_size, kernel_size=4, stride=2, pad=2):
         return (input_size + pad * 2 - kernel_size) // stride + 1
 
@@ -69,9 +68,8 @@ class DiscriminatorTest(tf.test.TestCase):
 
         images = tf.ones((batch_size, input_size, input_size, 3))
         with self.assertRaises(TypeError):
-            discriminator.pix2pix_discriminator(images,
-                                                num_filters=[64, 128, 256, 512],
-                                                padding=1.5)
+            discriminator.pix2pix_discriminator(
+                images, num_filters=[64, 128, 256, 512], padding=1.5)
 
     def test_four_layers_negative_padding(self):
         batch_size = 2
@@ -83,9 +81,8 @@ class DiscriminatorTest(tf.test.TestCase):
         else:
             exception_type = ValueError
         with self.assertRaises(exception_type):
-            discriminator.pix2pix_discriminator(images,
-                                                num_filters=[64, 128, 256, 512],
-                                                padding=-1)
+            discriminator.pix2pix_discriminator(
+                images, num_filters=[64, 128, 256, 512], padding=-1)
 
 
 if __name__ == '__main__':

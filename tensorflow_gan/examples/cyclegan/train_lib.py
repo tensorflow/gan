@@ -51,7 +51,8 @@ def _get_data(image_set_x_file_pattern, image_set_y_file_pattern, batch_size,
         ]
     else:
         if image_set_x_file_pattern or image_set_y_file_pattern:
-            raise ValueError('Both image patterns or neither must be provided.')
+            raise ValueError(
+                'Both image patterns or neither must be provided.')
         image_file_patterns = None
     images_x, images_y = data_provider.provide_custom_data(
         batch_size=batch_size,
@@ -172,8 +173,8 @@ def train(hparams):
     if not tf.io.gfile.exists(hparams.train_log_dir):
         tf.io.gfile.makedirs(hparams.train_log_dir)
 
-    with tf.device(tf.compat.v1.train.replica_device_setter(
-            hparams.ps_replicas)):
+    with tf.device(
+            tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
         with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
             images_x, images_y = _get_data(hparams.image_set_x_file_pattern,
                                            hparams.image_set_y_file_pattern,
@@ -186,7 +187,8 @@ def train(hparams):
         # Define CycleGAN loss.
         cyclegan_loss = tfgan.cyclegan_loss(
             cyclegan_model,
-            cycle_consistency_loss_weight=hparams.cycle_consistency_loss_weight,
+            cycle_consistency_loss_weight=hparams.
+            cycle_consistency_loss_weight,
             tensor_pool_fn=tfgan.features.tensor_pool)
 
         # Define CycleGAN train ops.

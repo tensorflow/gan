@@ -128,10 +128,10 @@ def _validate_flags():
 
 def main(_):
     _validate_flags()
-    images_x_hwc_pl, generated_y = make_inference_graph('ModelX2Y',
-                                                        FLAGS.patch_dim)
-    images_y_hwc_pl, generated_x = make_inference_graph('ModelY2X',
-                                                        FLAGS.patch_dim)
+    images_x_hwc_pl, generated_y = make_inference_graph(
+        'ModelX2Y', FLAGS.patch_dim)
+    images_y_hwc_pl, generated_x = make_inference_graph(
+        'ModelY2X', FLAGS.patch_dim)
 
     # Restore all the variables that were saved in the checkpoint.
     saver = tf.compat.v1.train.Saver()

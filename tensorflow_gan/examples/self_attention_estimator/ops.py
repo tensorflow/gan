@@ -185,7 +185,6 @@ class BatchNorm(object):
 
   This is just vanilla batch normalization.
   """
-
     def __init__(self, name='batch_norm'):
         """Inits the object.
 
@@ -245,8 +244,8 @@ def sn_conv1x1(x, output_dim, training=True, name='sn_conv1x1'):
   Returns:
     A new volume with the same batch, height, and width as the input.
   """
-    with tf.compat.v1.variable_scope(name,
-                                     custom_getter=sn_gettr(training=training)):
+    with tf.compat.v1.variable_scope(
+            name, custom_getter=sn_gettr(training=training)):
         w = tf.compat.v1.get_variable(
             'weights', [1, 1, x.get_shape()[-1], output_dim],
             initializer=tf.compat.v1.keras.initializers.VarianceScaling(

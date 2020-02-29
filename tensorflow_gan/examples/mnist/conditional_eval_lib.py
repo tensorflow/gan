@@ -62,7 +62,8 @@ def evaluate(hparams, run_eval_loop=True):
     tf.compat.v1.summary.scalar('MNIST_Classifier_score',
                                 util.mnist_score(images))
     tf.compat.v1.summary.scalar(
-        'MNIST_Cross_entropy', util.mnist_cross_entropy(images, one_hot_labels))
+        'MNIST_Cross_entropy',
+        util.mnist_cross_entropy(images, one_hot_labels))
 
     # Write images to disk.
     image_write_ops = None

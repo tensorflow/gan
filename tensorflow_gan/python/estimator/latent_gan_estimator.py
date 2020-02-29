@@ -85,7 +85,6 @@ __all__ = [
 def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
                              optimizer):
     """Sets up a model function that wraps around a given GAN."""
-
     def model_fn(features, labels, mode, params):
         """Model function defining an inpainting estimator."""
         batch_size = params['batch_size']
@@ -186,8 +185,8 @@ def get_latent_gan_estimator(generator_fn,
   Returns:
     An estimator spec defining a GAN input training estimator.
   """
-    model_fn = _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
-                                        optimizer)
+    model_fn = _get_latent_gan_model_fn(generator_fn, discriminator_fn,
+                                        loss_fn, optimizer)
 
     if isinstance(warmstart_options, tf.estimator.WarmStartSettings):
         ws = warmstart_options

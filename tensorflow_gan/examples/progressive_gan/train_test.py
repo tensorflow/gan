@@ -33,7 +33,6 @@ def provide_random_data(batch_size=2, patch_size=4, colors=1, **unused_kwargs):
 
 
 class TrainTest(tf.test.TestCase):
-
     def setUp(self):
         super(TrainTest, self).setUp()
         self._config = {
@@ -62,7 +61,8 @@ class TrainTest(tf.test.TestCase):
             'adam_beta2': 0.99,
             'fake_grid_size': 2,
             'interp_grid_size': 2,
-            'train_log_dir': os.path.join(FLAGS.test_tmpdir, 'progressive_gan'),
+            'train_log_dir': os.path.join(FLAGS.test_tmpdir,
+                                          'progressive_gan'),
             'master': '',
             'task': 0
         }

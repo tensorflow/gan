@@ -226,7 +226,8 @@ def generator_bottleneck(input_net, residual_block_num=6, num_outputs=256):
                     input_net.shape[-1], num_outputs))
     else:
         raise ValueError(
-            'The last dimension of the input_net should be explicitly defined.')
+            'The last dimension of the input_net should be explicitly defined.'
+        )
 
     with tf.compat.v1.variable_scope('generator_bottleneck'):
 

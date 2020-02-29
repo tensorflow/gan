@@ -93,7 +93,6 @@ def _validate_init_input_and_get_axis(reference_batch, axis):
 
 def _validate_call_input(tensor_list, batch_dim):
     """Verifies that tensor shapes are compatible, except for `batch_dim`."""
-
     def _get_shape(tensor):
         shape = tensor.shape.as_list()
         del shape[batch_dim]
@@ -122,7 +121,6 @@ class VBN(object):
   The `__init__` API is intended to mimic `tf.layers.batch_normalization` as
   closely as possible.
   """
-
     def __init__(self,
                  reference_batch,
                  axis=-1,
@@ -230,14 +228,14 @@ class VBN(object):
             if center:
                 self._beta = tf.compat.v1.get_variable(
                     name='beta',
-                    shape=(params_shape,),
+                    shape=(params_shape, ),
                     initializer=beta_initializer,
                     regularizer=beta_regularizer,
                     trainable=trainable)
             if scale:
                 self._gamma = tf.compat.v1.get_variable(
                     name='gamma',
-                    shape=(params_shape,),
+                    shape=(params_shape, ),
                     initializer=gamma_initializer,
                     regularizer=gamma_regularizer,
                     trainable=trainable)

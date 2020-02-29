@@ -33,7 +33,8 @@ flags.DEFINE_string('output_dir', '/tmp/tfgan_logdir/stargan_estimator/out/',
 
 # FLAGS for training hyper-parameters.
 flags.DEFINE_float('generator_lr', 1e-4, 'The generator learning rate.')
-flags.DEFINE_float('discriminator_lr', 1e-4, 'The discriminator learning rate.')
+flags.DEFINE_float('discriminator_lr', 1e-4,
+                   'The discriminator learning rate.')
 flags.DEFINE_integer('max_number_of_steps', 1000000,
                      'The maximum number of gradient steps.')
 flags.DEFINE_integer('steps_per_eval', 1000,

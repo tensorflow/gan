@@ -313,7 +313,8 @@ def group_norm(inputs,
         else:
             moments_axes.append(a)
 
-    with tf.compat.v1.variable_scope(scope, 'GroupNorm', [inputs], reuse=reuse):
+    with tf.compat.v1.variable_scope(scope, 'GroupNorm', [inputs],
+                                     reuse=reuse):
         # Note that the params_shape is the number of channels always.
         params_shape = [channels]
 

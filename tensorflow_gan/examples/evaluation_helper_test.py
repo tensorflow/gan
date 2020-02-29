@@ -37,7 +37,6 @@ def _local_variable(val, name):
 
 
 class CheckpointIteratorTest(tf.test.TestCase):
-
     def testReturnsEmptyIfNoCheckpointsFound(self):
         checkpoint_dir = os.path.join(self.get_temp_dir(),
                                       'no_checkpoints_found')
@@ -119,7 +118,6 @@ def logistic_classifier(inputs):
 
 
 class EvaluateOnceTest(tf.test.TestCase):
-
     def setUp(self):
         super(EvaluateOnceTest, self).setUp()
 
@@ -226,7 +224,8 @@ class EvaluateOnceTest(tf.test.TestCase):
             hooks=[
                 evaluation.StopAfterNEvalsHook(num_evals),
             ])
-        self.assertEqual(final_ops_values['value'], num_evals + final_increment)
+        self.assertEqual(final_ops_values['value'],
+                         num_evals + final_increment)
 
     def testOnlyFinalOp(self):
         if tf.executing_eagerly():
@@ -255,7 +254,6 @@ class EvaluateOnceTest(tf.test.TestCase):
 
 
 class EvaluateRepeatedlyTest(tf.test.TestCase):
-
     def setUp(self):
         super(EvaluateRepeatedlyTest, self).setUp()
 
@@ -471,7 +469,8 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
             return
         checkpoint_dir = os.path.join(self.get_temp_dir(),
                                       'summaries_are_flushed')
-        logdir = os.path.join(self.get_temp_dir(), 'summaries_are_flushed_eval')
+        logdir = os.path.join(self.get_temp_dir(),
+                              'summaries_are_flushed_eval')
         if tf.io.gfile.exists(logdir):
             tf.io.gfile.rmtree(logdir)
 

@@ -79,7 +79,8 @@ def _provide_custom_dataset(image_file_pattern, num_threads=1):
     A tf.data.Dataset with image elements.
   """
     filenames_ds = tf.data.Dataset.list_files(image_file_pattern)
-    bytes_ds = filenames_ds.map(tf.io.read_file, num_parallel_calls=num_threads)
+    bytes_ds = filenames_ds.map(tf.io.read_file,
+                                num_parallel_calls=num_threads)
     images_ds = bytes_ds.map(tf.image.decode_image,
                              num_parallel_calls=num_threads)
     return images_ds
@@ -142,8 +143,8 @@ def provide_custom_datasets(batch_size,
     if image_file_patterns and not isinstance(image_file_patterns,
                                               (list, tuple)):
         raise ValueError(
-            '`image_file_patterns` should be either list or tuple, but was {}.'.
-            format(type(image_file_patterns)))
+            '`image_file_patterns` should be either list or tuple, but was {}.'
+            .format(type(image_file_patterns)))
     images_ds = []
     if image_file_patterns:
         for pattern in image_file_patterns:
@@ -191,8 +192,8 @@ def provide_custom_data(batch_size,
   Raises:
     ValueError: If image_file_patterns is not a list or tuple.
   """
-    datasets = provide_custom_datasets(batch_size, image_file_patterns, shuffle,
-                                       num_threads, patch_size)
+    datasets = provide_custom_datasets(batch_size, image_file_patterns,
+                                       shuffle, num_threads, patch_size)
 
     tensors = []
     for ds in datasets:

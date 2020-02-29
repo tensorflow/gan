@@ -68,7 +68,8 @@ def pad(input_net, padding_size):
   """
     if len(input_net.shape) == 4:
         return tf.pad(tensor=input_net,
-                      paddings=_padding_arg(padding_size, padding_size, 'NHWC'))
+                      paddings=_padding_arg(padding_size, padding_size,
+                                            'NHWC'))
     elif len(input_net.shape) == 3:
         return tf.pad(tensor=input_net,
                       paddings=_padding_arg(padding_size, padding_size, 'HWC'))
@@ -97,7 +98,8 @@ def condition_input_with_pixel_padding(input_tensor, condition_tensor):
 
     input_tensor.shape.assert_has_rank(4)
     condition_tensor.shape.assert_has_rank(2)
-    input_tensor.shape[:1].assert_is_compatible_with(condition_tensor.shape[:1])
+    input_tensor.shape[:1].assert_is_compatible_with(
+        condition_tensor.shape[:1])
     condition_tensor = tf.expand_dims(condition_tensor, axis=1)
     condition_tensor = tf.expand_dims(condition_tensor, axis=1)
     condition_tensor = tf.tile(

@@ -27,7 +27,6 @@ from tensorflow_gan.python.features import virtual_batchnorm as vbn_lib
 
 
 class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
-
     def test_syntax(self):
         reference_batch = tf.zeros([5, 3, 16, 9, 15])
         vbn = vbn_lib.VBN(reference_batch, batch_axis=1)
@@ -155,7 +154,8 @@ class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
         # Get the VBN object and the virtual batch normalized value for
         # `fixed_example`.
         vbn = vbn_lib.VBN(reference_batch)
-        vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)), 0)
+        vbn_fixed_example = tf.squeeze(vbn(tf.expand_dims(fixed_example, 0)),
+                                       0)
         with self.cached_session() as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
             vbn_fixed_example_np = sess.run(vbn_fixed_example)
@@ -163,7 +163,9 @@ class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
         # Check that the value is the same for different minibatches, and different
         # sized minibatches.
         for minibatch_size in range(1, 6):
-            examples = [tf.random.normal([7, 3]) for _ in range(minibatch_size)]
+            examples = [
+                tf.random.normal([7, 3]) for _ in range(minibatch_size)
+            ]
 
             minibatch = tf.stack([fixed_example] + examples)
             vbn_minibatch = vbn(minibatch)

@@ -93,9 +93,8 @@ def batch_norm(inputs,
                                                  initializer=beta_initializer)
                 beta = tf.gather(beta, labels)
             if scale:
-                gamma = tf.compat.v1.get_variable('gamma',
-                                                  var_shape,
-                                                  initializer=gamma_initializer)
+                gamma = tf.compat.v1.get_variable(
+                    'gamma', var_shape, initializer=gamma_initializer)
                 gamma = tf.gather(gamma, labels)
         else:
             if center:
@@ -103,9 +102,8 @@ def batch_norm(inputs,
                                                  var_shape,
                                                  initializer=beta_initializer)
             if scale:
-                gamma = tf.compat.v1.get_variable('gamma',
-                                                  var_shape,
-                                                  initializer=gamma_initializer)
+                gamma = tf.compat.v1.get_variable(
+                    'gamma', var_shape, initializer=gamma_initializer)
         outputs = standardize_batch(inputs,
                                     is_training=is_training,
                                     epsilon=variance_epsilon,

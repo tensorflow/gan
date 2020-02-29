@@ -42,12 +42,10 @@ class SummaryType(enum.IntEnum):
 
 
 summary_type_map = {
-    SummaryType.VARIABLES:
-        tfgan_summaries.add_gan_model_summaries,
-    SummaryType.IMAGES:
-        tfgan_summaries.add_gan_model_image_summaries,
+    SummaryType.VARIABLES: tfgan_summaries.add_gan_model_summaries,
+    SummaryType.IMAGES: tfgan_summaries.add_gan_model_image_summaries,
     SummaryType.IMAGE_COMPARISON:
-        tfgan_summaries.add_image_comparison_summaries,
+    tfgan_summaries.add_image_comparison_summaries,
 }
 
 
@@ -97,7 +95,6 @@ class GANEstimator(tf.estimator.Estimator):
           x for x in gan_estimator.predict(predict_input_fn)])
   ```
   """
-
     def __init__(self,
                  model_dir=None,
                  generator_fn=None,
@@ -257,8 +254,9 @@ def get_gan_model(mode,
     return gan_model
 
 
-def _make_gan_model(generator_fn, discriminator_fn, real_data, generator_inputs,
-                    generator_scope, discriminator_scope, add_summaries, mode):
+def _make_gan_model(generator_fn, discriminator_fn, real_data,
+                    generator_inputs, generator_scope, discriminator_scope,
+                    add_summaries, mode):
     """Construct a `GANModel`, and optionally pass in `mode`."""
     # If network functions have an argument `mode`, pass mode to it.
     if 'mode' in inspect.getargspec(generator_fn).args:
@@ -313,9 +311,9 @@ def get_eval_estimator_spec(gan_model, gan_loss, get_eval_metric_ops_fn=None):
     with tf.compat.v1.name_scope(name='metrics'):
         eval_metric_ops = {
             'generator_loss':
-                tf.compat.v1.metrics.mean(gan_loss.generator_loss),
+            tf.compat.v1.metrics.mean(gan_loss.generator_loss),
             'discriminator_loss':
-                tf.compat.v1.metrics.mean(gan_loss.discriminator_loss),
+            tf.compat.v1.metrics.mean(gan_loss.discriminator_loss),
         }
         if get_eval_metric_ops_fn is not None:
             custom_eval_metric_ops = get_eval_metric_ops_fn(gan_model)

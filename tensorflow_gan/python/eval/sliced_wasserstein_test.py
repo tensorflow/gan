@@ -28,7 +28,6 @@ from tensorflow_gan.python.eval.sliced_wasserstein import laplacian_pyramid
 
 
 class ClassifierMetricsTest(tf.test.TestCase):
-
     def test_laplacian_pyramid(self):
         # The numpy/scipy code for reference estimation comes from:
         # https://github.com/tkarras/progressive_growing_of_gans

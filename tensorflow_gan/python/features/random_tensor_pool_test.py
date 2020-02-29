@@ -25,7 +25,6 @@ import tensorflow_gan as tfgan
 
 
 class TensorPoolTest(tf.test.TestCase):
-
     def test_pool_unknown_input_shape(self):
         """Checks that `input_value` can have unknown shape."""
         if tf.executing_eagerly():

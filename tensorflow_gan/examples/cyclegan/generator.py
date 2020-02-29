@@ -65,9 +65,9 @@ def cyclegan_upsample(net,
         spatial_pad_1 = np.array([[0, 0], [1, 1], [1, 1], [0, 0]])
 
         if method == 'nn_upsample_conv':
-            net = tf.image.resize(net,
-                                  [strides[0] * height, strides[1] * width],
-                                  method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+            net = tf.image.resize(
+                net, [strides[0] * height, strides[1] * width],
+                method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
             net = tf.pad(tensor=net, paddings=spatial_pad_1, mode=pad_mode)
             net = _conv2d(net, num_outputs, 3)
             net = _instance_norm(net)

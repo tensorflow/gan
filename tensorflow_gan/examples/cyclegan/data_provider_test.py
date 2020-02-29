@@ -31,7 +31,6 @@ mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase):
-
     def setUp(self):
         super(DataProviderTest, self).setUp()
         self.testdata_dir = os.path.join(

@@ -130,7 +130,8 @@ def log_and_summarize_variables(var_list, dbg_messge, on_tpu):
         # The TPU estimator doesn't support summaries.
         with tf.compat.v1.name_scope(name=None):
             for var in sigma_ratio_vars:
-                tf.compat.v1.summary.scalar('sigma_ratio_vars/' + var.name, var)
+                tf.compat.v1.summary.scalar('sigma_ratio_vars/' + var.name,
+                                            var)
 
 
 def predict_and_write_images(estimator, input_fn, model_dir, filename_suffix):

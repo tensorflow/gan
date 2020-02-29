@@ -24,7 +24,6 @@ from tensorflow_gan.examples.self_attention_estimator import ops
 
 
 class OpsTest(tf.test.TestCase):
-
     def test_snconv2d_shapes(self):
         """Tests the spectrally normalized 2d conv function.
 

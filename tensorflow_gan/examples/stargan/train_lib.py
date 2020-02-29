@@ -175,14 +175,13 @@ def train(hparams):
         tf.io.gfile.makedirs(hparams.train_log_dir)
 
     # Shard the model to different parameter servers.
-    with tf.device(tf.compat.v1.train.replica_device_setter(
-            hparams.ps_replicas)):
+    with tf.device(
+            tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
 
         # Create the input dataset.
         with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
-            images, labels = data_provider.provide_data('train',
-                                                        hparams.batch_size,
-                                                        hparams.patch_size)
+            images, labels = data_provider.provide_data(
+                'train', hparams.batch_size, hparams.patch_size)
 
         # Define the model.
         with tf.compat.v1.name_scope('model'):

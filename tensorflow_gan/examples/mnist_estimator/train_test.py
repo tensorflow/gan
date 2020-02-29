@@ -27,7 +27,6 @@ mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase):
-
     @mock.patch.object(train_lib, 'data_provider', autospec=True)
     def test_full_flow(self, mock_data_provider):
         hparams = train_lib.HParams(batch_size=16,

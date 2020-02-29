@@ -231,7 +231,6 @@ def _log_performance_statistics(cur_step, steps_taken, time_taken, start_time):
 
 def _get_generator(hparams):
     """Returns a TF-GAN compatible generator function."""
-
     def generator(noise, mode):
         """TF-GAN compatible generator function."""
         batch_size = tf.shape(input=noise)[0]
@@ -245,16 +244,17 @@ def _get_generator(hparams):
         gen_sparse_class.shape.assert_is_compatible_with([None])
 
         if hparams.debug_params.fake_nets:
-            gen_imgs = tf.zeros([batch_size, 128, 128, 3
-                                ]) * tf.compat.v1.get_variable('dummy_g',
-                                                               initializer=2.0)
+            gen_imgs = tf.zeros([
+                batch_size, 128, 128, 3
+            ]) * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
             generator_vars = ()
         else:
-            gen_imgs, generator_vars = gen_module.generator(noise,
-                                                            gen_sparse_class,
-                                                            hparams.gf_dim,
-                                                            hparams.num_classes,
-                                                            training=is_train)
+            gen_imgs, generator_vars = gen_module.generator(
+                noise,
+                gen_sparse_class,
+                hparams.gf_dim,
+                hparams.num_classes,
+                training=is_train)
         # Print debug statistics and log the generated variables.
         gen_imgs, gen_sparse_class = eval_lib.print_debug_statistics(
             gen_imgs, gen_sparse_class, 'generator',
@@ -273,7 +273,6 @@ def _get_generator(hparams):
 
 def _get_discriminator(hparams):
     """Return a TF-GAN compatible discriminator."""
-
     def discriminator(images_and_lbls, unused_conditioning, mode):
         """TF-GAN compatible discriminator."""
         del unused_conditioning, mode

@@ -28,7 +28,6 @@ mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(DataProviderTest, self).setUp()
         mock_imgs = np.zeros([32, 32, 3], dtype=np.uint8)
@@ -105,7 +104,7 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
         if one_hot:
             expected_lbls_shape = (batch_size, 10)
         else:
-            expected_lbls_shape = (batch_size,)
+            expected_lbls_shape = (batch_size, )
         self.assertTupleEqual(labels.shape, expected_lbls_shape)
 
     @mock.patch.object(data_provider, 'tfds', autospec=True)

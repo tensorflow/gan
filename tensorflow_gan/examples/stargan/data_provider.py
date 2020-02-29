@@ -53,7 +53,6 @@ def provide_dataset(split,
     ds = tfds.load('celeb_a', split=split, shuffle_files=shuffle)
 
     def _filter_pred(attribute):
-
         def _filter(element):
             return element['attributes'][attribute]
 
@@ -77,8 +76,8 @@ def provide_dataset(split,
                  num_parallel_calls=num_parallel_calls).cache().repeat())
     if shuffle:
         ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-    ds = (ds.batch(batch_size,
-                   drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
+    ds = (ds.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE))
 
     return ds
 

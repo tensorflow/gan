@@ -26,7 +26,6 @@ from tensorflow_gan.examples.cyclegan import generator
 
 # TODO(joelshor): Add a test to check generator endpoints.
 class CycleganTest(tf.test.TestCase, parameterized.TestCase):
-
     def test_generator_inference(self):
         """Check one inference step."""
         img_batch = tf.zeros([2, 32, 32, 3])

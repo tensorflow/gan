@@ -30,9 +30,7 @@ import tensorflow_gan as tfgan
 
 
 class VariableClippingOptimizerTest(tf.test.TestCase):
-
     def _setupCluster(self):
-
         def get_open_port():
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -98,8 +96,8 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
             2.0 * expected_unclipped / np.linalg.norm(expected_unclipped),
             var0_out[1])
         # var1 is not in the var list, so it should not be clipped
-        self.assertAllCloseAccordingToType([4.0 - 3.0 * 0.01, 5.0 - 3.0 * 0.01],
-                                           sess.run(var1))
+        self.assertAllCloseAccordingToType(
+            [4.0 - 3.0 * 0.01, 5.0 - 3.0 * 0.01], sess.run(var1))
 
     def _setupSparse(self, is_distributed, dtype, sess):
         with self._maybeWithDevice("/job:ps" if is_distributed else None):
@@ -124,10 +122,10 @@ class VariableClippingOptimizerTest(tf.test.TestCase):
 
     def _assertSparseCorrect(self, var0, var1, update_op, sess):
         # Fetch params to validate initial values
-        self.assertAllCloseAccordingToType([[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]],
-                                           sess.run(var0))
-        self.assertAllCloseAccordingToType([[0.0, 1.0], [0.0, 3.0], [0.0, 5.0]],
-                                           sess.run(var1))
+        self.assertAllCloseAccordingToType(
+            [[0.0, 1.0], [2.0, 3.0], [4.0, 5.0]], sess.run(var0))
+        self.assertAllCloseAccordingToType(
+            [[0.0, 1.0], [0.0, 3.0], [0.0, 5.0]], sess.run(var1))
 
         # Run 1 step of sgd
         sess.run(update_op)

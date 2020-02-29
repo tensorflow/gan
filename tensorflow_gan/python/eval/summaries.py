@@ -38,7 +38,9 @@ def _assert_is_image(data):
     data.shape[1:].assert_is_fully_defined()
 
 
-def add_gan_model_image_summaries(gan_model, grid_size=4, model_summaries=True):
+def add_gan_model_image_summaries(gan_model,
+                                  grid_size=4,
+                                  model_summaries=True):
     """Adds image summaries for real and fake images.
 
   Args:

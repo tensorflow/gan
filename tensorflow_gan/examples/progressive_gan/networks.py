@@ -35,7 +35,6 @@ from tensorflow_gan.examples.progressive_gan import layers
 
 class ResolutionSchedule(object):
     """Image resolution upscaling schedule."""
-
     def __init__(self,
                  start_resolutions=(4, 4),
                  scale_base=2,

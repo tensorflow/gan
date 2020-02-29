@@ -19,7 +19,6 @@ from tensorflow_gan.examples.stargan import network
 
 
 class NetworkTest(tf.test.TestCase):
-
     def test_generator(self):
 
         n = 2

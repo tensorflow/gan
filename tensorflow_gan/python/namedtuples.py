@@ -224,7 +224,6 @@ class GANTrainOps(
       to be populated when training ops are instantiated. Used primarily for
       sync hooks.
   """
-
     def __new__(cls,
                 generator_train_op,
                 discriminator_train_op,

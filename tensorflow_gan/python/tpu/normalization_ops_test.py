@@ -29,7 +29,6 @@ from tensorflow_gan.python.tpu.normalization_ops import moving_moments_for_infer
 
 
 class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
-
     @parameterized.parameters(
         {"conditional": True},
         {"conditional": False},
@@ -49,9 +48,8 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
         except AttributeError:  # TF 2.0 doesn't have contrib.
             contrib_bn = core_bn
         onehot_labels = tf.one_hot([0, 1, 2, 1], 5) if conditional else None
-        custom_bn = tfgan.tpu.batch_norm(x,
-                                         is_training=True,
-                                         conditional_class_labels=onehot_labels)
+        custom_bn = tfgan.tpu.batch_norm(
+            x, is_training=True, conditional_class_labels=onehot_labels)
         with self.cached_session() as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
             core_bn, contrib_bn, custom_bn = sess.run(
@@ -92,7 +90,9 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
         def _name(i):
             return "batch_norm" if same_name else "batch_norm_%i" % i
 
-        tfgan.tpu.batch_norm(tf.zeros([5, 4]), is_training=False, name=_name(0))
+        tfgan.tpu.batch_norm(tf.zeros([5, 4]),
+                             is_training=False,
+                             name=_name(0))
         num_vars = len(tf.compat.v1.global_variables())
         for i in range(1, 4):
             tfgan.tpu.batch_norm(tf.zeros([5, 4]),
@@ -106,18 +106,17 @@ class BatchNormTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class AccumulatedMomentsTest(tf.test.TestCase):
-
     def testAccumulatedMomentsDuringTraining(self):
         if tf.executing_eagerly():
             # Eager execution doesn't support placeholders or `x.op`.
             return
         mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
         variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-        mean, variance = accumulated_moments_for_inference(mean=mean_in,
-                                                           variance=variance_in,
-                                                           is_training=True)
+        mean, variance = accumulated_moments_for_inference(
+            mean=mean_in, variance=variance_in, is_training=True)
         variables_by_name = {
-            v.op.name: v for v in tf.compat.v1.global_variables()
+            v.op.name: v
+            for v in tf.compat.v1.global_variables()
         }
         accu_mean = variables_by_name["accu/accu_mean"]
         accu_variance = variables_by_name["accu/accu_variance"]
@@ -149,11 +148,11 @@ class AccumulatedMomentsTest(tf.test.TestCase):
             return
         mean_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
         variance_in = tf.compat.v1.placeholder(tf.float32, shape=[2])
-        mean, variance = accumulated_moments_for_inference(mean=mean_in,
-                                                           variance=variance_in,
-                                                           is_training=False)
+        mean, variance = accumulated_moments_for_inference(
+            mean=mean_in, variance=variance_in, is_training=False)
         variables_by_name = {
-            v.op.name: v for v in tf.compat.v1.global_variables()
+            v.op.name: v
+            for v in tf.compat.v1.global_variables()
         }
         accu_mean = variables_by_name["accu/accu_mean"]
         accu_variance = variables_by_name["accu/accu_variance"]
@@ -198,7 +197,6 @@ class AccumulatedMomentsTest(tf.test.TestCase):
 
 
 class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
-
     @parameterized.parameters(
         {"decay": 0.1},
         {"decay": 0.999},
@@ -214,7 +212,8 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
                                                       is_training=True,
                                                       decay=decay)
         variables_by_name = {
-            v.op.name: v for v in tf.compat.v1.global_variables()
+            v.op.name: v
+            for v in tf.compat.v1.global_variables()
         }
         self.assertLen(variables_by_name, 2)
         self.assertIn("moving_mean", variables_by_name)
@@ -262,7 +261,8 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
                                                       is_training=False,
                                                       decay=0.5)
         variables_by_name = {
-            v.op.name: v for v in tf.compat.v1.global_variables()
+            v.op.name: v
+            for v in tf.compat.v1.global_variables()
         }
         self.assertLen(variables_by_name, 2)
         self.assertIn("moving_mean", variables_by_name)
@@ -279,8 +279,8 @@ class MovingMomentsTest(tf.test.TestCase, parameterized.TestCase):
             v_exp = np.array([1.0, 1.0])  # init values
 
             # Run a bunch of rounds and update the EMA.
-            for m_in, v_in in [([1.0, 2.0], [3.0, 4.0]), ([2.0,
-                                                           4.0], [5.0, 6.0])]:
+            for m_in, v_in in [([1.0, 2.0], [3.0, 4.0]),
+                               ([2.0, 4.0], [5.0, 6.0])]:
                 m_in = np.array(m_in)
                 v_in = np.array(v_in)
                 m, v, ema_m, ema_v = sess.run(

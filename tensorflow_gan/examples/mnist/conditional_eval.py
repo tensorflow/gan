@@ -46,11 +46,9 @@ FLAGS = flags.FLAGS
 
 
 def main(_):
-    hparams = conditional_eval_lib.HParams(FLAGS.checkpoint_dir, FLAGS.eval_dir,
-                                           FLAGS.num_images_per_class,
-                                           FLAGS.noise_dims,
-                                           FLAGS.max_number_of_evaluations,
-                                           FLAGS.write_to_disk)
+    hparams = conditional_eval_lib.HParams(
+        FLAGS.checkpoint_dir, FLAGS.eval_dir, FLAGS.num_images_per_class,
+        FLAGS.noise_dims, FLAGS.max_number_of_evaluations, FLAGS.write_to_disk)
     conditional_eval_lib.evaluate(hparams, run_eval_loop=True)
 
 

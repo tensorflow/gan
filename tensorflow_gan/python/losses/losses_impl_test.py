@@ -27,7 +27,6 @@ import tensorflow_probability as tfp
 
 
 class _LossesTest(object):
-
     def init_constants(self):
         self._discriminator_real_outputs_np = [-5.0, 1.4, 12.5, 2.7]
         self._discriminator_gen_outputs_np = [10.0, 4.4, -5.5, 3.6]
@@ -106,9 +105,10 @@ class _LossesTest(object):
         self.assertEqual(logits.dtype, loss.dtype)
 
         with self.cached_session() as sess:
-            loss = sess.run(loss, feed_dict={
-                logits: [[10.0, 4.4, -5.5, 3.6]],
-            })
+            loss = sess.run(loss,
+                            feed_dict={
+                                logits: [[10.0, 4.4, -5.5, 3.6]],
+                            })
             self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
     def test_discriminator_loss_with_placeholder_for_logits(self):
@@ -193,7 +193,6 @@ class _LossesTest(object):
 
 class LeastSquaresLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
     """Tests for least_squares_xxx_loss."""
-
     def setUp(self):
         super(LeastSquaresLossTest, self).setUp()
         self.init_constants()
@@ -205,7 +204,6 @@ class LeastSquaresLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
 
 class ModifiedLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
     """Tests for modified_xxx_loss."""
-
     def setUp(self):
         super(ModifiedLossTest, self).setUp()
         self.init_constants()
@@ -217,7 +215,6 @@ class ModifiedLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
 
 class MinimaxLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
     """Tests for minimax_xxx_loss."""
-
     def setUp(self):
         super(MinimaxLossTest, self).setUp()
         self.init_constants()
@@ -229,7 +226,6 @@ class MinimaxLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
 
 class WassersteinLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
     """Tests for wasserstein_xxx_loss."""
-
     def setUp(self):
         super(WassersteinLossTest, self).setUp()
         self.init_constants()
@@ -242,7 +238,6 @@ class WassersteinLossTest(tf.test.TestCase, absltest.TestCase, _LossesTest):
 class HingeWassersteinLossTest(tf.test.TestCase, absltest.TestCase,
                                _LossesTest):
     """Tests for wasserstein_hinge_xxx_loss."""
-
     def setUp(self):
         super(HingeWassersteinLossTest, self).setUp()
         self.init_constants()
@@ -255,7 +250,6 @@ class HingeWassersteinLossTest(tf.test.TestCase, absltest.TestCase,
 # TODO(joelshor): Refactor this test to use the same code as the other losses.
 class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
     """Tests for acgan_loss."""
-
     def setUp(self):
         super(ACGANLossTest, self).setUp()
         self._g_loss_fn = tfgan.losses.wargs.acgan_generator_loss
@@ -274,22 +268,21 @@ class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
         self._discriminator_gen_classification_logits = tf.constant(
             self._discriminator_gen_classification_logits_np, dtype=tf.float32)
         self._discriminator_real_classification_logits = tf.constant(
-            self._discriminator_real_classification_logits_np, dtype=tf.float32)
+            self._discriminator_real_classification_logits_np,
+            dtype=tf.float32)
         self._one_hot_labels = tf.constant(self._one_hot_labels_np,
                                            dtype=tf.float32)
         self._generator_kwargs = {
             'discriminator_gen_classification_logits':
-                self._discriminator_gen_classification_logits,
-            'one_hot_labels':
-                self._one_hot_labels,
+            self._discriminator_gen_classification_logits,
+            'one_hot_labels': self._one_hot_labels,
         }
         self._discriminator_kwargs = {
             'discriminator_gen_classification_logits':
-                self._discriminator_gen_classification_logits,
+            self._discriminator_gen_classification_logits,
             'discriminator_real_classification_logits':
-                self._discriminator_real_classification_logits,
-            'one_hot_labels':
-                self._one_hot_labels,
+            self._discriminator_real_classification_logits,
+            'one_hot_labels': self._one_hot_labels,
         }
         self._expected_g_loss = 3.84974
         self._expected_d_loss = 9.43950
@@ -366,9 +359,8 @@ class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
                 loss,
                 feed_dict={
                     gen_logits:
-                        self._discriminator_gen_classification_logits_np,
-                    one_hot_labels:
-                        self._one_hot_labels_np,
+                    self._discriminator_gen_classification_logits_np,
+                    one_hot_labels: self._one_hot_labels_np,
                 })
             self.assertAlmostEqual(self._expected_g_loss, loss, 5)
 
@@ -387,11 +379,10 @@ class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
                 loss,
                 feed_dict={
                     gen_logits:
-                        self._discriminator_gen_classification_logits_np,
+                    self._discriminator_gen_classification_logits_np,
                     real_logits:
-                        self._discriminator_real_classification_logits_np,
-                    one_hot_labels:
-                        self._one_hot_labels_np,
+                    self._discriminator_real_classification_logits_np,
+                    one_hot_labels: self._one_hot_labels_np,
                 })
             self.assertAlmostEqual(self._expected_d_loss, loss, 5)
 
@@ -449,7 +440,6 @@ class ACGANLossTest(tf.test.TestCase, absltest.TestCase):
 
 
 class _PenaltyTest(object):
-
     def test_all_correct(self):
         loss = self._penalty_fn(**self._kwargs)
         self.assertEqual(self._expected_dtype, loss.dtype)
@@ -474,18 +464,19 @@ class _PenaltyTest(object):
         loss = self._penalty_fn(weights=2.3, **self._kwargs)
         with self.cached_session() as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
-            self.assertAlmostEqual(self._expected_loss * 2.3, sess.run(loss), 3)
+            self.assertAlmostEqual(self._expected_loss * 2.3, sess.run(loss),
+                                   3)
 
     def test_scalar_tensor_weight(self):
         loss = self._penalty_fn(weights=tf.constant(2.3), **self._kwargs)
         with self.cached_session() as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
-            self.assertAlmostEqual(self._expected_loss * 2.3, sess.run(loss), 3)
+            self.assertAlmostEqual(self._expected_loss * 2.3, sess.run(loss),
+                                   3)
 
 
 class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
     """Tests for wasserstein_gradient_penalty."""
-
     def setUp(self):
         super(GradientPenaltyTest, self).setUp()
         self._penalty_fn = tfgan.losses.wargs.wasserstein_gradient_penalty
@@ -498,16 +489,15 @@ class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
 
         self._kwargs = {
             'generated_data':
-                tf.constant(self._generated_data_np,
-                            dtype=self._expected_dtype),
+            tf.constant(self._generated_data_np, dtype=self._expected_dtype),
             'real_data':
-                tf.constant(self._real_data_np, dtype=self._expected_dtype),
+            tf.constant(self._real_data_np, dtype=self._expected_dtype),
             'generator_inputs':
-                None,
+            None,
             'discriminator_fn':
-                self._discriminator_fn,
+            self._discriminator_fn,
             'discriminator_scope':
-                self._scope,
+            self._scope,
         }
         self._expected_loss = 9.00000
         self._expected_op_name = 'wasserstein_gradient_penalty/value'
@@ -626,14 +616,16 @@ class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
         # already in the collection.
         self.assertLen(
             tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name), 1)
+                'fake_update_ops', self._kwargs['discriminator_scope'].name),
+            1)
 
         # Make sure the op is added to the collection even if it's in a name scope.
         with tf.compat.v1.name_scope('loss'):
             tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
         self.assertLen(
             tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name), 2)
+                'fake_update_ops', self._kwargs['discriminator_scope'].name),
+            2)
 
         # Make sure the op is added to the collection even if it's in a variable
         # scope.
@@ -641,13 +633,13 @@ class GradientPenaltyTest(tf.test.TestCase, absltest.TestCase, _PenaltyTest):
             tfgan.losses.wargs.wasserstein_gradient_penalty(**self._kwargs)
         self.assertLen(
             tf.compat.v1.get_collection(
-                'fake_update_ops', self._kwargs['discriminator_scope'].name), 3)
+                'fake_update_ops', self._kwargs['discriminator_scope'].name),
+            3)
 
 
 class MutualInformationPenaltyTest(tf.test.TestCase, absltest.TestCase,
                                    _PenaltyTest):
     """Tests for mutual_information_penalty."""
-
     def setUp(self):
         super(MutualInformationPenaltyTest, self).setUp()
         self._penalty_fn = tfgan.losses.wargs.mutual_information_penalty
@@ -669,7 +661,6 @@ class MutualInformationPenaltyTest(tf.test.TestCase, absltest.TestCase,
 
 class CombineAdversarialLossTest(tf.test.TestCase):
     """Tests for combine_adversarial_loss."""
-
     def setUp(self):
         super(CombineAdversarialLossTest, self).setUp()
         self._generated_data_np = [[3.1, 2.3, -12.3, 32.1]]
@@ -788,14 +779,14 @@ class CombineAdversarialLossTest(tf.test.TestCase):
         precond_gnorm = numerically_stable_global_norm(tensors)
 
         with self.cached_session() as sess:
-            for _ in range(10):  # spot check closeness on more than one sample.
+            for _ in range(
+                    10):  # spot check closeness on more than one sample.
                 gnorm_np, precond_gnorm_np = sess.run([gnorm, precond_gnorm])
                 self.assertNear(gnorm_np, precond_gnorm_np, 1e-4)
 
 
 class CycleConsistencyLossTest(tf.test.TestCase):
     """Tests for cycle_consistency_loss."""
-
     def setUp(self):
         super(CycleConsistencyLossTest, self).setUp()
 

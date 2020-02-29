@@ -44,7 +44,6 @@ version = __version__
 
 
 class StderrWrapper(io.IOBase):
-
     def write(self, *args, **kwargs):
         return sys.stderr.write(*args, **kwargs)
 
@@ -55,7 +54,6 @@ class StderrWrapper(io.IOBase):
 
 
 class Test(TestCommandBase):
-
     def run_tests(self):
         # Import absl inside run, where dependencies have been loaded already.
         from absl import app  # pylint: disable=g-import-not-at-top
@@ -91,7 +89,6 @@ class Test(TestCommandBase):
 
 class BinaryDistribution(Distribution):
     """This class is needed in order to create OS specific wheels."""
-
     def has_ext_modules(self):
         return False
 

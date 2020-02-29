@@ -19,7 +19,6 @@ from tensorflow_gan.examples.stargan import ops
 
 
 class OpsTest(tf.test.TestCase):
-
     def test_padding_arg(self):
 
         pad_h = 2

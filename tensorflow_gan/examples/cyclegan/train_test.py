@@ -39,7 +39,6 @@ def _test_discriminator(image_batch, unused_conditioning=None):
 
 
 class TrainTest(tf.test.TestCase):
-
     def setUp(self):
         super(TrainTest, self).setUp()
         self._original_generator = train_lib.networks.generator
@@ -95,9 +94,11 @@ class TrainTest(tf.test.TestCase):
         max_number_of_steps = 10
         with self.cached_session(use_gpu=True) as sess:
             mock_get_or_create_global_step.return_value = tf.constant(2)
-            lr_step2 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
+            lr_step2 = sess.run(train_lib._get_lr(base_lr,
+                                                  max_number_of_steps))
             mock_get_or_create_global_step.return_value = tf.constant(9)
-            lr_step9 = sess.run(train_lib._get_lr(base_lr, max_number_of_steps))
+            lr_step9 = sess.run(train_lib._get_lr(base_lr,
+                                                  max_number_of_steps))
 
         self.assertAlmostEqual(base_lr, lr_step2)
         self.assertAlmostEqual(base_lr * 0.2, lr_step9)

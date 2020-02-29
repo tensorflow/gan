@@ -28,7 +28,6 @@ from tensorflow_gan.python.features import normalization as norm
 
 
 class InstanceNormTest(tf.test.TestCase, absltest.TestCase):
-
     def testUnknownShape(self):
         if tf.executing_eagerly():
             # Placeholders don't work in eager execution mode.
@@ -150,7 +149,10 @@ class InstanceNormTest(tf.test.TestCase, absltest.TestCase):
                     var = np.var(outputs, axis=reduced_axes)
                     # The mean and variance of each example should be close to 0 and 1
                     # respectively.
-                    self.assertAllClose(expected_mean, mean, rtol=tol, atol=tol)
+                    self.assertAllClose(expected_mean,
+                                        mean,
+                                        rtol=tol,
+                                        atol=tol)
                     self.assertAllClose(expected_var, var, rtol=tol, atol=tol)
 
     def testOutputSmallInput4DNHWC(self):
@@ -179,7 +181,6 @@ class InstanceNormTest(tf.test.TestCase, absltest.TestCase):
 
 
 class GroupNormTest(tf.test.TestCase, absltest.TestCase):
-
     def testInvalidGroupSize(self):
         inputs = tf.zeros((5, 2, 10, 10), dtype=tf.float32)
         with self.assertRaisesRegexp(ValueError,
@@ -239,7 +240,8 @@ class GroupNormTest(tf.test.TestCase, absltest.TestCase):
             # Placeholders don't work in eager execution mode.
             return
         inputs = tf.compat.v1.placeholder(tf.float32, shape=(1, 3, 4, None))
-        with self.assertRaisesRegexp(ValueError, 'undefined channel dimension'):
+        with self.assertRaisesRegexp(ValueError,
+                                     'undefined channel dimension'):
             norm.group_norm(inputs, channels_axis=-1, reduction_axes=[-3, -2])
 
     def testParamsShapeNotFullyDefinedBatchAxis(self):
@@ -414,7 +416,10 @@ class GroupNormTest(tf.test.TestCase, absltest.TestCase):
                     var = np.var(outputs, axis=reduced_axes)
                     # The mean and variance of each example should be close to 0 and 1
                     # respectively.
-                    self.assertAllClose(expected_mean, mean, rtol=tol, atol=tol)
+                    self.assertAllClose(expected_mean,
+                                        mean,
+                                        rtol=tol,
+                                        atol=tol)
                     self.assertAllClose(expected_var, var, rtol=tol, atol=tol)
 
     def doOutputTestForMeanCloseToZero(self,

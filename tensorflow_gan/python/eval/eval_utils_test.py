@@ -25,7 +25,6 @@ import tensorflow_probability as tfp
 
 
 class UtilsTest(tf.test.TestCase):
-
     def test_image_grid(self):
         eval_utils.image_grid(input_tensor=tf.zeros([25, 32, 32, 3]),
                               grid_shape=(5, 5))
@@ -50,7 +49,6 @@ class UtilsTest(tf.test.TestCase):
 
 
 class StreamingUtilsTest(tf.test.TestCase):
-
     def test_mean_correctness(self):
         """Checks value of streaming_mean_tensor_float64."""
         if tf.executing_eagerly():
@@ -63,7 +61,8 @@ class StreamingUtilsTest(tf.test.TestCase):
 
         placeholder = tf.compat.v1.placeholder(dtype=tf.float64,
                                                shape=(3, 4, 5))
-        value, update_op = eval_utils.streaming_mean_tensor_float64(placeholder)
+        value, update_op = eval_utils.streaming_mean_tensor_float64(
+            placeholder)
 
         expected_result = np.mean(data, axis=0)
         with self.cached_session() as sess:
@@ -71,7 +70,10 @@ class StreamingUtilsTest(tf.test.TestCase):
             for i in range(num_batches):
                 sess.run(update_op, feed_dict={placeholder: data[i]})
             result = sess.run(value)
-            self.assertAllClose(expected_result, result, rtol=1e-15, atol=1e-15)
+            self.assertAllClose(expected_result,
+                                result,
+                                rtol=1e-15,
+                                atol=1e-15)
 
     def test_mean_update_op_value(self):
         """Checks that the value of the update op is the same as the value."""
@@ -85,7 +87,8 @@ class StreamingUtilsTest(tf.test.TestCase):
 
         placeholder = tf.compat.v1.placeholder(dtype=tf.float64,
                                                shape=(3, 4, 5))
-        value, update_op = eval_utils.streaming_mean_tensor_float64(placeholder)
+        value, update_op = eval_utils.streaming_mean_tensor_float64(
+            placeholder)
 
         with self.cached_session() as sess:
             sess.run(tf.compat.v1.initializers.local_variables())
@@ -220,7 +223,10 @@ class StreamingUtilsTest(tf.test.TestCase):
             for i in range(num_batches):
                 sess.run(update_op, feed_dict={placeholder: data[i]})
             result = sess.run(value)
-            self.assertAllClose(expected_result, result, rtol=1e-15, atol=1e-15)
+            self.assertAllClose(expected_result,
+                                result,
+                                rtol=1e-15,
+                                atol=1e-15)
 
     def test_covariance_accuracy_with_y(self):
         """Checks accuracy of streaming_covariance with two input tensors."""
@@ -257,7 +263,10 @@ class StreamingUtilsTest(tf.test.TestCase):
                              placeholder_y: y[i]
                          })
             result = sess.run(value)
-            self.assertAllClose(expected_result, result, rtol=1e-15, atol=1e-15)
+            self.assertAllClose(expected_result,
+                                result,
+                                rtol=1e-15,
+                                atol=1e-15)
 
 
 if __name__ == '__main__':

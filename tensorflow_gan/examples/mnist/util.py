@@ -197,7 +197,8 @@ def get_eval_noise_continuous_dim1(noise_samples, categorical_sample_points,
 
     # Increase first dimension of continuous noise from left to right, making sure
     # they are constant across rows.
-    cont_noise_dim1 = np.expand_dims(np.tile(continuous_sample_points, rows), 1)
+    cont_noise_dim1 = np.expand_dims(np.tile(continuous_sample_points, rows),
+                                     1)
 
     continuous_noise = np.concatenate((cont_noise_dim1, cont_noise_dim2), 1)
 
@@ -247,7 +248,8 @@ def get_eval_noise_continuous_dim2(noise_samples, categorical_sample_points,
 
     # Increase first dimension of continuous noise from left to right, making sure
     # they are constant across rows.
-    cont_noise_dim2 = np.expand_dims(np.tile(continuous_sample_points, rows), 1)
+    cont_noise_dim2 = np.expand_dims(np.tile(continuous_sample_points, rows),
+                                     1)
 
     continuous_noise = np.concatenate((cont_noise_dim1, cont_noise_dim2), 1)
 

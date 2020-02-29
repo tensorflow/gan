@@ -79,7 +79,6 @@ def get_latest_eval_step_value(update_ops):
 
 class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
     """Run hook used by the evaluation routines to run the `eval_ops` N times."""
-
     def __init__(self, num_evals, steps_per_run=1):
         """Constructs the run hook.
 
@@ -132,7 +131,6 @@ class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
 
 class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
     """Run hook used by the evaluation routines to run the `eval_ops` N times."""
-
     def __init__(self, num_evals, log_progress=True):
         """Constructs the run hook.
 
@@ -162,8 +160,8 @@ class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
             if self._num_evals is None:
                 tf.compat.v1.logging.info('Evaluation [%d]', evals_completed)
             else:
-                if ((evals_completed % self._log_frequency) == 0 or
-                    (self._num_evals == evals_completed)):
+                if ((evals_completed % self._log_frequency) == 0
+                        or (self._num_evals == evals_completed)):
                     tf.compat.v1.logging.info('Evaluation [%d/%d]',
                                               evals_completed, self._num_evals)
         if self._num_evals is not None and evals_completed >= self._num_evals:
@@ -172,7 +170,6 @@ class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
 
 class SummaryAtEndHook(tf.estimator.SessionRunHook):
     """A run hook that saves a summary with the results of evaluation."""
-
     def __init__(self,
                  log_dir=None,
                  summary_writer=None,
@@ -199,7 +196,8 @@ class SummaryAtEndHook(tf.estimator.SessionRunHook):
         self._summary_writer = summary_writer
         self._log_dir = log_dir
         if self._log_dir is None and self._summary_writer is None:
-            raise ValueError('One of log_dir or summary_writer should be used.')
+            raise ValueError(
+                'One of log_dir or summary_writer should be used.')
 
     def begin(self):
         if self._replace_summary_op:
@@ -307,7 +305,8 @@ def checkpoints_iterator(checkpoint_dir,
         if new_checkpoint_path is None:
             if not timeout_fn:
                 # timed out
-                tf.compat.v1.logging.info('Timed-out waiting for a checkpoint.')
+                tf.compat.v1.logging.info(
+                    'Timed-out waiting for a checkpoint.')
                 return
             if timeout_fn():
                 # The timeout_fn indicated that we are truly done.
@@ -547,8 +546,8 @@ def evaluate_repeatedly(checkpoint_dir,
                 time.strftime('%Y-%m-%d-%H:%M:%S', time.gmtime()))
         num_evaluations += 1
 
-        if (max_number_of_evaluations is not None and
-                num_evaluations >= max_number_of_evaluations):
+        if (max_number_of_evaluations is not None
+                and num_evaluations >= max_number_of_evaluations):
             return final_ops_hook.final_ops_values
 
     return final_ops_hook.final_ops_values

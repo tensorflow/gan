@@ -136,7 +136,6 @@ def sample_and_run_classifier_fn(sample_fn,
     ValueError: If `classifier_fn` return multiple outputs but `dtypes` isn't
       specified, or is incorrect.
   """
-
     def _fn(x):
         tensor = sample_fn(x)
         return classifier_fn(tensor)
@@ -342,7 +341,7 @@ def _classifier_score_from_logits_helper(logits, streaming=False):
         q = tf.reduce_mean(input_tensor=p, axis=0)
         kl = kl_divergence(p, logits, q)
         kl.shape.assert_has_rank(1)
-        log_score_ops = (tf.reduce_mean(input_tensor=kl),)
+        log_score_ops = (tf.reduce_mean(input_tensor=kl), )
     # log_score_ops contains the score value and possibly the update_op. We
     # apply the same operation on all its elements to make sure their value is
     # consistent.
@@ -710,17 +709,18 @@ def _frechet_classifier_distance_from_activations_helper(
         sigma = eval_utils.streaming_covariance(activations1)
         sigma_w = eval_utils.streaming_covariance(activations2)
     else:
-        m = (tf.reduce_mean(input_tensor=activations1, axis=0),)
-        m_w = (tf.reduce_mean(input_tensor=activations2, axis=0),)
+        m = (tf.reduce_mean(input_tensor=activations1, axis=0), )
+        m_w = (tf.reduce_mean(input_tensor=activations2, axis=0), )
         # Calculate the unbiased covariance matrix of first activations.
-        num_examples_real = tf.cast(tf.shape(input=activations1)[0], tf.float64)
+        num_examples_real = tf.cast(
+            tf.shape(input=activations1)[0], tf.float64)
         sigma = (num_examples_real / (num_examples_real - 1) *
-                 tfp.stats.covariance(activations1),)
+                 tfp.stats.covariance(activations1), )
         # Calculate the unbiased covariance matrix of second activations.
         num_examples_generated = tf.cast(
             tf.shape(input=activations2)[0], tf.float64)
         sigma_w = (num_examples_generated / (num_examples_generated - 1) *
-                   tfp.stats.covariance(activations2),)
+                   tfp.stats.covariance(activations2), )
     # m, m_w, sigma, sigma_w are tuples containing one or two elements: the first
     # element will be used to calculate the score value and the second will be
     # used to create the update_op. We apply the same operation on the two
@@ -792,9 +792,8 @@ def frechet_classifier_distance_from_activations(activations1, activations2):
    The Frechet Inception distance. A floating-point scalar of the same type
    as the output of the activations.
   """
-    return _frechet_classifier_distance_from_activations_helper(activations1,
-                                                                activations2,
-                                                                streaming=False)
+    return _frechet_classifier_distance_from_activations_helper(
+        activations1, activations2, streaming=False)
 
 
 def frechet_classifier_distance_from_activations_streaming(
@@ -1036,10 +1035,8 @@ def kernel_classifier_distance_from_activations(activations1,
         activations1, activations2, max_block_size, dtype)[0]
 
 
-def kernel_classifier_distance_and_std_from_activations(activations1,
-                                                        activations2,
-                                                        max_block_size=1024,
-                                                        dtype=None):
+def kernel_classifier_distance_and_std_from_activations(
+    activations1, activations2, max_block_size=1024, dtype=None):
     """Kernel "classifier" distance for evaluating a generative model.
 
   This methods computes the kernel classifier distance from activations of

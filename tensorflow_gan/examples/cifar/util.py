@@ -81,8 +81,7 @@ def get_image_grid(images, batch_size, num_classes, num_images_per_class):
     # Only get a certain number of images per class.
     num_batches = batch_size // num_classes
     indices = [
-        i * num_batches + j
-        for i in xrange(num_classes)
+        i * num_batches + j for i in xrange(num_classes)
         for j in xrange(num_images_per_class)
     ]
     sampled_images = tf.gather(images, indices)

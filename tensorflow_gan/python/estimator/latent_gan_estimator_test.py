@@ -26,7 +26,6 @@ import tensorflow_gan as tfgan
 
 
 class TrainInputEstimatorTest(tf.test.TestCase):
-
     def test_get_input_training_estimator(self):
         """Integration test to make sure the input_training_estimator works."""
 

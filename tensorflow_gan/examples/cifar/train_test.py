@@ -26,7 +26,6 @@ mock = tf.compat.v1.test.mock
 
 
 class TrainTest(tf.test.TestCase):
-
     @mock.patch.object(train_lib, 'data_provider', autospec=True)
     def test_build_graph(self, mock_data_provider):
         if tf.executing_eagerly():

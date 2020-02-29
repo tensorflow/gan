@@ -56,7 +56,6 @@ def _transform(image, npx=64, is_crop=True, resize_w=64):
 
 
 class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
-
     @mock.patch.object(data_provider, '_load_imagenet_dataset', autospec=True)
     def test_provide_data_shape(self, mock_ds):
         batch_size = 16
@@ -79,7 +78,8 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
             'image': tf.zeros([123, 456, 3], dtype=tf.uint8),
             'label': tf.constant([4]),
         }
-        process_fn = data_provider._preprocess_dataset_record_fn(image_size=128)
+        process_fn = data_provider._preprocess_dataset_record_fn(
+            image_size=128)
         processed_record = process_fn(dummy_record)
         processed_record[0].shape.assert_is_compatible_with([128, 128, 3])
         processed_record[1].shape.assert_is_compatible_with([1])
@@ -90,15 +90,14 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
         padding_size = 5
         dummy_record = {
             'image':
-                tf.concat([
-                    tf.zeros([center_size, padding_size, 3],
-                             dtype=tf.uint8), 255 *
-                    tf.ones([center_size, center_size, 3], dtype=tf.uint8),
-                    tf.zeros([center_size, padding_size, 3], dtype=tf.uint8)
-                ],
-                          axis=1),
+            tf.concat([
+                tf.zeros([center_size, padding_size, 3], dtype=tf.uint8),
+                255 * tf.ones([center_size, center_size, 3], dtype=tf.uint8),
+                tf.zeros([center_size, padding_size, 3], dtype=tf.uint8)
+            ],
+                      axis=1),
             'label':
-                tf.constant([4]),
+            tf.constant([4]),
         }
         image_size = 7
         process_fn = data_provider._preprocess_dataset_record_fn(
@@ -141,7 +140,8 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
             'image': tf.constant(test_image, dtype=tf.uint8),
             'label': [4],
         }
-        process_fn = data_provider._preprocess_dataset_record_fn(image_size=128)
+        process_fn = data_provider._preprocess_dataset_record_fn(
+            image_size=128)
         processed_record = process_fn(dummy_record)
         with self.session():
             # There's a relatively large gap between the two results, mainly because

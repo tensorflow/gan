@@ -102,7 +102,6 @@ def args_to_gan_model(loss_fn):
     default_args_dict = dict(zip(args_with_defaults, defaults))
 
     def new_loss_fn(gan_model, **kwargs):  # pylint:disable=missing-docstring
-
         def _asdict(namedtuple):
             """Returns a namedtuple as a dictionary.
 
@@ -121,7 +120,8 @@ def args_to_gan_model(loss_fn):
         gan_model_dict = _asdict(gan_model)
 
         # Make sure non-tuple required args are supplied.
-        args_from_tuple = set(argspec.args).intersection(set(gan_model._fields))
+        args_from_tuple = set(argspec.args).intersection(set(
+            gan_model._fields))
         required_args_not_from_tuple = required_args - args_from_tuple
         for arg in required_args_not_from_tuple:
             if arg not in kwargs:
@@ -129,7 +129,8 @@ def args_to_gan_model(loss_fn):
                                  (arg, loss_fn.__name__))
 
         # Make sure tuple args aren't also supplied as keyword args.
-        ambiguous_args = set(gan_model._fields).intersection(set(kwargs.keys()))
+        ambiguous_args = set(gan_model._fields).intersection(set(
+            kwargs.keys()))
         if ambiguous_args:
             raise ValueError(
                 'The following args are present in both the tuple and keyword args '
@@ -146,8 +147,8 @@ def args_to_gan_model(loss_fn):
             val_from_tuple = gan_model_dict[
                 arg] if arg in gan_model_dict else None
             val_from_kwargs = kwargs[arg] if arg in kwargs else None
-            assert not (val_from_tuple is not None and
-                        val_from_kwargs is not None)
+            assert not (val_from_tuple is not None
+                        and val_from_kwargs is not None)
             if val_from_tuple is not None:
                 kwargs[arg] = val_from_tuple
             else:
@@ -291,7 +292,6 @@ def stargan_generator_loss_wrapper(loss_fn):
     A new function that takes a StarGANModel namedtuple and returns the same
     loss.
   """
-
     def new_loss_fn(stargan_model, **kwargs):
         return loss_fn(
             stargan_model.discriminator_generated_data_source_predication,
@@ -317,7 +317,6 @@ def stargan_discriminator_loss_wrapper(loss_fn):
     A new function that takes a StarGANModel namedtuple and returns the same
     loss.
   """
-
     def new_loss_fn(stargan_model, **kwargs):
         return loss_fn(
             stargan_model.discriminator_input_data_source_predication,
@@ -345,7 +344,6 @@ def stargan_gradient_penalty_wrapper(loss_fn):
     A new function that takes a StarGANModel namedtuple and returns the same
     loss.
   """
-
     def new_loss_fn(stargan_model, **kwargs):
         num_domains = stargan_model.input_data_domain_label.shape.as_list()[-1]
         return loss_fn(real_data=stargan_model.input_data,

@@ -152,7 +152,9 @@ def spectral_normalize(w,
   """
     with tf.compat.v1.variable_scope(name, 'spectral_normalize'):
         normalization_factor = compute_spectral_norm(
-            w, power_iteration_rounds=power_iteration_rounds, training=training)
+            w,
+            power_iteration_rounds=power_iteration_rounds,
+            training=training)
         if not equality_constrained:
             normalization_factor = tf.maximum(1., normalization_factor)
         w_normalized = w / normalization_factor
@@ -340,10 +342,11 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
                 'Spectral norm can only be applied to multi-dimensional tensors'
             )
 
-        return spectral_normalize(w_tensor,
-                                  power_iteration_rounds=power_iteration_rounds,
-                                  equality_constrained=equality_constrained,
-                                  training=training,
-                                  name=(name + '/spectral_normalize'))
+        return spectral_normalize(
+            w_tensor,
+            power_iteration_rounds=power_iteration_rounds,
+            equality_constrained=equality_constrained,
+            training=training,
+            name=(name + '/spectral_normalize'))
 
     return _internal_getter

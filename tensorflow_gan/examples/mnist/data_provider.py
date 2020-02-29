@@ -54,8 +54,8 @@ def provide_dataset(split, batch_size, num_parallel_calls=None, shuffle=True):
                  num_parallel_calls=num_parallel_calls).cache().repeat())
     if shuffle:
         ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-    ds = (ds.batch(batch_size,
-                   drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
+    ds = (ds.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE))
 
     return ds
 

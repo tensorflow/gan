@@ -95,7 +95,6 @@ def _load_imagenet_dataset(split, data_dir=None, shuffle_files=False):
 
 def _preprocess_dataset_record_fn(image_size):
     """Returns function for processing the elements of the imagenet dataset."""
-
     def _process_record(record):
         """Takes the largest central square and resamples to image_size."""
         # Based on
@@ -116,15 +115,14 @@ def _preprocess_dataset_record_fn(image_size):
         normalized_x_min = box_x_min / (image_shape[1] - 1)
         normalized_y_max = box_y_max / (image_shape[0] - 1)
         normalized_x_max = box_x_max / (image_shape[1] - 1)
-        image = compat_utils.crop_and_resize([image],
-                                             boxes=[[
-                                                 normalized_y_min,
-                                                 normalized_x_min,
-                                                 normalized_y_max,
-                                                 normalized_x_max
-                                             ]],
-                                             box_ind=[0],
-                                             crop_size=[image_size, image_size])
+        image = compat_utils.crop_and_resize(
+            [image],
+            boxes=[[
+                normalized_y_min, normalized_x_min, normalized_y_max,
+                normalized_x_max
+            ]],
+            box_ind=[0],
+            crop_size=[image_size, image_size])
         # crop_and_resize returns a tensor of type tf.float32.
         image = tf.squeeze(image, axis=0)
         image = image * (2. / 255) - 1.

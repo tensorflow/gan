@@ -118,7 +118,6 @@ def _expected_kid_and_std(real_imgs, gen_imgs, max_block_size=1024):
 
 
 class RunClassifierFnTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(RunClassifierFnTest, self).setUp()
 
@@ -195,7 +194,6 @@ class RunClassifierFnTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class SampleAndRunClassifierFn(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(SampleAndRunClassifierFn, self).setUp()
 
@@ -311,7 +309,6 @@ class SampleAndRunClassifierFn(tf.test.TestCase, parameterized.TestCase):
 
 
 class ClassifierScoreTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(ClassifierScoreTest, self).setUp()
 
@@ -395,7 +392,6 @@ class ClassifierScoreTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class FrechetTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(FrechetTest, self).setUp()
 
@@ -422,7 +418,8 @@ class FrechetTest(tf.test.TestCase, parameterized.TestCase):
             'is_streaming': True
         },
     )
-    def test_frechet_classifier_distance_graph(self, num_batches, is_streaming):
+    def test_frechet_classifier_distance_graph(self, num_batches,
+                                               is_streaming):
         """Test graph construction."""
         if is_streaming and tf.executing_eagerly():
             # Streaming is not compatible with eager execution.
@@ -526,9 +523,9 @@ class FrechetTest(tf.test.TestCase, parameterized.TestCase):
                 fid_op_value = sess.run(
                     fid_update_op, {
                         real_placeholder:
-                            test_pool_real_a[(512 * i):(512 * (i + 1))],
+                        test_pool_real_a[(512 * i):(512 * (i + 1))],
                         gen_placeholder:
-                            test_pool_gen_a[(512 * i):(512 * (i + 1))]
+                        test_pool_gen_a[(512 * i):(512 * (i + 1))]
                     })
                 actual_fid = sess.run(fid_value)
                 self.assertAllClose(fid_op_value, actual_fid)
@@ -567,7 +564,6 @@ class FrechetTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class KernelTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(KernelTest, self).setUp()
 
@@ -654,7 +650,6 @@ class KernelTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class UtilsTest(tf.test.TestCase, parameterized.TestCase):
-
     def test_trace_sqrt_product_value(self):
         """Test that `trace_sqrt_product` gives the correct value."""
         np.random.seed(0)

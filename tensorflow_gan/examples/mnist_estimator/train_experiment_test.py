@@ -28,7 +28,6 @@ mock = tf.compat.v1.test.mock
 
 
 class TrainEstimatorTest(tf.test.TestCase):
-
     @mock.patch.object(train_experiment_lib.util, 'mnist_score', autospec=True)
     @mock.patch.object(train_experiment_lib.util,
                        'mnist_frechet_distance',

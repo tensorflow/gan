@@ -81,7 +81,6 @@ def sample_patch(image, patch_height, patch_width, colors):
 def _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                           num_parallel_calls, shuffle):
     """Efficiently process and batch a tf.data.Dataset."""
-
     def _preprocess(element):
         """Map elements to the example dicts expected by the model."""
         images = normalize_image(element['image'])
@@ -92,8 +91,8 @@ def _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                  num_parallel_calls=num_parallel_calls).cache().repeat())
     if shuffle:
         ds = ds.shuffle(buffer_size=10000, reshuffle_each_iteration=True)
-    ds = (ds.batch(batch_size,
-                   drop_remainder=True).prefetch(tf.data.experimental.AUTOTUNE))
+    ds = (ds.batch(batch_size, drop_remainder=True).prefetch(
+        tf.data.experimental.AUTOTUNE))
     return ds
 
 
@@ -188,7 +187,6 @@ def provide_data_from_image_files(file_pattern,
     A float `Tensor` of shape [batch_size, patch_height, patch_width, 3]
     representing a batch of images.
   """
-<<<<<<< HEAD
     dataset_files = tf.io.gfile.glob(file_pattern)
     if shuffle:
         dataset_files = np.random.permutation(dataset_files)
@@ -210,27 +208,3 @@ def provide_data_from_image_files(file_pattern,
     images = next_batch['images']
 
     return images
-=======
-  dataset_files = tf.io.gfile.glob(file_pattern)
-  if shuffle:
-    dataset_files = np.random.permutation(dataset_files)
-  np_data = np.stack([np.asarray(PIL.Image.open(x)) for x in dataset_files],
-                     axis=0)
-  ds = tf.data.Dataset.from_tensor_slices(np_data)
-  if shuffle:
-    ds = ds.shuffle(reshuffle_each_iteration=True)
-
-  def _make_dict(img):
-    if img.shape.ndims == 2:
-      img = tf.expand_dims(img, -1)
-    return {'image': img}
-
-  ds = ds.map(_make_dict, num_parallel_calls=num_parallel_calls)
-  ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
-                             num_parallel_calls, shuffle)
-
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
-  images = next_batch['images']
-
-  return images
->>>>>>> upstream/master

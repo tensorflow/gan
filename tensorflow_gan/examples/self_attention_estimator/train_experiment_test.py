@@ -40,7 +40,6 @@ def _get_real_activations_mock(*args, **kwargs):
 
 
 class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(TrainExperimentTest, self).setUp()
         self.hparams = train_experiment.HParams(
@@ -122,21 +121,21 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
         """Tests input_fn."""
         params = {
             'tpu_params':
-                self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est),
+            self.hparams.tpu_params._replace(use_tpu_estimator=tpu_est),
             'batch_size':
-                8,
+            8,
             'train_batch_size':
-                8,
+            8,
             'eval_batch_size':
-                8,
+            8,
             'predict_batch_size':
-                16,
+            16,
             'debug_params':
-                self.hparams.debug_params._replace(fake_data=False),
+            self.hparams.debug_params._replace(fake_data=False),
             'z_dim':
-                12,
+            12,
             'shuffle_buffer_size':
-                100,
+            100,
         }
         mock_dataset.return_value = tf.data.Dataset.from_tensors(
             np.zeros([8, 128, 128, 3])).map(lambda x: (x, [1]))

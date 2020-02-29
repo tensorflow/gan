@@ -196,7 +196,8 @@ def infogan_model(
         real_data = tf.convert_to_tensor(value=real_data)
         dis_real_outputs, _ = discriminator_fn(real_data, generator_inputs)
 
-    if not generated_data.get_shape().is_compatible_with(real_data.get_shape()):
+    if not generated_data.get_shape().is_compatible_with(
+            real_data.get_shape()):
         raise ValueError(
             'Generator output shape (%s) must be the same shape as real data '
             '(%s).' % (generated_data.get_shape(), real_data.get_shape()))
@@ -287,15 +288,15 @@ def acgan_model(
     with tf.compat.v1.variable_scope(discriminator_scope) as dis_scope:
         with tf.compat.v1.name_scope(dis_scope.name + '/generated/'):
             (discriminator_gen_outputs, discriminator_gen_classification_logits
-            ) = _validate_acgan_discriminator_outputs(
-                discriminator_fn(generated_data, generator_inputs))
+             ) = _validate_acgan_discriminator_outputs(
+                 discriminator_fn(generated_data, generator_inputs))
     with tf.compat.v1.variable_scope(dis_scope, reuse=True):
         with tf.compat.v1.name_scope(dis_scope.name + '/real/'):
             real_data = tf.convert_to_tensor(value=real_data)
             (discriminator_real_outputs,
              discriminator_real_classification_logits
-            ) = _validate_acgan_discriminator_outputs(
-                discriminator_fn(real_data, generator_inputs))
+             ) = _validate_acgan_discriminator_outputs(
+                 discriminator_fn(real_data, generator_inputs))
     if check_shapes:
         if not generated_data.shape.is_compatible_with(real_data.shape):
             raise ValueError(
@@ -435,7 +436,8 @@ def stargan_model(generator_fn,
 
     # Convert to tensor.
     input_data = _convert_tensor_or_l_or_d(input_data)
-    input_data_domain_label = _convert_tensor_or_l_or_d(input_data_domain_label)
+    input_data_domain_label = _convert_tensor_or_l_or_d(
+        input_data_domain_label)
 
     # Convert list of tensor to a single tensor if applicable.
     if isinstance(input_data, (list, tuple)):
@@ -443,7 +445,8 @@ def stargan_model(generator_fn,
             [tf.convert_to_tensor(value=x) for x in input_data], 0)
     if isinstance(input_data_domain_label, (list, tuple)):
         input_data_domain_label = tf.concat(
-            [tf.convert_to_tensor(value=x) for x in input_data_domain_label], 0)
+            [tf.convert_to_tensor(value=x) for x in input_data_domain_label],
+            0)
 
     # Get batch_size, num_domains from the labels.
     input_data_domain_label.shape.assert_has_rank(2)
@@ -501,9 +504,10 @@ def stargan_model(generator_fn,
 def _validate_aux_loss_weight(aux_loss_weight, name='aux_loss_weight'):
     if isinstance(aux_loss_weight, tf.Tensor):
         aux_loss_weight.shape.assert_is_compatible_with([])
-        with tf.control_dependencies(
-            [tf.compat.v1.debugging.assert_greater_equal(aux_loss_weight,
-                                                         0.0)]):
+        with tf.control_dependencies([
+                tf.compat.v1.debugging.assert_greater_equal(
+                    aux_loss_weight, 0.0)
+        ]):
             aux_loss_weight = tf.identity(aux_loss_weight)
     elif aux_loss_weight is not None and aux_loss_weight < 0:
         raise ValueError('`%s` must be greater than 0. Instead, was %s' %
@@ -542,7 +546,8 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
     if isinstance(model, namedtuples.GANModel):
         pooled_generator_inputs, pooled_generated_data = tensor_pool_fn(
             (model.generator_inputs, model.generated_data))
-        with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
+        with tf.compat.v1.variable_scope(model.discriminator_scope,
+                                         reuse=True):
             dis_gen_outputs = model.discriminator_fn(pooled_generated_data,
                                                      pooled_generator_inputs)
         return model._replace(generator_inputs=pooled_generator_inputs,
@@ -551,11 +556,12 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
     elif isinstance(model, namedtuples.ACGANModel):
         pooled_generator_inputs, pooled_generated_data = tensor_pool_fn(
             (model.generator_inputs, model.generated_data))
-        with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
+        with tf.compat.v1.variable_scope(model.discriminator_scope,
+                                         reuse=True):
             (pooled_discriminator_gen_outputs,
              pooled_discriminator_gen_classification_logits
-            ) = model.discriminator_fn(pooled_generated_data,
-                                       pooled_generator_inputs)
+             ) = model.discriminator_fn(pooled_generated_data,
+                                        pooled_generator_inputs)
         return model._replace(
             generator_inputs=pooled_generator_inputs,
             generated_data=pooled_generated_data,
@@ -566,7 +572,8 @@ def tensor_pool_adjusted_model(model, tensor_pool_fn):
         pooled_generator_inputs, pooled_generated_data, pooled_structured_input = (
             tensor_pool_fn((model.generator_inputs, model.generated_data,
                             model.structured_generator_inputs)))
-        with tf.compat.v1.variable_scope(model.discriminator_scope, reuse=True):
+        with tf.compat.v1.variable_scope(model.discriminator_scope,
+                                         reuse=True):
             (pooled_discriminator_gen_outputs,
              pooled_predicted_distributions) = model.discriminator_and_aux_fn(
                  pooled_generated_data, pooled_generator_inputs)
@@ -659,16 +666,16 @@ def gan_loss(
         aux_cond_discriminator_weight, 'aux_cond_discriminator_weight')
 
     # Verify configuration for mutual information penalty
-    if (_use_aux_loss(mutual_information_penalty_weight) and
-            not isinstance(model, namedtuples.InfoGANModel)):
+    if (_use_aux_loss(mutual_information_penalty_weight)
+            and not isinstance(model, namedtuples.InfoGANModel)):
         raise ValueError(
             'When `mutual_information_penalty_weight` is provided, `model` must be '
             'an `InfoGANModel`. Instead, was %s.' % type(model))
 
     # Verify configuration for mutual auxiliary condition loss (ACGAN).
-    if ((_use_aux_loss(aux_cond_generator_weight) or
-         _use_aux_loss(aux_cond_discriminator_weight)) and
-            not isinstance(model, namedtuples.ACGANModel)):
+    if ((_use_aux_loss(aux_cond_generator_weight)
+         or _use_aux_loss(aux_cond_discriminator_weight))
+            and not isinstance(model, namedtuples.ACGANModel)):
         raise ValueError(
             'When `aux_cond_generator_weight` or `aux_cond_discriminator_weight` '
             'is provided, `model` must be an `ACGANModel`. Instead, was %s.' %
@@ -740,7 +747,8 @@ def gan_loss(
     else:
         dis_reg_loss = 0
 
-    return namedtuples.GANLoss(gen_loss + gen_reg_loss, dis_loss + dis_reg_loss)
+    return namedtuples.GANLoss(gen_loss + gen_reg_loss,
+                               dis_loss + dis_reg_loss)
 
 
 def cyclegan_loss(
@@ -778,14 +786,13 @@ def cyclegan_loss(
   """
     # Sanity checks.
     if not isinstance(model, namedtuples.CycleGANModel):
-        raise ValueError('`model` must be a `CycleGANModel`. Instead, was %s.' %
-                         type(model))
+        raise ValueError(
+            '`model` must be a `CycleGANModel`. Instead, was %s.' %
+            type(model))
 
     # Defines cycle consistency loss.
-    cycle_consistency_loss = cycle_consistency_loss_fn(model,
-                                                       add_summaries=kwargs.get(
-                                                           'add_summaries',
-                                                           True))
+    cycle_consistency_loss = cycle_consistency_loss_fn(
+        model, add_summaries=kwargs.get('add_summaries', True))
     cycle_consistency_loss_weight = _validate_aux_loss_weight(
         cycle_consistency_loss_weight, 'cycle_consistency_loss_weight')
     aux_loss = cycle_consistency_loss_weight * cycle_consistency_loss
@@ -863,7 +870,6 @@ def stargan_loss(
     ValueError: If input StarGANModel.input_data_domain_label does not have rank
     2, or dimension 2 is not defined.
   """
-
     def _classification_loss_helper(true_labels, predict_logits, scope_name):
         """Classification Loss Function Helper.
 
@@ -924,7 +930,8 @@ def stargan_loss(
     generator_loss += _classification_loss_helper(
         true_labels=model.generated_data_domain_target,
         predict_logits=model.discriminator_generated_data_domain_predication,
-        scope_name='generator_classification_loss') * classification_loss_weight
+        scope_name='generator_classification_loss'
+    ) * classification_loss_weight
     discriminator_loss += _classification_loss_helper(
         true_labels=model.input_data_domain_label,
         predict_logits=model.discriminator_input_data_domain_predication,
@@ -1094,15 +1101,14 @@ def gan_train_ops(
             update_ops=dis_update_ops,
             **kwargs)
 
-    return namedtuples.GANTrainOps(gen_train_op, disc_train_op, global_step_inc,
-                                   sync_hooks)
+    return namedtuples.GANTrainOps(gen_train_op, disc_train_op,
+                                   global_step_inc, sync_hooks)
 
 
 # TODO(joelshor): Implement a dynamic GAN train loop, as in `Real-Time Adaptive
 # Image Compression` (https://arxiv.org/abs/1705.05823)
 class RunTrainOpsHook(tf.estimator.SessionRunHook):
     """A hook to run train ops a fixed number of times."""
-
     def __init__(self, train_ops, train_steps):
         """Run train ops a certain number of times.
 
@@ -1130,7 +1136,6 @@ def get_sequential_train_hooks(train_steps=namedtuples.GANTrainSteps(1, 1)):
   Returns:
     A function that takes a GANTrainOps tuple and returns a list of hooks.
   """
-
     def get_hooks(train_ops):
         generator_hook = RunTrainOpsHook(train_ops.generator_train_op,
                                          train_steps.generator_train_steps)
@@ -1297,8 +1302,8 @@ def get_sequential_train_steps(train_steps=namedtuples.GANTrainSteps(1, 1)):
   Returns:
     A function that can be used for `train_step_fn` for GANs.
   """
-
-    def sequential_train_steps(sess, train_ops, global_step, train_step_kwargs):
+    def sequential_train_steps(sess, train_ops, global_step,
+                               train_step_kwargs):
         """A thin wrapper around slim.learning.train_step, for GANs.
 
     Args:
@@ -1329,7 +1334,8 @@ def get_sequential_train_steps(train_steps=namedtuples.GANTrainSteps(1, 1)):
         # Run discriminator training steps.
         dis_loss = 0
         for _ in range(train_steps.discriminator_train_steps):
-            cur_dis_loss, _ = train_step(sess, train_ops.discriminator_train_op,
+            cur_dis_loss, _ = train_step(sess,
+                                         train_ops.discriminator_train_op,
                                          global_step, train_kwargs)
             dis_loss += cur_dis_loss
 
@@ -1427,8 +1433,9 @@ def train_step(sess, train_op, global_step, train_step_kwargs):
     run_metadata = None
     if 'should_trace' in train_step_kwargs:
         if 'logdir' not in train_step_kwargs:
-            raise ValueError('logdir must be present in train_step_kwargs when '
-                             'should_trace is present')
+            raise ValueError(
+                'logdir must be present in train_step_kwargs when '
+                'should_trace is present')
         if sess.run(train_step_kwargs['should_trace']):
             trace_run_options = tf.compat.v1.RunOptions(
                 trace_level=tf.compat.v1.RunOptions.FULL_TRACE)

@@ -26,7 +26,6 @@ import tensorflow_gan as tfgan
 
 class ClipWeightsTest(tf.test.TestCase):
     """Tests for `discriminator_weight_clip`."""
-
     def setUp(self):
         super(ClipWeightsTest, self).setUp()
         self.variables = [tf.Variable(2.0)]

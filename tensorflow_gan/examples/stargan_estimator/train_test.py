@@ -40,7 +40,6 @@ def _test_discriminator(inputs, num_domains):
 
 
 class TrainTest(tf.test.TestCase):
-
     @mock.patch.object(train_lib.data_provider, 'provide_data', autospec=True)
     @mock.patch.object(train_lib.data_provider,
                        'provide_celeba_test_set',

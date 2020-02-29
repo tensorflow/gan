@@ -43,7 +43,8 @@ flags.DEFINE_integer('start_width', 4, 'Start image width.')
 
 flags.DEFINE_integer('scale_base', 2, 'Resolution multiplier.')
 
-flags.DEFINE_integer('num_resolutions', 4, 'Number of progressive resolutions.')
+flags.DEFINE_integer('num_resolutions', 4,
+                     'Number of progressive resolutions.')
 
 flags.DEFINE_list(
     'batch_size_schedule', [8, 8, 4],

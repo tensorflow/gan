@@ -93,7 +93,6 @@ class StarGANEstimator(tf.estimator.Estimator):
           x for x in stargan_estimator.predict(predict_input_fn)])
   ```
   """
-
     def __init__(self,
                  model_dir=None,
                  generator_fn=None,
@@ -239,7 +238,8 @@ def get_estimator_spec(mode,
             get_hooks_fn = get_hooks_fn or tfgan_train.get_sequential_train_hooks(
             )
             estimator_spec = _get_train_estimator_spec(gan_model, gan_loss,
-                                                       gopt, dopt, get_hooks_fn)
+                                                       gopt, dopt,
+                                                       get_hooks_fn)
 
     return estimator_spec
 
@@ -316,9 +316,9 @@ def _get_eval_estimator_spec(gan_model,
 
         eval_metric_ops = {
             _summary_key(name, 'generator_loss'):
-                tf.compat.v1.metrics.mean(gan_loss.generator_loss),
+            tf.compat.v1.metrics.mean(gan_loss.generator_loss),
             _summary_key(name, 'discriminator_loss'):
-                tf.compat.v1.metrics.mean(gan_loss.discriminator_loss)
+            tf.compat.v1.metrics.mean(gan_loss.discriminator_loss)
         }
         if get_eval_metric_ops_fn is not None:
             custom_eval_metric_ops = get_eval_metric_ops_fn(gan_model)
@@ -363,7 +363,6 @@ def stargan_prediction_input_fn_wrapper(fn):
     A tuple ((feature, label), None) where the second element is the dummy label
     to be disregarded and the first element is the true input to the estimator.
   """
-
     def new_fn():
         return fn(), None
 

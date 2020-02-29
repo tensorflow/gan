@@ -58,9 +58,9 @@ class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
   for the second step were read before the updates from the first step were
   applied (or the training has converged, which is unlikely in a test scenario).
   """
-
     def __init__(self, opt, name):
-        super(TestOptimizerWrapper, self).__init__(use_locking=False, name=name)
+        super(TestOptimizerWrapper, self).__init__(use_locking=False,
+                                                   name=name)
         self._opt = opt
         self._first_call = True
         self._name = name
@@ -177,8 +177,8 @@ def get_dummy_gan_model(generated_data=None):
         discriminator_fn=None)
 
 
-def prepare_arguments_for_metric_fn(generator_inputs, generated_data, real_data,
-                                    discriminator_real_outputs,
+def prepare_arguments_for_metric_fn(generator_inputs, generated_data,
+                                    real_data, discriminator_real_outputs,
                                     discriminator_gen_outputs):
     del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
     return {
@@ -190,8 +190,8 @@ def prepare_arguments_for_metric_fn(generator_inputs, generated_data, real_data,
 def get_metrics_custom_args(my_real_data, my_generated_data):
     return {
         'mse_custom_metric':
-            tf.compat.v1.metrics.mean_squared_error(my_real_data,
-                                                    my_generated_data)
+        tf.compat.v1.metrics.mean_squared_error(my_real_data,
+                                                my_generated_data)
     }
 
 
@@ -200,13 +200,12 @@ def get_metrics(generator_inputs, generated_data, real_data,
     del generator_inputs, discriminator_real_outputs, discriminator_gen_outputs
     return {
         'mse_custom_metric':
-            tf.compat.v1.metrics.mean_squared_error(real_data, generated_data)
+        tf.compat.v1.metrics.mean_squared_error(real_data, generated_data)
     }
 
 
 class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     """Tests that the EstimatorSpec is constructed appropriately."""
-
     @classmethod
     def setUpClass(cls):
         super(GetTPUEstimatorSpecTest, cls).setUpClass()
@@ -305,7 +304,6 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 
 class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
     """Integration tests for TPUGANEstimator."""
-
     def setUp(self):
         super(TPUGANEstimatorIntegrationTest, self).setUp()
         self._model_dir = tempfile.mkdtemp()
@@ -324,7 +322,6 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
                             prediction_size,
                             lr_decay=False,
                             joint_train=True):
-
         def make_opt():
             gstep = tf.compat.v1.train.get_or_create_global_step()
             lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
@@ -368,10 +365,11 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
             [x['generated_data'] for x in est.predict(predict_input_fn)])
         self.assertAllEqual(prediction_size, predictions.shape)
 
-    @parameterized.named_parameters(('joint_train', True, False, False),
-                                    ('train_sequential', False, False, False),
-                                    ('lr_decay', False, True, False),
-                                    ('train_sequential_ds', False, False, True))
+    @parameterized.named_parameters(
+        ('joint_train', True, False, False),
+        ('train_sequential', False, False, False),
+        ('lr_decay', False, True, False),
+        ('train_sequential_ds', False, False, True))
     def test_numpy_input_fn(self, joint_train, lr_decay, return_ds):
         """Tests complete flow with numpy_input_fn."""
         input_dim = 4
@@ -403,8 +401,9 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
         def predict_input_fn(params):
             del params  # unused
             data = np.zeros([input_dim], dtype=np.float32)
-            ds = (tf.data.Dataset.from_tensors(data).repeat(predict_size).batch(
-                1, drop_remainder=True))
+            ds = (
+                tf.data.Dataset.from_tensors(data).repeat(predict_size).batch(
+                    1, drop_remainder=True))
             return ds
 
         self._test_complete_flow(train_input_fn=train_input_fn,
@@ -418,7 +417,6 @@ class TPUGANEstimatorIntegrationTest(tf.test.TestCase, parameterized.TestCase):
 class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
                                         parameterized.TestCase):
     """Tests for TPU multistep logic."""
-
     def setUp(self):
         super(TPUGANEstimatorMultiTrainStepTest, self).setUp()
         self._model_dir = tempfile.mkdtemp()
@@ -439,8 +437,9 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
         ('3:1 seq', 3, 1, False, 4, [0b1110], [0b0001]),
         ('1:0 seq', 1, 0, False, 1, [0b1], None),
         ('0:1 seq', 0, 1, False, 1, None, [0b1]))
-    def test_train(self, g_steps, d_steps, joint_train, expected_total_substeps,
-                   expected_g_substep_mask, expected_d_substep_mask):
+    def test_train(self, g_steps, d_steps, joint_train,
+                   expected_total_substeps, expected_g_substep_mask,
+                   expected_d_substep_mask):
         real_opt = tf.compat.v1.train.GradientDescentOptimizer(1e-2)
         gopt = TestOptimizerWrapper(real_opt, name='g_opt')
         dopt = TestOptimizerWrapper(real_opt, name='d_opt')
@@ -486,7 +485,6 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
 
 class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
     """Tests that TPUGANEstimator can be warm-started."""
-
     def setUp(self):
         super(TPUGANEstimatorWarmStartTest, self).setUp()
         self._model_dir = self.get_temp_dir()
@@ -500,7 +498,6 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
 
     def _test_warm_start(self, warm_start_from=None):
         """Tests whether WarmStartSettings work as intended."""
-
         def generator_with_new_variable(noise_dict, mode):
             tf.compat.v1.get_variable(name=self.new_variable_name,
                                       initializer=self.new_variable_value,
@@ -514,8 +511,8 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
             discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             train_batch_size=4,
             use_tpu=flags.FLAGS.use_tpu,
             config=self._config)
@@ -533,8 +530,8 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
             discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             config=TpuRunConfig(
                 model_dir=None if warm_start_from else self._model_dir),
             train_batch_size=4,

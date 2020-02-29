@@ -28,7 +28,6 @@ mock = tf.compat.v1.test.mock
 
 
 class DataProviderTest(tf.test.TestCase, absltest.TestCase):
-
     def setUp(self):
         super(DataProviderTest, self).setUp()
         mock_imgs = np.zeros([128, 128, 3], dtype=np.uint8)

@@ -39,7 +39,6 @@ def _num_filters_stub(block_id):
 
 
 class NetworksTest(tf.test.TestCase):
-
     def test_resolution_schedule_correct(self):
         rs = networks.ResolutionSchedule(start_resolutions=[5, 3],
                                          scale_base=2,
@@ -94,9 +93,8 @@ class NetworksTest(tf.test.TestCase):
         with self.cached_session(use_gpu=True) as sess:
             alpha_fixed_block_id = [
                 sess.run(
-                    networks._generator_alpha(2,
-                                              tf.constant(progress,
-                                                          tf.float32)))
+                    networks._generator_alpha(
+                        2, tf.constant(progress, tf.float32)))
                 for progress in [0, 0.2, 1, 1.2, 2, 2.2, 3]
             ]
             alpha_fixed_progress = [
@@ -121,7 +119,8 @@ class NetworksTest(tf.test.TestCase):
             alpha_fixed_progress = [
                 sess.run(
                     networks._discriminator_alpha(block_id,
-                                                  tf.constant(1.2, tf.float32)))
+                                                  tf.constant(1.2,
+                                                              tf.float32)))
                 for block_id in range(1, 5)
             ]
 

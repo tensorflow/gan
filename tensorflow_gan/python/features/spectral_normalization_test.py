@@ -28,7 +28,6 @@ import tensorflow_gan as tfgan
 
 
 class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
-
     def testComputeSpectralNorm(self):
         if tf.executing_eagerly():
             # `compute_spectral_norm` doesn't work when executing eagerly.
@@ -161,8 +160,9 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
                 w_befores.append(w_before)
                 self.assertFalse(
                     np.allclose(w_initial, w_before),
-                    msg=('%s appears not to be normalized. Before: %s After: %s'
-                         % (name, w_initial, w_before)))
+                    msg=(
+                        '%s appears not to be normalized. Before: %s After: %s'
+                        % (name, w_initial, w_before)))
 
             # Not true for the unnormalized variables.
             for name, var in expected_not_normalized_vars.items():
@@ -204,18 +204,23 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
             return
 
         def build_layer_fn(x, w_initializer, b_initializer):
-            layer = tf.compat.v1.layers.Conv2D(filters=3,
-                                               kernel_size=3,
-                                               padding='same',
-                                               kernel_initializer=w_initializer,
-                                               bias_initializer=b_initializer)
+            layer = tf.compat.v1.layers.Conv2D(
+                filters=3,
+                kernel_size=3,
+                padding='same',
+                kernel_initializer=w_initializer,
+                bias_initializer=b_initializer)
             net = layer.apply(x)
-            expected_normalized_vars = {'tf.layers.Conv2d.kernel': layer.kernel}
-            expected_not_normalized_vars = {'tf.layers.Conv2d.bias': layer.bias}
+            expected_normalized_vars = {
+                'tf.layers.Conv2d.kernel': layer.kernel
+            }
+            expected_not_normalized_vars = {
+                'tf.layers.Conv2d.bias': layer.bias
+            }
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3, ))
 
     def testConv2D_Keras(self):
         if tf.executing_eagerly():
@@ -236,7 +241,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3, ))
 
     def testConv2D_ContribLayers(self):
         if tf.executing_eagerly():
@@ -253,12 +258,13 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
                 'weights': ['CONTRIB_LAYERS_CONV2D_WEIGHTS'],
                 'biases': ['CONTRIB_LAYERS_CONV2D_BIASES']
             }
-            net = tf.contrib.layers.conv2d(x,
-                                           3,
-                                           3,
-                                           weights_initializer=w_initializer,
-                                           biases_initializer=b_initializer,
-                                           variables_collections=var_collection)
+            net = tf.contrib.layers.conv2d(
+                x,
+                3,
+                3,
+                weights_initializer=w_initializer,
+                biases_initializer=b_initializer,
+                variables_collections=var_collection)
             weight_vars = tf.compat.v1.get_collection(
                 'CONTRIB_LAYERS_CONV2D_WEIGHTS')
             self.assertLen(weight_vars, 1)
@@ -274,7 +280,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3, ))
 
     def testConv2D_Slim(self):
         if tf.executing_eagerly():
@@ -306,7 +312,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (3, 3, 3, 3), (3, ))
 
     def testFC_Layers(self):
         if tf.executing_eagerly():
@@ -324,7 +330,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (300, 3), (3, ))
 
     def testFC_Keras(self):
         if tf.executing_eagerly():
@@ -345,7 +351,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (300, 3), (3, ))
 
     def testFC_ContribLayers(self):
         if tf.executing_eagerly():
@@ -382,7 +388,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (300, 3), (3, ))
 
     def testFC_Slim(self):
         if tf.executing_eagerly():
@@ -419,7 +425,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
             return net, expected_normalized_vars, expected_not_normalized_vars
 
-        self._testLayerHelper(build_layer_fn, (300, 3), (3,))
+        self._testLayerHelper(build_layer_fn, (300, 3), (3, ))
 
     @parameterized.parameters(
         {
@@ -480,7 +486,8 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
                                 parallel_iterations=1,
                                 back_prop=False,
                                 swap_memory=True)
-            outputs.shape.assert_is_compatible_with((num_loops, 1, output_size))
+            outputs.shape.assert_is_compatible_with(
+                (num_loops, 1, output_size))
             output1 = tf.expand_dims(outputs[0, 0, :], 0)
             output2 = tf.expand_dims(outputs[1, 0, :], 0)
 

@@ -63,7 +63,8 @@ def get_stargan_model():
         return tfgan.StarGANModel(
             input_data=tf.ones([1, 2, 2, 3]),
             input_data_domain_label=tf.ones([1, 2]),
-            generated_data=stargan_generator_model(tf.ones([1, 2, 2, 3]), None),
+            generated_data=stargan_generator_model(tf.ones([1, 2, 2, 3]),
+                                                   None),
             generated_data_domain_target=tf.ones([1, 2]),
             reconstructed_data=tf.ones([1, 2, 2, 3]),
             discriminator_input_data_source_predication=tf.ones([1]),
@@ -90,7 +91,6 @@ def get_cyclegan_model():
 
 
 class SummariesTest(tf.test.TestCase):
-
     def _test_add_gan_model_image_summaries_impl(self, get_model_fn,
                                                  expected_num_summary_ops,
                                                  model_summaries):
@@ -148,7 +148,8 @@ class SummariesTest(tf.test.TestCase):
         self._test_add_regularization_loss_summaries_impl(get_gan_model, 2)
 
     def test_add_regularization_loss_summaries_for_cyclegan(self):
-        self._test_add_regularization_loss_summaries_impl(get_cyclegan_model, 4)
+        self._test_add_regularization_loss_summaries_impl(
+            get_cyclegan_model, 4)
 
     # TODO(joelshor): Add correctness test.
     def _test_add_image_comparison_summaries_impl(self, get_model_fn,

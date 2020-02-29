@@ -64,7 +64,6 @@ def _new_tensor(*args, **kwargs):
 
 
 class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(EstimatorLibTest, self).setUp()
         self.hparams = train_experiment.HParams(
@@ -102,9 +101,10 @@ class EstimatorLibTest(tf.test.TestCase, parameterized.TestCase):
     @mock.patch.object(estimator_lib.tfgan.eval,
                        'classifier_score_from_logits_streaming',
                        new=_new_tensor)
-    @mock.patch.object(estimator_lib.tfgan.eval,
-                       'frechet_classifier_distance_from_activations_streaming',
-                       new=_new_tensor)
+    @mock.patch.object(
+        estimator_lib.tfgan.eval,
+        'frechet_classifier_distance_from_activations_streaming',
+        new=_new_tensor)
     @mock.patch.object(estimator_lib.eval_lib,
                        'get_activations',
                        new=_new_tensor)

@@ -51,7 +51,6 @@ def dummy_discriminator_fn(input_data, num_domains, mode):
 
 class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
     """Tests that `StarGetGANModel` produces the correct model."""
-
     @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
                                     ('eval', tf.estimator.ModeKeys.EVAL),
                                     ('predict', tf.estimator.ModeKeys.PREDICT))
@@ -119,8 +118,8 @@ def get_dummy_gan_model():
         generated_data_domain_target=tf.ones([1, 2]),
         reconstructed_data=tf.ones([1, 2, 2, 3]),
         discriminator_input_data_source_predication=tf.ones([1]) * dis_var,
-        discriminator_generated_data_source_predication=tf.ones([1]) * gen_var *
-        dis_var,
+        discriminator_generated_data_source_predication=tf.ones([1]) *
+        gen_var * dis_var,
         discriminator_input_data_domain_predication=tf.ones([1, 2]) * dis_var,
         discriminator_generated_data_domain_predication=tf.ones([1, 2]) *
         gen_var * dis_var,
@@ -144,14 +143,13 @@ def dummy_loss_fn(gan_model):
 def get_metrics(gan_model):
     return {
         'mse_custom_metric':
-            tf.compat.v1.metrics.mean_squared_error(gan_model.input_data,
-                                                    gan_model.generated_data)
+        tf.compat.v1.metrics.mean_squared_error(gan_model.input_data,
+                                                gan_model.generated_data)
     }
 
 
 class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     """Tests that the EstimatorSpec is constructed appropriately."""
-
     @classmethod
     def setUpClass(cls):
         super(GetEstimatorSpecTest, cls).setUpClass()
@@ -189,7 +187,6 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
 
 # TODO(joelshor): Add pandas tf.test
 class StarGANEstimatorIntegrationTest(tf.test.TestCase):
-
     def setUp(self):
         super(StarGANEstimatorIntegrationTest, self).setUp()
         self._model_dir = tempfile.mkdtemp()
@@ -206,7 +203,6 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
                             predict_input_fn,
                             prediction_size,
                             lr_decay=False):
-
         def make_opt():
             gstep = tf.compat.v1.train.get_or_create_global_step()
             lr = tf.compat.v1.train.exponential_decay(1.0, gstep, 10, 0.9)
@@ -259,7 +255,6 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
     Returns:
       a new input_fn
     """
-
         def new_input_fn():
             features = numpy_input_fn()
             return features['x'], tf.one_hot([0] * batch_size, label_size)
@@ -288,8 +283,8 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
                                                       batch_size, label_size)
         eval_input_fn = self._numpy_input_fn_wrapper(eval_input_fn, batch_size,
                                                      label_size)
-        predict_input_fn = self._numpy_input_fn_wrapper(predict_input_fn,
-                                                        batch_size, label_size)
+        predict_input_fn = self._numpy_input_fn_wrapper(
+            predict_input_fn, batch_size, label_size)
 
         predict_input_fn = tfgan.estimator.stargan_prediction_input_fn_wrapper(
             predict_input_fn)
@@ -302,7 +297,6 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
 
 
 class StarGANEstimatorParamsTest(tf.test.TestCase):
-
     def setUp(self):
         super(StarGANEstimatorParamsTest, self).setUp()
         self._model_dir = self.get_temp_dir()
@@ -312,7 +306,6 @@ class StarGANEstimatorParamsTest(tf.test.TestCase):
         tf.compat.v1.summary.FileWriterCache.clear()
 
     def test_params_used(self):
-
         def train_input_fn(params):
             self.assertIn('batch_size', params)
             data = np.zeros([params['batch_size'], 4], dtype=np.float32)
@@ -324,8 +317,8 @@ class StarGANEstimatorParamsTest(tf.test.TestCase):
             loss_fn=dummy_loss_fn,
             generator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
                 1.0),
-            discriminator_optimizer=tf.compat.v1.train.GradientDescentOptimizer(
-                1.0),
+            discriminator_optimizer=tf.compat.v1.train.
+            GradientDescentOptimizer(1.0),
             model_dir=self._model_dir,
             params={'batch_size': 4})
 

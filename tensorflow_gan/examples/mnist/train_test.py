@@ -40,7 +40,6 @@ def _new_data(*args, **kwargs):
 
 
 class TrainTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(TrainTest, self).setUp()
         self.hparams = train_lib.HParams(batch_size=BATCH_SIZE,

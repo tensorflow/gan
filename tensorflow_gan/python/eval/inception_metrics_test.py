@@ -27,7 +27,6 @@ mock = tf.compat.v1.test.mock
 
 
 class FakeInceptionModule(tf.Module):
-
     @tf.function(input_signature=[tf.TensorSpec(shape=None, dtype=tf.float32)])
     def __call__(self, x):
         bs = tf.shape(x)[0]
@@ -37,7 +36,6 @@ class FakeInceptionModule(tf.Module):
 
 
 class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(RunInceptionTest, self).setUp()
         self.export_path = os.path.join(self.get_temp_dir(), 'my-module')
@@ -87,7 +85,6 @@ class RunInceptionTest(tf.test.TestCase, parameterized.TestCase):
 
 
 class SampleAndRunInception(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(SampleAndRunInception, self).setUp()
         self.export_path = os.path.join(self.get_temp_dir(), 'my-module')
@@ -122,7 +119,8 @@ class SampleAndRunInception(tf.test.TestCase, parameterized.TestCase):
         self.assertIn('logits', results)
         logits = results['logits']
         self.assertIsInstance(logits, tf.Tensor)
-        logits.shape.assert_is_compatible_with([batch_size * num_batches, 1008])
+        logits.shape.assert_is_compatible_with(
+            [batch_size * num_batches, 1008])
 
         self.assertIn('pool_3', results)
         pool = results['pool_3']
@@ -134,7 +132,6 @@ class SampleAndRunInception(tf.test.TestCase, parameterized.TestCase):
 
 
 class InceptionScore(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(InceptionScore, self).setUp()
         self.export_path = os.path.join(self.get_temp_dir(), 'my-module')
@@ -195,7 +192,6 @@ class InceptionScore(tf.test.TestCase, parameterized.TestCase):
 
 
 class FrechetInceptionDistance(tf.test.TestCase, parameterized.TestCase):
-
     def setUp(self):
         super(FrechetInceptionDistance, self).setUp()
         self.export_path = os.path.join(self.get_temp_dir(), 'my-module')
