@@ -17,11 +17,6 @@
 
 ***NOTE***: It's wise to run this test with `-c opt`.
 """
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from absl.testing import parameterized
 import numpy as np
 import tensorflow as tf  # tf
