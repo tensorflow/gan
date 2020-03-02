@@ -13,13 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Lint as: python2, python3
 """Common TFGAN summaries."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+from six.moves import range
+from six.moves import zip
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.python import namedtuples
 from tensorflow_gan.python.eval import eval_utils
 
@@ -66,7 +69,7 @@ def add_gan_model_image_summaries(gan_model, grid_size=4, model_summaries=True):
   real_channels = gan_model.real_data.shape.as_list()[3]
   generated_channels = gan_model.generated_data.shape.as_list()[3]
 
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'real_data',
       eval_utils.image_grid(
           gan_model.real_data[:num_images],
@@ -74,7 +77,7 @@ def add_gan_model_image_summaries(gan_model, grid_size=4, model_summaries=True):
           image_shape=real_image_shape,
           num_channels=real_channels),
       max_outputs=1)
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'generated_data',
       eval_utils.image_grid(
           gan_model.generated_data[:num_images],
@@ -118,15 +121,15 @@ def add_cyclegan_image_summaries(cyclegan_model):
     image_list = (tf.unstack(gan_model.generator_inputs[:1]) +
                   tf.unstack(gan_model.generated_data[:1]) +
                   tf.unstack(reconstructions[:1]))
-    tf.compat.v1.summary.image(
+    tf.summary.image(
         'image_comparison',
         eval_utils.image_reshaper(image_list, num_cols=len(image_list)),
         max_outputs=1)
 
-  with tf.compat.v1.name_scope('x2y_image_comparison_summaries'):
+  with tf.name_scope('x2y_image_comparison_summaries'):
     _add_comparison_summary(
         cyclegan_model.model_x2y, cyclegan_model.reconstructed_x)
-  with tf.compat.v1.name_scope('y2x_image_comparison_summaries'):
+  with tf.name_scope('y2x_image_comparison_summaries'):
     _add_comparison_summary(
         cyclegan_model.model_y2x, cyclegan_model.reconstructed_y)
 
@@ -176,7 +179,7 @@ def add_image_comparison_summaries(gan_model, num_comparisons=2,
     image_list.extend(diffs)
 
   # Reshape image and display.
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'image_comparison',
       eval_utils.image_reshaper(image_list, num_cols=num_comparisons),
       max_outputs=1)
@@ -228,7 +231,7 @@ def add_stargan_image_summaries(stargan_model,
     # Create the targets to 0, 1, 2, ..., num_domains-1.
     targets = tf.one_hot(list(range(num_domains)), num_domains)
 
-    with tf.compat.v1.variable_scope(stargan_model.generator_scope, reuse=True):
+    with tf.variable_scope(stargan_model.generator_scope, reuse=True):
 
       # Add the original image.
       output_images_list = [image]
@@ -258,7 +261,7 @@ def add_stargan_image_summaries(stargan_model,
     # Reduce the first rank.
     return tf.squeeze(final_image, axis=0)
 
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'stargan_image_generation',
       tf.map_fn(
           _build_image,
@@ -276,18 +279,18 @@ def add_gan_model_summaries(gan_model):
     gan_model: A GANModel tuple.
   """
   if isinstance(gan_model, namedtuples.CycleGANModel):
-    with tf.compat.v1.name_scope('cyclegan_x2y_summaries'):
+    with tf.name_scope('cyclegan_x2y_summaries'):
       add_gan_model_summaries(gan_model.model_x2y)
-    with tf.compat.v1.name_scope('cyclegan_y2x_summaries'):
+    with tf.name_scope('cyclegan_y2x_summaries'):
       add_gan_model_summaries(gan_model.model_y2x)
     return
 
-  with tf.compat.v1.name_scope('generator_variables'):
+  with tf.name_scope('generator_variables'):
     for var in gan_model.generator_variables:
-      tf.compat.v1.summary.histogram(var.name, var)
-  with tf.compat.v1.name_scope('discriminator_variables'):
+      tf.summary.histogram(var.name, var)
+  with tf.name_scope('discriminator_variables'):
     for var in gan_model.discriminator_variables:
-      tf.compat.v1.summary.histogram(var.name, var)
+      tf.summary.histogram(var.name, var)
 
 
 def add_regularization_loss_summaries(gan_model):
@@ -297,19 +300,19 @@ def add_regularization_loss_summaries(gan_model):
     gan_model: A GANModel tuple.
   """
   if isinstance(gan_model, namedtuples.CycleGANModel):
-    with tf.compat.v1.name_scope('cyclegan_x2y_regularization_loss_summaries'):
+    with tf.name_scope('cyclegan_x2y_regularization_loss_summaries'):
       add_regularization_loss_summaries(gan_model.model_x2y)
-    with tf.compat.v1.name_scope('cyclegan_y2x_regularization_loss_summaries'):
+    with tf.name_scope('cyclegan_y2x_regularization_loss_summaries'):
       add_regularization_loss_summaries(gan_model.model_y2x)
     return
 
   if gan_model.generator_scope:
-    tf.compat.v1.summary.scalar(
+    tf.summary.scalar(
         'generator_regularization_loss',
-        tf.compat.v1.losses.get_regularization_loss(
+        tf.losses.get_regularization_loss(
             gan_model.generator_scope.name))
   if gan_model.discriminator_scope:
-    tf.compat.v1.summary.scalar(
+    tf.summary.scalar(
         'discriminator_regularization_loss',
-        tf.compat.v1.losses.get_regularization_loss(
+        tf.losses.get_regularization_loss(
             gan_model.discriminator_scope.name))

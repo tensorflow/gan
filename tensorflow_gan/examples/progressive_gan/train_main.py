@@ -30,7 +30,8 @@ import sys
 
 from absl import flags
 from absl import logging
-import tensorflow as tf
+import six
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import data_provider
 from tensorflow_gan.examples.progressive_gan import train
@@ -152,14 +153,15 @@ def main(_):
     tf.io.gfile.makedirs(FLAGS.train_log_dir)
 
   config = _make_config_from_flags()
-  logging.info('\n'.join(['{}={}'.format(k, v) for k, v in config.iteritems()]))
+  logging.info('\n'.join(
+      ['{}={}'.format(k, v) for k, v in six.iteritems(config)]))
 
   for stage_id in train.get_stage_ids(**config):
     batch_size = train.get_batch_size(stage_id, **config)
-    tf.compat.v1.reset_default_graph()
-    with tf.device(tf.compat.v1.train.replica_device_setter(FLAGS.ps_replicas)):
+    tf.reset_default_graph()
+    with tf.device(tf.train.replica_device_setter(FLAGS.ps_replicas)):
       real_images = None
-      with tf.device('/cpu:0'), tf.compat.v1.name_scope('inputs'):
+      with tf.device('/cpu:0'), tf.name_scope('inputs'):
         real_images = _provide_real_images(batch_size, **config)
       model = train.build_model(stage_id, batch_size, real_images, **config)
       train.add_model_summaries(model, **config)
@@ -167,4 +169,4 @@ def main(_):
 
 
 if __name__ == '__main__':
-  tf.compat.v1.app.run()
+  tf.app.run()

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Lint as: python2, python3
 """A tensor pool stores values from an input tensor and returns a stored one.
 
 We use this to keep a history of values created by a generator, such that
@@ -31,7 +32,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+from six.moves import zip
+import tensorflow.compat.v1 as tf
 
 
 __all__ = [
@@ -84,7 +86,7 @@ def tensor_pool(input_values,
   original_input_values = input_values
   input_values = tf.nest.flatten(input_values)
 
-  with tf.compat.v1.name_scope(
+  with tf.name_scope(
       '{}_pool_queue'.format(name),
       values=input_values + [pooling_probability]):
     pool_queue = tf.queue.RandomShuffleQueue(

@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Lint as: python2, python3
 """Keras-like layers and utilities that implement Spectral Normalization.
 
 Based on "Spectral Normalization for Generative Adversarial Networks" by Miyato,
@@ -26,7 +27,8 @@ from __future__ import print_function
 import numbers
 import re
 
-import tensorflow as tf
+from six.moves import range
+import tensorflow.compat.v1 as tf
 
 __all__ = [
     'compute_spectral_norm',
@@ -69,7 +71,7 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     # Under eager mode, get_variable() creates a new variable on every call.
     raise ValueError(
         '`compute_spectral_norm` doesn\'t work when executing eagerly.')
-  with tf.compat.v1.variable_scope(name, 'spectral_norm'):
+  with tf.variable_scope(name, 'spectral_norm'):
     # The paper says to flatten convnet kernel weights from
     # (C_out, C_in, KH, KW) to (C_out, C_in * KH * KW). But TensorFlow's Conv2D
     # kernel weight shape is (KH, KW, C_in, C_out), so it should be reshaped to
@@ -91,11 +93,11 @@ def compute_spectral_norm(w_tensor, power_iteration_rounds=1,
     else:
       aggregation = tf.VariableAggregation.ONLY_FIRST_REPLICA
 
-    u_var = tf.compat.v1.get_variable(
+    u_var = tf.get_variable(
         _PERSISTED_U_VARIABLE_SUFFIX,
         shape=(w.shape[0], 1),
         dtype=w.dtype,
-        initializer=tf.compat.v1.initializers.random_normal(),
+        initializer=tf.initializers.random_normal(),
         trainable=False,
         aggregation=aggregation)
     u = u_var
@@ -149,7 +151,7 @@ def spectral_normalize(w,
     The input weight matrix, normalized so that its spectral norm is at most
     one.
   """
-  with tf.compat.v1.variable_scope(name, 'spectral_normalize'):
+  with tf.variable_scope(name, 'spectral_normalize'):
     normalization_factor = compute_spectral_norm(
         w, power_iteration_rounds=power_iteration_rounds, training=training)
     if not equality_constrained:
@@ -191,13 +193,12 @@ def spectral_norm_regularizer(scale, power_iteration_rounds=1,
       raise ValueError(
           'Setting a scale less than 0 on a regularizer: %g' % scale)
     if scale == 0.0:
-      tf.compat.v1.logging.info('Scale of 0 disables regularizer.')
+      tf.logging.info('Scale of 0 disables regularizer.')
       return lambda _: None
 
   def sn(weights, name=None):
     """Applies spectral norm regularization to weights."""
-    with tf.compat.v1.name_scope(scope, 'SpectralNormRegularizer',
-                                 [weights]) as name:
+    with tf.name_scope(scope, 'SpectralNormRegularizer', [weights]) as name:
       scale_t = tf.convert_to_tensor(
           value=scale, dtype=weights.dtype.base_dtype, name='scale')
       return tf.multiply(
