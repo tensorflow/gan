@@ -27,6 +27,6 @@ one set of images into another set in an unpaired way.
 
 #### CycleGAN
 
-<img src="images/z2h2z.png" title="Zebra to horses to zebras" width="330" />
+<img src="g3doc/images/z2h2z.png" title="Zebra to horses to zebras" width="330" />
 
-<img src="images/a.png" title="Original apple image" width="165" /> <img src="images/o.png" title="Morphed to orange" width="161" />
+<img src="g3doc/images/a.png" title="Original apple image" width="165" /> <img src="g3doc/images/o.png" title="Morphed to orange" width="161" />
