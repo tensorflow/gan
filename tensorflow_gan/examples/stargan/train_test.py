@@ -50,6 +50,10 @@ class TrainTest(tf.test.TestCase):
 
   def setUp(self):
     super(TrainTest, self).setUp()
+
+    # Force the TF lazy loading to kick in before mocking this out below.
+    _ = tf.compat.v1.train.get_or_create_global_step()
+
     self.hparams = train_lib.HParams(
         batch_size=6,
         patch_size=128,
