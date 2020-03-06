@@ -43,6 +43,11 @@ class TrainTest(tf.test.TestCase):
 
   def setUp(self):
     super(TrainTest, self).setUp()
+
+    # Force the TF lazy loading to kick in before mocking these out below.
+    _ = tf.compat.v1.train.get_or_create_global_step
+    _ = tf.compat.v1.train.AdamOptimizer
+
     self._original_generator = train_lib.networks.generator
     self._original_discriminator = train_lib.networks.discriminator
     train_lib.networks.generator = _test_generator
