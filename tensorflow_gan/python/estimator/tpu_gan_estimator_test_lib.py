@@ -461,18 +461,22 @@ class TPUGANEstimatorMultiTrainStepTest(tf.test.TestCase,
 
     self.assertEqual(1, est.get_variable_value('global_step'))
 
-    substep_counter_name = 'discriminator_train/substep_counter'
+    # On TPUs, variable are created inside a while_loop which adds a prefix to
+    # the variable name.
+    prefix = '' if not flags.FLAGS.use_tpu else 'while/'
+    substep_counter_name = prefix + 'discriminator_train/substep_counter'
     if d_steps == 0:
-      substep_counter_name = 'generator_train/substep_counter'
+      substep_counter_name = prefix + 'generator_train/substep_counter'
     substep_counter = est.get_variable_value(substep_counter_name)
     self.assertEqual(expected_total_substeps, substep_counter)
 
     if expected_g_substep_mask is not None:
-      g_substep_mask = est.get_variable_value('generator_train/substep_mask')
+      g_substep_mask = est.get_variable_value(prefix +
+                                              'generator_train/substep_mask')
       self.assertIn(g_substep_mask, expected_g_substep_mask)
     if expected_d_substep_mask is not None:
       d_substep_mask = est.get_variable_value(
-          'discriminator_train/substep_mask')
+          prefix + 'discriminator_train/substep_mask')
       self.assertIn(d_substep_mask, expected_d_substep_mask)
 
 
