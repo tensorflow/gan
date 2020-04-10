@@ -35,7 +35,7 @@ Authors: Yoel Drori, Augustus Odena, Joel Shor
     pip install --upgrade tensorflow_datasets --user
     tmux
     STORAGE_BUCKET=gs://YOUR-BUCKET-NAME
-    python -c 'import tensorflow_datasets as tfds; ds = tfds.load("imagenet2012", split="train", data_dir="'${STORAGE_BUCKET}/data'"); tfds.as_numpy(ds)'
+    python -c 'import tensorflow_datasets as tfds; ds = tfds.load("imagenet2012:5.*.*", split="train", data_dir="'${STORAGE_BUCKET}/data'"); tfds.as_numpy(ds)'
     ```
 
 1.  Install the necessary packages and download the example code:

@@ -124,7 +124,7 @@ def provide_dataset(split,
     ValueError: If `dataset_name` is invalid.
     ValueError: If `split_name` is invalid.
   """
-  ds = tfds.load('cifar10', split=split, shuffle_files=shuffle)
+  ds = tfds.load('cifar10:3.*.*', split=split, shuffle_files=shuffle)
   ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                              num_parallel_calls, shuffle)
 
