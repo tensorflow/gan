@@ -91,7 +91,7 @@ def provide_data(batch_size,
 
 
 def _load_imagenet_dataset(split, data_dir=None, shuffle_files=False):
-  return tfds.load('imagenet2012', split=split, data_dir=data_dir,
+  return tfds.load('imagenet2012:5.*.*', split=split, data_dir=data_dir,
                    shuffle_files=shuffle_files)
 
 

@@ -38,7 +38,7 @@ def provide_celeba_test_set(patch_size):
     An `np.array` of shape (num_domains, H, W, C) representing the images.
       Values are in [-1, 1].
   """
-  ds = tfds.load('celeb_a', split='test')
+  ds = tfds.load('celeb_a:2.*.*', split='test')
   def _preprocess(x):
     return {
         'image': cyclegan_dp.full_image_to_patch(x['image'], patch_size),
