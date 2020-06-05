@@ -79,8 +79,8 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
       params=hparams._asdict())
 
 
-def get_gpu_estimator(generator, discriminator, hparams, config):
-  """Returns an Estimator object to be used for training with GPUs."""
+def make_gpu_get_metric_fn(hparams):
+  """Return a function compatible with GANEstimator's get_eval_metric_ops_fn."""
 
   def gpu_get_metric(gan_model):
     """A function compatible with GANEstimator's get_eval_metric_ops_fn arg."""
@@ -100,6 +100,12 @@ def get_gpu_estimator(generator, discriminator, hparams, config):
     metrics.update(_generator_summary_ops(gen_images, real_images))
     return metrics
 
+  return gpu_get_metric
+
+
+def get_gpu_estimator(generator, discriminator, hparams, config):
+  """Returns an Estimator object to be used for training with GPUs."""
+
   return tfgan.estimator.GANEstimator(
       generator_fn=generator,
       discriminator_fn=discriminator,
@@ -109,7 +115,7 @@ def get_gpu_estimator(generator, discriminator, hparams, config):
           hparams.generator_lr, hparams.beta1),
       discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
           hparams.discriminator_lr, hparams.beta1),
-      get_eval_metric_ops_fn=gpu_get_metric,
+      get_eval_metric_ops_fn=make_gpu_get_metric_fn(hparams),
       config=config,
       params=hparams._asdict())
 

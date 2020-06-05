@@ -93,11 +93,12 @@ class TrainExperimentTest(tf.test.TestCase, parameterized.TestCase):
     train_experiment.run_continuous_eval(self.hparams)
 
 
-  @mock.patch.object(train_experiment.est_lib, 'get_metrics', autospec=True)
+  @mock.patch.object(
+      train_experiment.est_lib, 'make_gpu_get_metric_fn', autospec=True)
   def test_train_and_eval_cpu_local(self, mock_metrics):
     """Tests `run_train_and_eval`."""
     # Mock computationally expensive metrics computations.
-    mock_metrics.return_value = {}
+    mock_metrics.return_value = lambda hparams: {}
     train_experiment.run_train_and_eval(self.hparams)
 
   @parameterized.parameters(
