@@ -19,15 +19,15 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def dummy_apply_kernel(kernel_shape, kernel_initializer):
-  kernel = tf.compat.v1.get_variable(
+  kernel = tf.get_variable(
       'kernel', shape=kernel_shape, initializer=kernel_initializer)
   return tf.reduce_sum(input_tensor=kernel) + 1.5
 
@@ -39,7 +39,7 @@ class LayersTest(tf.test.TestCase):
 
     # Do a dummy computation to trigger lazy loading of the conv2d method before
     # mocking it in tests.
-    _ = tf.compat.v1.layers.conv2d(
+    _ = tf.layers.conv2d(
         np.ones(shape=[1, 3, 3, 1], dtype=np.float32), filters=1, kernel_size=2)
 
   def test_pixel_norm_4d_images_returns_channel_normalized_images(self):
@@ -131,13 +131,12 @@ class LayersTest(tf.test.TestCase):
     self.assertAlmostEqual(
         layers.he_initializer_scale([3, 4, 5, 6], 0.0), 0.1825742, 5)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
+  @mock.patch.object(tf, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf, 'zeros_initializer', autospec=False)
   def test_custom_layer_impl_with_weight_scaling(
       self, mock_zeros_initializer, mock_random_normal_initializer):
-    mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = (
-        tf.compat.v1.constant_initializer(3.0))
+    mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
+    mock_random_normal_initializer.return_value = (tf.constant_initializer(3.0))
     output = layers._custom_layer_impl(
         apply_kernel=dummy_apply_kernel,
         kernel_shape=(25, 6),
@@ -148,18 +147,17 @@ class LayersTest(tf.test.TestCase):
     mock_zeros_initializer.assert_called_once_with()
     mock_random_normal_initializer.assert_called_once_with(stddev=1.0)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
     self.assertAlmostEqual(output_np, 182.6, 3)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
+  @mock.patch.object(tf, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf, 'zeros_initializer', autospec=False)
   def test_custom_layer_impl_no_weight_scaling(self, mock_zeros_initializer,
                                                mock_random_normal_initializer):
-    mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = (
-        tf.compat.v1.constant_initializer(3.0))
+    mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
+    mock_random_normal_initializer.return_value = (tf.constant_initializer(3.0))
     output = layers._custom_layer_impl(
         apply_kernel=dummy_apply_kernel,
         kernel_shape=(25, 6),
@@ -170,12 +168,12 @@ class LayersTest(tf.test.TestCase):
     mock_zeros_initializer.assert_called_once_with()
     mock_random_normal_initializer.assert_called_once_with(stddev=0.2)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
     self.assertAlmostEqual(output_np, 905.0, 3)
 
-  @mock.patch.object(tf.compat.v1.layers, 'conv2d', autospec=True)
+  @mock.patch.object(tf.layers, 'conv2d', autospec=True)
   def test_custom_conv2d_passes_conv2d_options(self, mock_conv2d):
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
@@ -205,13 +203,12 @@ class LayersTest(tf.test.TestCase):
         he_initializer_slope=1.0,
         use_weight_scaling=True)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
+  @mock.patch.object(tf, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf, 'zeros_initializer', autospec=False)
   def test_custom_conv2d_scalar_kernel_size(self, mock_zeros_initializer,
                                             mock_random_normal_initializer):
-    mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = (
-        tf.compat.v1.constant_initializer(3.0))
+    mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
+    mock_random_normal_initializer.return_value = (tf.constant_initializer(3.0))
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
                     dtype=tf.float32)
@@ -219,7 +216,7 @@ class LayersTest(tf.test.TestCase):
     mock_zeros_initializer.assert_called_once_with()
     mock_random_normal_initializer.assert_called_once_with(stddev=1.0)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
     expected_np = [[[[68.54998016], [42.56921768]],
@@ -228,13 +225,12 @@ class LayersTest(tf.test.TestCase):
                                                    [9.66025352]]]]
     self.assertAllClose(output_np, expected_np, 1.0e-5)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=True)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=True)
+  @mock.patch.object(tf, 'random_normal_initializer', autospec=True)
+  @mock.patch.object(tf, 'zeros_initializer', autospec=True)
   def test_custom_conv2d_list_kernel_size(self, mock_zeros_initializer,
                                           mock_random_normal_initializer):
-    mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = (
-        tf.compat.v1.constant_initializer(3.0))
+    mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
+    mock_random_normal_initializer.return_value = (tf.constant_initializer(3.0))
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
                     dtype=tf.float32)
@@ -242,7 +238,7 @@ class LayersTest(tf.test.TestCase):
     mock_zeros_initializer.assert_called_once_with()
     mock_random_normal_initializer.assert_called_once_with(stddev=1.0)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
     expected_np = [[
@@ -266,13 +262,12 @@ class LayersTest(tf.test.TestCase):
         he_initializer_slope=1.0,
         use_weight_scaling=True)
 
-  @mock.patch.object(tf.compat.v1, 'random_normal_initializer', autospec=False)
-  @mock.patch.object(tf.compat.v1, 'zeros_initializer', autospec=False)
+  @mock.patch.object(tf, 'random_normal_initializer', autospec=False)
+  @mock.patch.object(tf, 'zeros_initializer', autospec=False)
   def test_custom_dense_output_is_correct(self, mock_zeros_initializer,
                                           mock_random_normal_initializer):
-    mock_zeros_initializer.return_value = tf.compat.v1.constant_initializer(1.0)
-    mock_random_normal_initializer.return_value = (
-        tf.compat.v1.constant_initializer(3.0))
+    mock_zeros_initializer.return_value = tf.constant_initializer(1.0)
+    mock_random_normal_initializer.return_value = (tf.constant_initializer(3.0))
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
                      [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
                     dtype=tf.float32)
@@ -280,7 +275,7 @@ class LayersTest(tf.test.TestCase):
     mock_zeros_initializer.assert_called_once_with()
     mock_random_normal_initializer.assert_called_once_with(stddev=1.0)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_np = sess.run(output)
 
     expected_np = [[68.54998016, 68.54998016, 68.54998016],

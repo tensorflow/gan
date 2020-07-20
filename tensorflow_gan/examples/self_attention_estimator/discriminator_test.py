@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.self_attention_estimator import discriminator
 
 
@@ -42,7 +42,7 @@ class DiscriminatorTest(tf.test.TestCase):
     images = tf.random.normal([10, 32, 32, 3])
     d_out, var_list = discriminator.discriminator(images, gen_sparse_class, 16,
                                                   1000)
-    sess = tf.compat.v1.train.MonitoredTrainingSession()
+    sess = tf.train.MonitoredTrainingSession()
     images_np = sess.run(d_out)
     self.assertEqual((batch_size, 1), images_np.shape)
     self.assertAllInRange(images_np, -1.0, 1.0)

@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 from absl import flags
-import tensorflow as tf  # tf
+import tensorflow.compat.v1 as tf  # tf
 import tensorflow_datasets as tfds
 
 from tensorflow_gan.examples import compat_utils
@@ -78,7 +78,7 @@ def provide_data(batch_size,
   """
   dataset = provide_dataset(batch_size * num_batches, shuffle_buffer_size,
                             split)
-  iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
+  iterator = tf.data.make_one_shot_iterator(dataset)
   images, labels = iterator.get_next()
   images = tf.reshape(
       images, shape=[num_batches, batch_size, IMG_SIZE, IMG_SIZE, 3])

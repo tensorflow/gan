@@ -23,7 +23,7 @@ import os
 import numpy as np
 import PIL
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.self_attention_estimator import data_provider
 import tensorflow_gan as tfgan  # tf
 
@@ -64,7 +64,7 @@ def get_activations_from_dataset(image_ds, num_batches, get_logits=False):
     1 or 2 Tensors of Inception activations.
   """
   # TODO(joelshor): Add dataset format checks.
-  iterator = tf.compat.v1.data.make_one_shot_iterator(image_ds)
+  iterator = tf.data.make_one_shot_iterator(image_ds)
 
   get_images_fn = iterator.get_next
   return get_activations(get_images_fn, num_batches, get_logits)
@@ -107,14 +107,14 @@ def print_debug_statistics(image, labels, dbg_messge_prefix, on_tpu):
       input_tensor=tf.math.squared_difference(image, image_means),
       axis=0,
       keepdims=True)
-  image = tf.compat.v1.Print(
+  image = tf.Print(
       image, [
           tf.reduce_mean(input_tensor=image_means),
           tf.reduce_mean(input_tensor=image_vars)
       ],
       dbg_messge_prefix + ' mean and average var',
       first_n=1)
-  labels = tf.compat.v1.Print(
+  labels = tf.Print(
       labels, [labels, labels.shape],
       dbg_messge_prefix + ' sparse labels',
       first_n=2)
@@ -123,17 +123,16 @@ def print_debug_statistics(image, labels, dbg_messge_prefix, on_tpu):
 
 def log_and_summarize_variables(var_list, dbg_messge, on_tpu):
   """Logs given variables, summarizes sigma_ratio_vars."""
-  tf.compat.v1.logging.info(dbg_messge + str(var_list))
+  tf.logging.info(dbg_messge + str(var_list))
   sigma_ratio_vars = [var for var in var_list if 'sigma_ratio' in var.name]
-  tf.compat.v1.logging.info('sigma_ratio_vars %s %s', dbg_messge,
-                            sigma_ratio_vars)
+  tf.logging.info('sigma_ratio_vars %s %s', dbg_messge, sigma_ratio_vars)
   # Reset the name scope so the summary names are displayed as passed to the
   # summary function.
   if not on_tpu:
     # The TPU estimator doesn't support summaries.
-    with tf.compat.v1.name_scope(name=None):
+    with tf.name_scope(name=None):
       for var in sigma_ratio_vars:
-        tf.compat.v1.summary.scalar('sigma_ratio_vars/' + var.name, var)
+        tf.summary.scalar('sigma_ratio_vars/' + var.name, var)
 
 
 def predict_and_write_images(estimator, input_fn, model_dir, filename_suffix):
@@ -170,4 +169,4 @@ def _write_image_to_disk(image, filename):
     img_np = (255 / 2.0) * (image + 1.0)
     pil_image = PIL.Image.fromarray(img_np.astype(np.uint8))
     pil_image.convert('RGB').save(f, 'PNG')
-  tf.compat.v1.logging.info('Wrote output to: %s', filename)
+  tf.logging.info('Wrote output to: %s', filename)

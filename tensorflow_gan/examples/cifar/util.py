@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan  # tf
 
 
@@ -110,7 +110,7 @@ def get_inception_scores(images, batch_size, num_inception_images):
 
   # Resize images.
   size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_images = tf.compat.v1.image.resize(
+  resized_images = tf.image.resize(
       images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
 
   # Run images through Inception.
@@ -146,9 +146,9 @@ def get_frechet_inception_distance(real_images, generated_images, batch_size,
 
   # Resize input images.
   size = tfgan.eval.INCEPTION_DEFAULT_IMAGE_SIZE
-  resized_real_images = tf.compat.v1.image.resize(
+  resized_real_images = tf.image.resize(
       real_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
-  resized_generated_images = tf.compat.v1.image.resize(
+  resized_generated_images = tf.image.resize(
       generated_images, [size, size], method=tf.image.ResizeMethod.BILINEAR)
 
   # Compute Frechet Inception Distance.

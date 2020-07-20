@@ -28,7 +28,7 @@ from __future__ import print_function
 
 import math
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
 
@@ -288,12 +288,12 @@ def generator(z,
 
   end_points = {}
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
-    with tf.compat.v1.name_scope('input'):
-      x = tf.compat.v1.layers.flatten(z)
+  with tf.variable_scope(scope, reuse=reuse):
+    with tf.name_scope('input'):
+      x = tf.layers.flatten(z)
       end_points['latent_vector'] = x
 
-    with tf.compat.v1.variable_scope(block_name(1)):
+    with tf.variable_scope(block_name(1)):
       x = tf.expand_dims(tf.expand_dims(x, 1), 1)
       x = layers.pixel_norm(x)
       # Pad the 1 x 1 image to 2 * (start_h - 1) x 2 * (start_w - 1)
@@ -307,7 +307,7 @@ def generator(z,
       lods = [x]
 
     for block_id in range(2, num_blocks + 1):
-      with tf.compat.v1.variable_scope(block_name(block_id)):
+      with tf.variable_scope(block_name(block_id)):
         x = layers.upscale(x, resolution_schedule.scale_base)
         x = _conv2d('conv0', x, kernel_size, num_filters_fn(block_id))
         x = _conv2d('conv1', x, kernel_size, num_filters_fn(block_id))
@@ -315,7 +315,7 @@ def generator(z,
 
     outputs = []
     for block_id in range(1, num_blocks + 1):
-      with tf.compat.v1.variable_scope(block_name(block_id)):
+      with tf.variable_scope(block_name(block_id)):
         lod = _to_rgb(lods[block_id - 1])
         scale = resolution_schedule.scale_factor(block_id)
         lod = layers.upscale(lod, scale)
@@ -380,13 +380,13 @@ def discriminator(x,
 
   end_points = {}
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
+  with tf.variable_scope(scope, reuse=reuse):
     x0 = x
     end_points['rgb'] = x0
 
     lods = []
     for block_id in range(num_blocks, 0, -1):
-      with tf.compat.v1.variable_scope(block_name(block_id)):
+      with tf.variable_scope(block_name(block_id)):
         scale = resolution_schedule.scale_factor(block_id)
         lod = layers.downscale(x0, scale)
         end_points['downscaled_rgb_{}'.format(block_id)] = lod
@@ -399,14 +399,14 @@ def discriminator(x,
     lods_iter = iter(lods)
     x, _ = next(lods_iter)
     for block_id in range(num_blocks, 1, -1):
-      with tf.compat.v1.variable_scope(block_name(block_id)):
+      with tf.variable_scope(block_name(block_id)):
         x = _conv2d('conv0', x, kernel_size, num_filters_fn(block_id))
         x = _conv2d('conv1', x, kernel_size, num_filters_fn(block_id - 1))
         x = layers.downscale(x, resolution_schedule.scale_base)
         lod, alpha = next(lods_iter)
         x = alpha * lod + (1.0 - alpha) * x
 
-    with tf.compat.v1.variable_scope(block_name(1)):
+    with tf.variable_scope(block_name(1)):
       x = layers.scalar_concat(x, layers.minibatch_mean_stddev(x))
       x = _conv2d('conv0', x, kernel_size, num_filters_fn(1))
       x = _conv2d('conv1', x, resolution_schedule.start_resolutions,

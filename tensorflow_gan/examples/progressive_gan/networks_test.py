@@ -19,7 +19,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import layers
 from tensorflow_gan.examples.progressive_gan import networks
@@ -73,7 +73,7 @@ class NetworksTest(tf.test.TestCase):
         with self.cached_session(use_gpu=True) as sess:
           progress_output.append(sess.run(progress))
     else:
-      current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
+      current_image_id_ph = tf.placeholder(tf.int32, [])
       progress = networks.compute_progress(
           current_image_id_ph,
           stable_stage_num_images=7,
@@ -157,7 +157,7 @@ class NetworksTest(tf.test.TestCase):
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 
-    current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
+    current_image_id_ph = tf.placeholder(tf.int32, [])
     progress = networks.compute_progress(
         current_image_id_ph,
         stable_stage_num_images,
@@ -170,20 +170,17 @@ class NetworksTest(tf.test.TestCase):
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
     fake_loss = tf.reduce_sum(input_tensor=tf.square(x))
     grad_norms = [
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       x1_np = sess.run(x, feed_dict={current_image_id_ph: 0.12})
       x2_np = sess.run(x, feed_dict={current_image_id_ph: 1.8})
       grad_norms_output = np.array([
@@ -216,7 +213,7 @@ class NetworksTest(tf.test.TestCase):
     stable_stage_num_images = 2
     transition_stage_num_images = 3
 
-    current_image_id_ph = tf.compat.v1.placeholder(tf.int32, [])
+    current_image_id_ph = tf.placeholder(tf.int32, [])
     progress = networks.compute_progress(
         current_image_id_ph,
         stable_stage_num_images,
@@ -229,20 +226,17 @@ class NetworksTest(tf.test.TestCase):
             start_resolutions=(4, 4), scale_base=2, num_resolutions=3))
     fake_loss = tf.reduce_sum(input_tensor=tf.square(logits))
     grad_norms = [
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_1/.*')),
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_2/.*')),
-        _get_grad_norm(
-            fake_loss,
-            tf.compat.v1.trainable_variables('.*/progressive_gan_block_3/.*'))
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_1/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_2/.*')),
+        _get_grad_norm(fake_loss,
+                       tf.trainable_variables('.*/progressive_gan_block_3/.*'))
     ]
 
     grad_norms_output = None
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       grad_norms_output = np.array([
           sess.run(grad_norms, feed_dict={current_image_id_ph: i})
           for i in range(15)  # total num of images

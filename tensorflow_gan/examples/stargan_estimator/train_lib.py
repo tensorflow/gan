@@ -25,7 +25,7 @@ import os
 import numpy as np
 import PIL
 from six.moves import xrange  # pylint: disable=redefined-builtin
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.stargan import network
@@ -54,9 +54,9 @@ def _get_optimizer(gen_lr, dis_lr, beta1, beta2):
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
   """
-  gen_opt = tf.compat.v1.train.AdamOptimizer(
+  gen_opt = tf.train.AdamOptimizer(
       gen_lr, beta1=beta1, beta2=beta2, use_locking=True)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(
+  dis_opt = tf.train.AdamOptimizer(
       dis_lr, beta1=beta1, beta2=beta2, use_locking=True)
   return gen_opt, dis_opt
 

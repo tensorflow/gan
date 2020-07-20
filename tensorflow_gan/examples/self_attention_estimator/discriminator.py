@@ -15,7 +15,7 @@
 
 """Discriminator definitions."""
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples import compat_utils
 from tensorflow_gan.examples.self_attention_estimator import ops
 
@@ -47,7 +47,7 @@ def block(x, out_channels, name, downsample=True, act=tf.nn.relu):
   Returns:
     A `Tensor` representing the output of the operation.
   """
-  with tf.compat.v1.variable_scope(name):
+  with tf.variable_scope(name):
     input_channels = x.shape.as_list()[-1]
     x_0 = x
     x = act(x)
@@ -77,7 +77,7 @@ def optimized_block(x, out_channels, name, act=tf.nn.relu):
   Returns:
     A `Tensor` representing the output of the operation.
   """
-  with tf.compat.v1.variable_scope(name):
+  with tf.variable_scope(name):
     x_0 = x
     x = ops.snconv2d(x, out_channels, 3, 3, 1, 1, name='sn_conv1')
     x = act(x)
@@ -101,8 +101,7 @@ def discriminator(image, labels, df_dim, number_classes, act=tf.nn.relu):
     - A `Tensor` representing the logits of the discriminator.
     - A list containing all trainable varaibles defined by the model.
   """
-  with tf.compat.v1.variable_scope(
-      'discriminator', reuse=tf.compat.v1.AUTO_REUSE) as dis_scope:
+  with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as dis_scope:
     h0 = optimized_block(
         image, df_dim, 'd_optimized_block1', act=act)  # 64 * 64
     h1 = block(h0, df_dim * 2, 'd_block2', act=act)  # 32 * 32
@@ -117,6 +116,5 @@ def discriminator(image, labels, df_dim, number_classes, act=tf.nn.relu):
     h_labels = ops.sn_embedding(labels, number_classes, df_dim * 16,
                                 name='d_embedding')
     output += tf.reduce_sum(input_tensor=h6 * h_labels, axis=1, keepdims=True)
-  var_list = tf.compat.v1.get_collection(
-      tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, dis_scope.name)
+  var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, dis_scope.name)
   return output, var_list

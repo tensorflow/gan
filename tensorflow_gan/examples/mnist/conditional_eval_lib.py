@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples import evaluation_helper as evaluation
@@ -44,27 +44,25 @@ def evaluate(hparams, run_eval_loop=True):
     hparams: An HParams instance containing the eval hyperparameters.
     run_eval_loop: Whether to run the full eval loop. Set to False for testing.
   """
-  with tf.compat.v1.name_scope('inputs'):
+  with tf.name_scope('inputs'):
     noise, one_hot_labels = _get_generator_inputs(hparams.num_images_per_class,
                                                   NUM_CLASSES,
                                                   hparams.noise_dims)
 
   # Generate images.
-  with tf.compat.v1.variable_scope('Generator'):  # Same scope as in train job.
+  with tf.variable_scope('Generator'):  # Same scope as in train job.
     images = networks.conditional_generator((noise, one_hot_labels),
                                             is_training=False)
 
   # Visualize images.
   reshaped_img = tfgan.eval.image_reshaper(
       images, num_cols=hparams.num_images_per_class)
-  tf.compat.v1.summary.image('generated_images', reshaped_img, max_outputs=1)
+  tf.summary.image('generated_images', reshaped_img, max_outputs=1)
 
   # Calculate evaluation metrics.
-  tf.compat.v1.summary.scalar(
-      'MNIST_Classifier_score', util.mnist_score(images))
-  tf.compat.v1.summary.scalar(
-      'MNIST_Cross_entropy',
-      util.mnist_cross_entropy(images, one_hot_labels))
+  tf.summary.scalar('MNIST_Classifier_score', util.mnist_score(images))
+  tf.summary.scalar('MNIST_Cross_entropy',
+                    util.mnist_cross_entropy(images, one_hot_labels))
 
   # Write images to disk.
   image_write_ops = None

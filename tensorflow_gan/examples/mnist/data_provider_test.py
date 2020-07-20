@@ -20,11 +20,11 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.mnist import data_provider
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 class DataProviderTest(tf.test.TestCase):
@@ -46,13 +46,13 @@ class DataProviderTest(tf.test.TestCase):
     ds = data_provider.provide_dataset('test', batch_size)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = tf.compat.v1.data.get_output_classes(ds)
+    output = tf.data.get_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images', 'labels']))
     self.assertEqual(output['images'], tf.Tensor)
     self.assertEqual(output['labels'], tf.Tensor)
 
-    shapes = tf.compat.v1.data.get_output_shapes(ds)
+    shapes = tf.data.get_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images', 'labels']))
     self.assertIsInstance(shapes['images'], tf.TensorShape)
@@ -60,13 +60,13 @@ class DataProviderTest(tf.test.TestCase):
     self.assertListEqual(shapes['images'].as_list(), [batch_size, 28, 28, 1])
     self.assertListEqual(shapes['labels'].as_list(), [batch_size, 10])
 
-    types = tf.compat.v1.data.get_output_types(ds)
+    types = tf.data.get_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images', 'labels']))
     self.assertEqual(types['images'], tf.float32)
     self.assertEqual(types['labels'], tf.float32)
 
-    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+    next_batch = tf.data.make_one_shot_iterator(ds).get_next()
     images = next_batch['images']
     labels = next_batch['labels']
 
@@ -85,7 +85,7 @@ class DataProviderTest(tf.test.TestCase):
     images, labels = data_provider.provide_data('test', batch_size)
 
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.tables_initializer())
+      sess.run(tf.tables_initializer())
       images, labels = sess.run([images, labels])
     self.assertTupleEqual(images.shape, (batch_size, 28, 28, 1))
     self.assertTrue(np.all(np.abs(images) <= 1))

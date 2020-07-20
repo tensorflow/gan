@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 from absl.testing import parameterized
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.cyclegan import generator
 
@@ -33,7 +33,7 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
     img_batch = tf.zeros([2, 32, 32, 3])
     model_output, _ = generator.cyclegan_generator_resnet(img_batch)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       sess.run(model_output)
 
   @parameterized.parameters(
@@ -51,7 +51,7 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
     if tf.executing_eagerly():
       # tf.placeholder() is not compatible with eager execution.
       return
-    img = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, None, 3])
+    img = tf.placeholder(tf.float32, shape=[None, 32, None, 3])
     output_imgs, _ = generator.cyclegan_generator_resnet(img)
 
     self.assertAllEqual([None, 32, None, 3], output_imgs.shape.as_list())
@@ -63,7 +63,7 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
       {'kernel_size': 6},
   )
   def input_and_output_same_shape(self, kernel_size):
-    img_batch = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
+    img_batch = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
     output_img_batch, _ = generator.cyclegan_generator_resnet(
         img_batch, kernel_size=kernel_size)
 
@@ -77,10 +77,9 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
   )
   def error_if_height_not_multiple_of_four(self, height):
     self.assertRaisesRegexp(
-        ValueError,
-        'The input height must be a multiple of 4.',
+        ValueError, 'The input height must be a multiple of 4.',
         generator.cyclegan_generator_resnet,
-        tf.compat.v1.placeholder(tf.float32, shape=[None, height, 32, 3]))
+        tf.placeholder(tf.float32, shape=[None, height, 32, 3]))
 
   @parameterized.parameters(
       {'width': 29},
@@ -89,10 +88,9 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
   )
   def error_if_width_not_multiple_of_four(self, width):
     self.assertRaisesRegexp(
-        ValueError,
-        'The input width must be a multiple of 4.',
+        ValueError, 'The input width must be a multiple of 4.',
         generator.cyclegan_generator_resnet,
-        tf.compat.v1.placeholder(tf.float32, shape=[None, 32, width, 3]))
+        tf.placeholder(tf.float32, shape=[None, 32, width, 3]))
 
 
 if __name__ == '__main__':

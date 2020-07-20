@@ -33,7 +33,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 
@@ -49,14 +49,14 @@ def _instance_norm(x):
 
 
 def _conv2d(net, num_filters, stride, use_bias, name):
-  return tf.compat.v1.layers.conv2d(
+  return tf.layers.conv2d(
       net,
       num_filters,
       kernel_size=[4, 4],
       strides=stride,
       padding='valid',
       use_bias=use_bias,
-      kernel_initializer=tf.compat.v1.random_normal_initializer(0, 0.02),
+      kernel_initializer=tf.random_normal_initializer(0, 0.02),
       name=name)
 
 
@@ -86,7 +86,7 @@ def pix2pix_discriminator(net, num_filters, padding=2, pad_mode='REFLECT',
 
   def padded(net, scope):
     if padding:
-      with tf.compat.v1.variable_scope(scope):
+      with tf.variable_scope(scope):
         spatial_pad = tf.constant(
             [[0, 0], [padding, padding], [padding, padding], [0, 0]],
             dtype=tf.int32)

@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.stargan import data_provider
@@ -65,11 +65,11 @@ def _get_lr(base_lr, max_number_of_steps):
     global training step is less than Fmax_number_of_steps / 2, afterwards
     it linearly decays to zero.
   """
-  global_step = tf.compat.v1.train.get_or_create_global_step()
+  global_step = tf.train.get_or_create_global_step()
   lr_constant_steps = max_number_of_steps // 2
 
   def _lr_decay():
-    return tf.compat.v1.train.polynomial_decay(
+    return tf.train.polynomial_decay(
         learning_rate=base_lr,
         global_step=(global_step - lr_constant_steps),
         decay_steps=(max_number_of_steps - lr_constant_steps),
@@ -97,9 +97,9 @@ def _get_optimizer(gen_lr, dis_lr, beta1, beta2):
   Returns:
     A tuple of generator optimizer and discriminator optimizer.
   """
-  gen_opt = tf.compat.v1.train.AdamOptimizer(
+  gen_opt = tf.train.AdamOptimizer(
       gen_lr, beta1=beta1, beta2=beta2, use_locking=True)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(
+  dis_opt = tf.train.AdamOptimizer(
       dis_lr, beta1=beta1, beta2=beta2, use_locking=True)
   return gen_opt, dis_opt
 
@@ -137,8 +137,8 @@ def _define_train_ops(model, loss, gen_lr, dis_lr, beta1, beta2,
       colocate_gradients_with_ops=True,
       aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
-  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
+  tf.summary.scalar('generator_lr', gen_lr)
+  tf.summary.scalar('discriminator_lr', dis_lr)
 
   return train_ops
 
@@ -174,15 +174,15 @@ def train(hparams):
     tf.io.gfile.makedirs(hparams.train_log_dir)
 
   # Shard the model to different parameter servers.
-  with tf.device(tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
+  with tf.device(tf.train.replica_device_setter(hparams.ps_replicas)):
 
     # Create the input dataset.
-    with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
+    with tf.name_scope('inputs'), tf.device('/cpu:0'):
       images, labels = data_provider.provide_data('train', hparams.batch_size,
                                                   hparams.patch_size)
 
     # Define the model.
-    with tf.compat.v1.name_scope('model'):
+    with tf.name_scope('model'):
       model = _define_model(images, labels)
 
     # Add image summary.
@@ -193,7 +193,7 @@ def train(hparams):
     loss = tfgan.stargan_loss(model)
 
     # Define the train ops.
-    with tf.compat.v1.name_scope('train_ops'):
+    with tf.name_scope('train_ops'):
       train_ops = _define_train_ops(model, loss, hparams.generator_lr,
                                     hparams.discriminator_lr,
                                     hparams.adam_beta1, hparams.adam_beta2,
@@ -205,7 +205,7 @@ def train(hparams):
     # Define a status message.
     status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
+        tf.as_string(tf.train.get_or_create_global_step())
     ],
                                      name='status_message')
 

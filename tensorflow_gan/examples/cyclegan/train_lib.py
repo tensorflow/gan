@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cyclegan import data_provider
@@ -95,11 +95,11 @@ def _get_lr(base_lr, max_number_of_steps):
     global training step is less than max_number_of_steps / 2,
     afterwards it linearly decays to zero.
   """
-  global_step = tf.compat.v1.train.get_or_create_global_step()
+  global_step = tf.train.get_or_create_global_step()
   lr_constant_steps = max_number_of_steps // 2
 
   def _lr_decay():
-    return tf.compat.v1.train.polynomial_decay(
+    return tf.train.polynomial_decay(
         learning_rate=base_lr,
         global_step=(global_step - lr_constant_steps),
         decay_steps=(max_number_of_steps - lr_constant_steps),
@@ -125,10 +125,8 @@ def _get_optimizer(gen_lr, dis_lr):
   """
   # beta1 follows
   # https://github.com/junyanz/CycleGAN/blob/master/options.lua
-  gen_opt = tf.compat.v1.train.AdamOptimizer(
-      gen_lr, beta1=0.5, use_locking=True)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(
-      dis_lr, beta1=0.5, use_locking=True)
+  gen_opt = tf.train.AdamOptimizer(gen_lr, beta1=0.5, use_locking=True)
+  dis_opt = tf.train.AdamOptimizer(dis_lr, beta1=0.5, use_locking=True)
   return gen_opt, dis_opt
 
 
@@ -156,8 +154,8 @@ def _define_train_ops(cyclegan_model, cyclegan_loss, hparams):
       colocate_gradients_with_ops=True,
       aggregation_method=tf.AggregationMethod.EXPERIMENTAL_ACCUMULATE_N)
 
-  tf.compat.v1.summary.scalar('generator_lr', gen_lr)
-  tf.compat.v1.summary.scalar('discriminator_lr', dis_lr)
+  tf.summary.scalar('generator_lr', gen_lr)
+  tf.summary.scalar('discriminator_lr', dis_lr)
   return train_ops
 
 
@@ -170,8 +168,8 @@ def train(hparams):
   if not tf.io.gfile.exists(hparams.train_log_dir):
     tf.io.gfile.makedirs(hparams.train_log_dir)
 
-  with tf.device(tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
-    with tf.compat.v1.name_scope('inputs'), tf.device('/cpu:0'):
+  with tf.device(tf.train.replica_device_setter(hparams.ps_replicas)):
+    with tf.name_scope('inputs'), tf.device('/cpu:0'):
       images_x, images_y = _get_data(hparams.image_set_x_file_pattern,
                                      hparams.image_set_y_file_pattern,
                                      hparams.batch_size, hparams.patch_size)
@@ -192,7 +190,7 @@ def train(hparams):
     train_steps = tfgan.GANTrainSteps(1, 1)
     status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
+        tf.as_string(tf.train.get_or_create_global_step())
     ],
                                      name='status_message')
     if not hparams.max_number_of_steps:

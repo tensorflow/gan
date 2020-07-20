@@ -21,11 +21,11 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.mnist import train_lib
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 BATCH_SIZE = 5

@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples import evaluation_helper as evaluation
@@ -44,27 +44,24 @@ def evaluate(hparams, run_eval_loop=True):
     run_eval_loop: Whether to run the full eval loop. Set to False for testing.
   """
   # Fetch real images.
-  with tf.compat.v1.name_scope('inputs'):
+  with tf.name_scope('inputs'):
     real_images, _ = data_provider.provide_data('train',
                                                 hparams.num_images_generated,
                                                 hparams.dataset_dir)
 
   image_write_ops = None
   if hparams.eval_real_images:
-    tf.compat.v1.summary.scalar(
-        'MNIST_Classifier_score', util.mnist_score(real_images))
+    tf.summary.scalar('MNIST_Classifier_score', util.mnist_score(real_images))
   else:
     # In order for variables to load, use the same variable scope as in the
     # train job.
-    with tf.compat.v1.variable_scope('Generator'):
+    with tf.variable_scope('Generator'):
       images = networks.unconditional_generator(
           tf.random.normal([hparams.num_images_generated, hparams.noise_dims]),
           is_training=False)
-    tf.compat.v1.summary.scalar(
-        'MNIST_Frechet_distance',
-        util.mnist_frechet_distance(real_images, images))
-    tf.compat.v1.summary.scalar(
-        'MNIST_Classifier_score', util.mnist_score(images))
+    tf.summary.scalar('MNIST_Frechet_distance',
+                      util.mnist_frechet_distance(real_images, images))
+    tf.summary.scalar('MNIST_Classifier_score', util.mnist_score(images))
     if hparams.num_images_generated >= 100 and hparams.write_to_disk:
       reshaped_images = tfgan.eval.image_reshaper(
           images[:100, ...], num_cols=10)

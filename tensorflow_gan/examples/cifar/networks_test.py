@@ -21,19 +21,19 @@ from __future__ import print_function
 
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.cifar import networks
 
 
 class NetworksTest(tf.test.TestCase):
 
   def test_generator(self):
-    tf.compat.v1.set_random_seed(1234)
+    tf.set_random_seed(1234)
     batch_size = 100
     noise = tf.random.normal([batch_size, 64])
     image = networks.generator(noise)
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       image_np = sess.run(image)
 
     self.assertAllEqual([batch_size, 32, 32, 3], image_np.shape)
@@ -44,7 +44,7 @@ class NetworksTest(tf.test.TestCase):
     image = tf.random.uniform([batch_size, 32, 32, 3], -1, 1)
     dis_output = networks.discriminator(image, None)
     with self.cached_session(use_gpu=True) as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       dis_output_np = sess.run(dis_output)
 
     self.assertAllEqual([batch_size, 1], dis_output_np.shape)

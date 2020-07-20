@@ -21,11 +21,11 @@ from __future__ import print_function
 
 import os
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.mnist_estimator import train_experiment_lib
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 class TrainEstimatorTest(tf.test.TestCase):

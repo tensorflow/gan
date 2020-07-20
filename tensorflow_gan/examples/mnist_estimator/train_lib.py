@@ -25,7 +25,7 @@ import numpy as np
 from PIL import Image as image_lib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.mnist import data_provider
@@ -73,8 +73,8 @@ def train(hparams):
       discriminator_fn=networks.unconditional_discriminator,
       generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
-      generator_optimizer=tf.compat.v1.train.AdamOptimizer(0.001, 0.5),
-      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(0.0001, 0.5),
+      generator_optimizer=tf.train.AdamOptimizer(0.001, 0.5),
+      discriminator_optimizer=tf.train.AdamOptimizer(0.0001, 0.5),
       add_summaries=tfgan.estimator.SummaryType.IMAGES)
 
   # Train estimator.

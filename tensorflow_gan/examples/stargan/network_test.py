@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.stargan import network
 
@@ -33,7 +33,7 @@ class NetworkTest(tf.test.TestCase):
     output_tensor = network.generator(input_tensor, target_tensor)
 
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output = sess.run(output_tensor)
       self.assertTupleEqual((n, h, w, c), output.shape)
 
@@ -50,7 +50,7 @@ class NetworkTest(tf.test.TestCase):
         input_tensor, class_num)
 
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       output_src, output_cls = sess.run([output_src_tensor, output_cls_tensor])
       self.assertEqual(1, len(output_src.shape))
       self.assertEqual(n, output_src.shape[0])

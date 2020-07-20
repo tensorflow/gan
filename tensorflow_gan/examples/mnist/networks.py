@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 import tensorflow_probability as tfp
 
@@ -27,7 +27,7 @@ ds = tfp.distributions
 
 
 def _dense(inputs, units, l2_weight):
-  return tf.compat.v1.layers.dense(
+  return tf.layers.dense(
       inputs,
       units,
       use_bias=False,
@@ -35,12 +35,12 @@ def _dense(inputs, units, l2_weight):
 
 
 def _batch_norm(inputs, is_training):
-  return tf.compat.v1.layers.batch_normalization(
+  return tf.layers.batch_normalization(
       inputs, momentum=0.999, epsilon=0.001, training=is_training)
 
 
 def _deconv2d(inputs, filters, kernel_size, stride, l2_weight):
-  return tf.compat.v1.layers.conv2d_transpose(
+  return tf.layers.conv2d_transpose(
       inputs,
       filters,
       kernel_size,
@@ -50,7 +50,7 @@ def _deconv2d(inputs, filters, kernel_size, stride, l2_weight):
 
 
 def _conv2d(inputs, filters, kernel_size, stride, l2_weight):
-  return tf.compat.v1.layers.conv2d(
+  return tf.layers.conv2d(
       inputs,
       filters,
       kernel_size,
@@ -189,14 +189,14 @@ def discriminator_helper(img, is_conditional, one_hot_labels, weight_decay):
     Final fully connected discriminator layer. [batch_size, 1024].
   """
   sn_gettr = tfgan.features.spectral_normalization_custom_getter
-  with tf.compat.v1.variable_scope('sn', custom_getter=sn_gettr(training=True)):
+  with tf.variable_scope('sn', custom_getter=sn_gettr(training=True)):
     net = _conv2d(img, 64, 4, 2, weight_decay)
     net = leaky_relu(net)
 
     net = _conv2d(net, 128, 4, 2, weight_decay)
     net = leaky_relu(net)
 
-    net = tf.compat.v1.layers.flatten(net)
+    net = tf.layers.flatten(net)
 
     if is_conditional:
       net = tfgan.features.condition_tensor_from_onehot(net, one_hot_labels)
@@ -223,7 +223,7 @@ def unconditional_discriminator(img, unused_conditioning, weight_decay=2.5e-5):
     Logits for the probability that the image is real.
   """
   net = discriminator_helper(img, False, None, weight_decay)
-  return tf.compat.v1.layers.dense(
+  return tf.layers.dense(
       net, 1, kernel_regularizer=tf.keras.regularizers.l2(l=weight_decay))
 
 
@@ -240,7 +240,7 @@ def conditional_discriminator(img, conditioning, weight_decay=2.5e-5):
   """
   _, one_hot_labels = conditioning
   net = discriminator_helper(img, True, one_hot_labels, weight_decay)
-  return tf.compat.v1.layers.dense(
+  return tf.layers.dense(
       net, 1, kernel_regularizer=tf.keras.regularizers.l2(l=weight_decay))
 
 
@@ -266,14 +266,14 @@ def infogan_discriminator(img, unused_conditioning, weight_decay=2.5e-5,
     distributions for each of the noise vectors.
   """
   net = discriminator_helper(img, False, None, weight_decay)
-  logits_real = tf.compat.v1.layers.dense(net, 1)
+  logits_real = tf.layers.dense(net, 1)
 
   # Compute logits for each category of categorical latent.
-  logits_cat = tf.compat.v1.layers.dense(net, categorical_dim)
+  logits_cat = tf.layers.dense(net, categorical_dim)
   q_cat = ds.Categorical(logits_cat)
 
   # Compute mean for Gaussian posterior of continuous latents.
-  mu_cont = tf.compat.v1.layers.dense(net, continuous_dim)
+  mu_cont = tf.layers.dense(net, continuous_dim)
   sigma_cont = tf.ones_like(mu_cont)
   q_cont = ds.Normal(loc=mu_cont, scale=sigma_cont)
 

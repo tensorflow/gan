@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.cyclegan import discriminator as d_module
 from tensorflow_gan.examples.cyclegan import generator as gmodule
@@ -54,6 +54,6 @@ def discriminator(image_batch, unused_conditioning=None):
       image_batch, num_filters=[64, 128, 256, 512])
   logits_4d.shape.assert_has_rank(4)
   # Output of logits is 4D. Reshape to 2D, for TF-GAN.
-  logits_2d = tf.compat.v1.layers.flatten(logits_4d)
+  logits_2d = tf.layers.flatten(logits_4d)
 
   return logits_2d

@@ -20,23 +20,23 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.stargan_estimator import train_lib
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
-  hidden = tf.compat.v1.layers.flatten(inputs)
+  hidden = tf.layers.flatten(inputs)
   output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
-  output_cls = tf.compat.v1.layers.dense(inputs=hidden, units=num_domains)
+  output_cls = tf.layers.dense(inputs=hidden, units=num_domains)
   return output_src, output_cls
 
 
