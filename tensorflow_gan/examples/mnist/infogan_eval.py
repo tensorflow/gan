@@ -29,6 +29,7 @@ from __future__ import print_function
 from absl import app
 from absl import flags
 
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.mnist import infogan_eval_lib
 
 flags.DEFINE_string('checkpoint_dir', '/tmp/mnist/',
@@ -68,4 +69,5 @@ def main(_):
 
 
 if __name__ == '__main__':
+  tf.disable_v2_behavior()
   app.run(main)

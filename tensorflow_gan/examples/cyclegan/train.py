@@ -22,6 +22,7 @@ from __future__ import print_function
 from absl import app
 from absl import flags
 
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.cyclegan import train_lib
 
 flags.DEFINE_string('image_set_x_file_pattern', None,
@@ -63,4 +64,5 @@ def main(_):
 
 
 if __name__ == '__main__':
+  tf.disable_v2_behavior()
   app.run(main)

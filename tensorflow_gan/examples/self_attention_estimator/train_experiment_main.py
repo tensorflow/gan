@@ -27,6 +27,8 @@ from __future__ import print_function
 
 from absl import app
 from absl import flags
+
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.self_attention_estimator import train_experiment
 
 
@@ -140,4 +142,5 @@ def main(_):
 
 
 if __name__ == '__main__':
+  tf.disable_v2_behavior()
   app.run(main)
