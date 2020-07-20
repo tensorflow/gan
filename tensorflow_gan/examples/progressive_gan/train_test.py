@@ -21,7 +21,7 @@ from __future__ import print_function
 import os
 
 from absl import flags
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import train
 
@@ -77,7 +77,7 @@ class TrainTest(tf.test.TestCase):
 
     for stage_id in train.get_stage_ids(**self._config):
       batch_size = train.get_batch_size(stage_id, **self._config)
-      tf.compat.v1.reset_default_graph()
+      tf.reset_default_graph()
       real_images = provide_random_data(batch_size=batch_size)
       model = train.build_model(stage_id, batch_size, real_images,
                                 **self._config)

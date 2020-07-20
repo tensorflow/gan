@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import functools
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.self_attention_estimator import eval_lib
 import tensorflow_gan as tfgan  # tf
@@ -29,23 +29,23 @@ import tensorflow_gan as tfgan  # tf
 
 def get_tpu_run_config_from_hparams(hparams):
   """Create a TPU-suitable RunConfig from HParams."""
-  tf.compat.v1.logging.info('tpu_location: %s', hparams.tpu_params.tpu_location)
-  tf.compat.v1.logging.info('gcp_project: %s', hparams.tpu_params.gcp_project)
-  tf.compat.v1.logging.info('tpu_zone: %s', hparams.tpu_params.tpu_zone)
+  tf.logging.info('tpu_location: %s', hparams.tpu_params.tpu_location)
+  tf.logging.info('gcp_project: %s', hparams.tpu_params.gcp_project)
+  tf.logging.info('tpu_zone: %s', hparams.tpu_params.tpu_zone)
   cluster_resolver = tf.distribute.cluster_resolver.TPUClusterResolver(
       tpu=hparams.tpu_params.tpu_location,
       project=hparams.tpu_params.gcp_project,
       zone=hparams.tpu_params.tpu_zone)
   if hparams.debug_params.eval_on_tpu:
-    eval_training_input_configuration = tf.compat.v1.estimator.tpu.InputPipelineConfig.SLICED
+    eval_training_input_configuration = tf.estimator.tpu.InputPipelineConfig.SLICED
   else:
     # InputPipelineConfig.SLICED is not supported when running on CPU.
-    eval_training_input_configuration = tf.compat.v1.estimator.tpu.InputPipelineConfig.PER_HOST_V1
-  return tf.compat.v1.estimator.tpu.RunConfig(
+    eval_training_input_configuration = tf.estimator.tpu.InputPipelineConfig.PER_HOST_V1
+  return tf.estimator.tpu.RunConfig(
       model_dir=hparams.model_dir,
       cluster=cluster_resolver,
       save_checkpoints_steps=hparams.train_steps_per_eval,
-      tpu_config=tf.compat.v1.estimator.tpu.TPUConfig(
+      tpu_config=tf.estimator.tpu.TPUConfig(
           iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop,
           eval_training_input_configuration=eval_training_input_configuration))
 
@@ -64,10 +64,10 @@ def get_tpu_estimator(generator, discriminator, hparams, config):
       discriminator_fn=discriminator,
       generator_loss_fn=tfgan.losses.wasserstein_hinge_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_hinge_discriminator_loss,
-      generator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.generator_lr, hparams.beta1),
-      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.discriminator_lr, hparams.beta1),
+      generator_optimizer=tf.train.AdamOptimizer(hparams.generator_lr,
+                                                 hparams.beta1),
+      discriminator_optimizer=tf.train.AdamOptimizer(hparams.discriminator_lr,
+                                                     hparams.beta1),
       prepare_arguments_for_eval_metric_fn=prepare_metric_arguments,
       get_eval_metric_ops_fn=functools.partial(get_metrics, hparams=hparams),
       eval_on_tpu=hparams.debug_params.eval_on_tpu,
@@ -111,10 +111,10 @@ def get_gpu_estimator(generator, discriminator, hparams, config):
       discriminator_fn=discriminator,
       generator_loss_fn=tfgan.losses.wasserstein_hinge_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_hinge_discriminator_loss,
-      generator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.generator_lr, hparams.beta1),
-      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.discriminator_lr, hparams.beta1),
+      generator_optimizer=tf.train.AdamOptimizer(hparams.generator_lr,
+                                                 hparams.beta1),
+      discriminator_optimizer=tf.train.AdamOptimizer(hparams.discriminator_lr,
+                                                     hparams.beta1),
       get_eval_metric_ops_fn=make_gpu_get_metric_fn(hparams),
       config=config,
       params=hparams._asdict())
@@ -187,16 +187,16 @@ def get_metrics(real_logits, real_pools, fake_logits, fake_pools, hparams):
 
 def _generator_summary_ops(generated_images, real_images):
   """Creates a dictionary of image summaries."""
-  real_img_summ = tf.compat.v1.summary.image('real_images', real_images)
-  gen_img_summ = tf.compat.v1.summary.image('gen_images', generated_images)
-  real_img_grid = tf.compat.v1.summary.image(
+  real_img_summ = tf.summary.image('real_images', real_images)
+  gen_img_summ = tf.summary.image('gen_images', generated_images)
+  real_img_grid = tf.summary.image(
       'real_images_grid',
       tfgan.eval.image_grid(
           real_images[:16],
           grid_shape=(4, 4),
           image_shape=(128, 128),
           num_channels=3))
-  gen_img_grid = tf.compat.v1.summary.image(
+  gen_img_grid = tf.summary.image(
       'generated_images_grid',
       tfgan.eval.image_grid(
           generated_images[:16],

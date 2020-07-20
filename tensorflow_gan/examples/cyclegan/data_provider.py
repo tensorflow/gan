@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
 
@@ -53,7 +53,7 @@ def _sample_patch(image, patch_size):
   image = tf.image.resize_with_crop_or_pad(image, target_size, target_size)
   # tf.image.resize_area only accepts 4D tensor, so expand dims first.
   image = tf.expand_dims(image, axis=0)
-  image = tf.compat.v1.image.resize(image, [patch_size, patch_size])
+  image = tf.image.resize(image, [patch_size, patch_size])
   image = tf.squeeze(image, axis=0)
   # Force image num_channels = 3
   image = tf.tile(image, [1, 1, tf.maximum(1, 4 - tf.shape(input=image)[2])])
@@ -188,9 +188,8 @@ def provide_custom_data(batch_size,
 
   tensors = []
   for ds in datasets:
-    iterator = tf.compat.v1.data.make_initializable_iterator(ds)
-    tf.compat.v1.add_to_collection(tf.compat.v1.GraphKeys.TABLE_INITIALIZERS,
-                                   iterator.initializer)
+    iterator = tf.data.make_initializable_iterator(ds)
+    tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, iterator.initializer)
     tensors.append(iterator.get_next())
 
   # Add batch size to shape information.

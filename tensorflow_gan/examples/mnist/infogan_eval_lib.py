@@ -29,7 +29,7 @@ from __future__ import print_function
 import collections
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples import evaluation_helper as evaluation
@@ -54,7 +54,7 @@ def evaluate(hparams, run_eval_loop=True):
     hparams: An HParams instance containing the eval hyperparameters.
     run_eval_loop: Whether to run the full eval loop. Set to False for testing.
   """
-  with tf.compat.v1.name_scope('inputs'):
+  with tf.name_scope('inputs'):
     noise_args = (hparams.noise_samples, CAT_SAMPLE_POINTS, CONT_SAMPLE_POINTS,
                   hparams.unstructured_noise_dims,
                   hparams.continuous_noise_dims)
@@ -70,33 +70,28 @@ def evaluate(hparams, run_eval_loop=True):
     return networks.infogan_generator(
         inputs, len(CAT_SAMPLE_POINTS), is_training=False)
 
-  with tf.compat.v1.variable_scope(
-      'Generator') as genscope:  # Same scope as in training.
+  with tf.variable_scope('Generator') as genscope:  # Same scope as in training.
     categorical_images = generator_fn(display_noise1)
   reshaped_categorical_img = tfgan.eval.image_reshaper(
       categorical_images, num_cols=len(CAT_SAMPLE_POINTS))
-  tf.compat.v1.summary.image(
-      'categorical', reshaped_categorical_img, max_outputs=1)
+  tf.summary.image('categorical', reshaped_categorical_img, max_outputs=1)
 
-  with tf.compat.v1.variable_scope(genscope, reuse=True):
+  with tf.variable_scope(genscope, reuse=True):
     continuous1_images = generator_fn(display_noise2)
   reshaped_continuous1_img = tfgan.eval.image_reshaper(
       continuous1_images, num_cols=len(CONT_SAMPLE_POINTS))
-  tf.compat.v1.summary.image(
-      'continuous1', reshaped_continuous1_img, max_outputs=1)
+  tf.summary.image('continuous1', reshaped_continuous1_img, max_outputs=1)
 
-  with tf.compat.v1.variable_scope(genscope, reuse=True):
+  with tf.variable_scope(genscope, reuse=True):
     continuous2_images = generator_fn(display_noise3)
   reshaped_continuous2_img = tfgan.eval.image_reshaper(
       continuous2_images, num_cols=len(CONT_SAMPLE_POINTS))
-  tf.compat.v1.summary.image(
-      'continuous2', reshaped_continuous2_img, max_outputs=1)
+  tf.summary.image('continuous2', reshaped_continuous2_img, max_outputs=1)
 
   # Evaluate image quality.
   all_images = tf.concat(
       [categorical_images, continuous1_images, continuous2_images], 0)
-  tf.compat.v1.summary.scalar(
-      'MNIST_Classifier_score', util.mnist_score(all_images))
+  tf.summary.scalar('MNIST_Classifier_score', util.mnist_score(all_images))
 
   # Write images to disk.
   image_write_ops = []

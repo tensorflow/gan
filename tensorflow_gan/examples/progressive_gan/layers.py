@@ -28,7 +28,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples import compat_utils
 
@@ -181,10 +181,10 @@ def _custom_layer_impl(apply_kernel, kernel_shape, bias_shape, activation,
   if use_weight_scaling:
     init_scale, post_scale = post_scale, init_scale
 
-  kernel_initializer = tf.compat.v1.random_normal_initializer(stddev=init_scale)
+  kernel_initializer = tf.random_normal_initializer(stddev=init_scale)
 
-  bias = tf.compat.v1.get_variable(
-      'bias', shape=bias_shape, initializer=tf.compat.v1.zeros_initializer())
+  bias = tf.get_variable(
+      'bias', shape=bias_shape, initializer=tf.zeros_initializer())
 
   output = post_scale * apply_kernel(kernel_shape, kernel_initializer) + bias
 
@@ -231,7 +231,7 @@ def custom_conv2d(x,
   kernel_size = list(kernel_size)
 
   def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.compat.v1.layers.conv2d(
+    return tf.layers.conv2d(
         x,
         filters=filters,
         kernel_size=kernel_shape[0:2],
@@ -240,7 +240,7 @@ def custom_conv2d(x,
         use_bias=False,
         kernel_initializer=kernel_initializer)
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
+  with tf.variable_scope(scope, reuse=reuse):
     return _custom_layer_impl(
         _apply_kernel,
         kernel_shape=kernel_size + [x.shape.as_list()[3], filters],
@@ -277,16 +277,16 @@ def custom_dense(x,
   Returns:
     A `Tensor` where the last dimension has size `units`.
   """
-  x = tf.compat.v1.layers.flatten(x)
+  x = tf.layers.flatten(x)
 
   def _apply_kernel(kernel_shape, kernel_initializer):
-    return tf.compat.v1.layers.dense(
+    return tf.layers.dense(
         x,
         kernel_shape[1],
         use_bias=False,
         kernel_initializer=kernel_initializer)
 
-  with tf.compat.v1.variable_scope(scope, reuse=reuse):
+  with tf.variable_scope(scope, reuse=reuse):
     return _custom_layer_impl(
         _apply_kernel,
         kernel_shape=(x.shape.as_list()[-1], units),

@@ -20,7 +20,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cifar import data_provider
@@ -47,10 +47,10 @@ def train(hparams):
   if not tf.io.gfile.exists(hparams.train_log_dir):
     tf.io.gfile.makedirs(hparams.train_log_dir)
 
-  with tf.device(tf.compat.v1.train.replica_device_setter(hparams.ps_replicas)):
+  with tf.device(tf.train.replica_device_setter(hparams.ps_replicas)):
     # Force all input processing onto CPU in order to reserve the GPU for
     # the forward inference and back-propagation.
-    with tf.compat.v1.name_scope('inputs'):
+    with tf.name_scope('inputs'):
       with tf.device('/cpu:0'):
         images, _ = data_provider.provide_data(
             'train', hparams.batch_size, num_parallel_calls=4)
@@ -67,13 +67,13 @@ def train(hparams):
     tfgan.eval.add_gan_model_image_summaries(gan_model)
 
     # Get the GANLoss tuple. Use the selected GAN loss functions.
-    with tf.compat.v1.name_scope('loss'):
+    with tf.name_scope('loss'):
       gan_loss = tfgan.gan_loss(
           gan_model, gradient_penalty_weight=1.0, add_summaries=True)
 
     # Get the GANTrain ops using the custom optimizers and optional
     # discriminator weight clipping.
-    with tf.compat.v1.name_scope('train'):
+    with tf.name_scope('train'):
       gen_opt, dis_opt = _get_optimizers(hparams)
       train_ops = tfgan.gan_train_ops(
           gan_model,
@@ -86,7 +86,7 @@ def train(hparams):
     # (used for graph construction tests).
     status_message = tf.strings.join([
         'Starting train step: ',
-        tf.as_string(tf.compat.v1.train.get_or_create_global_step())
+        tf.as_string(tf.train.get_or_create_global_step())
     ],
                                      name='status_message')
     if hparams.max_number_of_steps == 0:
@@ -104,7 +104,7 @@ def train(hparams):
 
 def _get_optimizers(hparams):
   """Get optimizers that are optionally synchronous."""
-  gen_opt = tf.compat.v1.train.AdamOptimizer(hparams.generator_lr, 0.5)
-  dis_opt = tf.compat.v1.train.AdamOptimizer(hparams.discriminator_lr, 0.5)
+  gen_opt = tf.train.AdamOptimizer(hparams.generator_lr, 0.5)
+  dis_opt = tf.train.AdamOptimizer(hparams.discriminator_lr, 0.5)
 
   return gen_opt, dis_opt

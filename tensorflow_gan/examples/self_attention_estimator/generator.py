@@ -15,7 +15,7 @@
 
 """Definitions of generator functions."""
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 from tensorflow_gan.examples.self_attention_estimator import ops
 
@@ -80,7 +80,7 @@ def block(x, labels, out_channels, num_classes, name, training=True):
   Returns:
     A `Tensor` representing the output of the operation.
   """
-  with tf.compat.v1.variable_scope(name):
+  with tf.variable_scope(name):
     labels_onehot = tf.one_hot(labels, num_classes)
     x_0 = x
     x = tf.nn.relu(tfgan.tpu.batch_norm(x, training, labels_onehot,
@@ -112,8 +112,7 @@ def generator(zs, target_class, gf_dim, num_classes, training=True):
     - The output layer of the generator.
     - A list containing all trainable varaibles defined by the model.
   """
-  with tf.compat.v1.variable_scope(
-      'generator', reuse=tf.compat.v1.AUTO_REUSE) as gen_scope:
+  with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as gen_scope:
 
     act0 = ops.snlinear(
         zs, gf_dim * 16 * 4 * 4, training=training, name='g_snh0')
@@ -129,6 +128,5 @@ def generator(zs, target_class, gf_dim, num_classes, training=True):
     act5 = tf.nn.relu(tfgan.tpu.batch_norm(act5, training, conditional_class_labels=None, name='g_bn'))
     act6 = ops.snconv2d(act5, 3, 3, 3, 1, 1, training, 'g_snconv_last')
     out = tf.nn.tanh(act6)
-  var_list = tf.compat.v1.get_collection(
-      tf.compat.v1.GraphKeys.TRAINABLE_VARIABLES, gen_scope.name)
+  var_list = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, gen_scope.name)
   return out, var_list

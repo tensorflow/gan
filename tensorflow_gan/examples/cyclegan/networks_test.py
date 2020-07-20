@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.cyclegan import networks
 
 
@@ -29,12 +29,12 @@ class NetworksTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 128, 128, 3])
     model_output = networks.generator(img_batch)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_graph(self):
     for shape in ([4, 32, 32], [3, 128, 128], [2, 80, 400]):
-      tf.compat.v1.reset_default_graph()
+      tf.reset_default_graph()
       img = tf.ones(shape + [3])
       output_imgs = networks.generator(img)
 
@@ -44,7 +44,7 @@ class NetworksTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # Placeholders don't work in eager execution.
       return
-    img = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
+    img = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
     output_imgs = networks.generator(img)
 
     self.assertAllEqual([None, 32, 32, 3], output_imgs.shape.as_list())
@@ -57,7 +57,7 @@ class NetworksTest(tf.test.TestCase):
     img_batch = tf.zeros([3, 128, 128, 5])
     model_output = networks.generator(img_batch)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       sess.run(model_output)
 
   def test_generator_invalid_channels(self):
@@ -66,21 +66,21 @@ class NetworksTest(tf.test.TestCase):
       return
     with self.assertRaisesRegexp(
         ValueError, 'Last dimension shape must be known but is None'):
-      img = tf.compat.v1.placeholder(tf.float32, shape=[4, 32, 32, None])
+      img = tf.placeholder(tf.float32, shape=[4, 32, 32, None])
       networks.generator(img)
 
   def test_discriminator_run(self):
     img_batch = tf.zeros([3, 70, 70, 3])
     disc_output = networks.discriminator(img_batch)
     with self.cached_session() as sess:
-      sess.run(tf.compat.v1.global_variables_initializer())
+      sess.run(tf.global_variables_initializer())
       sess.run(disc_output)
 
   def test_discriminator_graph(self):
     # Check graph construction for a number of image size/depths and batch
     # sizes.
     for batch_size, patch_size in zip([3, 6], [70, 128]):
-      tf.compat.v1.reset_default_graph()
+      tf.reset_default_graph()
       img = tf.ones([batch_size, patch_size, patch_size, 3])
       disc_output = networks.discriminator(img)
 

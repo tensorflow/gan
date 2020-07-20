@@ -21,11 +21,11 @@ from __future__ import print_function
 
 from absl.testing import absltest
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.stargan import data_provider
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 class DataProviderTest(tf.test.TestCase, absltest.TestCase):

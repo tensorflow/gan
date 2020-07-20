@@ -21,7 +21,7 @@ from __future__ import print_function
 
 import collections
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 from tensorflow_gan.examples import evaluation_helper as evaluation
 
@@ -45,7 +45,7 @@ def evaluate(hparams, run_eval_loop=True):
     run_eval_loop: Whether to run the full eval loop. Set to False for testing.
   """
   # Fetch and generate images to run through Inception.
-  with tf.compat.v1.name_scope('inputs'):
+  with tf.name_scope('inputs'):
     real_data, _ = data_provider.provide_data(
         'test', hparams.num_images_generated, shuffle=False)
     generated_data = _get_generated_data(hparams.num_images_generated)
@@ -55,7 +55,7 @@ def evaluate(hparams, run_eval_loop=True):
     fid = util.get_frechet_inception_distance(real_data, generated_data,
                                               hparams.num_images_generated,
                                               hparams.num_inception_images)
-    tf.compat.v1.summary.scalar('frechet_inception_distance', fid)
+    tf.summary.scalar('frechet_inception_distance', fid)
 
   # Compute normal Inception scores.
   if hparams.eval_real_images:
@@ -66,7 +66,7 @@ def evaluate(hparams, run_eval_loop=True):
     inc_score = util.get_inception_scores(generated_data,
                                           hparams.num_images_generated,
                                           hparams.num_inception_images)
-  tf.compat.v1.summary.scalar('inception_score', inc_score)
+  tf.summary.scalar('inception_score', inc_score)
 
   # Create ops that write images to disk.
   image_write_ops = None
@@ -97,7 +97,7 @@ def _get_generated_data(num_images_generated):
   generator_fn = networks.generator
   # In order for variables to load, use the same variable scope as in the
   # train job.
-  with tf.compat.v1.variable_scope('Generator'):
+  with tf.variable_scope('Generator'):
     data = generator_fn(generator_inputs, is_training=False)
 
   return data

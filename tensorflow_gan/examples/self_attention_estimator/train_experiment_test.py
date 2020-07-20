@@ -24,11 +24,11 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 import numpy as np
-import tensorflow as tf  # tf
+import tensorflow.compat.v1 as tf  # tf
 
 from tensorflow_gan.examples.self_attention_estimator import train_experiment
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def _get_real_activations_mock(*args, **kwargs):

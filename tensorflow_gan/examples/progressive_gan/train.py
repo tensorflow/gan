@@ -30,7 +30,7 @@ import os
 
 from absl import logging
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.progressive_gan import networks
@@ -210,7 +210,7 @@ def define_loss(gan_model, **kwargs):
 
   real_score_penalty = tf.reduce_mean(
       input_tensor=tf.square(gan_model.discriminator_real_outputs))
-  tf.compat.v1.summary.scalar('real_score_penalty', real_score_penalty)
+  tf.summary.scalar('real_score_penalty', real_score_penalty)
 
   return gan_loss._replace(
       discriminator_loss=(
@@ -234,15 +234,15 @@ def define_train_ops(gan_model, gan_loss, **kwargs):
     A tuple of `GANTrainOps` namedtuple and a list variables tracking the state
     of optimizers.
   """
-  with tf.compat.v1.variable_scope('progressive_gan_train_ops') as var_scope:
+  with tf.variable_scope('progressive_gan_train_ops') as var_scope:
     beta1, beta2 = kwargs['adam_beta1'], kwargs['adam_beta2']
-    gen_opt = tf.compat.v1.train.AdamOptimizer(
-        kwargs['generator_learning_rate'], beta1, beta2)
-    dis_opt = tf.compat.v1.train.AdamOptimizer(
-        kwargs['discriminator_learning_rate'], beta1, beta2)
+    gen_opt = tf.train.AdamOptimizer(kwargs['generator_learning_rate'], beta1,
+                                     beta2)
+    dis_opt = tf.train.AdamOptimizer(kwargs['discriminator_learning_rate'],
+                                     beta1, beta2)
     gan_train_ops = tfgan.gan_train_ops(gan_model, gan_loss, gen_opt, dis_opt)
-  return gan_train_ops, tf.compat.v1.get_collection(
-      tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope=var_scope.name)
+  return gan_train_ops, tf.get_collection(
+      tf.GraphKeys.GLOBAL_VARIABLES, scope=var_scope.name)
 
 
 def add_generator_smoothing_ops(generator_ema, gan_model, gan_train_ops):
@@ -302,14 +302,14 @@ def build_model(stage_id, batch_size, real_images, **kwargs):
 
   num_blocks, num_images = get_stage_info(stage_id, **kwargs)
 
-  current_image_id = tf.compat.v1.train.get_or_create_global_step()
+  current_image_id = tf.train.get_or_create_global_step()
   current_image_id_inc_op = current_image_id.assign_add(batch_size)
-  tf.compat.v1.summary.scalar('current_image_id', current_image_id)
+  tf.summary.scalar('current_image_id', current_image_id)
 
   progress = networks.compute_progress(
       current_image_id, kwargs['stable_stage_num_images'],
       kwargs['transition_stage_num_images'], num_blocks)
-  tf.compat.v1.summary.scalar('progress', progress)
+  tf.summary.scalar('progress', progress)
 
   real_images = networks.blend_images(
       real_images, progress, resolution_schedule, num_blocks=num_blocks)
@@ -431,7 +431,7 @@ def add_model_summaries(model, **kwargs):
   interp_images_shape = [interp_batch_size] + image_shape + [colors]
 
   # When making prediction, use the ema smoothed generator vars.
-  with tf.compat.v1.variable_scope(
+  with tf.variable_scope(
       model.gan_model.generator_scope,
       reuse=True,
       custom_getter=make_var_scope_custom_getter_for_ema(model.generator_ema)):
@@ -444,7 +444,7 @@ def add_model_summaries(model, **kwargs):
     interp_images = model.gan_model.generator_fn(z_interp)
     interp_images.set_shape(interp_images_shape)
 
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'fake_images',
       tfgan.eval.image_grid(
           fake_images,
@@ -453,7 +453,7 @@ def add_model_summaries(model, **kwargs):
           num_channels=colors),
       max_outputs=1)
 
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'interp_images',
       tfgan.eval.image_grid(
           interp_images,
@@ -463,7 +463,7 @@ def add_model_summaries(model, **kwargs):
       max_outputs=1)
 
   real_grid_size = int(np.sqrt(model.batch_size))
-  tf.compat.v1.summary.image(
+  tf.summary.image(
       'real_images_blend',
       tfgan.eval.image_grid(
           model.gan_model.real_data[:real_grid_size**2],
@@ -514,24 +514,23 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
     new_block_var_list = []
     for block_id in range(prev_num_blocks + 1, num_blocks + 1):
       new_block_var_list.extend(
-          tf.compat.v1.get_collection(
-              tf.compat.v1.GraphKeys.GLOBAL_VARIABLES,
+          tf.get_collection(
+              tf.GraphKeys.GLOBAL_VARIABLES,
               scope='.*/{}/'.format(networks.block_name(block_id))))
 
     # Every variables that are 1) not for optimizers and 2) from the new block
     # need to be restored.
     restore_var_list = [
-        var for var in tf.compat.v1.get_collection(
-            tf.compat.v1.GraphKeys.GLOBAL_VARIABLES)
+        var for var in tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
         if var not in set(optimizer_var_list + new_block_var_list)
     ]
 
   # Add saver op to graph. This saver is used to restore variables from the
   # previous stage.
-  saver_for_restore = tf.compat.v1.train.Saver(
+  saver_for_restore = tf.train.Saver(
       var_list=restore_var_list, allow_empty=True)
   # Add the op to graph that initializes all global variables.
-  init_op = tf.compat.v1.global_variables_initializer()
+  init_op = tf.global_variables_initializer()
 
   def _init_fn(unused_scaffold, sess):
     # First initialize every variables.
@@ -542,7 +541,7 @@ def make_scaffold(stage_id, optimizer_var_list, **kwargs):
       saver_for_restore.restore(sess, prev_ckpt)
 
   # Use a dummy init_op here as all initialization is done in init_fn.
-  return tf.compat.v1.train.Scaffold(init_op=tf.constant([]), init_fn=_init_fn)
+  return tf.train.Scaffold(init_op=tf.constant([]), init_fn=_init_fn)
 
 
 def make_status_message(model):

@@ -20,24 +20,24 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.stargan import train_lib
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def _test_generator(input_images, _):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(inputs, num_domains):
   """Differentiable dummy discriminator for StarGAN."""
-  hidden = tf.compat.v1.layers.flatten(inputs)
+  hidden = tf.layers.flatten(inputs)
   output_src = tf.reduce_mean(input_tensor=hidden, axis=1)
-  output_cls = tf.compat.v1.layers.dense(inputs=hidden, units=num_domains)
+  output_cls = tf.layers.dense(inputs=hidden, units=num_domains)
 
   return output_src, output_cls
 
@@ -52,7 +52,7 @@ class TrainTest(tf.test.TestCase):
     super(TrainTest, self).setUp()
 
     # Force the TF lazy loading to kick in before mocking this out below.
-    _ = tf.compat.v1.train.get_or_create_global_step()
+    _ = tf.train.get_or_create_global_step()
 
     self.hparams = train_lib.HParams(
         batch_size=6,
@@ -84,13 +84,12 @@ class TrainTest(tf.test.TestCase):
     self.assertShapeEqual(images_np, model.reconstructed_data)
     self.assertTrue(isinstance(model.discriminator_variables, list))
     self.assertTrue(isinstance(model.generator_variables, list))
-    self.assertIsInstance(model.discriminator_scope, tf.compat.v1.VariableScope)
-    self.assertTrue(model.generator_scope, tf.compat.v1.VariableScope)
+    self.assertIsInstance(model.discriminator_scope, tf.VariableScope)
+    self.assertTrue(model.generator_scope, tf.VariableScope)
     self.assertTrue(callable(model.discriminator_fn))
     self.assertTrue(callable(model.generator_fn))
 
-  @mock.patch.object(
-      tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
+  @mock.patch.object(tf.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step):
     if tf.executing_eagerly():
       return

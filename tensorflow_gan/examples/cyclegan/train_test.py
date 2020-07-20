@@ -20,23 +20,23 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cyclegan import train_lib
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def _test_generator(input_images):
   """Simple generator function."""
-  return input_images * tf.compat.v1.get_variable('dummy_g', initializer=2.0)
+  return input_images * tf.get_variable('dummy_g', initializer=2.0)
 
 
 def _test_discriminator(image_batch, unused_conditioning=None):
   """Simple discriminator function."""
-  return tf.compat.v1.layers.flatten(
-      image_batch * tf.compat.v1.get_variable('dummy_d', initializer=2.0))
+  return tf.layers.flatten(image_batch *
+                           tf.get_variable('dummy_d', initializer=2.0))
 
 
 class TrainTest(tf.test.TestCase):
@@ -45,8 +45,8 @@ class TrainTest(tf.test.TestCase):
     super(TrainTest, self).setUp()
 
     # Force the TF lazy loading to kick in before mocking these out below.
-    _ = tf.compat.v1.train.get_or_create_global_step
-    _ = tf.compat.v1.train.AdamOptimizer
+    _ = tf.train.get_or_create_global_step
+    _ = tf.train.AdamOptimizer
 
     self._original_generator = train_lib.networks.generator
     self._original_discriminator = train_lib.networks.discriminator
@@ -90,8 +90,7 @@ class TrainTest(tf.test.TestCase):
 
   @mock.patch.object(train_lib.networks, 'generator', autospec=True)
   @mock.patch.object(train_lib.networks, 'discriminator', autospec=True)
-  @mock.patch.object(
-      tf.compat.v1.train, 'get_or_create_global_step', autospec=True)
+  @mock.patch.object(tf.train, 'get_or_create_global_step', autospec=True)
   def test_get_lr(self, mock_get_or_create_global_step,
                   unused_mock_discriminator, unused_mock_generator):
     if tf.executing_eagerly():
@@ -107,7 +106,7 @@ class TrainTest(tf.test.TestCase):
     self.assertAlmostEqual(base_lr, lr_step2)
     self.assertAlmostEqual(base_lr * 0.2, lr_step9)
 
-  @mock.patch.object(tf.compat.v1.train, 'AdamOptimizer', autospec=True)
+  @mock.patch.object(tf.train, 'AdamOptimizer', autospec=True)
   def test_get_optimizer(self, mock_adam_optimizer):
     gen_lr, dis_lr = 0.1, 0.01
     train_lib._get_optimizer(gen_lr=gen_lr, dis_lr=dis_lr)

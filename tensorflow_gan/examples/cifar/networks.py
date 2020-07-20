@@ -23,7 +23,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 def _leaky_relu(x):
@@ -31,38 +31,35 @@ def _leaky_relu(x):
 
 
 def _batch_norm(x, is_training, name):
-  return tf.compat.v1.layers.batch_normalization(
+  return tf.layers.batch_normalization(
       x, momentum=0.9, epsilon=1e-5, training=is_training, name=name)
 
 
 def _dense(x, channels, name):
-  return tf.compat.v1.layers.dense(
+  return tf.layers.dense(
       x,
       channels,
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
+      kernel_initializer=tf.initializers.truncated_normal(stddev=0.02),
       name=name)
 
 
 def _conv2d(x, filters, kernel_size, stride, name):
-  return tf.compat.v1.layers.conv2d(
+  return tf.layers.conv2d(
       x,
       filters, [kernel_size, kernel_size],
       strides=[stride, stride],
       padding='same',
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
+      kernel_initializer=tf.initializers.truncated_normal(stddev=0.02),
       name=name)
 
 
 def _deconv2d(x, filters, kernel_size, stride, name):
-  return tf.compat.v1.layers.conv2d_transpose(
+  return tf.layers.conv2d_transpose(
       x,
       filters, [kernel_size, kernel_size],
       strides=[stride, stride],
       padding='same',
-      kernel_initializer=tf.compat.v1.initializers.truncated_normal(
-          stddev=0.02),
+      kernel_initializer=tf.initializers.truncated_normal(stddev=0.02),
       name=name)
 
 
@@ -88,7 +85,7 @@ def discriminator(images, unused_conditioning, is_training=True,
     images are real. The output can lie in [-inf, inf], with positive values
     indicating high confidence that the images are real.
   """
-  with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
+  with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
     x = _conv2d(images, 64, 5, 2, name='d_conv1')
     x = _leaky_relu(x)
 
@@ -120,7 +117,7 @@ def generator(noise, is_training=True, scope='Generator'):
   Returns:
     A single Tensor with a batch of generated CIFAR images.
   """
-  with tf.compat.v1.variable_scope(scope, reuse=tf.compat.v1.AUTO_REUSE):
+  with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
     net = _dense(noise, 4096, name='g_fc1')
     net = tf.nn.relu(_batch_norm(net, is_training, name='g_bn1'))
 

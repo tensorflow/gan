@@ -19,10 +19,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.cifar import util
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 class UtilTest(tf.test.TestCase):

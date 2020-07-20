@@ -25,14 +25,14 @@ from absl import logging
 import numpy as np
 from PIL import Image as image_lib
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cyclegan import inference_demo
 from tensorflow_gan.examples.cyclegan import train_lib
 
 FLAGS = flags.FLAGS
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def _basenames_from_glob(file_glob):
@@ -65,7 +65,7 @@ class InferenceDemoTest(tf.test.TestCase):
     # to one but not the other. This test will keep them in sync.
 
     # Save the training graph
-    train_sess = tf.compat.v1.Session()
+    train_sess = tf.Session()
     hparams = train_lib.HParams(
         image_set_x_file_pattern='/tmp/x/*.jpg',
         image_set_y_file_pattern='/tmp/y/*.jpg',
@@ -82,13 +82,13 @@ class InferenceDemoTest(tf.test.TestCase):
     mock_provide_custom_data.return_value = (
         tf.zeros([3, 4, 4, 3,]), tf.zeros([3, 4, 4, 3]))
     train_lib.train(hparams)
-    init_op = tf.compat.v1.global_variables_initializer()
+    init_op = tf.global_variables_initializer()
     train_sess.run(init_op)
-    train_saver = tf.compat.v1.train.Saver()
+    train_saver = tf.train.Saver()
     train_saver.save(train_sess, save_path=self._ckpt_path)
 
     # Create inference graph
-    tf.compat.v1.reset_default_graph()
+    tf.reset_default_graph()
     FLAGS.patch_dim = hparams.patch_size
     logging.info('dir_path: %s', os.listdir(self._export_dir))
     FLAGS.checkpoint_path = self._ckpt_path

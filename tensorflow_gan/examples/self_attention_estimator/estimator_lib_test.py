@@ -24,16 +24,16 @@ from __future__ import print_function
 
 from absl.testing import parameterized
 import numpy as np
-import tensorflow as tf  # tf
+import tensorflow.compat.v1 as tf  # tf
 
 from tensorflow_gan.examples.self_attention_estimator import estimator_lib
 from tensorflow_gan.examples.self_attention_estimator import train_experiment
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 def generator(inputs):
-  gvar = tf.compat.v1.get_variable('dummy_g', initializer=2.0)
+  gvar = tf.get_variable('dummy_g', initializer=2.0)
   return gvar * inputs
 
 
@@ -41,7 +41,7 @@ def discriminator(inputs, _):
   if isinstance(inputs, dict):
     inputs = inputs['images']
   net = tf.math.reduce_sum(inputs, axis=1)
-  return tf.compat.v1.get_variable('dummy_d', initializer=2.0) * net
+  return tf.get_variable('dummy_d', initializer=2.0) * net
 
 
 def input_fn(params):

@@ -20,7 +20,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.self_attention_estimator import generator
 
 
@@ -43,7 +43,7 @@ class GeneratorTest(tf.test.TestCase):
     gen_sparse_class = tf.squeeze(gen_class_ints)
     images, var_list = generator.generator(
         zs, gen_sparse_class, gf_dim=32, num_classes=num_classes)
-    sess = tf.compat.v1.train.MonitoredTrainingSession()
+    sess = tf.train.MonitoredTrainingSession()
     images_np = sess.run(images)
     self.assertEqual((batch_size, 128, 128, 3), images_np.shape)
     self.assertAllInRange(images_np, -1.0, 1.0)
@@ -58,8 +58,7 @@ class GeneratorTest(tf.test.TestCase):
   def test_upsample_value(self):
     image = tf.random.normal([10, 32, 32, 3])
     big_image = generator.usample(image)
-    expected_image = tf.compat.v1.image.resize_nearest_neighbor(
-        image, [32 * 2, 32 * 2])
+    expected_image = tf.image.resize_nearest_neighbor(image, [32 * 2, 32 * 2])
     with self.cached_session() as sess:
       big_image_np, expected_image_np = sess.run([big_image, expected_image])
     self.assertAllEqual(big_image_np, expected_image_np)
@@ -69,11 +68,10 @@ class GeneratorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # tf.placeholder() is not compatible with eager execution.
       return
-    image = tf.compat.v1.placeholder(tf.float32, shape=[None, 32, 32, 3])
+    image = tf.placeholder(tf.float32, shape=[None, 32, 32, 3])
     big_image = generator.usample(image)
     self.assertEqual([None, 64, 64, 3], big_image.shape.as_list())
-    expected_image = tf.compat.v1.image.resize_nearest_neighbor(
-        image, [32 * 2, 32 * 2])
+    expected_image = tf.image.resize_nearest_neighbor(image, [32 * 2, 32 * 2])
     with self.cached_session() as sess:
       big_image_np, expected_image_np = sess.run(
           [big_image, expected_image],
@@ -95,7 +93,7 @@ class GeneratorTest(tf.test.TestCase):
     if tf.executing_eagerly():
       return
     zs = generator.make_z_normal(2, 16, 128)
-    sess = tf.compat.v1.train.MonitoredTrainingSession()
+    sess = tf.train.MonitoredTrainingSession()
     z_batch = sess.run(zs)
     self.assertEqual((2, 16, 128), z_batch.shape)
 

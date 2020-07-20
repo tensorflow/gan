@@ -26,7 +26,7 @@ from __future__ import print_function
 import numpy as np
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 import tensorflow_hub as tfhub
 import tensorflow_probability as tfp
@@ -105,7 +105,7 @@ def mnist_cross_entropy(images, one_hot_labels):
     A scalar Tensor representing the cross entropy of the image minibatch.
   """
   logits = tfhub.load(MNIST_MODULE)(images)
-  return tf.compat.v1.losses.softmax_cross_entropy(
+  return tf.losses.softmax_cross_entropy(
       one_hot_labels, logits, loss_collection=None)
 
 

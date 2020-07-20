@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 from tensorflow_gan.examples.cyclegan import data_provider
 
@@ -108,7 +108,7 @@ def provide_data(split, batch_size, patch_size, num_parallel_calls=None,
   ds = provide_dataset(split, batch_size, patch_size, num_parallel_calls,
                        shuffle, domains)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+  next_batch = tf.data.make_one_shot_iterator(ds).get_next()
   domains = next_batch.keys()
   images = [next_batch[domain]['images'] for domain in domains]
   labels = [next_batch[domain]['labels'] for domain in domains]

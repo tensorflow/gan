@@ -22,7 +22,7 @@ from __future__ import print_function
 
 import numpy as np
 import PIL.Image
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
 
@@ -66,7 +66,7 @@ def sample_patch(image, patch_height, patch_width, colors):
   # Cut a patch of shape (target_h, target_w).
   image = tf.image.resize_with_crop_or_pad(image, target_hw[0], target_hw[1])
   # Resize the cropped image to (patch_h, patch_w).
-  image = tf.compat.v1.image.resize([image], [patch_height, patch_width])[0]
+  image = tf.image.resize([image], [patch_height, patch_width])[0]
   # Force number of channels: repeat the channel dimension enough
   # number of times and then slice the first `colors` channels.
   num_repeats = _to_int32(tf.math.ceil(colors / image_shape[2]))
@@ -160,7 +160,7 @@ def provide_data(split,
   ds = provide_dataset(split, batch_size, patch_height, patch_width, colors,
                        num_parallel_calls, shuffle)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+  next_batch = tf.data.make_one_shot_iterator(ds).get_next()
   images = next_batch['images']
 
   return images
@@ -206,7 +206,7 @@ def provide_data_from_image_files(file_pattern,
   ds = _standard_ds_pipeline(ds, batch_size, patch_height, patch_width, colors,
                              num_parallel_calls, shuffle)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+  next_batch = tf.data.make_one_shot_iterator(ds).get_next()
   images = next_batch['images']
 
   return images

@@ -25,7 +25,7 @@ import numpy as np
 from PIL import Image as image_lib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.mnist import data_provider
@@ -82,9 +82,9 @@ def get_metrics(gan_model):
   frechet_distance = util.mnist_frechet_distance(
       gan_model.real_data, gan_model.generated_data)
   return {
-      'real_mnist_score': tf.compat.v1.metrics.mean(real_mnist_score),
-      'mnist_score': tf.compat.v1.metrics.mean(generated_mnist_score),
-      'frechet_distance': tf.compat.v1.metrics.mean(frechet_distance),
+      'real_mnist_score': tf.metrics.mean(real_mnist_score),
+      'mnist_score': tf.metrics.mean(generated_mnist_score),
+      'frechet_distance': tf.metrics.mean(frechet_distance),
   }
 
 
@@ -96,10 +96,9 @@ def make_estimator(hparams):
       generator_loss_fn=tfgan.losses.wasserstein_generator_loss,
       discriminator_loss_fn=tfgan.losses.wasserstein_discriminator_loss,
       params=hparams._asdict(),
-      generator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.generator_lr, 0.5),
-      discriminator_optimizer=tf.compat.v1.train.AdamOptimizer(
-          hparams.discriminator_lr, 0.5),
+      generator_optimizer=tf.train.AdamOptimizer(hparams.generator_lr, 0.5),
+      discriminator_optimizer=tf.train.AdamOptimizer(hparams.discriminator_lr,
+                                                     0.5),
       add_summaries=tfgan.estimator.SummaryType.IMAGES,
       get_eval_metric_ops_fn=get_metrics)
 
@@ -117,7 +116,7 @@ def write_predictions_to_disk(predictions, out_dir, current_step):
     img_np = np.squeeze((255 / 2.0) * (tiled_image + 1.0), axis=2)
     pil_image = image_lib.fromarray(img_np.astype(np.uint8))
     pil_image.convert('RGB').save(f, 'PNG')
-  tf.compat.v1.logging.info('Wrote output to: %s', fn)
+  tf.logging.info('Wrote output to: %s', fn)
 
 
 def train(hparams):

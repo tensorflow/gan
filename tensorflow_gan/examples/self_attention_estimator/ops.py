@@ -16,7 +16,7 @@
 """Spectral normalization ops."""
 
 import contextlib
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
 
@@ -40,10 +40,10 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
     conv: The normalized tensor.
 
   """
-  with tf.compat.v1.variable_scope(
+  with tf.variable_scope(
       name,
       custom_getter=sn_gettr(training=training, equality_constrained=False)):
-    return tf.compat.v1.layers.conv2d(
+    return tf.layers.conv2d(
         input_,
         filters=output_dim,
         kernel_size=(k_h, k_w),
@@ -51,9 +51,9 @@ def snconv2d(input_, output_dim, k_h=3, k_w=3, d_h=2, d_w=2, training=True,
         padding='same',
         activation=None,
         use_bias=True,
-        kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+        kernel_initializer=tf.keras.initializers.VarianceScaling(
             scale=1.0, mode='fan_avg', distribution='uniform'),
-        bias_initializer=tf.compat.v1.initializers.zeros(),
+        bias_initializer=tf.initializers.zeros(),
         name=name)
 
 
@@ -69,17 +69,17 @@ def snlinear(x, output_size, bias_start=0.0, training=True, name='snlinear'):
   Returns:
     The normalized output tensor of the linear layer.
   """
-  with tf.compat.v1.variable_scope(
+  with tf.variable_scope(
       name,
       custom_getter=sn_gettr(training=training, equality_constrained=False)):
-    return tf.compat.v1.layers.dense(
+    return tf.layers.dense(
         x,
         output_size,
         activation=None,
         use_bias=True,
-        kernel_initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+        kernel_initializer=tf.keras.initializers.VarianceScaling(
             scale=1.0, mode='fan_avg', distribution='uniform'),
-        bias_initializer=tf.compat.v1.initializers.constant(bias_start))
+        bias_initializer=tf.initializers.constant(bias_start))
 
 
 def sn_embedding(x, number_classes, embedding_size, training=True,
@@ -95,11 +95,11 @@ def sn_embedding(x, number_classes, embedding_size, training=True,
   Returns:
     The output tensor (batch size, embedding_size).
   """
-  with tf.compat.v1.variable_scope(name):
-    embedding_map = tf.compat.v1.get_variable(
+  with tf.variable_scope(name):
+    embedding_map = tf.get_variable(
         name='embedding_map',
         shape=[number_classes, embedding_size],
-        initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+        initializer=tf.keras.initializers.VarianceScaling(
             scale=1.0, mode='fan_avg', distribution='uniform'))
     embedding_map_bar_transpose = tfgan.features.spectral_normalize(
         tf.transpose(a=embedding_map),
@@ -131,7 +131,7 @@ class ConditionalBatchNorm(object):
     Returns:
       Initialized object.
     """
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
       self.name = name
       self.num_categories = num_categories
 
@@ -150,11 +150,11 @@ class ConditionalBatchNorm(object):
     axis = [0, 1, 2]
     shape = tf.TensorShape([self.num_categories]).concatenate(params_shape)
 
-    with tf.compat.v1.variable_scope(self.name):
-      self.gamma = tf.compat.v1.get_variable(
-          'gamma', shape, initializer=tf.compat.v1.initializers.ones())
-      self.beta = tf.compat.v1.get_variable(
-          'beta', shape, initializer=tf.compat.v1.initializers.zeros())
+    with tf.variable_scope(self.name):
+      self.gamma = tf.get_variable(
+          'gamma', shape, initializer=tf.initializers.ones())
+      self.beta = tf.get_variable(
+          'beta', shape, initializer=tf.initializers.zeros())
       beta = tf.gather(self.beta, labels)
       beta = tf.expand_dims(tf.expand_dims(beta, 1), 1)
       gamma = tf.gather(self.gamma, labels)
@@ -183,7 +183,7 @@ class BatchNorm(object):
     Returns:
       Initialized object.
     """
-    with tf.compat.v1.variable_scope(name):
+    with tf.variable_scope(name):
       self.name = name
 
   def __call__(self, inputs):
@@ -199,11 +199,11 @@ class BatchNorm(object):
     params_shape = inputs_shape[-1]
     axis = [0, 1, 2]
     shape = tf.TensorShape([params_shape])
-    with tf.compat.v1.variable_scope(self.name):
-      self.gamma = tf.compat.v1.get_variable(
-          'gamma', shape, initializer=tf.compat.v1.initializers.ones())
-      self.beta = tf.compat.v1.get_variable(
-          'beta', shape, initializer=tf.compat.v1.initializers.zeros())
+    with tf.variable_scope(self.name):
+      self.gamma = tf.get_variable(
+          'gamma', shape, initializer=tf.initializers.ones())
+      self.beta = tf.get_variable(
+          'beta', shape, initializer=tf.initializers.zeros())
       beta = self.beta
       gamma = self.gamma
 
@@ -228,11 +228,10 @@ def sn_conv1x1(x, output_dim, training=True, name='sn_conv1x1'):
   Returns:
     A new volume with the same batch, height, and width as the input.
   """
-  with tf.compat.v1.variable_scope(
-      name, custom_getter=sn_gettr(training=training)):
-    w = tf.compat.v1.get_variable(
+  with tf.variable_scope(name, custom_getter=sn_gettr(training=training)):
+    w = tf.get_variable(
         'weights', [1, 1, x.get_shape()[-1], output_dim],
-        initializer=tf.compat.v1.keras.initializers.VarianceScaling(
+        initializer=tf.keras.initializers.VarianceScaling(
             scale=1.0, mode='fan_avg', distribution='uniform'))
     conv = tf.nn.conv2d(
         input=x, filters=w, strides=[1, 1, 1, 1], padding='SAME')
@@ -251,7 +250,7 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
   Returns:
     A new volume with self-attention having been applied.
   """
-  with tf.compat.v1.variable_scope(name):
+  with tf.variable_scope(name):
     _, h, w, num_channels = x.shape.as_list()
     location_num = h * w
     downsampled_num = location_num // 4
@@ -263,8 +262,7 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
 
     # phi path
     phi = sn_conv1x1(x, num_channels // 8, training, 'sn_conv_phi')
-    phi = tf.compat.v1.layers.max_pooling2d(
-        inputs=phi, pool_size=[2, 2], strides=2)
+    phi = tf.layers.max_pooling2d(inputs=phi, pool_size=[2, 2], strides=2)
     phi = tf.reshape(
         phi, [-1, downsampled_num, num_channels // 8])
 
@@ -273,14 +271,14 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
 
     # g path
     g = sn_conv1x1(x, num_channels // 2, training, 'sn_conv_g')
-    g = tf.compat.v1.layers.max_pooling2d(inputs=g, pool_size=[2, 2], strides=2)
+    g = tf.layers.max_pooling2d(inputs=g, pool_size=[2, 2], strides=2)
     g = tf.reshape(
         g, [-1, downsampled_num, num_channels // 2])
 
     attn_g = tf.matmul(attn, g)
     attn_g = tf.reshape(attn_g, [-1, h, w, num_channels // 2])
-    sigma = tf.compat.v1.get_variable(
-        'sigma_ratio', [], initializer=tf.compat.v1.initializers.constant(0.0))
+    sigma = tf.get_variable(
+        'sigma_ratio', [], initializer=tf.initializers.constant(0.0))
     attn_g = sn_conv1x1(attn_g, num_channels, training, 'sn_conv_attn')
     return x + sigma * attn_g
 
@@ -288,15 +286,15 @@ def sn_non_local_block_sim(x, training=True, name='sn_nonlocal'):
 @contextlib.contextmanager
 def variables_on_gpu0():
   """Put variables on GPU."""
-  old_fn = tf.compat.v1.get_variable
+  old_fn = tf.get_variable
 
   def new_fn(*args, **kwargs):
     with tf.device('/gpu:0'):
       return old_fn(*args, **kwargs)
 
-  tf.compat.v1.get_variable = new_fn
+  tf.get_variable = new_fn
   yield
-  tf.compat.v1.get_variable = old_fn
+  tf.get_variable = old_fn
 
 
 def avg_grads(tower_grads):

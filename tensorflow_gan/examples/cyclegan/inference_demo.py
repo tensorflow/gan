@@ -25,7 +25,7 @@ from absl import app
 from absl import flags
 import numpy as np
 import PIL
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.cyclegan import data_provider
 from tensorflow_gan.examples.cyclegan import networks
@@ -79,14 +79,14 @@ def make_inference_graph(model_name, patch_dim):
   Returns:
     Tuple of (input_placeholder, generated_tensor).
   """
-  input_hwc_pl = tf.compat.v1.placeholder(tf.float32, [None, None, 3])
+  input_hwc_pl = tf.placeholder(tf.float32, [None, None, 3])
 
   # Expand HWC to NHWC
   images_x = tf.expand_dims(
       data_provider.full_image_to_patch(input_hwc_pl, patch_dim), 0)
 
-  with tf.compat.v1.variable_scope(model_name):
-    with tf.compat.v1.variable_scope('Generator'):
+  with tf.variable_scope(model_name):
+    with tf.variable_scope('Generator'):
       generated = networks.generator(images_x)
   return input_hwc_pl, generated
 
@@ -135,8 +135,8 @@ def main(_):
                                                       FLAGS.patch_dim)
 
   # Restore all the variables that were saved in the checkpoint.
-  saver = tf.compat.v1.train.Saver()
-  with tf.compat.v1.Session() as sess:
+  saver = tf.train.Saver()
+  with tf.Session() as sess:
     saver.restore(sess, FLAGS.checkpoint_path)
 
     export(sess, images_x_hwc_pl, generated_y, FLAGS.image_set_x_glob,

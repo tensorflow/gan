@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 import tensorflow_datasets as tfds
 
 
@@ -99,7 +99,7 @@ def provide_data(split,
   """
   ds = provide_dataset(split, batch_size, num_parallel_calls, shuffle, one_hot)
 
-  next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+  next_batch = tf.data.make_one_shot_iterator(ds).get_next()
   images, labels = next_batch['images'], next_batch['labels']
 
   return images, labels

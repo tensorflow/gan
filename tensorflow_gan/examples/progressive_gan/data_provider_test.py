@@ -23,11 +23,11 @@ import os
 from absl import flags
 from absl.testing import parameterized
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 from tensorflow_gan.examples.progressive_gan import data_provider
 
-mock = tf.compat.v1.test.mock
+mock = tf.test.mock
 
 
 class DataProviderUtilsTest(tf.test.TestCase):
@@ -101,22 +101,22 @@ class DataProviderTest(tf.test.TestCase, parameterized.TestCase):
         batch_size=batch_size)
     self.assertIsInstance(ds, tf.data.Dataset)
 
-    output = tf.compat.v1.data.get_output_classes(ds)
+    output = tf.data.get_output_classes(ds)
     self.assertIsInstance(output, dict)
     self.assertSetEqual(set(output.keys()), set(['images']))
     self.assertEqual(output['images'], tf.Tensor)
 
-    shapes = tf.compat.v1.data.get_output_shapes(ds)
+    shapes = tf.data.get_output_shapes(ds)
     self.assertIsInstance(shapes, dict)
     self.assertSetEqual(set(shapes.keys()), set(['images']))
     self.assertListEqual(shapes['images'].as_list(), expected_shape)
 
-    types = tf.compat.v1.data.get_output_types(ds)
+    types = tf.data.get_output_types(ds)
     self.assertIsInstance(types, dict)
     self.assertSetEqual(set(types.keys()), set(['images']))
     self.assertEqual(types['images'], tf.float32)
 
-    next_batch = tf.compat.v1.data.make_one_shot_iterator(ds).get_next()
+    next_batch = tf.data.make_one_shot_iterator(ds).get_next()
     images = next_batch['images']
 
     with self.cached_session() as sess:
