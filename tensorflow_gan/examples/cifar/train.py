@@ -22,6 +22,7 @@ from absl import app
 from absl import flags
 from absl import logging
 
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.cifar import train_lib
 
 # ML Hparams.
@@ -58,4 +59,5 @@ def main(_):
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
+  tf.disable_v2_behavior()
   app.run(main)

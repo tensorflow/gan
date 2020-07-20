@@ -22,6 +22,7 @@ from __future__ import print_function
 from absl import app
 from absl import flags
 
+import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.mnist_estimator import train_lib
 
 flags.DEFINE_integer('batch_size', 32,
@@ -46,4 +47,5 @@ def main(_):
 
 
 if __name__ == '__main__':
+  tf.disable_v2_behavior()
   app.run(main)
