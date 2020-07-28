@@ -16,15 +16,14 @@ make_virtual_env() {
   # Probably check using something like `which virtualenv`, and install
   # using something like `sudo apt-get install virtualenv`.
 
-  # Enable python3.6 in pyenv and update its pip.
-  pyenv global 3.6.1
-
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
   # virtualenv directory to use it; we just need to source bin/activate into the
   # current shell.
   VENV_PATH=${venv_dir}/virtualenv/${py_version}
-  virtualenv -p "${py_version}" "${VENV_PATH}"
+  # Requires sudo apt-get install ${py_version}-venv. Seems not to work on
+  # Debian with python3.6.
+  eval ${py_version} -m venv ${VENV_PATH}
   source ${VENV_PATH}/bin/activate
 }
 
@@ -36,13 +35,10 @@ install_tensorflow() {
     (exit 1) || echo "TF-GAN doesn't support Py2.X anymore".
   fi
 
-  # Workaround for https://github.com/tensorflow/tensorflow/issues/32319.
-  pip install gast==0.2.2
-
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow==1.15
+    pip3 install tensorflow==1.15
   elif [[ "$tf_version" == "TF2.x" ]]; then
-    pip install tensorflow
+    pip3 install tensorflow
   else
     echo "TensorFlow version not recognized: ${tf_version}"
     exit -1
@@ -53,9 +49,9 @@ install_tfp() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-probability==0.8.0
+    pip3 install tensorflow-probability==0.8.0
   elif [[ "$tf_version" == "TF2.x" ]]; then
-    pip install tfp-nightly
+    pip3 install tfp-nightly
   else
     echo "TensorFlow version not recognized: ${tf_version}"
     exit -1
@@ -66,9 +62,9 @@ install_tfds() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-datasets
+    pip3 install tensorflow-datasets
   elif [[ "$tf_version" == "TF2.x" ]]; then
-    pip install tfds-nightly
+    pip3 install tfds-nightly
   else
     echo "TensorFlow version not recognized: ${tf_version}"
     exit -1
@@ -91,13 +87,13 @@ run_unittests_tests() {
 
   # TODO(joelshor): These should get installed in setup.py, but aren't for some
   # reason.
-  pip install Pillow
-  pip install scipy
-  pip install --upgrade google-api-python-client
-  pip install --upgrade oauth2client
+  pip3 install Pillow
+  pip3 install scipy
+  pip3 install --upgrade google-api-python-client
+  pip3 install --upgrade oauth2client
   install_tfp "${tf_version}"
   install_tfds "${tf_version}"
-  pip install tensorflow-hub  # Package is the same regardless of TF version.
+  pip3 install tensorflow-hub  # Package is the same regardless of TF version.
 
   # Run the tests.
   python setup.py test
@@ -123,16 +119,17 @@ test_build_and_install_whl() {
 
   make_virtual_env "${py_version}" "${venv_dir}"
 
+  pip3 install wheel
   # Install TensorFlow explicitly.
   install_tensorflow "${tf_version}"
   install_tfp "${tf_version}"
-  pip install tensorflow-hub  # Package is the same regardless of TF version.
+  pip3 install tensorflow-hub  # Package is the same regardless of TF version.
 
   # Install tf_gan package.
   WHEEL_PATH=${venv_dir}/wheel/${py_version}
   ./pip_pkg.sh ${WHEEL_PATH}/
 
-  pip install ${WHEEL_PATH}/tensorflow_gan-*.whl
+  pip3 install ${WHEEL_PATH}/tensorflow_gan-*.whl
 
   # Move away from repo directory so "import tensorflow_gan" refers to the
   # installed wheel and not to the local fs.
