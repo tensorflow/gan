@@ -37,15 +37,15 @@ fi
 
 echo "Building whl and test it..."
 WHL_TMP_DIR=$(mktemp -d)
-test_build_and_install_whl "python3.7" "TF1.x" "${WHL_TMP_DIR}"
+# TODO(joelshor): Add support for python3.x.
+test_build_and_install_whl "python2.7" "TF1.x" "${WHL_TMP_DIR}"
 
 # Publish to PyPI
 read -p "Publish to ${mode}? (y/n) " -r
 echo
 
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-  venv_dir=$(mktemp -d)
-  make_virtual_env "python3.7" "${venv_dir}"
+  make_virtual_env "python3.6" "TF1.x"
   # TODO(joelshor): Check that pip exists and, if not, install it.
   # Probably install using `sudo apt-get install python-pip`.
 
