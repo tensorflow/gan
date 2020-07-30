@@ -45,7 +45,7 @@ HParams = collections.namedtuple('HParams', [
 
 def _get_data(image_set_x_file_pattern, image_set_y_file_pattern, batch_size,
               patch_size):
-  """Returns image TEnsors from a custom provider or TFDS."""
+  """Returns image Tensors from a custom provider or TFDS."""
   if image_set_x_file_pattern and image_set_y_file_pattern:
     image_file_patterns = [image_set_x_file_pattern, image_set_y_file_pattern]
   else:
