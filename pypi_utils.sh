@@ -121,6 +121,7 @@ test_build_and_install_whl() {
     venv_dir=$(mktemp -d)
   fi
 
+  
   make_virtual_env "${py_version}" "${venv_dir}"
 
   # Install TensorFlow explicitly.
