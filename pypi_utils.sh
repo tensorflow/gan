@@ -17,7 +17,16 @@ make_virtual_env() {
   # using something like `sudo apt-get install virtualenv`.
 
   # Enable python3.6 in pyenv and update its pip.
-  pyenv global 3.6.1
+  
+  # Log versions to debug
+  pyenv versions
+  pyenv install --list
+
+  # By default Ubuntu 16.04 uses Python 3.5.
+  pyenv install 3.6.8
+  pyenv global 3.6.8
+  which python
+  python --version
 
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
