@@ -45,6 +45,7 @@ Numerous projects inside Google. The following are some published papers that us
 *   [Discriminator rejection sampling](https://arxiv.org/abs/1810.06758)
 *   [Generative Models for Effective ML on Private, Decentralized Datasets](https://arxiv.org/pdf/1911.06679.pdf)
 *   [Semantic Pyramid for Image Generation](https://arxiv.org/abs/2003.06221)
+*   [GAN-Mediated Cell Images Batch Equalization](https://www.biorxiv.org/content/10.1101/2020.02.07.939215v1.full)
 
 The framework [Compare GAN](https://github.com/google/compare_gan) uses TF-GAN,
 especially the evaluation metrics. [Their papers](https://github.com/google/compare_gan#compare-gan)
