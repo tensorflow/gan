@@ -49,7 +49,7 @@ install_tensorflow() {
   pip install gast==0.2.2
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow==1.15
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tensorflow
   else
@@ -62,7 +62,7 @@ install_tfp() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-probability==0.8.0
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tfp-nightly
   else
@@ -75,7 +75,7 @@ install_tfds() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-datasets
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tfds-nightly
   else
@@ -130,7 +130,7 @@ test_build_and_install_whl() {
     venv_dir=$(mktemp -d)
   fi
 
-  
+
   make_virtual_env "${py_version}" "${venv_dir}"
 
   # Install TensorFlow explicitly.
