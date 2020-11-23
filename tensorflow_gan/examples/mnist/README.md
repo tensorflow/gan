@@ -9,7 +9,7 @@ Author: Joel Shor
 1.  Run:
 
     ```shell
-    python mnist/train.py --gan_type=[TYPE] --train_log_dir_mnist=/tmp/mnist
+    python mnist/train.py --gan_type=[TYPE] --train_log_dir=/tmp/mnist
     ```
 
     here `[TYPE]` can be is one of `unconditional`, `conditional` or `infogan`.
