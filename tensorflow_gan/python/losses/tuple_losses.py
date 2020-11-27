@@ -105,12 +105,14 @@ def args_to_gan_model(loss_fn):
   """
   # Match arguments in `loss_fn` to elements of `namedtuple`.
   # TODO(joelshor): Properly handle `varargs` and `keywords`.
-  argspec = inspect.getargspec(loss_fn)
-  defaults = argspec.defaults or []
-
-  required_args = set(argspec.args[:-len(defaults)])
-  args_with_defaults = argspec.args[-len(defaults):]
-  default_args_dict = dict(zip(args_with_defaults, defaults))
+  signature_params = inspect.signature(loss_fn).parameters
+  required_args = set()
+  default_args_dict = {}
+  for name, arg in signature_params.items():
+    if arg.default == arg.empty:
+      required_args.add(name)
+    else:
+      default_args_dict[name] = arg.default
 
   def new_loss_fn(gan_model, **kwargs):  # pylint:disable=missing-docstring
     def _asdict(namedtuple):
@@ -130,7 +132,8 @@ def args_to_gan_model(loss_fn):
     gan_model_dict = _asdict(gan_model)
 
     # Make sure non-tuple required args are supplied.
-    args_from_tuple = set(argspec.args).intersection(set(gan_model._fields))
+    args_from_tuple = set(signature_params.keys()).intersection(
+        set(gan_model._fields))
     required_args_not_from_tuple = required_args - args_from_tuple
     for arg in required_args_not_from_tuple:
       if arg not in kwargs:
