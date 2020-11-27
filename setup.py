@@ -119,7 +119,7 @@ setup(
         'tensorflow_probability>=0.7',
     ],
     extras_require={
-        'tf': ['tensorflow>=1.12'],
+        'tf': ['tensorflow>=2.1'],
         'tensorflow-datasets': ['tensorflow-datasets>=0.5.0'],
     },
     classifiers=[

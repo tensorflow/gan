@@ -17,7 +17,16 @@ make_virtual_env() {
   # using something like `sudo apt-get install virtualenv`.
 
   # Enable python3.6 in pyenv and update its pip.
-  pyenv global 3.6.1
+
+  # Log versions to debug
+  pyenv versions
+  pyenv install --list
+
+  # By default Ubuntu 16.04 uses Python 3.5.
+  pyenv install --skip-existing 3.6.8
+  pyenv global 3.6.8
+  which python
+  python --version
 
   # Create and activate a virtualenv to specify python version and test in
   # isolated environment. Note that we don't actually have to cd'ed into a
@@ -40,7 +49,7 @@ install_tensorflow() {
   pip install gast==0.2.2
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow==1.15
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tensorflow
   else
@@ -53,7 +62,7 @@ install_tfp() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-probability==0.8.0
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tfp-nightly
   else
@@ -66,7 +75,7 @@ install_tfds() {
   local tf_version=$1
 
   if [[ "$tf_version" == "TF1.x" ]]; then
-    pip install tensorflow-datasets
+    (exit 1) || echo "TF-GAN doesn't support testing for TF 1.X anymore".
   elif [[ "$tf_version" == "TF2.x" ]]; then
     pip install tfds-nightly
   else
@@ -120,6 +129,7 @@ test_build_and_install_whl() {
   if [ "${venv_dir}" = "" ]; then
     venv_dir=$(mktemp -d)
   fi
+
 
   make_virtual_env "${py_version}" "${venv_dir}"
 
