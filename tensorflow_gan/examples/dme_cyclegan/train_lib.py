@@ -24,7 +24,7 @@ import collections
 import tensorflow.compat.v1 as tf
 import tensorflow_gan as tfgan
 
-from tensorflow_gan.examples.cyclegan import data_provider
+from tensorflow_gan.examples.dme_cyclegan import data_provider
 from tensorflow_gan.examples.dme_cyclegan import networks
 
 HParams = collections.namedtuple('HParams', [

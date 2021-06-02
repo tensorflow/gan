@@ -26,9 +26,12 @@ import tensorflow.compat.v1 as tf
 from tensorflow_gan.examples.dme_cyclegan import train_lib
 
 flags.DEFINE_string('image_set_x_file_pattern', None,
-                    'File pattern of images in image set X')
+                    'File pattern of images in image set X.'
+                    'If the file pattern points to a single file, then it\'s '
+                    'assumed that the file contains a list of file names for '
+                    'the images, one per line.')
 flags.DEFINE_string('image_set_y_file_pattern', None,
-                    'File pattern of images in image set Y')
+                    'Same as image_set_x_file_pattern but for image set Y.')
 flags.DEFINE_integer('batch_size', 1, 'The number of images in each batch.')
 flags.DEFINE_integer('patch_size', 64, 'The patch size of images.')
 flags.DEFINE_string('master', '', 'Name of the TensorFlow master to use.')
