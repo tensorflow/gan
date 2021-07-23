@@ -37,10 +37,12 @@ class LayersTest(tf.test.TestCase):
   def setUp(self):
     super(LayersTest, self).setUp()
 
-    # Do a dummy computation to trigger lazy loading of the conv2d method before
-    # mocking it in tests.
+    # Do a dummy computation to trigger lazy loading of methods that are to be
+    # mocked out by tests.
     _ = tf.layers.conv2d(
         np.ones(shape=[1, 3, 3, 1], dtype=np.float32), filters=1, kernel_size=2)
+    _ = tf.random_normal_initializer()
+    _ = tf.zeros_initializer()
 
   def test_pixel_norm_4d_images_returns_channel_normalized_images(self):
     x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
