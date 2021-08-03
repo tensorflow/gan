@@ -21,6 +21,7 @@ from __future__ import print_function
 
 import shutil
 import tempfile
+from typing import Mapping, Optional
 
 from absl.testing import parameterized
 import numpy as np
@@ -50,14 +51,16 @@ def get_sync_optimizer_hook_type():
   return type(dummy_hook)
 
 
-def generator_fn(noise_dict, mode):
+def generator_fn(noise_dict: Mapping[str, tf.Tensor],
+                 mode: tf.estimator.ModeKeys) -> tf.Tensor:
   del mode
   noise = noise_dict['x']
   return tf.compat.v1.layers.dense(
       noise, tf.compat.dimension_value(noise.shape[1]))
 
 
-def discriminator_fn(data, unused_conditioning, mode):
+def discriminator_fn(data: tf.Tensor, unused_conditioning: Optional[tf.Tensor],
+                     mode: tf.estimator.ModeKeys) -> tf.Tensor:
   del unused_conditioning, mode
   return tf.compat.v1.layers.dense(data, 1)
 

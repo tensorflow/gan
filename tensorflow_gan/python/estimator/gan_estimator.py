@@ -257,9 +257,9 @@ def _make_gan_model(generator_fn, discriminator_fn, real_data, generator_inputs,
                     generator_scope, discriminator_scope, add_summaries, mode):
   """Construct a `GANModel`, and optionally pass in `mode`."""
   # If network functions have an argument `mode`, pass mode to it.
-  if 'mode' in inspect.getargspec(generator_fn).args:
+  if 'mode' in inspect.getfullargspec(generator_fn).args:
     generator_fn = functools.partial(generator_fn, mode=mode)
-  if 'mode' in inspect.getargspec(discriminator_fn).args:
+  if 'mode' in inspect.getfullargspec(discriminator_fn).args:
     discriminator_fn = functools.partial(discriminator_fn, mode=mode)
   gan_model = tfgan_train.gan_model(
       generator_fn,
@@ -282,7 +282,7 @@ def _make_gan_model(generator_fn, discriminator_fn, real_data, generator_inputs,
 def make_prediction_gan_model(generator_inputs, generator_fn, generator_scope):
   """Make a `GANModel` from just the generator."""
   # If `generator_fn` has an argument `mode`, pass mode to it.
-  if 'mode' in inspect.getargspec(generator_fn).args:
+  if 'mode' in inspect.getfullargspec(generator_fn).args:
     generator_fn = functools.partial(
         generator_fn, mode=tf.estimator.ModeKeys.PREDICT)
   with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
@@ -361,7 +361,7 @@ def get_train_estimator_spec(
 
 def extract_gan_loss_args_from_params(params):
   """Returns a dictionary with values for `gan_loss`."""
-  gan_loss_arg_names = inspect.getargspec(tfgan_train.gan_loss).args
+  gan_loss_arg_names = inspect.getfullargspec(tfgan_train.gan_loss).args
 
   # Remove args that you can't adjust via params, and fail if they're present.
   for forbidden_symbol in [
