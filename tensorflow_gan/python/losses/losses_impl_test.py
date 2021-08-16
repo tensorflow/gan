@@ -805,6 +805,29 @@ class CycleConsistencyLossTest(tf.test.TestCase):
       sess.run(tf.compat.v1.global_variables_initializer())
       self.assertNear(5.25, sess.run(loss), 1e-5)
 
+class RelativisticAverageLoss(tf.test.TestCase, absltest.TestCase, _LossesTest):
+  """Tests for ragan_xxx_loss."""
+  def setUp(self):
+    super(RelativisticAverageLoss, self).setUp()
+    self.init_constants()
+    self._discriminator_gen_logits = tf.constant([10.0, 4.4, -5.5, 3.6])
+    self._discriminator_real_logits = tf.constant([-2.0, 0.4, 12.5, 2.7])
+    
+    self._expected_g_loss = 4.390114
+    self._expected_d_loss = 4.9401135
+    
+    self._g_loss_fn = tfgan.losses.wargs.ragan_generator_loss
+    self._d_loss_fn = tfgan.losses.wargs.ragan_discriminator_loss
 
+  def test_correct_loss(self):
+    g_loss = self._g_loss_fn(self._discriminator_real_logits, 
+                             self._discriminator_gen_logits)
+    d_loss = self._d_loss_fn(self._discriminator_real_logits, 
+                             self._discriminator_gen_logits)
+    with self.cached_session() as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      self.assertNear(self._expected_g_loss, sess.run(g_loss), 1e-5)
+      self.assertNear(self._expected_d_loss, sess.run(d_loss), 1e-5)
+      
 if __name__ == '__main__':
   tf.test.main()

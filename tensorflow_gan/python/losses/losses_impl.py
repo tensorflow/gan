@@ -58,6 +58,8 @@ __all__ = [
     'mutual_information_penalty',
     'combine_adversarial_loss',
     'cycle_consistency_loss',
+    'ragan_generator_loss',
+    'ragan_discriminator_loss'
 ]
 
 
@@ -1155,3 +1157,83 @@ def cycle_consistency_loss(data_x,
       tf.compat.v1.summary.scalar('cycle_consistency_loss', loss)
 
   return loss
+
+
+def ragan_discriminator_loss(d_real, 
+                             d_fake,
+                             scope=None):
+  """Relativistic Average GAN discriminator loss.
+
+  This loss introduced in `The relativistic discriminator: a key element missing
+  from standard GAN` (https://arxiv.org/abs/1807.00734).  
+
+  D_ra(x, y) = D(x) - E[D(y)]  
+  L = E[log(D_ra(real, fake))] - E[log(1 - D_ra(fake, real)]
+  
+  where D(x) and D(y) are discriminator logits, E[] represents the operation
+  of taking average for all data in a mini-batch. 
+
+  Args:
+    d_real: Discriminator output on real data.
+    d_fake: Discriminator output on generated data. Expected
+            to be in the range of (-inf, inf).
+    scope: The scope for the operations performed in computing the loss.
+  Returns:
+    A loss Tensor.
+  """
+  with tf.compat.v1.name_scope(
+      scope,
+      'relativistic_avg_discriminator_loss',
+      values=[d_real, d_fake]):
+    def get_logits(x, y):
+      return x - tf.reduce_mean(y)
+    
+    real_logits = get_logits(d_real, d_fake)
+    fake_logits = get_logits(d_fake, d_real)
+
+    real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.ones_like(real_logits), logits=real_logits))
+    fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=tf.zeros_like(fake_logits), logits=fake_logits))
+
+  return real_loss + fake_loss
+
+def ragan_generator_loss(d_real, 
+                         d_fake,
+                         scope=None):
+  """Relativistic Average GAN generator loss.
+
+  This loss introduced in `The relativistic discriminator: a key element missing
+  from standard GAN` (https://arxiv.org/abs/1807.00734).  
+
+  D_ra(x, y) = D(x) - E[D(y)]  
+  L = E[log(1 - D_ra(real, fake))] - E[log(D_ra(fake, real)]
+  
+  where D(x) and D(y) are discriminator logits, E[] represents the operation
+  of taking average for all data in a mini-batch. 
+
+  Args:
+    d_real: Discriminator output on real data.
+    d_fake: Discriminator output on generated data. Expected
+            to be in the range of (-inf, inf).
+    scope: The scope for the operations performed in computing the loss.
+  Returns:
+    A loss Tensor.
+  """
+  with tf.compat.v1.name_scope(
+      scope,
+      'relativistic_avg_generator_loss',
+      values=[d_real, d_fake]):
+    def get_logits(x, y):
+      return x - tf.reduce_mean(y)
+      
+    real_logits = get_logits(d_real, d_fake)
+    fake_logits = get_logits(d_fake, d_real)
+
+    real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=tf.zeros_like(real_logits), logits=real_logits))  
+    fake_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=tf.ones_like(fake_logits), logits=fake_logits))
+
+  return real_loss + fake_loss
+  
