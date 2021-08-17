@@ -813,8 +813,8 @@ class RelativisticAverageLoss(tf.test.TestCase, absltest.TestCase, _LossesTest):
     self._discriminator_gen_logits = tf.constant([10.0, 4.4, -5.5, 3.6])
     self._discriminator_real_logits = tf.constant([-2.0, 0.4, 12.5, 2.7])
     
-    self._expected_g_loss = 4.390114
-    self._expected_d_loss = 4.9401135
+    self._expected_g_loss = 4.9401135
+    self._expected_d_loss = 4.390114 
     
     self._g_loss_fn = tfgan.losses.wargs.ragan_generator_loss
     self._d_loss_fn = tfgan.losses.wargs.ragan_discriminator_loss
