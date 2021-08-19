@@ -17,7 +17,7 @@ from absl import flags, logging, app
 import train_lib
 import data_provider
 
-flags.DEFINE_integer('batch_size', 4,
+flags.DEFINE_integer('batch_size', 16,
                      'The number of images in each batch.')
 flags.DEFINE_string('model_dir', '/content/',
                     'Directory to save and load trained models')
@@ -35,7 +35,7 @@ flags.DEFINE_string('data_dir', '/content/datasets',
                     'Directory to save DIV2K dataset.')
 flags.DEFINE_integer('print_steps', 1000,
                      'Steps at which values are displayed during training.')
-flags.DEFINE_integer('total_steps', 1,
+flags.DEFINE_integer('total_steps', 100000,
                      'The maximum number of steps for training.')
 flags.DEFINE_integer('decay_steps', 50000,
                      'Step at which learning rate is modified.')
