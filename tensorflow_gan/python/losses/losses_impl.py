@@ -58,8 +58,8 @@ __all__ = [
     'mutual_information_penalty',
     'combine_adversarial_loss',
     'cycle_consistency_loss',
-    'ragan_generator_loss',
-    'ragan_discriminator_loss'
+    'relativistic_generator_loss',
+    'relativistic_discriminator_loss'
 ]
 
 
@@ -1159,9 +1159,9 @@ def cycle_consistency_loss(data_x,
   return loss
 
 
-def ragan_discriminator_loss(d_real, 
-                             d_fake,
-                             scope=None):
+def relativistic_discriminator_loss(discriminator_real_outputs, 
+                                    discriminator_fake_outputs,
+                                    scope=None):
   """Relativistic Average GAN discriminator loss.
 
   This loss introduced in `The relativistic discriminator: a key element missing
@@ -1174,9 +1174,9 @@ def ragan_discriminator_loss(d_real,
   of taking average for all data in a mini-batch. 
 
   Args:
-    d_real: Discriminator output on real data.
-    d_fake: Discriminator output on generated data. Expected
-            to be in the range of (-inf, inf).
+    discriminator_real_outputs: Discriminator output on real data.
+    discriminator_fake_outputs: Discriminator output on generated data. Expected
+                                to be in the range of (-inf, inf).
     scope: The scope for the operations performed in computing the loss.
   Returns:
     A loss Tensor.
@@ -1184,12 +1184,12 @@ def ragan_discriminator_loss(d_real,
   with tf.compat.v1.name_scope(
       scope,
       'relativistic_avg_discriminator_loss',
-      values=[d_real, d_fake]):
+      values=[discriminator_real_outputs, discriminator_fake_outputs]):
     def get_logits(x, y):
       return x - tf.reduce_mean(y)
     
-    real_logits = get_logits(d_real, d_fake)
-    fake_logits = get_logits(d_fake, d_real)
+    real_logits = get_logits(discriminator_real_outputs, discriminator_fake_outputs)
+    fake_logits = get_logits(discriminator_fake_outputs, discriminator_real_outputs)
 
     real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
             labels=tf.ones_like(real_logits), logits=real_logits))
@@ -1198,9 +1198,9 @@ def ragan_discriminator_loss(d_real,
 
   return real_loss + fake_loss
 
-def ragan_generator_loss(d_real, 
-                         d_fake,
-                         scope=None):
+def relativistic_generator_loss(discriminator_real_outputs, 
+                                discriminator_fake_outputs,
+                                scope=None):
   """Relativistic Average GAN generator loss.
 
   This loss introduced in `The relativistic discriminator: a key element missing
@@ -1213,8 +1213,8 @@ def ragan_generator_loss(d_real,
   of taking average for all data in a mini-batch. 
 
   Args:
-    d_real: Discriminator output on real data.
-    d_fake: Discriminator output on generated data. Expected
+    ddiscriminator_real_outputs: Discriminator output on real data.
+    discriminator_fake_outputs: Discriminator output on generated data. Expected
             to be in the range of (-inf, inf).
     scope: The scope for the operations performed in computing the loss.
   Returns:
@@ -1223,12 +1223,12 @@ def ragan_generator_loss(d_real,
   with tf.compat.v1.name_scope(
       scope,
       'relativistic_avg_generator_loss',
-      values=[d_real, d_fake]):
+      values=[discriminator_real_outputs, discriminator_fake_outputs]):
     def get_logits(x, y):
       return x - tf.reduce_mean(y)
       
-    real_logits = get_logits(d_real, d_fake)
-    fake_logits = get_logits(d_fake, d_real)
+    real_logits = get_logits(discriminator_real_outputs, discriminator_fake_outputs)
+    fake_logits = get_logits(discriminator_fake_outputs, discriminator_real_outputs)
 
     real_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(
         labels=tf.zeros_like(real_logits), logits=real_logits))  
