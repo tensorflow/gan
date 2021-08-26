@@ -1183,7 +1183,7 @@ def relativistic_discriminator_loss(discriminator_real_outputs,
   """
   with tf.compat.v1.name_scope(
       scope,
-      'relativistic_avg_discriminator_loss',
+      'relativistic_discriminator_loss',
       values=[discriminator_real_outputs, discriminator_fake_outputs]):
     def get_logits(x, y):
       return x - tf.reduce_mean(y)
@@ -1213,16 +1213,16 @@ def relativistic_generator_loss(discriminator_real_outputs,
   of taking average for all data in a mini-batch. 
 
   Args:
-    ddiscriminator_real_outputs: Discriminator output on real data.
+    discriminator_real_outputs: Discriminator output on real data.
     discriminator_fake_outputs: Discriminator output on generated data. Expected
-            to be in the range of (-inf, inf).
+                                to be in the range of (-inf, inf).
     scope: The scope for the operations performed in computing the loss.
   Returns:
     A loss Tensor.
   """
   with tf.compat.v1.name_scope(
       scope,
-      'relativistic_avg_generator_loss',
+      'relativistic_generator_loss',
       values=[discriminator_real_outputs, discriminator_fake_outputs]):
     def get_logits(x, y):
       return x - tf.reduce_mean(y)
