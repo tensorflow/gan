@@ -15,19 +15,14 @@
 
 """Tests for tfgan.examples.esrgan.train"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from absl.testing import absltest
-import os
 import collections
 
 import tensorflow as tf
 import train_lib
 
 mock = tf.compat.v1.test.mock
-HParams = collections.namedtuple('HParams', [
+hparams = collections.namedtuple('hparams', [
     'batch_size', 'scale',
     'model_dir', 'phase_1',
     'phase_2', 'hr_dimension',
@@ -41,7 +36,7 @@ HParams = collections.namedtuple('HParams', [
 
 class TrainTest(tf.test.TestCase):
   def setUp(self):
-    self.HParams = HParams(32, 4, '/content/', 
+    self.hparams = hparams(32, 4, '/content/', 
                           False, False, 256,
                           '/content/', 1, 11, 1, 1, 
                           0.5, 0.0001, 0.5, 0.001, 0.00005, 
