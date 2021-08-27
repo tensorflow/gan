@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from tensorflow.python.data.experimental import AUTOTUNE
@@ -21,26 +20,28 @@ from tensorflow.python.data.experimental import AUTOTUNE
 
 def random_flip(lr_img, hr_img):
   """ Randomly flips LR and HR images for data augmentation."""
-  rn = tf.random.uniform(shape=(), maxval=1)
+  random = tf.random.uniform(shape=(), maxval=1)
   
-  return tf.cond(rn < 0.5,
+  return tf.cond(random<0.5,
                  lambda: (lr_img, hr_img),
                  lambda: (tf.image.flip_left_right(lr_img),
                           tf.image.flip_left_right(hr_img)))
 
 def random_rotate(lr_img, hr_img):
   """ Randomly rotates LR and HR images for data augmentation."""
-  rn = tf.random.uniform(shape=(), maxval=4, dtype=tf.int32)
-  return tf.image.rot90(lr_img, rn), tf.image.rot90(hr_img, rn)
+  random = tf.random.uniform(shape=(), maxval=4, dtype=tf.int32)
+  return tf.image.rot90(lr_img, random), tf.image.rot90(hr_img, random)
 
 
-def get_div2k_data(HParams, 
+def get_div2k_data(hparams, 
+                   name='div2k/bicubic_x4',
                    mode='train',
                    shuffle=True, 
                    repeat_count=None):
   """ Downloads and loads DIV2K dataset. 
   Args:
-      HParams : For getting values for different parameters.
+      hparams : A named tuple to store different parameters. 
+      name : Name of the dataset  to be loaded using tfds. 
       mode : Either 'train' or 'valid'.
       shuffle : Whether to shuffle the images in the dataset.
       repeat_count : Repetition of data during training.
@@ -50,12 +51,11 @@ def get_div2k_data(HParams,
   Raises:
         TypeError : If the data directory(data_dir) is not specified.
   """
-  bs = HParams.batch_size
   split = 'train' if mode == 'train' else 'validation'
 
   def scale(image, *args):
-    hr_size = HParams.hr_dimension
-    scale = HParams.scale
+    hr_size = hparams.hr_dimension
+    scale = hparams.scale
 
     hr_image = image
     hr_image = tf.image.resize(hr_image, [hr_size, hr_size])
@@ -66,18 +66,18 @@ def get_div2k_data(HParams,
     
     return lr_image, hr_image
 
-  dataset = (tfds.load('div2k/bicubic_x4', 
+  dataset = (tfds.load(name=name, 
                        split=split, 
-                       data_dir=HParams.data_dir, 
+                       data_dir=hparams.data_dir, 
                        as_supervised=True)
-             .map(scale, num_parallel_calls=4)
+             .map(scale, num_parallel_calls=AUTOTUNE)
              .cache())
   
   if shuffle:
     dataset = dataset.shuffle(
         buffer_size=10000, reshuffle_each_iteration=True)
   
-  dataset = dataset.batch(HParams.batch_size)
+  dataset = dataset.batch(hparams.batch_size)
   dataset = dataset.repeat(repeat_count)
   dataset = dataset.prefetch(buffer_size=AUTOTUNE)
             
