@@ -15,16 +15,12 @@
 
 """Tests for tfgan.examples.esrgan.utils"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 from absl.testing import absltest
-import os
 import collections
 
 import tensorflow as tf
-import utils, networks
+import utils
+import networks
 
 
 Params = collections.namedtuple('HParams', ['hr_dimension', 
