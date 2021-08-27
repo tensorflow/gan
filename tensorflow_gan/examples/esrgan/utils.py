@@ -22,8 +22,13 @@ import numpy as np
 
 
 def preprocess_input(image):
-  """ Preprocessing of images done before calculating loss 
-      functions during training."""
+  """ Input images are preprocessed by subtracting the dataset mean. 
+      Since the VGG-19 network used here to extract features, is pretrained 
+      on ImageNet dataset, its mean value (103.939, 116.779, 123.68) is subtracted 
+      from the input images.
+      This ensures that each feature will have a similar range and the gradients
+      calculated during training are stable. 
+  """
   image = image[..., ::-1]
   mean = -tf.constant([103.939, 116.779, 123.68])
   return tf.nn.bias_add(image, mean)
@@ -32,6 +37,7 @@ def preprocess_input(image):
 def visualize_results(image_lr, 
                       generated, 
                       image_hr, 
+                      size = 256,
                       image_dir='',
                       step=0, 
                       train=True):
@@ -40,15 +46,14 @@ def visualize_results(image_lr,
       saves the results as a .png image.
   
   Args:
-      image_lr : batch of tensors representing LR images.
-      generated : batch of tensors representing generated images.
-      image_hr : batch of tensors representing HR images.
+      image_lr : Batch of tensors representing LR images.
+      generated : Batch of tensors representing generated images.
+      image_hr : Batch of tensors representing HR images.
+      size : Size to which all images are resized for visualization.
       image_dir : Directory to save the results.
       step : Number of steps completed, for naming purposes. 
       train : Training or Validation.   
   """
-  # Resizing all images to 256x256 just for visualization
-  size = 256
   resized_lr = tf.image.resize(
       image_lr, [size, size], method=tf.image.ResizeMethod.BILINEAR)
   resized_gen = tf.image.resize(
