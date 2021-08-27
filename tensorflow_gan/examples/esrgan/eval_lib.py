@@ -13,17 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import tensorflow as tf
 from absl import logging
 import utils
-import collections
 
-HParams = collections.namedtuple('HParams', [
+hparams = collections.namedtuple('hparams', [
     'batch_size', 'hr_dimension',
-    'scale',
-    'model_dir', 'data_dir',
-    'num_steps', 'num_inception_images', 
-    'image_dir', 'eval_real_images'])
+    'scale', 'model_dir', 
+    'data_dir', 'num_steps', 
+    'num_inception_images', 'image_dir', 
+    'eval_real_images'])
 
 def evaluate(hparams, generator, data):
   """ Runs an evaluation loop and calculates the mean FID,
@@ -38,24 +38,24 @@ def evaluate(hparams, generator, data):
   inc_metric = tf.keras.metrics.Mean()
   psnr_metric = tf.keras.metrics.Mean()
   step = 0
+
   for lr, hr in data.take(hparams.num_steps):
     step += 1
     # Generate fake images for evaluating the model
     gen = generator(lr)
-
-    if step % hparams.num_steps//10:
+    
+    if step%hparams.num_steps//10 == 0:
       utils.visualize_results(lr,
                               gen,
                               hr,
                               image_dir=hparams.image_dir,
                               step=step)
-
+    
     # Compute Frechet Inception Distance.
     fid_score = utils.get_frechet_inception_distance(
         hr, gen,
         hparams.batch_size,
         hparams.num_inception_images)
-
     fid_metric(fid_score)
 
     # Compute Inception Scores.
