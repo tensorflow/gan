@@ -15,22 +15,18 @@
 
 """Tests for tfgan.examples.esrgan.networks"""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import tensorflow as tf
 import networks
 import collections
 
-Params = collections.namedtuple('HParams', ['hr_dimension', 
+hparams = collections.namedtuple('hparams', ['hr_dimension', 
                                             'scale', 
                                             'trunk_size'])
 class NetworksTest(tf.test.TestCase):
   def setUp(self):
-    self.HParams = Params(256, 4, 11)
-    self.generator = networks.generator_network(self.HParams)
-    self.discriminator = networks.discriminator_network(self.HParams)
+    self.hparams = hparams(256, 4, 11)
+    self.generator = networks.generator_network(self.hparams)
+    self.discriminator = networks.discriminator_network(self.hparams)
 
   def test_network_type(self):
     """ Verifies that the models are of keras.Model type """
