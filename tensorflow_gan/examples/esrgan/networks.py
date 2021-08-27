@@ -15,11 +15,7 @@
 
 import os 
 import tensorflow as tf
-from keras.models import Model
-from keras.layers import Input, Add, Concatenate
-from keras.layers import BatchNormalization, LeakyReLU, Conv2D, Dense, Conv2DTranspose
-from keras.layers import Lambda, Dropout, Flatten
-
+from tensorflow.keras import layers
 
 """
 Implementation of Generator (ESRGAN_G) and Discriminator (ESRGAN_D) models
@@ -27,61 +23,62 @@ based on the architecture proposed in the paper
 'ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks'.
 """
 
-def _conv_block(input, filters=32, activation=True):
-  h = Conv2D(filters, kernel_size=[3,3], bias_initializer="zeros", 
-             strides=[1,1], padding='same')(input)
+def _conv_block(input, filters, activation=True):
+  h = layers.Conv2D(filters, kernel_size=[3,3], 
+                    kernel_initializer="he_normal", bias_initializer="zeros", 
+                    strides=[1,1], padding='same', use_bias=True)(input)
   if activation:
-    h = LeakyReLU(0.2)(h)
+      h = layers.LeakyReLU(0.2)(h)
   return h
 
 def _conv_block_d(input, out_channel):
-  x = Conv2D(out_channel, 3,1, padding='same', use_bias=False)(input)
-  x = BatchNormalization(momentum=0.8)(x)
-  x = LeakyReLU(alpha=0.2)(x)
+  x = layers.Conv2D(out_channel, 3,1, padding='same', use_bias=False)(input)
+  x = layers.BatchNormalization(momentum=0.8)(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
 
-  x = Conv2D(out_channel, 4,2, padding='same', use_bias=False)(x)
-  x = BatchNormalization(momentum=0.8)(x)
-  x = LeakyReLU(alpha=0.2)(x)
+  x = layers.Conv2D(out_channel, 4,2, padding='same', use_bias=False)(x)
+  x = layers.BatchNormalization(momentum=0.8)(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
   return x
 
 def dense_block(input):
-  h1 = _conv_block(input)
-  h1 = Concatenate()([input, h1])
+  h1 = _conv_block(input, 32)
+  h1 = layers.Concatenate()([input, h1])
 
-  h2 = _conv_block(h1)
-  h2 = Concatenate()([input, h1, h2])
+  h2 = _conv_block(h1, 32)
+  h2 = layers.Concatenate()([input, h1, h2])
 
-  h3 = _conv_block(h2)
-  h3 = Concatenate()([input, h1, h2, h3])
+  h3 = _conv_block(h2, 32)
+  h3 = layers.Concatenate()([input, h1, h2, h3])
 
-  h4 = _conv_block(h3)
-  h4 = Concatenate()([input, h1, h2, h3, h4])
+  h4 = _conv_block(h3, 32)
+  h4 = layers.Concatenate()([input, h1, h2, h3, h4])  
 
-  h5 = _conv_block(h4, activation=False)
-
-  h5 = Lambda(lambda x: x * 0.2)(h5)
-  h = Add()([h5, input])
-
+  h5 = _conv_block(h4, 32, activation=False)
+  
+  h5 = layers.Lambda(lambda x: x * 0.2)(h5)
+  h = layers.Add()([h5, input])
+  
   return h
 
-def rrdb_block(input):
+def rrdb(input):
   h = dense_block(input)
   h = dense_block(h)
   h = dense_block(h)
-  h = Lambda(lambda x: x * 0.2)(h)
-  out = Add()([h, input])
+  h = layers.Lambda(lambda x:x * 0.2)(h)
+  out = layers.Add()([h, input])
   return out
 
-def upsample(x, filters, use_bias=True):
-  x = Conv2DTranspose(filters, kernel_size=[3, 3],
-                      strides=[2, 2], padding='same',
-                      use_bias=use_bias)(x)
-  x = LeakyReLU(alpha=0.2)(x)
+def upsample(x, filters):
+  x = layers.Conv2DTranspose(filters, kernel_size=3, 
+                             strides=2, padding='same', 
+                             use_bias = True)(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
   return x
 
-def generator_network(HParams,
-              num_filters=32,
-              out_channels=3):
+def generator_network(hparams,
+                      num_filters=32,
+                      out_channels=3):
   """
   The Generator network for ESRGAN consisting of Residual in Residual Block
   as the basic building unit.
@@ -97,38 +94,38 @@ def generator_network(HParams,
           inputs -> Batch of tensors representing LR images.
           outputs -> Batch of generated HR images.
   """
-  lr_input = Input(shape=(HParams.hr_dimension//HParams.scale,
-                          HParams.hr_dimension//HParams.scale, 3))
+  lr_input = layers.Input(shape=(hparams.hr_dimension//hparams.scale,
+                          hparams.hr_dimension//hparams.scale, 3))
 
-  x = Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
-             padding='same', use_bias=True)(lr_input)
-  x = LeakyReLU(0.2)(x)
+  x = layers.Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
+                    padding='same', use_bias=True)(lr_input)
+  x = layers.LeakyReLU(0.2)(x)
 
   ref = x
 
-  for _ in range(HParams.trunk_size):
-    x = rrdb_block(x)
+  for _ in range(hparams.trunk_size):
+    x = rrdb(x)
 
-  x = Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
+  x = layers.Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
              padding='same', use_bias=True)(x)
-  x = Add()([x, ref])
+  x = layers.Add()([x, ref])
 
   x = upsample(x, num_filters)
   x = upsample(x, num_filters)
 
-  x = Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
-             padding='same', use_bias=True)(x)
-  x = LeakyReLU(0.2)(x)
-  hr_output = Conv2D(out_channels, kernel_size=[3, 3], strides=[1, 1],
-                     padding='same', use_bias=True)(x)
+  x = layers.Conv2D(num_filters, kernel_size=[3, 3], strides=[1, 1],
+                    padding='same', use_bias=True)(x)
+  x = layers.LeakyReLU(0.2)(x)
+  hr_output = layers.Conv2D(out_channels, kernel_size=[3, 3], strides=[1, 1],
+                            padding='same', use_bias=True)(x)
 
-  model = Model(inputs=lr_input, outputs=hr_output)
+  model = tf.keras.models.Model(inputs=lr_input, outputs=hr_output)
   return model
 
 
-def discriminator_network(HParams,
-                  num_filters=64, 
-                  training=True):
+def discriminator_network(hparams,
+                          num_filters=64, 
+                          training=True):
   """
   The discriminator network for ESRGAN.
 
@@ -140,24 +137,24 @@ def discriminator_network(HParams,
           inputs -> Batch of tensors representing HR images.
           outputs -> Predictions for batch of input images.
   """
-  img = Input(shape=(HParams.hr_dimension, HParams.hr_dimension, 3))
+  img = layers.Input(shape=(hparams.hr_dimension, hparams.hr_dimension, 3))
 
-  x = Conv2D(num_filters, [3,3], 1, padding='same', use_bias=False)(img)
-  x = BatchNormalization()(x)
-  x = LeakyReLU(alpha=0.2)(x)
+  x = layers.Conv2D(num_filters, [3,3], 1, padding='same', use_bias=False)(img)
+  x = layers.BatchNormalization()(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
 
-  x = Conv2D(num_filters, [3,3], 2, padding='same', use_bias=False)(x)
-  x = BatchNormalization()(x)
-  x = LeakyReLU(alpha=0.2)(x)
+  x = layers.Conv2D(num_filters, [3,3], 2, padding='same', use_bias=False)(x)
+  x = layers.BatchNormalization()(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
 
   x = _conv_block_d(x, num_filters *2)
   x = _conv_block_d(x, num_filters *4)
   x = _conv_block_d(x, num_filters *8)
   
-  x = Flatten()(x)
-  x = Dense(100)(x)
-  x = LeakyReLU(alpha=0.2)(x)
-  x = Dense(1)(x)
+  x = layers.Flatten()(x)
+  x = layers.Dense(100)(x)
+  x = layers.LeakyReLU(alpha=0.2)(x)
+  x = layers.Dense(1)(x)
 
-  model = Model(inputs=img, outputs=x)
+  model = tf.keras.models.Model(inputs = img, outputs = x)
   return model
