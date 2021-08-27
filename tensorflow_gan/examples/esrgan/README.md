@@ -7,7 +7,7 @@
 python esrgan/train.py
 ```
 
-The Notebook files for training ESRGAN on Google Colaboratory can be found [here](colab_notebooks)
+The Notebook files for training ESRGAN on Google Colaboratory can be found [here](https://github.com/tensorflow/gan/blob/master/tensorflow_gan/examples/esrgan/colab_notebooks/)
 
 ### Description
 The ESRGAN model proposed in the paper [ESRGAN: Enhanced Super-Resolution Generative Adversarial Networks (Wang Xintao et al.)](https://arxiv.org/abs/1809.00219) performs the task of image super-resolution which is the process of reconstructing high resolution (HR) image from a given low resolution (LR) image. Here we have trained the ESRGAN model on the DIV2K dataset and the model is evaluated using TF-GAN.  
