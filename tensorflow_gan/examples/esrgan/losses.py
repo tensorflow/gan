@@ -28,7 +28,7 @@ def pixel_loss(y_true, y_pred):
   y_pred = tf.cast(y_pred, tf.float32)
   return tf.reduce_mean(tf.reduce_mean(tf.abs(y_true - y_pred), axis=0))
 
-
+# TODO(Nived): Remove this function once the relativitic losses are added to TF-GAN
 def ragan_generator_loss(d_real, 
                          d_fake,
                          scope=None):
@@ -60,7 +60,7 @@ def ragan_generator_loss(d_real,
 
   return real_loss + fake_loss
  
-
+# TODO(Nived): Remove this function once the relativitic losses are added to TF-GAN
 def ragan_discriminator_loss(d_real, 
                              d_fake,
                              scope=None):
