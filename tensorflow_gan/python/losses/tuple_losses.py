@@ -86,7 +86,9 @@ __all__ = [
     'cycle_consistency_loss',
     'stargan_generator_loss_wrapper',
     'stargan_discriminator_loss_wrapper',
-    'stargan_gradient_penalty_wrapper'
+    'stargan_gradient_penalty_wrapper',
+    'relativistic_generator_loss',
+    'relativistic_discriminator_loss'
 ]
 
 
@@ -220,6 +222,15 @@ least_squares_discriminator_loss = args_to_gan_model(
 # https://arxiv.org/abs/1606.03657
 mutual_information_penalty = args_to_gan_model(
     tfgan_losses.mutual_information_penalty)
+
+
+# Relativistic Average loss from `The relativistic discriminator: 
+# a key element missing from standard GAN`.
+# (https://arxiv.org/abs/1807.00734)
+relativistic_generator_loss = args_to_gan_model(
+    tfgan_losses.relativistic_generator_loss)
+relativistic_discriminator_loss = args_to_gan_model(
+    tfgan_losses.relativistic_discriminator_loss)
 
 
 def combine_adversarial_loss(gan_loss,
