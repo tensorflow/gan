@@ -13,20 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Train the ESRGAN model
-See https://arxiv.org/abs/1809.00219 for details about the model.
-"""
+"""Code for training the ESRGAN model."""
 
-import tensorflow as tf
-import collections
 import os
+import collections
+import tensorflow as tf
 from absl import logging
 
 import networks
 import losses
 import utils
 
-hparams = collections.namedtuple('hparams', [
+HParams = collections.namedtuple('HParams', [
     'batch_size', 'scale',
     'model_dir', 'phase_1',
     'phase_2', 'hr_dimension',
@@ -39,8 +37,8 @@ hparams = collections.namedtuple('hparams', [
     'eta', 'image_dir'])
 
 def pretrain_generator(hparams, data):
-  """ Pre-trains the generator network with pixel-loss as proposed in
-      the paper and saves the network inside the model directory specified.
+  """Pre-trains the generator network with pixel-loss as proposed in
+     the paper and saves the network inside the model directory specified.
 
   Args:
       hparams : Training parameters as proposed in the paper.
@@ -63,8 +61,8 @@ def pretrain_generator(hparams, data):
   g_optimizer = _get_optimizer()
 
   def train_step(image_lr, image_hr):
-    """ Calculates the L1 Loss and gradients at each step, and updates the
-        gradient to improve the PSNR values.
+    """Calculates the L1 Loss and gradients at each step, and updates the
+       gradient to improve the PSNR values.
     Args:
         image_lr : batch of tensors representing LR images.
         image_hr : batch of tensors representing HR images.
@@ -151,8 +149,8 @@ def train_esrgan(hparams, data):
   psnr_metric = tf.keras.metrics.Mean()
 
   def train_step(image_lr, image_hr, step):
-    """ Calculates the L1 Loss, Perceptual loss and RaGAN loss, to train
-        both generator and discriminator networks of the ESRGAN model.
+    """Calculates the L1 Loss, Perceptual loss and RaGAN loss, to train
+       both generator and discriminator networks of the ESRGAN model.
     Args :
         image_lr : batch of tensors representing LR images.
         image_hr : batch of tensors representing HR images.
@@ -196,25 +194,25 @@ def train_esrgan(hparams, data):
       return gen_loss, disc_loss, psnr
 
   def val_step(image_lr, image_hr, step):
-    """ Saves an image grid containing LR image, generated image and
-        HR image, inside the image directory.
+    """Saves an image grid containing LR image, generated image and
+       HR image, inside the image directory.
     Args:
         image_lr : Low Resolution Image 
         image_hr : High Resolution Image. 
         step : Number of steps completed, used for naming the image 
                file. 
     """
-    fake=generator(image_lr)
+    fake = generator(image_lr)
     utils.visualize_results(image_lr, 
                             fake, 
                             image_hr,
-                            hparams.image_dir,
+                            image_dir=hparams.image_dir,
                             step=step)
 
   step = 0
   # Modify learning rate at each of these steps
   decay_list = [50000, 100000, 200000, 300000]
-  index=0
+  index = 0
 
   for lr, hr in data.take(hparams.total_steps):
     step += 1
@@ -240,7 +238,7 @@ def train_esrgan(hparams, data):
       d_optimizer.learning_rate.assign(
           d_optimizer.learning_rate * hparams.decay_factor)
   
-      index+=1
+      index += 1
       
 
   # Save the generator model inside model_dir.
@@ -262,8 +260,7 @@ def train_esrgan(hparams, data):
 
 def _get_optimizer(lr=0.0002, beta_1=0.9, beta_2=0.99):
   """Returns the Adam optimizer with the specified learning rate."""
-  optimizer =  tf.optimizers.Adam(
-                        learning_rate=lr,
-                        beta_1=beta_1,
-                        beta_2=beta_2)
+  optimizer = tf.optimizers.Adam(learning_rate=lr,
+                                 beta_1=beta_1,
+                                 beta_2=beta_2)
   return optimizer

@@ -13,22 +13,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tfgan.examples.esrgan.data_provider"""
+"""Tests for tfgan.examples.esrgan.data_provider."""
+
 import collections
 from absl.testing import absltest
 import tensorflow as tf
 import data_provider
 
 
-hparams = collections.namedtuple('hparams', ['hr_dimension', 
-                                            'scale', 
-                                            'batch_size',
-                                            'data_dir'])
+HParams = collections.namedtuple('HParams', ['hr_dimension', 
+                                             'scale', 
+                                             'batch_size',
+                                             'data_dir'])
 
 class DataProviderTest(tf.test.TestCase, absltest.TestCase):
   def setUp(self):
     super(DataProviderTest, self).setUp()
-    self.hparams = hparams(256, 4, 32, '/content/')
+    self.hparams = HParams(256, 4, 32, '/content/')
     self.dataset = data_provider.get_div2k_data(self.hparams)
     self.mock_lr = tf.random.normal([32, 64, 64, 3])
     self.mock_hr = tf.random.normal([32, 256, 256, 3])

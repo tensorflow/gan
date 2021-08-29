@@ -13,28 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tfgan.examples.esrgan.networks"""
+"""Tests for tfgan.examples.esrgan.networks."""
 
+import collections
 import tensorflow as tf
 import networks
-import collections
 
-hparams = collections.namedtuple('hparams', ['hr_dimension', 
-                                            'scale', 
-                                            'trunk_size'])
+HParams = collections.namedtuple('HParams', ['hr_dimension', 
+                                             'scale', 
+                                             'trunk_size'])
 class NetworksTest(tf.test.TestCase):
   def setUp(self):
-    self.hparams = hparams(256, 4, 11)
+    self.hparams = HParams(256, 4, 11)
     self.generator = networks.generator_network(self.hparams)
     self.discriminator = networks.discriminator_network(self.hparams)
 
   def test_network_type(self):
-    """ Verifies that the models are of keras.Model type """
+    """Verifies that the models are of keras.Model type."""
     self.assertIsInstance(self.generator, tf.keras.Model)
     self.assertIsInstance(self.discriminator, tf.keras.Model)
 
   def test_generator(self):
-    """ Verifies the generator output shape."""
+    """Verifies the generator output shape."""
     img_batch = tf.random.uniform([3, 64, 64, 3])
     target_shape = [3, 256, 256, 3]
     model_output = self.generator(img_batch)
@@ -43,7 +43,7 @@ class NetworksTest(tf.test.TestCase):
       self.assertEqual(model_output.shape, target_shape)
   
   def test_generator_inference(self):
-    """ Check one inference step."""
+    """Check one inference step."""
     img_batch = tf.zeros([2, 64, 64, 3])
     model_output, _ = self.generator(img_batch)
     with self.cached_session() as sess:

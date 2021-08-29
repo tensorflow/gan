@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Contains code for evaluating ESRGAN model."""
+
 from absl import flags, logging, app
 import tensorflow as tf
 import eval_lib
@@ -43,8 +45,8 @@ FLAGS = flags.FLAGS
 def main(_):
   hparams = eval_lib.HParams(FLAGS.batch_size, FLAGS.hr_dimension, 
                              FLAGS.scale, FLAGS.model_dir, 
-                             FLAGS.data_dir,FLAGS.num_steps, 
-                             FLAGS.num_inception_images,FLAGS.image_dir, 
+                             FLAGS.data_dir, FLAGS.num_steps, 
+                             FLAGS.num_inception_images, FLAGS.image_dir, 
                              FLAGS.eval_real_images)
 
   generator = tf.keras.models.load_model(FLAGS.model_dir +

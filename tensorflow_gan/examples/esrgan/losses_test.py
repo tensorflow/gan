@@ -13,15 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tfgan.examples.esrgan.losses"""
+"""Tests for tfgan.examples.esrgan.losses."""
 
-from absl.testing import absltest
 import os
+from absl.testing import absltest
 
 import tensorflow as tf
 import losses 
 
 class LossesTest(tf.test.TestCase, absltest.TestCase):
+  """Tests for relativistic losses and pixel loss."""
   def setUp(self):
     super(LossesTest, self).setUp()
     self.real_data = tf.constant([[3.1, 2.3, -12.3, 32.1]])

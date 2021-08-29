@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Code for training the ESRGAN model."""
+
 import os
 import tensorflow as tf
 import tensorflow_gan as tfgan
@@ -22,12 +24,13 @@ import numpy as np
 
 
 def preprocess_input(image):
-  """ Input images are preprocessed by subtracting the dataset mean. 
-      Since the VGG-19 network used here to extract features, is pretrained 
-      on ImageNet dataset, its mean value (103.939, 116.779, 123.68) is subtracted 
-      from the input images.
-      This ensures that each feature will have a similar range and the gradients
-      calculated during training are stable. 
+  """Input images are preprocessed by subtracting the dataset mean. 
+  
+  Since the VGG-19 network used here to extract features, is pretrained 
+  on ImageNet dataset, its mean value (103.939, 116.779, 123.68) is subtracted 
+  from the input images.
+  This ensures that each feature will have a similar range and the gradients
+  calculated during training are stable. 
   """
   image = image[..., ::-1]
   mean = -tf.constant([103.939, 116.779, 123.68])
@@ -42,8 +45,8 @@ def visualize_results(image_lr,
                       step=0, 
                       train=True):
     
-  """ Creates an image grid using Tf-GAN's image grid function and 
-      saves the results as a .png image.
+  """Creates an image grid using Tf-GAN's image grid function and 
+     saves the results as a .png image.
   
   Args:
       image_lr : Batch of tensors representing LR images.
@@ -80,12 +83,13 @@ def visualize_results(image_lr,
 def network_interpolation(alpha=0.2,
                           phase_1_path=None,
                           phase_2_path=None):
-  """ Network interpolation as explained in section 3.4 in the paper, bascically 
-      balancing the effects of PSNR oriented methods and GAN based methods. 
+  """Network interpolation as explained in section 3.4 in the paper, bascically 
+     balancing the effects of PSNR oriented methods and GAN based methods. 
   Args:
       alpha : interpolation parameter. 
       phase_1_path : path to the network saved after phase 1 training. 
       phase_2_path : path to the network saved after phase 2 training.
+  
   Returns: 
       Interpolated generator network.  
   """
@@ -105,7 +109,7 @@ def network_interpolation(alpha=0.2,
 # Utility functions for evaluation
 def get_frechet_inception_distance(real_images, generated_images, batch_size,
                                    num_inception_images):
-  """ Get Frechet Inception Distance between real and generated images.
+  """Get Frechet Inception Distance between real and generated images.
 
   Args:
     real_images: Real images minibatch.
@@ -140,7 +144,7 @@ def get_frechet_inception_distance(real_images, generated_images, batch_size,
 
 
 def get_inception_scores(images, batch_size, num_inception_images):
-  """ Calculate Inception score for images. 
+  """Calculate Inception score for images. 
 
   Args:
       images : A batch of tensors representing series of images.
@@ -176,7 +180,7 @@ def get_inception_scores(images, batch_size, num_inception_images):
   return inc_score
 
 def get_psnr(real, generated):
-  """ Calculate PSNR values for the given samples of images.
+  """Calculate PSNR values for the given samples of images.
 
   Args: 
       real: batch of tensors representing real images.

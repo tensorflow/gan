@@ -13,30 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tfgan.examples.esrgan.utils"""
+"""Tests for tfgan.examples.esrgan.utils."""
 
-from absl.testing import absltest
 import collections
-
 import tensorflow as tf
 import utils
 import networks
 
 
-Params = collections.namedtuple('HParams', ['hr_dimension', 
-                                            'scale', 
-                                            'trunk_size',
-                                            'path'])
+HParams = collections.namedtuple('HParams', ['hr_dimension', 
+                                             'scale', 
+                                             'trunk_size',
+                                             'path'])
 
 class UtilsTest(tf.test.TestCase):
   def setUp(self):
     super(UtilsTest, self).setUp()
-    self.HParams = Params(256, 4, 11, '/content/')
+    self.hparams = HParams(256, 4, 11, '/content/')
     
-    self.generator1 = networks.generator_network(self.HParams)
-    self.generator1.save(self.HParams.path+'1/')
-    self.generator2 = networks.generator_network(self.HParams)
-    self.generator1.save(self.HParams.path+'2/')
+    self.generator1 = networks.generator_network(self.hparams)
+    self.generator1.save(self.hparams.path+'1/')
+    self.generator2 = networks.generator_network(self.hparams)
+    self.generator1.save(self.hparams.path+'2/')
 
     self.hr_data = tf.random.normal([2,256,256,3])
     self.lr_data = tf.random.normal([2,64,64,3])
@@ -66,9 +64,9 @@ class UtilsTest(tf.test.TestCase):
     self.assertEqual(is_score.dtype, tf.float32)
   
   def test_interpolation(self):
-    """ To test the interpolation function. """
-    inter_gen = utils.network_interpolation(phase_1_path=self.HParams.path+'1/',
-                                            phase_2_path=self.HParams.path+'2/')
+    """ To test the interpolation function."""
+    inter_gen = utils.network_interpolation(phase_1_path=self.hparams.path+'1/',
+                                            phase_2_path=self.hparams.path+'2/')
     self.assertEqual(type(inter_gen), type(self.generator1))
 
 if __name__ == '__main__':

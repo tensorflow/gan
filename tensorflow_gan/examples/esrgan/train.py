@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Code for training the ESRGAN model."""
+
 from absl import flags, logging, app
 import train_lib
 import data_provider

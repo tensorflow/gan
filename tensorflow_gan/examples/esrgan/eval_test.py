@@ -21,13 +21,13 @@ import tensorflow as tf
 import eval_lib
 import networks
 
-hparams = collections.namedtuple('hparams', [
-  'num_steps', 'image_dir', 'batch_size', 'num_inception_images',
-  'eval_real_images', 'hr_dimension', 'scale', 'trunk_size'])
+HParams = collections.namedtuple('HParams', [
+    'num_steps', 'image_dir', 'batch_size', 'num_inception_images',
+    'eval_real_images', 'hr_dimension', 'scale', 'trunk_size'])
 
 class EvalTest(tf.test.TestCase):
   def setUp(self):
-    self.hparams = hparams(1, '/content/', 
+    self.hparams = HParams(1, '/content/', 
                            2, 2, 
                            True, 256, 
                            4, 11)

@@ -13,13 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Contains code for loading DIV2K dataset."""
+
 import tensorflow as tf
 import tensorflow_datasets as tfds
 from tensorflow.python.data.experimental import AUTOTUNE
 
 
 def random_flip(lr_img, hr_img):
-  """ Randomly flips LR and HR images for data augmentation."""
+  """Randomly flips LR and HR images for data augmentation."""
   random = tf.random.uniform(shape=(), maxval=1)
   
   return tf.cond(random<0.5,
@@ -28,7 +30,7 @@ def random_flip(lr_img, hr_img):
                           tf.image.flip_left_right(hr_img)))
 
 def random_rotate(lr_img, hr_img):
-  """ Randomly rotates LR and HR images for data augmentation."""
+  """Randomly rotates LR and HR images for data augmentation."""
   random = tf.random.uniform(shape=(), maxval=4, dtype=tf.int32)
   return tf.image.rot90(lr_img, random), tf.image.rot90(hr_img, random)
 
@@ -38,7 +40,7 @@ def get_div2k_data(hparams,
                    mode='train',
                    shuffle=True, 
                    repeat_count=None):
-  """ Downloads and loads DIV2K dataset. 
+  """Downloads and loads DIV2K dataset. 
   Args:
       hparams : A named tuple to store different parameters. 
       name : Name of the dataset  to be loaded using tfds. 

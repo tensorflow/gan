@@ -13,12 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Contains code for evaluating ESRGAN model."""
+
 import collections
 import tensorflow as tf
 from absl import logging
 import utils
 
-hparams = collections.namedtuple('hparams', [
+HParams = collections.namedtuple('HParams', [
     'batch_size', 'hr_dimension',
     'scale', 'model_dir', 
     'data_dir', 'num_steps', 
@@ -26,8 +28,8 @@ hparams = collections.namedtuple('hparams', [
     'eval_real_images'])
 
 def evaluate(hparams, generator, data):
-  """ Runs an evaluation loop and calculates the mean FID,
-      Inception and PSNR scores observed on the validation dataset.
+  """Runs an evaluation loop and calculates the mean FID,
+     Inception and PSNR scores observed on the validation dataset.
 
   Args:
       hparams: Parameters for evaluation.
