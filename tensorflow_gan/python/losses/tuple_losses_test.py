@@ -291,7 +291,7 @@ class RelativisticLossTest(tf.test.TestCase):
   def setUp(self):
     super(RelativisticLossTest, self).setUp()
 
-    def _model(disc_real_outputs, disc_gen_outputs):
+    def _model(disc_gen_outputs, disc_real_outputs):
       model = tfgan.GANModel(*[None] * 11)
       return model._replace(
           discriminator_real_outputs=disc_real_outputs,
@@ -306,8 +306,8 @@ class RelativisticLossTest(tf.test.TestCase):
     """Test the outputs of `relativistic_generator_loss` & 
        `relativistic_discriminator_loss`. 
     """
-    generator_loss = tfgan.losses.relativistic_generator_loss(gan_model)
-    discriminator_loss = tfgan.losses.relativistic_discriminator_loss(gan_model)
+    generator_loss = tfgan.losses.relativistic_generator_loss(self.gan_model)
+    discriminator_loss = tfgan.losses.relativistic_discriminator_loss(self.gan_model)
     with self.cached_session(use_gpu=True) as sess:
         sess.run(tf.compat.v1.global_variables_initializer())
         self.assertNear(self._expected_g_loss, sess.run(generator_loss), 1e-5)

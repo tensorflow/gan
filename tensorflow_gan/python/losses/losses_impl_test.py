@@ -810,7 +810,6 @@ class RelativisticAverageLoss(tf.test.TestCase, absltest.TestCase):
   """Tests for relativistic_xxx_loss."""
   def setUp(self):
     super(RelativisticAverageLoss, self).setUp()
-    self.init_constants()
     self._discriminator_gen_logits = tf.constant([10.0, 4.4, -5.5, 3.6])
     self._discriminator_real_logits = tf.constant([-2.0, 0.4, 12.5, 2.7])
 
