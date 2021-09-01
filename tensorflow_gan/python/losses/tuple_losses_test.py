@@ -284,9 +284,11 @@ class StarGANLossWrapperTest(tf.test.TestCase):
 
 
 class RelativisticLossTest(tf.test.TestCase):
-  """To calculate relativistic generator & discriminator loss, discriminator 
-     outputs for both real and generated images are required, unlike 
-     standard GAN models. 
+  """Tests relativistic generator & discriminator loss. 
+
+  Notes: 
+  Discriminator outputs for both real and generated images are required 
+  for calculating relativistic loss, unlike standard GAN models. 
   """
   def setUp(self):
     super(RelativisticLossTest, self).setUp()
