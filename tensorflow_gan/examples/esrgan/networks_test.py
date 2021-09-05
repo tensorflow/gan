@@ -24,6 +24,7 @@ HParams = collections.namedtuple('HParams', ['hr_dimension',
                                              'trunk_size'])
 class NetworksTest(tf.test.TestCase):
   def setUp(self):
+    super(NetworksTest, self).setUp()
     self.hparams = HParams(256, 4, 11)
     self.generator = networks.generator_network(self.hparams)
     self.discriminator = networks.discriminator_network(self.hparams)

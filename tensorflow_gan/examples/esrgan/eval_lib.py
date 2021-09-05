@@ -28,9 +28,8 @@ HParams = collections.namedtuple('HParams', [
     'eval_real_images'])
 
 def evaluate(hparams, generator, data):
-  """Runs an evaluation loop and calculates the mean FID,
-     Inception and PSNR scores observed on the validation dataset.
-
+  """ Runs the evaluation loop once.
+   
   Args:
       hparams: Parameters for evaluation.
       generator : The trained generator network.
@@ -75,5 +74,5 @@ def evaluate(hparams, generator, data):
     psnr = utils.get_psnr(hr, gen)
     psnr_metric(psnr)
 
-  logging.info('FID Score :{}\tInception Score :{}\tPSNR value :{}'.format(
-      fid_metric.result(), inc_metric.result(), psnr_metric.result()))
+    logging.info('FID Score :%f\tInception Score :%f\tPSNR value :%f', 
+                 fid_metric.result(), inc_metric.result(), psnr_metric.result())

@@ -18,7 +18,6 @@
 import os
 import tensorflow as tf
 import tensorflow_gan as tfgan
-from absl import logging
 import PIL
 import numpy as np
 
@@ -31,6 +30,12 @@ def preprocess_input(image):
   from the input images.
   This ensures that each feature will have a similar range and the gradients
   calculated during training are stable. 
+
+  Args: 
+    image : Batch of tensors representing an image.
+
+  Returns:
+    preprocessed images after subtracting the mean value.   
   """
   image = image[..., ::-1]
   mean = -tf.constant([103.939, 116.779, 123.68])
@@ -40,13 +45,12 @@ def preprocess_input(image):
 def visualize_results(image_lr, 
                       generated, 
                       image_hr, 
-                      size = 256,
+                      size=256,
                       image_dir='',
                       step=0, 
                       train=True):
     
-  """Creates an image grid using Tf-GAN's image grid function and 
-     saves the results as a .png image.
+  """Creates an image grid using Tf-GAN's image grid function.
   
   Args:
       image_lr : Batch of tensors representing LR images.
@@ -76,15 +80,15 @@ def visualize_results(image_lr,
       os.makedirs(image_dir + 'training_results', exist_ok=True)
       result.save(image_dir + 'training_results/' + 'step_{}.png'.format(step))
     else: 
-      os.makedirs(image_dir + 'validation_results', exist_ok=True)
-      result.save(image_dir + 'validation_results/' + 'step_{}.png'.format(step))
+      os.makedirs(image_dir + 'val_results', exist_ok=True)
+      result.save(image_dir + 'val_results/' + 'step_{}.png'.format(step))
 
 
 def network_interpolation(alpha=0.2,
                           phase_1_path=None,
                           phase_2_path=None):
-  """Network interpolation as explained in section 3.4 in the paper, bascically 
-     balancing the effects of PSNR oriented methods and GAN based methods. 
+  """Network interpolation as explained in section 3.4 in the paper.
+
   Args:
       alpha : interpolation parameter. 
       phase_1_path : path to the network saved after phase 1 training. 

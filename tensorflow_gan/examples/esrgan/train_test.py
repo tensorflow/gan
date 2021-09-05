@@ -15,7 +15,6 @@
 
 """Tests for tfgan.examples.esrgan.train."""
 
-import collections
 import tensorflow as tf
 import train_lib
 
@@ -24,7 +23,8 @@ mock = tf.compat.v1.test.mock
 
 class TrainTest(tf.test.TestCase):
   def setUp(self):
-    # Parameters for a single step of training. 
+    # Parameters for a single step of training.
+    super(TrainTest, self).setUp() 
     self.hparams = train_lib.HParams(32, 4, '/content/', 
                                      False, False, 256,
                                      '/content/', 1, 11, 1, 1, 
@@ -41,7 +41,8 @@ class TrainTest(tf.test.TestCase):
   
   def test_pretrain_generator(self):
     """Executes all the processes inside the phase-1 training step, once."""
-    self.assertIsNone(train_lib.pretrain_generator(self.hparams, self.mock_dataset))
+    self.assertIsNone(train_lib.pretrain_generator(self.hparams, 
+                                                   self.mock_dataset))
   
   def test_train_generator(self):
     """Executes the phase-2 training step for a single step, once."""

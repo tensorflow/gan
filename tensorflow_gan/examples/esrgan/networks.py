@@ -13,25 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Implementation of Generator (ESRGAN_G) and Discriminator (ESRGAN_D) models
-   based on the architecture proposed in the paper 'ESRGAN: Enhanced 
-   Super-Resolution Generative Adversarial Networks'.
-   (https://arxiv.org/abs/1809.00219).
+"""Implementation of the generator and discriminator networks.
+
+Based on the architecture proposed in the paper 'ESRGAN: Enhanced 
+Super-Resolution Generative Adversarial Networks'.
+(https://arxiv.org/abs/1809.00219)
 """
 
 import tensorflow as tf
 from tensorflow.keras import layers
 
-def _conv_block(input, filters, activation=True):
+def _conv_block(x, filters, activation=True):
+  """Convolutional block used for building generator network."""
   h = layers.Conv2D(filters, kernel_size=[3, 3], 
                     kernel_initializer="he_normal", bias_initializer="zeros", 
-                    strides=[1, 1], padding='same', use_bias=True)(input)
+                    strides=[1, 1], padding='same', use_bias=True)(x)
   if activation:
-      h = layers.LeakyReLU(0.2)(h)
+    h = layers.LeakyReLU(0.2)(h)
   return h
 
-def _conv_block_d(input, out_channel):
-  x = layers.Conv2D(out_channel, 3, 1, padding='same', use_bias=False)(input)
+def _conv_block_d(x, out_channel):
+  """Convolutional block used for building discriminator network."""
+  x = layers.Conv2D(out_channel, 3, 1, padding='same', use_bias=False)(x)
   x = layers.BatchNormalization(momentum=0.8)(x)
   x = layers.LeakyReLU(alpha=0.2)(x)
 
@@ -40,35 +43,38 @@ def _conv_block_d(input, out_channel):
   x = layers.LeakyReLU(alpha=0.2)(x)
   return x
 
-def dense_block(input):
-  h1 = _conv_block(input, 32)
-  h1 = layers.Concatenate()([input, h1])
+def dense_block(x):
+  """Dense block used inside RRDB."""
+  h1 = _conv_block(x, 32)
+  h1 = layers.Concatenate()([x, h1])
 
   h2 = _conv_block(h1, 32)
-  h2 = layers.Concatenate()([input, h1, h2])
+  h2 = layers.Concatenate()([x, h1, h2])
 
   h3 = _conv_block(h2, 32)
-  h3 = layers.Concatenate()([input, h1, h2, h3])
+  h3 = layers.Concatenate()([x, h1, h2, h3])
 
   h4 = _conv_block(h3, 32)
-  h4 = layers.Concatenate()([input, h1, h2, h3, h4])  
+  h4 = layers.Concatenate()([x, h1, h2, h3, h4])  
 
   h5 = _conv_block(h4, 32, activation=False)
   
   h5 = layers.Lambda(lambda x: x * 0.2)(h5)
-  h = layers.Add()([h5, input])
+  h = layers.Add()([h5, x])
   
   return h
 
-def rrdb(input):
-  h = dense_block(input)
+def rrdb(x):
+  """Residual-in-Residual Dense Block used in the generator."""
+  h = dense_block(x)
   h = dense_block(h)
   h = dense_block(h)
   h = layers.Lambda(lambda x: x * 0.2)(h)
-  out = layers.Add()([h, input])
+  out = layers.Add()([h, x])
   return out
 
 def upsample(x, filters):
+  """Upsampling layer for the generator."""
   x = layers.Conv2DTranspose(filters, kernel_size=3, 
                              strides=2, padding='same', 
                              use_bias=True)(x)
@@ -78,10 +84,9 @@ def upsample(x, filters):
 def generator_network(hparams,
                       num_filters=32,
                       out_channels=3):
-  """The Generator network for ESRGAN consisting of Residual in Residual 
-     Block as the basic building unit.
+  """The generator network for the ESRGAN model.
 
-  Args :
+  Args:
       num_filters : Number of num_filters for the convolutional layers used.
       out_channels : Number of channels for the generated image.
       use_bias : Whether to use bias or not for the convolutional layers.
@@ -121,14 +126,12 @@ def generator_network(hparams,
   return model
 
 
-def discriminator_network(hparams,
-                          num_filters=64, 
-                          training=True):
-  """The discriminator network for ESRGAN.
+def discriminator_network(hparams, num_filters=64):
+  """The discriminator network for the ESRGAN model.
 
-  Args :
+  Args:
       num_filters : Number of filters for the first convolutional layer.
-  Returns :
+  Returns:
       The compiled model of the discriminator network where the inputs
       and outputs of the model are defined as :
           inputs -> Batch of tensors representing HR images.
@@ -155,3 +158,4 @@ def discriminator_network(hparams,
 
   model = tf.keras.models.Model(inputs=img, outputs=x)
   return model
+

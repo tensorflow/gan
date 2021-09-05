@@ -15,7 +15,6 @@
 
 """Tests for tfgan.examples.esrgan.losses."""
 
-import os
 from absl.testing import absltest
 
 import tensorflow as tf

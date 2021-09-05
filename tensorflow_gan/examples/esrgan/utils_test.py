@@ -36,13 +36,12 @@ class UtilsTest(tf.test.TestCase):
     self.generator2 = networks.generator_network(self.hparams)
     self.generator1.save(self.hparams.path+'2/')
 
-    self.hr_data = tf.random.normal([2,256,256,3])
-    self.lr_data = tf.random.normal([2,64,64,3])
-    self.gen_data = tf.random.normal([2,256,256,3])
+    self.hr_data = tf.random.normal([2, 256, 256, 3])
+    self.lr_data = tf.random.normal([2, 64, 64, 3])
+    self.gen_data = tf.random.normal([2, 256, 256, 3])
     
   def test_visualize_results(self):
-    """ To test display grid function. The function doesn't return anything if no 
-        error is found."""
+    """To test display grid function."""
     self.assertIsNone(utils.visualize_results(self.lr_data,
                                               self.gen_data,
                                               self.hr_data))
@@ -64,7 +63,7 @@ class UtilsTest(tf.test.TestCase):
     self.assertEqual(is_score.dtype, tf.float32)
   
   def test_interpolation(self):
-    """ To test the interpolation function."""
+    """To test the interpolation function."""
     inter_gen = utils.network_interpolation(phase_1_path=self.hparams.path+'1/',
                                             phase_2_path=self.hparams.path+'2/')
     self.assertEqual(type(inter_gen), type(self.generator1))

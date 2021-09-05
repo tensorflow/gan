@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for tfgan.examples.esrgan.eval"""
+"""Tests for tfgan.examples.esrgan.eval."""
 
 import collections
 
@@ -27,6 +27,7 @@ HParams = collections.namedtuple('HParams', [
 
 class EvalTest(tf.test.TestCase):
   def setUp(self):
+    super(EvalTest, self).setUp()
     self.hparams = HParams(1, '/content/', 
                            2, 2, 
                            True, 256, 
@@ -49,4 +50,3 @@ class EvalTest(tf.test.TestCase):
 
 if __name__ == '__main__':
   tf.test.main()
-

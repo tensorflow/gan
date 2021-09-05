@@ -15,7 +15,10 @@
 
 """Contains code for evaluating ESRGAN model."""
 
-from absl import flags, logging, app
+from absl import flags
+from absl import logging
+from absl import app
+
 import tensorflow as tf
 import eval_lib
 import data_provider

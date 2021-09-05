@@ -37,8 +37,7 @@ HParams = collections.namedtuple('HParams', [
     'eta', 'image_dir'])
 
 def pretrain_generator(hparams, data):
-  """Pre-trains the generator network with pixel-loss as proposed in
-     the paper and saves the network inside the model directory specified.
+  """Pre-trains the generator network with pixel-loss.
 
   Args:
       hparams : Training parameters as proposed in the paper.
@@ -56,13 +55,13 @@ def pretrain_generator(hparams, data):
   else:
     generator = networks.generator_network(hparams)
 
-  logging.info("Starting Phase-1 training of generator using only pixel loss function.")
+  logging.info("Starting Phase-1 training using only pixel loss function.")
 
   g_optimizer = _get_optimizer()
 
   def train_step(image_lr, image_hr):
-    """Calculates the L1 Loss and gradients at each step, and updates the
-       gradient to improve the PSNR values.
+    """Calculates the L1 Loss and gradients at each step.
+
     Args:
         image_lr : batch of tensors representing LR images.
         image_hr : batch of tensors representing HR images.
@@ -94,8 +93,8 @@ def pretrain_generator(hparams, data):
     psnr_metric(psnr)
 
     if step % hparams.print_steps == 0:
-      logging.info("Step: {}\tGenerator Loss: {}\tPSNR: {}".format(
-          step, metric.result(), psnr_metric.result()))
+      logging.info("Step:%f\tGenerator Loss:%f\tPSNR:%f",
+                   step, metric.result(), psnr_metric.result())
 
     # Modify the learning rate as mentioned in the paper.
     if step % hparams.decay_steps == 0:
@@ -108,8 +107,7 @@ def pretrain_generator(hparams, data):
   logging.info("Saved pre-trained generator network succesfully!")
 
 def train_esrgan(hparams, data):
-  """Loads the pre-trained generator model and trains the ESRGAN network
-     using L1 Loss, Perceptual loss and RaGAN loss function.
+  """Trains the ESRGAN network.
 
   Args:
       hparams : Training parameters as proposed in the paper.
@@ -148,14 +146,14 @@ def train_esrgan(hparams, data):
   disc_metric = tf.keras.metrics.Mean()
   psnr_metric = tf.keras.metrics.Mean()
 
-  def train_step(image_lr, image_hr, step):
-    """Calculates the L1 Loss, Perceptual loss and RaGAN loss, to train
-       both generator and discriminator networks of the ESRGAN model.
-    Args :
+  def train_step(image_lr, image_hr):
+    """Calculates the L1 Loss, Perceptual loss and Relativstic loss.
+
+    Args:
         image_lr : batch of tensors representing LR images.
         image_hr : batch of tensors representing HR images.
 
-    Returns :
+    Returns:
         PSNR values, generator loss and discriminator obtained in each step.
     """
     with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
@@ -168,13 +166,13 @@ def train_esrgan(hparams, data):
       percep_loss = tf.reduce_mean(perceptual_loss(image_hr, fake))
       l1_loss = losses.pixel_loss(image_hr, fake)
       
-      # TODO(Nived): Replace these functions once TF-GAN losses are updated. 
-      loss_RaG = losses.ragan_generator_loss(discriminator(image_hr), 
+      # TODO(nivedwho): Replace these functions once TF-GAN losses are updated. 
+      gen_loss = losses.ragan_generator_loss(discriminator(image_hr), 
                                              discriminator(fake))
       disc_loss = losses.ragan_discriminator_loss(discriminator(image_hr), 
                                                   discriminator(fake))
 
-      gen_loss = percep_loss + hparams.lambda_ * loss_RaG + hparams.eta * l1_loss
+      gen_loss = percep_loss + hparams.lambda_ * gen_loss + hparams.eta * l1_loss
 
       gen_loss = gen_loss * (1.0 / hparams.batch_size)
       disc_loss = disc_loss * (1.0 / hparams.batch_size)      
@@ -194,8 +192,8 @@ def train_esrgan(hparams, data):
       return gen_loss, disc_loss, psnr
 
   def val_step(image_lr, image_hr, step):
-    """Saves an image grid containing LR image, generated image and
-       HR image, inside the image directory.
+    """Saves an image grid with LR image, generated image and HR image.
+
     Args:
         image_lr : Low Resolution Image 
         image_hr : High Resolution Image. 
@@ -203,8 +201,8 @@ def train_esrgan(hparams, data):
                file. 
     """
     fake = generator(image_lr)
-    utils.visualize_results(image_lr, 
-                            fake, 
+    utils.visualize_results(image_lr,
+                            fake,
                             image_hr,
                             image_dir=hparams.image_dir,
                             step=step)
@@ -219,16 +217,17 @@ def train_esrgan(hparams, data):
     lr = tf.cast(lr, tf.float32)
     hr = tf.cast(hr, tf.float32)
 
-    gen_loss, disc_loss, psnr = train_step(lr, hr, step)
+    gen_loss, disc_loss, psnr = train_step(lr, hr)
 
     gen_metric(gen_loss)
     disc_metric(disc_loss)
     psnr_metric(psnr)
 
     if step % hparams.print_steps == 0:
-      logging.info("Step: {}\tGenerator Loss: {}\tDiscriminator: {}\tPSNR: {}"
-                   .format(step, gen_metric.result(), disc_metric.result(),
-                           psnr_metric.result()))
+      logging.info("Step:%f\tGenerator Loss:%f\tDiscriminator:%f\tPSNR:%f",
+                   step, gen_metric.result(), 
+                   disc_metric.result(), psnr_metric.result())
+                           
       val_step(lr, hr, step)
 
     # Modify the learning rate as mentioned in the paper.
@@ -250,7 +249,7 @@ def train_esrgan(hparams, data):
       phase_1_path=hparams.model_dir + '/Phase_1/generator',
       phase_2_path=hparams.model_dir + '/Phase_2/generator')
 
-  #Save interpolated generator
+  # Save interpolated generator
   os.makedirs(hparams.model_dir 
               + '/Phase_2/interpolated_generator', exist_ok=True)
   interpolated_generator.save(hparams.model_dir 
