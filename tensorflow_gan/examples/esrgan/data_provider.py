@@ -17,7 +17,6 @@
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from tensorflow.python.data.experimental import AUTOTUNE
 
 
 def random_flip(lr_img, hr_img):
@@ -56,6 +55,7 @@ def get_div2k_data(hparams,
         TypeError : If the data directory(data_dir) is not specified.
   """
   split = 'train' if mode == 'train' else 'validation'
+  num_calls = tf.python.data.experimental.AUTOTUNE
 
   def scale(data):
     image = data['hr']
@@ -75,7 +75,7 @@ def get_div2k_data(hparams,
   dataset = (tfds.load(name=name, 
                        split=split, 
                        data_dir=hparams.data_dir)
-             .map(scale, num_parallel_calls=AUTOTUNE)
+             .map(scale, num_parallel_calls=num_calls)
              .cache())
   
   if shuffle:
@@ -88,6 +88,6 @@ def get_div2k_data(hparams,
 
   dataset = dataset.batch(hparams.batch_size)
   dataset = dataset.repeat(repeat_count)
-  dataset = dataset.prefetch(buffer_size=AUTOTUNE)
+  dataset = dataset.prefetch(buffer_size=num_calls)
             
   return dataset
