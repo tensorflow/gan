@@ -76,6 +76,8 @@ __all__ = [
     'modified_generator_loss',
     'minimax_discriminator_loss',
     'minimax_generator_loss',
+    'relativistic_discriminator_loss',
+    'relativistic_generator_loss',
     'wasserstein_discriminator_loss',
     'wasserstein_hinge_discriminator_loss',
     'wasserstein_hinge_generator_loss',
@@ -222,6 +224,15 @@ mutual_information_penalty = args_to_gan_model(
     tfgan_losses.mutual_information_penalty)
 
 
+# Relativistic Average loss from `The relativistic discriminator:
+# a key element missing from standard GAN`.
+# (https://arxiv.org/abs/1807.00734)
+relativistic_generator_loss = args_to_gan_model(
+    tfgan_losses.relativistic_generator_loss)
+relativistic_discriminator_loss = args_to_gan_model(
+    tfgan_losses.relativistic_discriminator_loss)
+
+
 def combine_adversarial_loss(gan_loss,
                              gan_model,
                              non_adversarial_loss,
@@ -239,12 +250,9 @@ def combine_adversarial_loss(gan_loss,
     gan_loss: A GANLoss namedtuple. Assume the GANLoss.generator_loss is the
       adversarial loss.
     gan_model: A GANModel namedtuple. Used to access the generator's variables.
-    non_adversarial_loss: Same as `main_loss` from
-      `combine_adversarial_loss`.
-    weight_factor: Same as `weight_factor` from
-      `combine_adversarial_loss`.
-    gradient_ratio: Same as `gradient_ratio` from
-      `combine_adversarial_loss`.
+    non_adversarial_loss: Same as `main_loss` from `combine_adversarial_loss`.
+    weight_factor: Same as `weight_factor` from `combine_adversarial_loss`.
+    gradient_ratio: Same as `gradient_ratio` from `combine_adversarial_loss`.
     gradient_ratio_epsilon: Same as `gradient_ratio_epsilon` from
       `combine_adversarial_loss`.
     scalar_summaries: Same as `scalar_summaries` from

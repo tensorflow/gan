@@ -50,6 +50,8 @@ __all__ = [
     'modified_generator_loss',
     'minimax_discriminator_loss',
     'minimax_generator_loss',
+    'relativistic_discriminator_loss',
+    'relativistic_generator_loss',
     'wasserstein_discriminator_loss',
     'wasserstein_hinge_generator_loss',
     'wasserstein_hinge_discriminator_loss',
@@ -1155,3 +1157,94 @@ def cycle_consistency_loss(data_x,
       tf.compat.v1.summary.scalar('cycle_consistency_loss', loss)
 
   return loss
+
+
+def relativistic_discriminator_loss(discriminator_real_outputs,
+                                    discriminator_gen_outputs,
+                                    scope=None):
+  """Relativistic Average GAN discriminator loss.
+
+  This loss introduced in `The relativistic discriminator: a key element missing
+  from standard GAN` (https://arxiv.org/abs/1807.00734).
+
+  D_ra(x, y) = D(x) - E[D(y)]
+  L = E[log(D_ra(real, fake))] - E[log(1 - D_ra(fake, real)]
+
+  where D(x) and D(y) are discriminator logits, E[] represents the operation
+  of taking average for all data in a mini-batch.
+
+  Args:
+    discriminator_real_outputs: Discriminator output on real data.
+    discriminator_gen_outputs: Discriminator output on generated data. Expected
+                                to be in the range of (-inf, inf).
+    scope: The scope for the operations performed in computing the loss.
+  Returns:
+    A loss Tensor.
+  """
+  with tf.compat.v1.name_scope(
+      scope,
+      'relativistic_discriminator_loss',
+      values=[discriminator_real_outputs, discriminator_gen_outputs]):
+
+    def get_logits(x, y):
+      return x - tf.reduce_mean(y)
+
+    real_logits = get_logits(discriminator_real_outputs,
+                             discriminator_gen_outputs)
+    gen_logits = get_logits(discriminator_gen_outputs,
+                            discriminator_real_outputs)
+
+    real_loss = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.ones_like(real_logits), logits=real_logits))
+    gen_loss = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.zeros_like(gen_logits), logits=gen_logits))
+
+  return real_loss + gen_loss
+
+
+def relativistic_generator_loss(discriminator_real_outputs,
+                                discriminator_gen_outputs,
+                                scope=None):
+  """Relativistic Average GAN generator loss.
+
+  This loss introduced in `The relativistic discriminator: a key element missing
+  from standard GAN` (https://arxiv.org/abs/1807.00734).
+
+  D_ra(x, y) = D(x) - E[D(y)]
+  L = E[log(1 - D_ra(real, fake))] - E[log(D_ra(fake, real)]
+
+  where D(x) and D(y) are discriminator logits, E[] represents the operation
+  of taking average for all data in a mini-batch.
+
+  Args:
+    discriminator_real_outputs: Discriminator output on real data.
+    discriminator_gen_outputs: Discriminator output on generated data. Expected
+      to be in the range of (-inf, inf).
+    scope: The scope for the operations performed in computing the loss.
+
+  Returns:
+    A loss Tensor.
+  """
+  with tf.compat.v1.name_scope(
+      scope,
+      'relativistic_generator_loss',
+      values=[discriminator_real_outputs, discriminator_gen_outputs]):
+
+    def get_logits(x, y):
+      return x - tf.reduce_mean(y)
+
+    real_logits = get_logits(discriminator_real_outputs,
+                             discriminator_gen_outputs)
+    gen_logits = get_logits(discriminator_gen_outputs,
+                            discriminator_real_outputs)
+
+    real_loss = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.zeros_like(real_logits), logits=real_logits))
+    gen_loss = tf.reduce_mean(
+        tf.nn.sigmoid_cross_entropy_with_logits(
+            labels=tf.ones_like(gen_logits), logits=gen_logits))
+
+  return real_loss + gen_loss

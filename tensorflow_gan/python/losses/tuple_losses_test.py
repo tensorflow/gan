@@ -131,7 +131,8 @@ manual_tests = [
     'combine_adversarial_loss', 'mutual_information_penalty',
     'wasserstein_gradient_penalty', 'cycle_consistency_loss',
     'stargan_generator_loss_wrapper', 'stargan_discriminator_loss_wrapper',
-    'stargan_gradient_penalty_wrapper'
+    'stargan_gradient_penalty_wrapper', 'relativistic_generator_loss',
+    'relativistic_discriminator_loss'
 ]
 
 discriminator_keyword_args = {
@@ -280,6 +281,38 @@ class StarGANLossWrapperTest(tf.test.TestCase):
       loss_result, wrapped_loss_result = sess.run(
           [loss_result_tensor, wrapped_loss_result_tensor])
       self.assertAlmostEqual(loss_result, wrapped_loss_result)
+
+
+class RelativisticLossTest(tf.test.TestCase):
+  """Tests relativistic generator & discriminator loss.
+
+  Notes:
+  Discriminator outputs for both real and generated images are required
+  for calculating relativistic loss, unlike standard GAN models.
+  """
+
+  def setUp(self):
+    super(RelativisticLossTest, self).setUp()
+
+    def _model(disc_gen_outputs, disc_real_outputs):
+      model = tfgan.GANModel(*[None] * 11)
+      return model._replace(
+          discriminator_real_outputs=disc_real_outputs,
+          discriminator_gen_outputs=disc_gen_outputs)
+
+    self.gan_model = _model([10.0, 4.4, -5.5, 3.6], [-2.0, 0.4, 12.5, 2.7])
+    self._expected_g_loss = 4.9401135
+    self._expected_d_loss = 4.390114
+
+  def test_correct_loss(self):
+    """Test the outputs of relativistic losses."""
+    generator_loss = tfgan.losses.relativistic_generator_loss(self.gan_model)
+    discriminator_loss = tfgan.losses.relativistic_discriminator_loss(
+        self.gan_model)
+    with self.cached_session(use_gpu=True) as sess:
+      sess.run(tf.compat.v1.global_variables_initializer())
+      self.assertNear(self._expected_g_loss, sess.run(generator_loss), 1e-5)
+      self.assertNear(self._expected_d_loss, sess.run(discriminator_loss), 1e-5)
 
 
 if __name__ == '__main__':
