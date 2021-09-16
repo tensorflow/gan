@@ -18,6 +18,8 @@
 from absl.testing import absltest
 
 import tensorflow as tf
+import tensorflow_gan as tfgan
+
 from tensorflow_gan.examples.esrgan import losses
 
 
@@ -32,6 +34,9 @@ class LossesTest(tf.test.TestCase, absltest.TestCase):
     self._discriminator_gen_logits = tf.constant([10.0, 4.4, -5.5, 3.6])
     self._discriminator_real_logits = tf.constant([-2.0, 0.4, 12.5, 2.7])
 
+    self.gen_loss = tfgan.losses.losses_impl.relativistic_generator_loss
+    self.disc_loss = tfgan.losses.losses_impl.relativistic_discriminator_loss
+
     self._expected_pixel_loss = 35.050003
     self._expected_g_loss = 4.9401135
     self._expected_d_loss = 4.390114
@@ -43,10 +48,10 @@ class LossesTest(tf.test.TestCase, absltest.TestCase):
       self.assertNear(self._expected_pixel_loss, sess.run(pixel_loss), 1e-5)
 
   def test_ragan_loss(self):
-    g_loss = losses.ragan_generator_loss(self._discriminator_real_logits,
-                                         self._discriminator_gen_logits)
-    d_loss = losses.ragan_discriminator_loss(self._discriminator_real_logits,
-                                             self._discriminator_gen_logits)
+    g_loss = self.gen_loss(self._discriminator_real_logits,
+                           self._discriminator_gen_logits)
+    d_loss = self.disc_loss(self._discriminator_real_logits,
+                            self._discriminator_gen_logits)
     with self.cached_session() as sess:
       sess.run(tf.compat.v1.global_variables_initializer())
       self.assertNear(self._expected_g_loss, sess.run(g_loss), 1e-5)

@@ -13,7 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Loss functions for training ESRGAN model."""
+"""Loss functions for training ESRGAN model.
+
+The ESRGAN model makes use of three loss functions: pixel loss, perceptual
+loss(vgg_loss) and adversarial loss. Adversarial loss for the model is
+calculated using relativistic average loss which is pre-defined in TF-GAN.
+"""
 
 import tensorflow as tf
 
@@ -31,70 +36,6 @@ def pixel_loss(y_true, y_pred):
   y_true = tf.cast(y_true, tf.float32)
   y_pred = tf.cast(y_pred, tf.float32)
   return tf.reduce_mean(tf.reduce_mean(tf.abs(y_true - y_pred), axis=0))
-
-
-# TODO(nivedwho): Remove this once the relativitic losses are added to TF-GAN.
-def ragan_generator_loss(d_real, d_fake, scope=None):
-  """To calculate the adversarial loss for generator.
-
-  Args:
-    d_real: Discriminator output on real data.
-    d_fake: Discriminator output on generated data. Expected to be in the range
-      of (-inf, inf).
-    scope: The scope for the operations performed in computing the loss.
-
-  Returns:
-    Adversarial loss for generator.
-  """
-  with tf.compat.v1.name_scope(
-      scope, 'relativistic_avg_generator_loss', values=[d_real, d_fake]):
-
-    def get_logits(x, y):
-      return x - tf.reduce_mean(y)
-
-    real_logits = get_logits(d_real, d_fake)
-    fake_logits = get_logits(d_fake, d_real)
-
-    real_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.zeros_like(real_logits), logits=real_logits))
-    fake_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.ones_like(fake_logits), logits=fake_logits))
-
-  return real_loss + fake_loss
-
-
-# TODO(nivedwho): Remove this once the relativitic losses are added to TF-GAN.
-def ragan_discriminator_loss(d_real, d_fake, scope=None):
-  """To calculate the adversarial loss for discriminator.
-
-  Args:
-    d_real: Discriminator output on real data.
-    d_fake: Discriminator output on generated data. Expected to be in the range
-      of (-inf, inf).
-    scope: The scope for the operations performed in computing the loss.
-
-  Returns:
-    Adversarial loss for discriminator.
-  """
-  with tf.compat.v1.name_scope(
-      scope, 'relativistic_avg_discriminator_loss', values=[d_real, d_fake]):
-
-    def get_logits(x, y):
-      return x - tf.reduce_mean(y)
-
-    real_logits = get_logits(d_real, d_fake)
-    fake_logits = get_logits(d_fake, d_real)
-
-    real_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.ones_like(real_logits), logits=real_logits))
-    fake_loss = tf.reduce_mean(
-        tf.nn.sigmoid_cross_entropy_with_logits(
-            labels=tf.zeros_like(fake_logits), logits=fake_logits))
-
-  return real_loss + fake_loss
 
 
 def vgg_loss(weight=None, input_shape=None):
