@@ -175,20 +175,6 @@ class LayersTest(tf.test.TestCase):
 
     self.assertAlmostEqual(output_np, 905.0, 3)
 
-  @mock.patch.object(tf.layers, 'conv2d', autospec=True)
-  def test_custom_conv2d_passes_conv2d_options(self, mock_conv2d):
-    x = tf.constant([[[[1, 2, 3], [4, 5, 6]], [[7, 8, 9], [10, 11, 12]]],
-                     [[[0, 0, 0], [-1, -2, -3]], [[1, -2, 2], [2, 5, 3]]]],
-                    dtype=tf.float32)
-    layers.custom_conv2d(x, 1, 2)
-    mock_conv2d.assert_called_once_with(
-        x,
-        filters=1,
-        kernel_size=[2, 2],
-        strides=(1, 1),
-        padding='SAME',
-        use_bias=False,
-        kernel_initializer=mock.ANY)
 
   @mock.patch.object(layers, '_custom_layer_impl', autospec=True)
   def test_custom_conv2d_passes_custom_layer_options(self,
