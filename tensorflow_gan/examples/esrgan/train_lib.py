@@ -20,6 +20,7 @@ import os
 from absl import logging
 
 import tensorflow as tf
+import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.esrgan import losses
 from tensorflow_gan.examples.esrgan import networks
@@ -163,10 +164,9 @@ def train_esrgan(hparams, data):
       percep_loss = tf.reduce_mean(perceptual_loss(image_hr, fake))
       l1_loss = losses.pixel_loss(image_hr, fake)
 
-      # TODO(nivedwho): Replace these functions once TF-GAN losses are updated.
-      gen_loss = losses.ragan_generator_loss(
+      gen_loss = tfgan.losses.losses_impl.relativistic_generator_loss(
           discriminator(image_hr), discriminator(fake))
-      disc_loss = losses.ragan_discriminator_loss(
+      disc_loss = tfgan.losses.losses_impl.relativistic_discriminator_loss(
           discriminator(image_hr), discriminator(fake))
 
       gen_loss = percep_loss + hparams.lambda_ * gen_loss + hparams.eta * l1_loss
