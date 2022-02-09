@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2021 The TensorFlow GAN Authors.
+# Copyright 2022 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ def spectral_normalization_custom_getter(name_filter=_default_name_filter,
     my_layer = tf.keras.layers.SomeLayer()
     layer.build(inputs.shape)
     layer.kernel = spectral_normalize(layer.kernel)
-    outputs = layer.apply(inputs)
+    outputs = layer(inputs)
 
   Args:
     name_filter: Optionally, a method that takes a Variable name as input and

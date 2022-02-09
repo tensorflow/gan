@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2021 The TensorFlow GAN Authors.
+# Copyright 2022 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
           padding='same',
           kernel_initializer=w_initializer,
           bias_initializer=b_initializer)
-      net = layer.apply(x)
+      net = layer(x)
       expected_normalized_vars = {'tf.layers.Conv2d.kernel': layer.kernel}
       expected_not_normalized_vars = {'tf.layers.Conv2d.bias': layer.bias}
 
@@ -227,7 +227,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
           bias_initializer=b_initializer)
       layer.build(x.shape)
       layer.kernel = tfgan.features.spectral_normalize(layer.kernel)
-      net = layer.apply(x)
+      net = layer(x)
       expected_normalized_vars = {'keras.Conv2d.kernel': layer.kernel}
       expected_not_normalized_vars = {'keras.Conv2d.bias': layer.bias}
 
@@ -316,7 +316,7 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
           units=3,
           kernel_initializer=w_initializer,
           bias_initializer=b_initializer)
-      net = layer.apply(x)
+      net = layer(x)
       expected_normalized_vars = {'tf.layers.Dense.kernel': layer.kernel}
       expected_not_normalized_vars = {'tf.layers.Dense.bias': layer.bias}
 
@@ -331,14 +331,14 @@ class SpectralNormalizationTest(tf.test.TestCase, parameterized.TestCase):
 
     def build_layer_fn(x, w_initializer, b_initializer):
       flatten = tf.keras.layers.Flatten()
-      x = flatten.apply(x)
+      x = flatten(x)
       layer = tf.keras.layers.Dense(
           units=3,
           kernel_initializer=w_initializer,
           bias_initializer=b_initializer)
       layer.build(x.shape)
       layer.kernel = tfgan.features.spectral_normalize(layer.kernel)
-      net = layer.apply(x)
+      net = layer(x)
       expected_normalized_vars = {'keras.Dense.kernel': layer.kernel}
       expected_not_normalized_vars = {'keras.Dense.bias': layer.bias}
 
