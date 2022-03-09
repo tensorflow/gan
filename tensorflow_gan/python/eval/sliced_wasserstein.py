@@ -111,11 +111,9 @@ def _batch_to_patches(batch, patches_per_image, patch_size):
     # Randomly pick patches.
     patch_id, y, x, chan = np.ogrid[0:patch_count, -hs:hs + 1, -hs:hs + 1, 0:3]
     img_id = patch_id // patches_per_image
-    # pylint: disable=g-no-augmented-assignment
     # Need explicit addition for broadcast to work properly.
     y = y + np.random.randint(hs, height - hs, size=(patch_count, 1, 1, 1))
     x = x + np.random.randint(hs, width - hs, size=(patch_count, 1, 1, 1))
-    # pylint: enable=g-no-augmented-assignment
     idx = ((img_id * height + y) * width + x) * channels + chan
     patches = batch.flat[idx]
     return patches
