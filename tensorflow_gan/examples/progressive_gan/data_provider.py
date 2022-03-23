@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# python2 python3
 """Loading and preprocessing image data."""
 
 import numpy as np

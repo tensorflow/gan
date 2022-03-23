@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python2, python3
 """A tensor pool stores values from an input tensor and returns a stored one.
 
 We use this to keep a history of values created by a generator, such that

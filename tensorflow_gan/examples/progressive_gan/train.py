@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# python2 python3
 """Train a progressive GAN model.
 
 See https://arxiv.org/abs/1710.10196 for details about the model.

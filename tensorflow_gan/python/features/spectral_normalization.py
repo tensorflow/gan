@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Lint as: python2, python3
 """Keras-like layers and utilities that implement Spectral Normalization.
 
 Based on "Spectral Normalization for Generative Adversarial Networks" by Miyato,
