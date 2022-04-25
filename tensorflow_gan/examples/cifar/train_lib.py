@@ -21,6 +21,7 @@ from __future__ import print_function
 import collections
 
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.cifar import data_provider
@@ -94,8 +95,8 @@ def train(hparams):
     tfgan.gan_train(
         train_ops,
         hooks=([
-            tf.estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
-            tf.estimator.LoggingTensorHook([status_message], every_n_iter=10)
+            tf_estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
+            tf_estimator.LoggingTensorHook([status_message], every_n_iter=10)
         ]),
         logdir=hparams.train_log_dir,
         master=hparams.master,

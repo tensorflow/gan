@@ -30,6 +30,7 @@ import os
 from absl import logging
 import numpy as np
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.progressive_gan import networks
@@ -580,8 +581,8 @@ def train(model, **kwargs):
       logdir=make_train_sub_dir(model.stage_id, **kwargs),
       get_hooks_fn=tfgan.get_sequential_train_hooks(tfgan.GANTrainSteps(1, 1)),
       hooks=[
-          tf.estimator.StopAtStepHook(last_step=model.num_images),
-          tf.estimator.LoggingTensorHook([make_status_message(model)],
+          tf_estimator.StopAtStepHook(last_step=model.num_images),
+          tf_estimator.LoggingTensorHook([make_status_message(model)],
                                          every_n_iter=10)
       ],
       master=kwargs['master'],

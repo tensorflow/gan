@@ -22,6 +22,7 @@ from __future__ import print_function
 import collections
 
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.dme_cyclegan import data_provider
@@ -200,8 +201,8 @@ def train(hparams):
         hparams.train_log_dir,
         get_hooks_fn=tfgan.get_sequential_train_hooks(train_steps),
         hooks=[
-            tf.estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
-            tf.estimator.LoggingTensorHook({'status_message': status_message},
+            tf_estimator.StopAtStepHook(num_steps=hparams.max_number_of_steps),
+            tf_estimator.LoggingTensorHook({'status_message': status_message},
                                            every_n_iter=10)
         ],
         master=hparams.master,
