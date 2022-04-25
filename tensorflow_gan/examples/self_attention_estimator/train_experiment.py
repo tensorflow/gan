@@ -23,6 +23,7 @@ from __future__ import print_function
 import collections
 import time
 
+from tensorflow.compat.v1 import estimator as tf_estimator
 import tensorflow.compat.v1 as tf  # tf
 from tensorflow_gan.examples import evaluation_helper as evaluation
 from tensorflow_gan.examples.self_attention_estimator import data_provider
@@ -86,21 +87,21 @@ def _verify_dataset_shape(ds, z_dim):
 
 def train_eval_input_fn(mode, params):
   """Mode-aware input function."""
-  is_train = mode == tf.estimator.ModeKeys.TRAIN
+  is_train = mode == tf_estimator.ModeKeys.TRAIN
   split = 'train' if is_train else 'validation'
 
   if params['tpu_params'].use_tpu_estimator:
     bs = params['batch_size']
   else:
     bs = {
-        tf.estimator.ModeKeys.TRAIN: params['train_batch_size'],
-        tf.estimator.ModeKeys.EVAL: params['eval_batch_size'],
-        tf.estimator.ModeKeys.PREDICT: params['predict_batch_size'],
+        tf_estimator.ModeKeys.TRAIN: params['train_batch_size'],
+        tf_estimator.ModeKeys.EVAL: params['eval_batch_size'],
+        tf_estimator.ModeKeys.PREDICT: params['predict_batch_size'],
     }[mode]
 
   if params['debug_params'].fake_data:
     fake_noise = tf.zeros([bs, params['z_dim']])
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       return tf.data.Dataset.from_tensors(fake_noise).repeat()
     fake_imgs = tf.zeros([bs, 128, 128, 3])
     fake_lbls = tf.zeros([bs], dtype=tf.int32)
@@ -117,7 +118,7 @@ def train_eval_input_fn(mode, params):
     return noise[0]  # one tower
 
   noise_ds = tf.data.Dataset.from_tensors(0).repeat().map(_make_noise)
-  if mode == tf.estimator.ModeKeys.PREDICT:
+  if mode == tf_estimator.ModeKeys.PREDICT:
     return noise_ds
 
   images_ds = data_provider.provide_dataset(
@@ -231,7 +232,7 @@ def _get_generator(hparams):
   def generator(noise, mode):
     """TF-GAN compatible generator function."""
     batch_size = tf.shape(input=noise)[0]
-    is_train = (mode == tf.estimator.ModeKeys.TRAIN)
+    is_train = (mode == tf_estimator.ModeKeys.TRAIN)
 
     # Some label trickery.
     gen_class_logits = tf.zeros((batch_size, hparams.num_classes))
@@ -259,7 +260,7 @@ def _get_generator(hparams):
                                          hparams.tpu_params.use_tpu_estimator)
     gen_imgs.shape.assert_is_compatible_with([None, 128, 128, 3])
 
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       return gen_imgs
     else:
       return {'images': gen_imgs, 'labels': gen_sparse_class}

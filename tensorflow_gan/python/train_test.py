@@ -23,6 +23,7 @@ from absl.testing import parameterized
 import numpy as np
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.python.contrib_utils import get_trainable_variables
@@ -1161,7 +1162,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops, logdir='', hooks=[tf.estimator.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf_estimator.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 
@@ -1181,7 +1182,7 @@ class GANTrainTest(tf.test.TestCase, parameterized.TestCase):
         train_ops,
         get_hooks_fn=get_hooks_fn_fn(train_steps),
         logdir='',
-        hooks=[tf.estimator.StopAtStepHook(num_steps=1)])
+        hooks=[tf_estimator.StopAtStepHook(num_steps=1)])
 
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(1 + 3 * 10 + 4 * 100, final_step)
@@ -1290,7 +1291,7 @@ class PatchGANTest(tf.test.TestCase, parameterized.TestCase):
     train_ops = tfgan.gan_train_ops(model, loss, g_opt, d_opt)
 
     final_step = tfgan.gan_train(
-        train_ops, logdir='', hooks=[tf.estimator.StopAtStepHook(num_steps=2)])
+        train_ops, logdir='', hooks=[tf_estimator.StopAtStepHook(num_steps=2)])
     self.assertTrue(np.isscalar(final_step))
     self.assertEqual(2, final_step)
 

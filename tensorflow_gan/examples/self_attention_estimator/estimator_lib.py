@@ -23,6 +23,7 @@ import functools
 
 import tensorflow.compat.v1 as tf
 
+from tensorflow.compat.v1 import estimator as tf_estimator
 from tensorflow_gan.examples.self_attention_estimator import eval_lib
 import tensorflow_gan as tfgan  # tf
 
@@ -37,22 +38,22 @@ def get_tpu_run_config_from_hparams(hparams):
       project=hparams.tpu_params.gcp_project,
       zone=hparams.tpu_params.tpu_zone)
   if hparams.debug_params.eval_on_tpu:
-    eval_training_input_configuration = tf.estimator.tpu.InputPipelineConfig.SLICED
+    eval_training_input_configuration = tf_estimator.tpu.InputPipelineConfig.SLICED
   else:
     # InputPipelineConfig.SLICED is not supported when running on CPU.
-    eval_training_input_configuration = tf.estimator.tpu.InputPipelineConfig.PER_HOST_V1
-  return tf.estimator.tpu.RunConfig(
+    eval_training_input_configuration = tf_estimator.tpu.InputPipelineConfig.PER_HOST_V1
+  return tf_estimator.tpu.RunConfig(
       model_dir=hparams.model_dir,
       cluster=cluster_resolver,
       save_checkpoints_steps=hparams.train_steps_per_eval,
-      tpu_config=tf.estimator.tpu.TPUConfig(
+      tpu_config=tf_estimator.tpu.TPUConfig(
           iterations_per_loop=hparams.tpu_params.tpu_iterations_per_loop,
           eval_training_input_configuration=eval_training_input_configuration))
 
 
 def get_run_config_from_hparams(hparams):
   mirrored_strategy = tf.distribute.MirroredStrategy()
-  return tf.estimator.RunConfig(
+  return tf_estimator.RunConfig(
       model_dir=hparams.model_dir,
       save_checkpoints_steps=hparams.train_steps_per_eval,
       train_distribute=mirrored_strategy)

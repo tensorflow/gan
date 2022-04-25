@@ -37,6 +37,7 @@ import time
 
 import tensorflow as tf
 
+from tensorflow import estimator as tf_estimator
 from tensorflow_gan.python import contrib_utils as contrib
 from tensorflow_gan.python import namedtuples
 from tensorflow_gan.python.losses import losses_wargs
@@ -1086,7 +1087,7 @@ def gan_train_ops(
 
 # TODO(joelshor): Implement a dynamic GAN train loop, as in `Real-Time Adaptive
 # Image Compression` (https://arxiv.org/abs/1705.05823)
-class RunTrainOpsHook(tf.estimator.SessionRunHook):
+class RunTrainOpsHook(tf_estimator.SessionRunHook):
   """A hook to run train ops a fixed number of times."""
 
   def __init__(self, train_ops, train_steps):

@@ -26,6 +26,7 @@ from PIL import Image as image_lib
 from six.moves import xrange  # pylint: disable=redefined-builtin
 
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1 import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 from tensorflow_gan.examples.mnist import data_provider
@@ -57,7 +58,7 @@ def _get_predict_input_fn(batch_size, noise_dims):
 
 def _unconditional_generator(noise, mode):
   """MNIST generator with extra argument for tf.Estimator's `mode`."""
-  is_training = (mode == tf.estimator.ModeKeys.TRAIN)
+  is_training = (mode == tf_estimator.ModeKeys.TRAIN)
   return networks.unconditional_generator(noise, is_training=is_training)
 
 

@@ -27,6 +27,7 @@ import math
 import time
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 
 from tensorflow.python.training import basic_session_run_hooks  # pylint:disable=g-direct-tensorflow-import
 
@@ -78,7 +79,7 @@ def get_latest_eval_step_value(update_ops):
     return tf.identity(get_or_create_eval_step().read_value())
 
 
-class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
+class MultiStepStopAfterNEvalsHook(tf_estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, steps_per_run=1):
@@ -109,7 +110,7 @@ class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
     self._steps_per_run_variable.load(steps, session=session)
 
   def before_run(self, run_context):
-    return tf.estimator.SessionRunArgs(
+    return tf_estimator.SessionRunArgs(
         {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
@@ -131,7 +132,7 @@ class MultiStepStopAfterNEvalsHook(tf.estimator.SessionRunHook):
       run_context.request_stop()
 
 
-class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
+class StopAfterNEvalsHook(tf_estimator.SessionRunHook):
   """Run hook used by the evaluation routines to run the `eval_ops` N times."""
 
   def __init__(self, num_evals, log_progress=True):
@@ -154,7 +155,7 @@ class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
     self._evals_completed = updated_eval_step
 
   def before_run(self, run_context):
-    return tf.estimator.SessionRunArgs(
+    return tf_estimator.SessionRunArgs(
         {'evals_completed': self._evals_completed})
 
   def after_run(self, run_context, run_values):
@@ -171,7 +172,7 @@ class StopAfterNEvalsHook(tf.estimator.SessionRunHook):
       run_context.request_stop()
 
 
-class SummaryAtEndHook(tf.estimator.SessionRunHook):
+class SummaryAtEndHook(tf_estimator.SessionRunHook):
   """A run hook that saves a summary with the results of evaluation."""
 
   def __init__(self,
@@ -412,7 +413,7 @@ def evaluate_once(checkpoint_path,
       master=master,
       config=config)
 
-  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
+  final_ops_hook = tf_estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
 
   with tf.compat.v1.train.MonitoredSession(
@@ -511,7 +512,7 @@ def evaluate_repeatedly(checkpoint_dir,
     else:
       eval_ops = [eval_ops, update_eval_step]
 
-  final_ops_hook = tf.estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
+  final_ops_hook = tf_estimator.FinalOpsHook(final_ops, final_ops_feed_dict)
   hooks.append(final_ops_hook)
   num_evaluations = 0
   for checkpoint_path in checkpoints_iterator(

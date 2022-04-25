@@ -27,6 +27,7 @@ import numpy as np
 
 import tensorflow as tf
 
+from tensorflow import estimator as tf_estimator
 from tensorflow_gan.examples import evaluation_helper as evaluation
 from tensorflow_gan.python import contrib_utils as contrib
 
@@ -151,7 +152,7 @@ class EvaluateOnceTest(tf.test.TestCase):
       train_op = contrib.create_train_op(loss, optimizer)
 
       with tf.compat.v1.train.MonitoredTrainingSession(
-          hooks=[tf.estimator.StopAtStepHook(num_steps)],
+          hooks=[tf_estimator.StopAtStepHook(num_steps)],
           checkpoint_dir=checkpoint_dir) as sess:
         loss = None
         while not sess.should_stop():
@@ -285,7 +286,7 @@ class EvaluateRepeatedlyTest(tf.test.TestCase):
       train_op = contrib.create_train_op(loss, optimizer)
 
       with tf.compat.v1.train.MonitoredTrainingSession(
-          hooks=[tf.estimator.StopAtStepHook(num_steps)],
+          hooks=[tf_estimator.StopAtStepHook(num_steps)],
           checkpoint_dir=checkpoint_dir) as sess:
         loss = None
         while not sess.should_stop():
