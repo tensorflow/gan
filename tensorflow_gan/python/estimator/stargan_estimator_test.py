@@ -27,6 +27,8 @@ import numpy as np
 import six
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
+from tensorflow.compat.v1 import estimator as tf_compat_v1_estimator
 import tensorflow_gan as tfgan
 
 # Private functions to test.
@@ -53,9 +55,9 @@ def dummy_discriminator_fn(input_data, num_domains, mode):
 class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
   """Tests that `StarGetGANModel` produces the correct model."""
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
+  @parameterized.named_parameters(('train', tf_estimator.ModeKeys.TRAIN),
+                                  ('eval', tf_estimator.ModeKeys.EVAL),
+                                  ('predict', tf_estimator.ModeKeys.PREDICT))
   def test_get_gan_model(self, mode):
     with tf.Graph().as_default():
       input_data = tf.ones([6, 4, 4, 3])
@@ -74,7 +76,7 @@ class StarGetGANModelTest(tf.test.TestCase, parameterized.TestCase):
     self.assertLen(gan_model.generator_variables, 1)
     self.assertIsNotNone(gan_model.generator_scope)
     self.assertIsNotNone(gan_model.generator_fn)
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       self.assertIsNone(gan_model.input_data_domain_label)
       self.assertEqual(input_data_domain_label,
                        gan_model.generated_data_domain_target)
@@ -159,9 +161,9 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
     cls._discriminator_optimizer = tf.compat.v1.train.GradientDescentOptimizer(
         1.0)
 
-  @parameterized.named_parameters(('train', tf.estimator.ModeKeys.TRAIN),
-                                  ('eval', tf.estimator.ModeKeys.EVAL),
-                                  ('predict', tf.estimator.ModeKeys.PREDICT))
+  @parameterized.named_parameters(('train', tf_estimator.ModeKeys.TRAIN),
+                                  ('eval', tf_estimator.ModeKeys.EVAL),
+                                  ('predict', tf_estimator.ModeKeys.PREDICT))
   def test_get_estimator_spec(self, mode):
     with tf.Graph().as_default():
       self._gan_model = get_dummy_gan_model()
@@ -174,13 +176,13 @@ class GetEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           discriminator_optimizer=self._discriminator_optimizer)
 
     self.assertEqual(mode, spec.mode)
-    if mode == tf.estimator.ModeKeys.PREDICT:
+    if mode == tf_estimator.ModeKeys.PREDICT:
       self.assertEqual(self._gan_model.generated_data, spec.predictions)
-    elif mode == tf.estimator.ModeKeys.TRAIN:
+    elif mode == tf_estimator.ModeKeys.TRAIN:
       self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
       self.assertIsNotNone(spec.train_op)
       self.assertIsNotNone(spec.training_hooks)
-    elif mode == tf.estimator.ModeKeys.EVAL:
+    elif mode == tf_estimator.ModeKeys.EVAL:
       self.assertEqual(self._gan_model.generated_data, spec.predictions)
       self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
       self.assertIsNotNone(spec.eval_metric_ops)
@@ -272,14 +274,14 @@ class StarGANEstimatorIntegrationTest(tf.test.TestCase):
     label_size = 3
     image_data = np.zeros([batch_size, img_size, img_size, channel_size],
                           dtype=np.float32)
-    train_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    train_input_fn = tf_compat_v1_estimator.inputs.numpy_input_fn(
         x={'x': image_data},
         batch_size=batch_size,
         num_epochs=None,
         shuffle=True)
-    eval_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    eval_input_fn = tf_compat_v1_estimator.inputs.numpy_input_fn(
         x={'x': image_data}, batch_size=batch_size, shuffle=False)
-    predict_input_fn = tf.compat.v1.estimator.inputs.numpy_input_fn(
+    predict_input_fn = tf_compat_v1_estimator.inputs.numpy_input_fn(
         x={'x': image_data}, shuffle=False)
 
     train_input_fn = self._numpy_input_fn_wrapper(train_input_fn, batch_size,

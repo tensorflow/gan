@@ -23,6 +23,7 @@ import tempfile
 
 import numpy as np
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 import tensorflow_gan as tfgan
 
 
@@ -83,7 +84,7 @@ class TrainInputEstimatorTest(tf.test.TestCase):
     # We are not loading checkpoints, so set the corresponding directory to a
     # dummy directories.
     tmp_dir = tempfile.mkdtemp()
-    config = tf.estimator.RunConfig(
+    config = tf_estimator.RunConfig(
         model_dir=tmp_dir,
         save_summary_steps=None,
         save_checkpoints_steps=1,

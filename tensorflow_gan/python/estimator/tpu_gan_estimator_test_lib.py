@@ -29,6 +29,8 @@ import numpy as np
 import six
 
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
+from tensorflow.compat.v1 import estimator as tf_compat_v1_estimator
 import tensorflow_gan as tfgan
 
 # Private functions to test.
@@ -41,9 +43,9 @@ from tensorflow_gan.python.estimator.tpu_gan_estimator import Optimizers
 flags.DEFINE_bool('use_tpu', False, 'Whether to run test on TPU or not.')
 
 
-TpuRunConfig = tf.compat.v1.estimator.tpu.RunConfig
+TpuRunConfig = tf_compat_v1_estimator.tpu.RunConfig
 CrossShardOptimizer = tf.compat.v1.tpu.CrossShardOptimizer
-TPUEstimatorSpec = tf.compat.v1.estimator.tpu.TPUEstimatorSpec
+TPUEstimatorSpec = tf_compat_v1_estimator.tpu.TPUEstimatorSpec
 
 
 class TestOptimizerWrapper(tf.compat.v1.train.Optimizer):
@@ -240,7 +242,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.estimator.ModeKeys.TRAIN, spec.mode)
+    self.assertEqual(tf_estimator.ModeKeys.TRAIN, spec.mode)
 
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
     self.assertIsNotNone(spec.train_op)
@@ -259,7 +261,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(tf_estimator.ModeKeys.EVAL, spec.mode)
 
     self.assertEqual(generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
@@ -278,7 +280,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
           add_summaries=not flags.FLAGS.use_tpu)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.estimator.ModeKeys.EVAL, spec.mode)
+    self.assertEqual(tf_estimator.ModeKeys.EVAL, spec.mode)
 
     self.assertEqual(generated_data, spec.predictions)
     self.assertShapeEqual(np.array(0), spec.loss)  # must be a scalar
@@ -291,7 +293,7 @@ class GetTPUEstimatorSpecTest(tf.test.TestCase, parameterized.TestCase):
       spec = get_predict_estimator_spec(gan_model_fns)
 
     self.assertIsInstance(spec, TPUEstimatorSpec)
-    self.assertEqual(tf.estimator.ModeKeys.PREDICT, spec.mode)
+    self.assertEqual(tf_estimator.ModeKeys.PREDICT, spec.mode)
     self.assertEqual({'generated_data': generated_data}, spec.predictions)
 
 
@@ -545,7 +547,7 @@ class TPUGANEstimatorWarmStartTest(tf.test.TestCase):
     """Test if GANEstimator allows explicit warm start variable assignment."""
     # Regex matches all variable names in ckpt except for new_var.
     var_regex = '^(?!.*%s.*)' % self.new_variable_name
-    warmstart = tf.estimator.WarmStartSettings(
+    warmstart = tf_estimator.WarmStartSettings(
         ckpt_to_initialize_from=self._model_dir, vars_to_warm_start=var_regex)
     est_warm = self._test_warm_start(warm_start_from=warmstart)
     full_variable_name = 'Generator/%s' % self.new_variable_name

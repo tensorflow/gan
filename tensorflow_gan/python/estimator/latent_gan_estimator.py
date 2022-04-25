@@ -73,6 +73,7 @@ from __future__ import print_function
 
 import functools
 import tensorflow as tf
+from tensorflow import estimator as tf_estimator
 from tensorflow_gan.python import train as tfgan_train
 
 
@@ -125,7 +126,7 @@ def _get_latent_gan_model_fn(generator_fn, discriminator_fn, loss_fn,
                                   tf.linalg.global_norm(z_grads))
       tf.compat.v1.summary.scalar('z_loss/loss', loss)
 
-    return tf.estimator.EstimatorSpec(mode=mode,
+    return tf_estimator.EstimatorSpec(mode=mode,
                                       predictions=gan_model.generated_data,
                                       loss=loss,
                                       train_op=train_op)
@@ -184,13 +185,13 @@ def get_latent_gan_estimator(generator_fn, discriminator_fn, loss_fn,
   model_fn = _get_latent_gan_model_fn(generator_fn, discriminator_fn,
                                       loss_fn, optimizer)
 
-  if isinstance(warmstart_options, tf.estimator.WarmStartSettings):
+  if isinstance(warmstart_options, tf_estimator.WarmStartSettings):
     ws = warmstart_options
   elif warmstart_options:
     # Default WarmStart loads all variable names except INPUT_NAME and
     # OPTIMIZER_NAME.
     var_regex = '^(?!.*(%s|%s).*)' % (INPUT_NAME, OPTIMIZER_NAME)
-    ws = tf.estimator.WarmStartSettings(ckpt_to_initialize_from=ckpt_dir,
+    ws = tf_estimator.WarmStartSettings(ckpt_to_initialize_from=ckpt_dir,
                                         vars_to_warm_start=var_regex)
   else:
     ws = None
@@ -198,5 +199,5 @@ def get_latent_gan_estimator(generator_fn, discriminator_fn, loss_fn,
   if 'opt_kwargs' not in params:
     params['opt_kwargs'] = {}
 
-  return tf.estimator.Estimator(model_fn=model_fn, config=config, params=params,
+  return tf_estimator.Estimator(model_fn=model_fn, config=config, params=params,
                                 warm_start_from=ws)
