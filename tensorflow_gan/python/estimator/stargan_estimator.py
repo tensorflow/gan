@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2022 The TensorFlow GAN Authors.
+# Copyright 2023 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -246,9 +246,14 @@ def _make_gan_model(generator_fn, discriminator_fn, input_data,
                     mode):
   """Construct a `StarGANModel`, and optionally pass in `mode`."""
   # If network functions have an argument `mode`, pass mode to it.
-  if 'mode' in inspect.getargspec(generator_fn).args:
+  generator_spec = inspect.getfullargspec(generator_fn)
+  if 'mode' in generator_spec.args or 'mode' in generator_spec.kwonlyargs:
     generator_fn = functools.partial(generator_fn, mode=mode)
-  if 'mode' in inspect.getargspec(discriminator_fn).args:
+  discriminator_spec = inspect.getfullargspec(discriminator_fn)
+  if (
+      'mode' in discriminator_spec.args
+      or 'mode' in discriminator_spec.kwonlyargs
+  ):
     discriminator_fn = functools.partial(discriminator_fn, mode=mode)
   gan_model = tfgan_train.stargan_model(
       generator_fn,

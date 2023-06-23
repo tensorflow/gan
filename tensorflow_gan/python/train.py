@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2022 The TensorFlow GAN Authors.
+# Copyright 2023 The TensorFlow GAN Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -680,12 +680,12 @@ def gan_loss(
   # them.
   def _optional_kwargs(fn, possible_kwargs):
     """Returns a kwargs dictionary of valid kwargs for a given function."""
-    if inspect.getargspec(fn).keywords is not None:
+    spec = inspect.getfullargspec(fn)
+    if spec.varkw is not None:
       return possible_kwargs
-    actual_args = inspect.getargspec(fn).args
     actual_kwargs = {}
     for k, v in possible_kwargs.items():
-      if k in actual_args:
+      if k in spec.args or k in spec.kwonlyargs:
         actual_kwargs[k] = v
     return actual_kwargs
   possible_kwargs = {'reduction': reduction, 'add_summaries': add_summaries}
