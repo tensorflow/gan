@@ -275,7 +275,7 @@ def _make_prediction_gan_model(input_data, input_data_domain_label,
                                generator_fn, generator_scope):
   """Make a `StarGANModel` from just the generator."""
   # If `generator_fn` has an argument `mode`, pass mode to it.
-  if 'mode' in inspect.getargspec(generator_fn).args:
+  if 'mode' in inspect.getfullargspec(generator_fn).args:
     generator_fn = functools.partial(
         generator_fn, mode=tf_estimator.ModeKeys.PREDICT)
   with tf.compat.v1.variable_scope(generator_scope) as gen_scope:
