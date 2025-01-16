@@ -50,7 +50,7 @@ class NetworksTest(tf.test.TestCase):
     self.assertAllEqual([None, 32, 32, 3], output_imgs.shape.as_list())
 
   def test_generator_invalid_input(self):
-    with self.assertRaisesRegexp(ValueError, 'must have rank 4'):
+    with self.assertRaisesRegex(ValueError, 'must have rank 4'):
       networks.generator(tf.zeros([28, 28, 3]))
 
   def test_generator_run_multi_channel(self):
@@ -64,8 +64,9 @@ class NetworksTest(tf.test.TestCase):
     if tf.executing_eagerly():
       # Placeholders don't work in eager execution.
       return
-    with self.assertRaisesRegexp(
-        ValueError, 'Last dimension shape must be known but is None'):
+    with self.assertRaisesRegex(
+        ValueError, 'Last dimension shape must be known but is None'
+    ):
       img = tf.placeholder(tf.float32, shape=[4, 32, 32, None])
       networks.generator(img)
 

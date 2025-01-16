@@ -50,7 +50,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
           tf.zeros((4, 1), tf.float32),
           tf.zeros((5, 1), tf.float32))
 
-    with self.assertRaisesRegexp(ValueError, 'at least 2D'):
+    with self.assertRaisesRegex(ValueError, 'at least 2D'):
       tfgan.features.condition_tensor(
           tf.zeros((5, 2), tf.float32),
           tf.zeros((5), tf.float32))
@@ -58,7 +58,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
   def test_condition_tensor_asserts_notfullydefined(self):
     if tf.executing_eagerly():
       return
-    with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
+    with self.assertRaisesRegex(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor(
           tf.compat.v1.placeholder(tf.float32, (5, None)),
           tf.zeros((5, 1), tf.float32))
@@ -69,7 +69,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
         tf.zeros((5, 10), tf.float32))
 
   def test_condition_tensor_from_onehot_asserts(self):
-    with self.assertRaisesRegexp(ValueError, 'Shape .* must have rank 2'):
+    with self.assertRaisesRegex(ValueError, 'Shape .* must have rank 2'):
       tfgan.features.condition_tensor_from_onehot(
           tf.zeros((5, 1), tf.float32),
           tf.zeros((5), tf.float32))
@@ -86,7 +86,7 @@ class ConditioningUtilsTest(tf.test.TestCase):
   def test_condition_tensor_from_onehot_asserts_notfullydefined(self):
     if tf.executing_eagerly():
       return
-    with self.assertRaisesRegexp(ValueError, 'Shape .* is not fully defined'):
+    with self.assertRaisesRegex(ValueError, 'Shape .* is not fully defined'):
       tfgan.features.condition_tensor_from_onehot(
           tf.zeros((5, 1), tf.float32),
           tf.compat.v1.placeholder(tf.float32, (5, None)))

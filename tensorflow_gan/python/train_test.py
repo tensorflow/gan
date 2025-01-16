@@ -350,7 +350,7 @@ class GANModelTest(tf.test.TestCase, parameterized.TestCase):
     def dummy_discriminator_model(data, conditioning):  # pylint: disable=unused-argument
       return 1
 
-    with self.assertRaisesRegexp(AttributeError, 'object has no attribute'):
+    with self.assertRaisesRegex(AttributeError, 'object has no attribute'):
       tfgan.gan_model(
           dummy_generator_model,
           dummy_discriminator_model,
@@ -1002,7 +1002,7 @@ class GANTrainOpsTest(tf.test.TestCase, parameterized.TestCase):
     g_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
     d_opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
 
-    with self.assertRaisesRegexp(ValueError, 'There are unused update ops:'):
+    with self.assertRaisesRegex(ValueError, 'There are unused update ops:'):
       tfgan.gan_train_ops(
           model, loss, g_opt, d_opt, check_for_unused_update_ops=True, **kwargs)
     train_ops = tfgan.gan_train_ops(

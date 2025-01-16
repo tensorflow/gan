@@ -607,22 +607,22 @@ class UtilsTest(tf.test.TestCase, parameterized.TestCase):
     p = tf.zeros([8, 10])
     p_logits = tf.zeros([8, 10])
     q = tf.zeros([10])
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+    with self.assertRaisesRegex(ValueError, 'must be floating type'):
       kl_divergence(tf.zeros([8, 10], dtype=tf.int32), p_logits, q)
 
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+    with self.assertRaisesRegex(ValueError, 'must be floating type'):
       kl_divergence(p, tf.zeros([8, 10], dtype=tf.int32), q)
 
-    with self.assertRaisesRegexp(ValueError, 'must be floating type'):
+    with self.assertRaisesRegex(ValueError, 'must be floating type'):
       kl_divergence(p, p_logits, tf.zeros([10], dtype=tf.int32))
 
-    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
+    with self.assertRaisesRegex(ValueError, 'must have rank 2'):
       kl_divergence(tf.zeros([8]), p_logits, q)
 
-    with self.assertRaisesRegexp(ValueError, 'must have rank 2'):
+    with self.assertRaisesRegex(ValueError, 'must have rank 2'):
       kl_divergence(p, tf.zeros([8]), q)
 
-    with self.assertRaisesRegexp(ValueError, 'must have rank 1'):
+    with self.assertRaisesRegex(ValueError, 'must have rank 1'):
       kl_divergence(p, p_logits, tf.zeros([10, 8]))
 
 

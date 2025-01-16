@@ -180,9 +180,10 @@ class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
     tensor1_ref = tf.zeros([6, 5, 7, 3, 3])
 
     with tf.compat.v1.variable_scope('dummy_scope', reuse=True):
-      with self.assertRaisesRegexp(
-          ValueError, 'does not exist, or was not created with '
-          'tf.get_variable()'):
+      with self.assertRaisesRegex(
+          ValueError,
+          'does not exist, or was not created with tf.get_variable()',
+      ):
         vbn_lib.VBN(tensor1_ref)
 
   def test_variable_reuse(self):
@@ -223,40 +224,46 @@ class VirtualBatchnormTest(tf.test.TestCase, absltest.TestCase):
   def test_invalid_input(self):
     # Reference batch has unknown dimensions.
     if not tf.executing_eagerly():
-      with self.assertRaisesRegexp(ValueError,
-                                   '`reference_batch` has unknown dimensions.'):
+      with self.assertRaisesRegex(
+          ValueError, '`reference_batch` has unknown dimensions.'
+      ):
         vbn_lib.VBN(tf.compat.v1.placeholder(tf.float32), name='vbn1')
 
     # Axis too negative.
-    with self.assertRaisesRegexp(ValueError,
-                                 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegex(
+        ValueError, 'Value of `axis` argument .* is out of range'
+    ):
       vbn_lib.VBN(tf.zeros([1, 2]), axis=-3, name='vbn2')
 
     # Axis too large.
-    with self.assertRaisesRegexp(ValueError,
-                                 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegex(
+        ValueError, 'Value of `axis` argument .* is out of range'
+    ):
       vbn_lib.VBN(tf.zeros([1, 2]), axis=2, name='vbn3')
 
     # Batch axis too negative.
-    with self.assertRaisesRegexp(ValueError,
-                                 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegex(
+        ValueError, 'Value of `axis` argument .* is out of range'
+    ):
       vbn_lib.VBN(tf.zeros([1, 2]), name='vbn4', batch_axis=-3)
 
     # Batch axis too large.
-    with self.assertRaisesRegexp(ValueError,
-                                 'Value of `axis` argument .* is out of range'):
+    with self.assertRaisesRegex(
+        ValueError, 'Value of `axis` argument .* is out of range'
+    ):
       vbn_lib.VBN(tf.zeros([1, 2]), name='vbn5', batch_axis=2)
 
     # Axis and batch axis are the same.
-    with self.assertRaisesRegexp(ValueError,
-                                 '`axis` and `batch_axis` cannot be the same.'):
+    with self.assertRaisesRegex(
+        ValueError, '`axis` and `batch_axis` cannot be the same.'
+    ):
       vbn_lib.VBN(tf.zeros([1, 2]), axis=1, name='vbn6', batch_axis=1)
 
     # Reference Tensor and example Tensor have incompatible shapes.
     tensor_ref = tf.zeros([5, 2, 3])
     tensor_examples = tf.zeros([3, 2, 3])
     vbn = vbn_lib.VBN(tensor_ref, name='vbn7', batch_axis=1)
-    with self.assertRaisesRegexp(ValueError, 'Shapes .* are incompatible'):
+    with self.assertRaisesRegex(ValueError, 'Shapes .* are incompatible'):
       vbn(tensor_examples)
 
 

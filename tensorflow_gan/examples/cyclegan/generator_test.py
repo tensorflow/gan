@@ -76,10 +76,12 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
       {'height': 31},
   )
   def error_if_height_not_multiple_of_four(self, height):
-    self.assertRaisesRegexp(
-        ValueError, 'The input height must be a multiple of 4.',
+    self.assertRaisesRegex(
+        ValueError,
+        'The input height must be a multiple of 4.',
         generator.cyclegan_generator_resnet,
-        tf.placeholder(tf.float32, shape=[None, height, 32, 3]))
+        tf.placeholder(tf.float32, shape=[None, height, 32, 3]),
+    )
 
   @parameterized.parameters(
       {'width': 29},
@@ -87,10 +89,12 @@ class CycleganTest(tf.test.TestCase, parameterized.TestCase):
       {'width': 31},
   )
   def error_if_width_not_multiple_of_four(self, width):
-    self.assertRaisesRegexp(
-        ValueError, 'The input width must be a multiple of 4.',
+    self.assertRaisesRegex(
+        ValueError,
+        'The input width must be a multiple of 4.',
         generator.cyclegan_generator_resnet,
-        tf.placeholder(tf.float32, shape=[None, 32, width, 3]))
+        tf.placeholder(tf.float32, shape=[None, 32, width, 3]),
+    )
 
 
 if __name__ == '__main__':

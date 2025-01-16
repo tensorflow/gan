@@ -74,11 +74,11 @@ class ClipWeightsTest(tf.test.TestCase):
     opt = tf.compat.v1.train.GradientDescentOptimizer(1.0)
 
     if use_tuple:
-      with self.assertRaisesRegexp(ValueError, 'must be positive'):
+      with self.assertRaisesRegex(ValueError, 'must be positive'):
         tfgan.features.clip_discriminator_weights(
             opt, self.tuple, weight_clip=-1)
     else:
-      with self.assertRaisesRegexp(ValueError, 'must be positive'):
+      with self.assertRaisesRegex(ValueError, 'must be positive'):
         tfgan.features.clip_variables(opt, self.variables, weight_clip=-1)
 
   def test_incorrect_weight_clip_value_argsonly(self):

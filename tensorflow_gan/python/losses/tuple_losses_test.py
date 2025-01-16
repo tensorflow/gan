@@ -53,12 +53,13 @@ class ArgsToGanModelTest(tf.test.TestCase):
     self.assertEqual(1 + 5 + 2 + 4, gan_model_loss(tuple_type(1, 2), arg2=5))
 
     # Requires non-tuple, non-default arguments.
-    with self.assertRaisesRegexp(ValueError, '`arg2` must be supplied'):
+    with self.assertRaisesRegex(ValueError, '`arg2` must be supplied'):
       gan_model_loss(tuple_type(1, 2))
 
     # Can't pass tuple argument outside tuple.
-    with self.assertRaisesRegexp(ValueError,
-                                 'present in both the tuple and keyword args'):
+    with self.assertRaisesRegex(
+        ValueError, 'present in both the tuple and keyword args'
+    ):
       gan_model_loss(tuple_type(1, 2), arg2=1, arg3=5)
 
   def testargs_to_gan_model_name(self):
